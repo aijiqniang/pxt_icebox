@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.szeastroc</groupId>
+    <artifactId>icebox</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <modules>
+        <module>common</module>
+        <module>client</module>
+        <module>server</module>
+    </modules>
+    <name>icebox</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+        <spring-cloud.version>Finchley.SR2</spring-cloud.version>
+        <!-- 公共jar -->
+        <pxt.common>0.2.3</pxt.common>
+        <pxt.common.db>0.2.0</pxt.common.db>
+        <!-- user服务 -->
+        <user.common.version>0.2.10</user.common.version>
+        <user.client.version>0.2.10</user.client.version>
+        <!-- customer服务 -->
+        <customer.common.version>0.2.10</customer.common.version>
+        <customer.client.version>0.2.10</customer.client.version>
+        <!-- visit -->
+        <visit.common.version>0.1.0</visit.common.version>
+        <visit.client.version>0.1.0</visit.client.version>
+        <!-- icebox服务 -->
+        <icebox.common.version>0.1.0</icebox.common.version>
+        <icebox.client.version>0.1.0</icebox.client.version>
+        <!-- transfer服务 -->
+        <transfer.common.version>0.1.0</transfer.common.version>
+        <transfer.client.version>0.1.0</transfer.client.version>
+    </properties>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.0.6.RELEASE</version>
+    </parent>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- nexus本地jar管理 - 公共jar -->
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>pxt-common</artifactId>
+                <version>${pxt.common}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>pxt-common-db</artifactId>
+                <version>${pxt.common.db}</version>
+            </dependency>
+
+            <!-- nexus本地jar管理 - user服务 -->
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>user-common</artifactId>
+                <version>${user.common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>user-client</artifactId>
+                <version>${user.client.version}</version>
+            </dependency>
+
+            <!-- nexus本地jar管理 - customer服务 -->
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>customer-common</artifactId>
+                <version>${customer.common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>customer-client</artifactId>
+                <version>${customer.client.version}</version>
+            </dependency>
+
+            <!-- nexus本地jar管理 - icebox服务 -->
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>icebox-common</artifactId>
+                <version>${icebox.common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>icebox-client</artifactId>
+                <version>${icebox.client.version}</version>
+            </dependency>
+
+            <!-- nexus本地jar管理 - transfer服务 -->
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>transfer-common</artifactId>
+                <version>${transfer.common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>transfer-client</artifactId>
+                <version>${transfer.client.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

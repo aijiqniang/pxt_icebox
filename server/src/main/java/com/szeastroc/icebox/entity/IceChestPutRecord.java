@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.szeastroc.common.enums.CommonStatus;
+import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
 import lombok.AllArgsConstructor;
@@ -38,6 +39,7 @@ public class IceChestPutRecord {
     private Integer recordStatus;
     private Integer serviceType;
     private BigDecimal depositMoney;
+    private Integer freePayType;
     private Integer status;
     private Date createTime;
     private Date updateTime;
@@ -54,6 +56,7 @@ public class IceChestPutRecord {
         this.recordStatus = RecordStatus.APPLY_ING.getStatus();
         this.serviceType = ServiceType.IS_PUT.getType();
         this.status = CommonStatus.VALID.getStatus();
+        this.freePayType = FreePayTypeEnum.UN_FREE.getType();
     }
 
     public IceChestPutRecord(Integer chestId, String applicantQywechatId, Date applyTime, Integer sendClientId, Integer receiveClientId, BigDecimal depositMoney, Integer recordStatus) {
@@ -68,6 +71,7 @@ public class IceChestPutRecord {
         this.recordStatus = recordStatus;
         this.serviceType = ServiceType.IS_PUT.getType();
         this.status = CommonStatus.VALID.getStatus();
+        this.freePayType = FreePayTypeEnum.UN_FREE.getType();
     }
 
     public IceChestPutRecord(Integer chestId, String applicantQywechatId, Date applyTime, Integer sendClientId, Integer receiveClientId, BigDecimal depositMoney, Integer recordStatus, Integer serviceType) {
@@ -82,5 +86,7 @@ public class IceChestPutRecord {
         this.recordStatus = recordStatus;
         this.serviceType = serviceType;
         this.status = CommonStatus.VALID.getStatus();
+        this.freePayType = FreePayTypeEnum.UN_FREE.getType();
     }
+
 }

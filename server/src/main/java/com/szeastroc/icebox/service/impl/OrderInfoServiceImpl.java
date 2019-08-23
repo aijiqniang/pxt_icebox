@@ -62,7 +62,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoDao, OrderInfo> i
     @Autowired
     private PactRecordDao pactRecordDao;
 
-    @Transactional(value = "assetsTransactionManager")
+    @Transactional(value = "transactionManager")
     @Override
     public OrderPayResponse createPayInfo(String ip, String openid, Integer iceChestId, Integer chestPutRecordId) throws Exception {
 
@@ -86,12 +86,12 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoDao, OrderInfo> i
         datas.put("signType", "MD5");
         String sign = WXPayUtil.generateSignature(datas, weiXinConfig.getSecret());
 
-        OrderPayResponse orderPayResponse = new OrderPayResponse(datas.get("appId"),
+        OrderPayResponse orderPayResponse = new OrderPayResponse(iceChestInfo.getFreePayType(), datas.get("appId"),
                 datas.get("timeStamp"), datas.get("nonceStr"), datas.get("package"), datas.get("signType"), sign, orderNum);
         return orderPayResponse;
     }
 
-    @Transactional(value = "assetsTransactionManager")
+    @Transactional(value = "transactionManager")
     @Override
     public boolean getPayStatus(String orderNum) throws Exception {
 
@@ -204,7 +204,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoDao, OrderInfo> i
         return flag;
     }
 
-    @Transactional(value = "assetsTransactionManager")
+    @Transactional(value = "transactionManager")
     @Override
     public void notifyOrderInfo(OrderPayBack orderPayBack) throws ImproperOptionException {
         //根据订单号查询订单

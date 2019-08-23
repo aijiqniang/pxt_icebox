@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.util.excel.Excel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -63,6 +64,7 @@ public class IceChestInfo {
     private Date releaseTime;
     @Excel(name = "保修起算日期")
     private Date repairBeginTime;
+    private Integer freePayType;
     private Date createTime;
     private Date updateTime;
 
@@ -108,6 +110,7 @@ public class IceChestInfo {
         this.depositMoney = depositMoney;
         this.clientId = clientId;
         this.remark = remark;
+        this.freePayType = FreePayTypeEnum.UN_FREE.getType();
         this.createTime = new Date();
         this.updateTime = this.createTime;
     }

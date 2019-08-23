@@ -49,7 +49,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
      * @since 2019/5/24
      */
     @Override
-    @Transactional(value = "assetsTransactionManager")
+    @Transactional(value = "transactionManager")
     public void EventPush(HisenseDTO hisenseDTO){
         // 同一台设备+同一个事件时间+同一个事件类型
         if(StringUtils.isBlank(jedisClient.get(hisenseDTO.getOccurrenceTime().getTime()+hisenseDTO.getControlId()+ hisenseDTO.getType()))){

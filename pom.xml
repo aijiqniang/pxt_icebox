@@ -22,7 +22,7 @@
         <spring-cloud.version>Finchley.SR2</spring-cloud.version>
         <!-- 公共jar -->
         <pxt.common>0.2.4</pxt.common>
-        <pxt.common.db>0.2.0</pxt.common.db>
+        <pxt.common.db>0.2.1</pxt.common.db>
         <!-- user服务 -->
         <user.common.version>0.2.10</user.common.version>
         <user.client.version>0.2.10</user.client.version>

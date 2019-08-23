@@ -7,7 +7,9 @@ import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.entity.MarketArea;
-import com.szeastroc.icebox.service.*;
+import com.szeastroc.icebox.service.IceChestPutRecordService;
+import com.szeastroc.icebox.service.MarketAreaService;
+import com.szeastroc.icebox.service.OrderInfoService;
 import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.vo.ClientInfoRequest;
 import com.szeastroc.icebox.vo.OrderPayBack;
@@ -40,7 +42,6 @@ public class IceChestPayController {
     /**
      * 创建订单并返回参数, 用于调起小程序
      *
-     * @param request
      * @param ip
      * @param openid
      * @param iceChestId
@@ -48,9 +49,10 @@ public class IceChestPayController {
      * @throws ImproperOptionException
      */
     @RequestMapping("/createPayInfo")
-    public OrderPayResponse createPayInfo(HttpServletRequest request, String ip, String openid, Integer iceChestId, Integer chestPutRecordId) throws ImproperOptionException {
+    public CommonResponse<OrderPayResponse> createPayInfo(String ip, String openid, Integer iceChestId, Integer chestPutRecordId) throws ImproperOptionException {
         try {
-            return orderInfoService.createPayInfo(ip, openid, iceChestId, chestPutRecordId);
+            OrderPayResponse orderPayResponse = orderInfoService.createPayInfo(ip, openid, iceChestId, chestPutRecordId);
+            return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
         } catch (ImproperOptionException e) {
             throw new ImproperOptionException(e.getMessage());
         } catch (Exception e) {

@@ -5,14 +5,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.icebox.dao.ClientInfoDao;
-import com.szeastroc.icebox.dao.IceChestInfoDao;
-import com.szeastroc.icebox.dao.IceChestInfoImportDao;
-import com.szeastroc.icebox.dao.IceEventRecordDao;
-import com.szeastroc.icebox.entity.ClientInfo;
-import com.szeastroc.icebox.entity.IceChestInfo;
-import com.szeastroc.icebox.entity.IceChestInfoImport;
-import com.szeastroc.icebox.entity.IceEventRecord;
+import com.szeastroc.icebox.dao.*;
+import com.szeastroc.icebox.entity.*;
 import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.service.IceChestInfoService;
 import com.szeastroc.icebox.vo.IceChestResponse;
@@ -33,6 +27,8 @@ public class IceChestInfoServiceImpl extends ServiceImpl<IceChestInfoDao, IceChe
     private final IceChestInfoDao iceChestInfoDao;
     private final IceChestInfoImportDao iceChestInfoImportDao;
     private final IceEventRecordDao iceEventRecordDao;
+    @Autowired
+    private IceChestPutRecordDao iceChestPutRecordDao;
 
     @Autowired
     public IceChestInfoServiceImpl(ClientInfoDao clientInfoDao, IceChestInfoDao iceChestInfoDao, IceChestInfoImportDao iceChestInfoImportDao, IceEventRecordDao iceEventRecordDao) {
@@ -53,7 +49,9 @@ public class IceChestInfoServiceImpl extends ServiceImpl<IceChestInfoDao, IceChe
             throw new NormalOptionException(ResultEnum.CLIENT_ICECHEST_IS_NOT_PUT.getCode(), ResultEnum.CLIENT_ICECHEST_IS_NOT_PUT.getMessage());
         }
         IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery().eq(IceEventRecord::getAssetId, iceChestInfo.getAssetId()).orderByDesc(IceEventRecord::getCreateTime).last("limit 1"));
-        return new IceChestResponse(iceChestInfo, clientInfo, iceEventRecord);
+
+        IceChestPutRecord iceChestPutRecord = iceChestPutRecordDao.selectById(iceChestInfo.getLastPutId());
+        return new IceChestResponse(iceChestInfo, clientInfo, iceEventRecord, iceChestPutRecord);
     }
 
     @Override

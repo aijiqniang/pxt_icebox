@@ -54,7 +54,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
     @Autowired
     private PactRecordDao pactRecordDao;
 
-    @Transactional(value = "assetsTransactionManager")
+    @Transactional(value = "transactionManager")
     @Override
     public CommonResponse<OrderPayResponse> applyPayIceChest(ClientInfoRequest clientInfoRequest) throws Exception {
         //查询冰柜信息
@@ -63,7 +63,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         /**
          * 查询对应冰柜是否可投放
          */
-        if(iceChestInfo.getPutStatus().equals(PutStatus.IS_PUT.getStatus())){
+        if (iceChestInfo.getPutStatus().equals(PutStatus.IS_PUT.getStatus())) {
             throw new NormalOptionException(ResultEnum.ICE_CHEST_IS_NOT_UN_PUT.getCode(), ResultEnum.ICE_CHEST_IS_NOT_UN_PUT.getMessage());
         }
 
@@ -75,7 +75,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
                 .eq(IceChestPutRecord::getChestId, iceChestInfo.getId())
                 .eq(IceChestPutRecord::getServiceType, ServiceType.IS_PUT.getType())
                 .eq(IceChestPutRecord::getRecordStatus, RecordStatus.SEND_ING.getStatus()));
-        if(CollectionUtils.isNotEmpty(iceChestPutRecords) && iceChestPutRecords.size() > 1){
+        if (CollectionUtils.isNotEmpty(iceChestPutRecords) && iceChestPutRecords.size() > 1) {
             //数据错误: 不存在对应单个冰柜
             log.error("数据错误:冰柜投放发出记录存在多条 -> {}", JSON.toJSONString(iceChestPutRecords));
             throw new ImproperOptionException(Constants.ErrorMsg.RECORD_DATA_ERROR);
@@ -86,22 +86,22 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
          */
         //查询对应客户的鹏讯通id是否存在
         ClientInfo clientInfo = clientInfoDao.selectOne(Wrappers.<ClientInfo>lambdaQuery().eq(ClientInfo::getClientNumber, clientInfoRequest.getClientNumber()));
-        if(clientInfo == null){
+        if (clientInfo == null) {
             //创建新的
             clientInfo = new ClientInfo(clientInfoRequest.getClientName(), ClientType.IS_STORE.getType(), clientInfoRequest.getClientNumber(), clientInfoRequest.getClientPlace(),
                     clientInfoRequest.getClientLevel(), CommonStatus.VALID.getStatus(), clientInfoRequest.getContactName(), clientInfoRequest.getContactMobile(), Integer.valueOf(clientInfoRequest.getMarketAreaId()));
             clientInfoDao.insert(clientInfo);
-        }else {
+        } else {
             /**
              * 如果客户存在其他拥有的冰柜, 无法继续绑定
              */
             List<IceChestInfo> oldIceChestInfos = iceChestInfoDao.selectList(Wrappers.<IceChestInfo>lambdaQuery().eq(IceChestInfo::getClientId, clientInfo.getId()));
-            if (CollectionUtils.isNotEmpty(oldIceChestInfos)){
+            if (CollectionUtils.isNotEmpty(oldIceChestInfos)) {
                 throw new NormalOptionException(ResultEnum.CLIENT_HAVE_ICECHEST_NOW.getCode(), ResultEnum.CLIENT_HAVE_ICECHEST_NOW.getMessage());
             }
         }
 
-        if(CollectionUtils.isEmpty(iceChestPutRecords)){
+        if (CollectionUtils.isEmpty(iceChestPutRecords)) {
             OrderPayResponse orderPayResponse = createPutIceChestAndOrderInfo(clientInfoRequest, iceChestInfo, clientInfo);
             return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
         }
@@ -113,17 +113,17 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         IceChestPutRecord iceChestPutRecord = iceChestPutRecords.get(0);
         List<OrderInfo> orderInfos = orderInfoDao.selectList(Wrappers.<OrderInfo>lambdaQuery()
                 .eq(OrderInfo::getChestPutRecordId, iceChestPutRecord.getId()));
-        if(CollectionUtils.isNotEmpty(orderInfos)){
+        if (CollectionUtils.isNotEmpty(orderInfos)) {
             orderInfos = orderInfos.stream().filter(x -> !x.getStatus().equals(OrderStatus.IS_CANCEL.getStatus())).collect(Collectors.toList());
         }
-        if(CollectionUtils.isEmpty(orderInfos) || orderInfos.size() > 1){
+        if (CollectionUtils.isEmpty(orderInfos) || orderInfos.size() > 1) {
             //数据错误: 不存在对应投放的单个订单
             log.error("数据错误:投放对应订单记录不存在或存在多条 -> 订单: {} | 投放: {}", JSON.toJSONString(orderInfos), JSON.toJSON(iceChestPutRecord));
             throw new ImproperOptionException(Constants.ErrorMsg.RECORD_DATA_ERROR);
         }
         OrderInfo orderInfo = orderInfos.get(0);
 
-        if(orderInfo.getStatus().equals(OrderStatus.IS_FINISH.getStatus())){
+        if (orderInfo.getStatus().equals(OrderStatus.IS_FINISH.getStatus())) {
 
             //已完成, 则修改投放信息为已接收, 修改冰柜信息为已投放
             iceChestPutRecord.setRecordStatus(RecordStatus.RECEIVE_FINISH.getStatus());
@@ -144,7 +144,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         /**
          * 订单未完成, 查询订单是否已超时
          */
-        if(assertOrderInfoTimeOut(orderInfo.getCreateTime())){
+        if (assertOrderInfoTimeOut(orderInfo.getCreateTime())) {
             //订单超时 调用订单超时流程
             return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, closeWechatWithTimeout(clientInfoRequest, orderInfo, iceChestInfo, clientInfo, iceChestPutRecord));
         }
@@ -152,7 +152,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         /**
          * 订单未超时, 判断订单所属的投放记录的客户人是否是自己, 不是则拒绝投放, 是则返回订单信息
          */
-        if(!iceChestPutRecord.getReceiveClientId().equals(clientInfo.getId())){
+        if (!iceChestPutRecord.getReceiveClientId().equals(clientInfo.getId())) {
             return new CommonResponse<>(ResultEnum.ICE_CHEST_IS_HAVE_PUT_ING.getCode(), ResultEnum.ICE_CHEST_IS_HAVE_PUT_ING.getMessage());
         }
         //属于自己, 返回订单信息, 重新调起旧订单
@@ -163,25 +163,35 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         datas.put("package", "prepay_id=" + orderInfo.getPrayId());
         datas.put("signType", "MD5");
         String sign = WXPayUtil.generateSignature(datas, weiXinConfig.getSecret());
-        OrderPayResponse orderPayResponse = new OrderPayResponse(datas.get("appId"),
+        OrderPayResponse orderPayResponse = new OrderPayResponse(iceChestPutRecord.getFreePayType(), datas.get("appId"),
                 datas.get("timeStamp"), datas.get("nonceStr"), datas.get("package"), datas.get("signType"), sign, orderInfo.getOrderNum());
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
     }
 
-
     /**
      * 创建投放记录及订单流程
+     *
      * @param clientInfoRequest
      * @param iceChestInfo
      * @return
      * @throws Exception
      */
     private OrderPayResponse createPutIceChestAndOrderInfo(ClientInfoRequest clientInfoRequest, IceChestInfo iceChestInfo, ClientInfo clientInfo) throws Exception {
+        int freePayType = iceChestInfo.getFreePayType();
+        if(freePayType == FreePayTypeEnum.UN_FREE.getType()){
+            return createByUnFree(clientInfoRequest, iceChestInfo, clientInfo);
+        }else{
+            return createByFree(clientInfoRequest, iceChestInfo, clientInfo);
+        }
+    }
+
+    private OrderPayResponse createByUnFree(ClientInfoRequest clientInfoRequest, IceChestInfo iceChestInfo, ClientInfo clientInfo) throws Exception {
         /**
          * 创建冰柜投放记录
          */
         IceChestPutRecord iceChestPutRecord = new IceChestPutRecord(Integer.parseInt(clientInfoRequest.getIceChestId()), null, null, iceChestInfo.getClientId(), clientInfo.getId(), iceChestInfo.getDepositMoney(), RecordStatus.SEND_ING.getStatus());
         iceChestPutRecordDao.insert(iceChestPutRecord);
+
         /**
          * 创建订单信息
          */
@@ -200,8 +210,35 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         datas.put("signType", "MD5");
         String sign = WXPayUtil.generateSignature(datas, weiXinConfig.getSecret());
 
-        OrderPayResponse orderPayResponse = new OrderPayResponse(datas.get("appId"),
+        OrderPayResponse orderPayResponse = new OrderPayResponse(iceChestInfo.getFreePayType(), datas.get("appId"),
                 datas.get("timeStamp"), datas.get("nonceStr"), datas.get("package"), datas.get("signType"), sign, orderNum);
+        return orderPayResponse;
+    }
+
+    private OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceChestInfo iceChestInfo, ClientInfo clientInfo) throws ImproperOptionException {
+        IceChestPutRecord iceChestPutRecord = new IceChestPutRecord(Integer.parseInt(clientInfoRequest.getIceChestId()), null, null, iceChestInfo.getClientId(), clientInfo.getId(), iceChestInfo.getDepositMoney(), RecordStatus.RECEIVE_FINISH.getStatus());
+        iceChestPutRecord.setFreePayType(iceChestInfo.getFreePayType());
+        iceChestPutRecordDao.insert(iceChestPutRecord);
+        //修改冰柜信息的投放状态
+        iceChestInfo.setPutStatus(PutStatus.IS_PUT.getStatus());
+        iceChestInfo.setClientId(iceChestPutRecord.getReceiveClientId());
+        iceChestInfo.setLastPutId(iceChestPutRecord.getId());
+        iceChestInfo.setLastPutTime(iceChestPutRecord.getCreateTime());
+        iceChestInfoDao.updateById(iceChestInfo);
+        //修改电子协议, 关联投放id及投放时间
+        PactRecord pactRecord = pactRecordDao.selectOne(Wrappers.<PactRecord>lambdaQuery()
+                .eq(PactRecord::getClientId, iceChestPutRecord.getReceiveClientId())
+                .eq(PactRecord::getChestId, iceChestInfo.getId()));
+        if(pactRecord == null){
+            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        }
+        pactRecord.setPutId(iceChestPutRecord.getId());
+        pactRecord.setPutTime(iceChestPutRecord.getCreateTime());
+        DateTime startTime = new DateTime(pactRecord.getPutTime());
+        DateTime endTime = startTime.plusYears(1);
+        pactRecord.setPutExpireTime(endTime.toDate());
+        pactRecordDao.updateById(pactRecord);
+        OrderPayResponse orderPayResponse = new OrderPayResponse(iceChestInfo.getFreePayType());
         return orderPayResponse;
     }
 
@@ -221,12 +258,12 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         String prepayId = weiXinService.createWeiXinPay(clientInfoRequest.getIp(), iceChestInfo.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
         //创建订单
         OrderInfo newOrderInfo = new OrderInfo(iceChestInfo.getId(), orderNum, clientInfoRequest.getOpenid(), iceChestInfo.getDepositMoney(), prepayId);
-        if(iceChestPutRecord.getReceiveClientId().equals(clientInfo.getId())){
+        if (iceChestPutRecord.getReceiveClientId().equals(clientInfo.getId())) {
             /**
              * 属于自身, 订单直接关联旧投放记录
              */
             newOrderInfo.setChestPutRecordId(iceChestPutRecord.getId());
-        }else{
+        } else {
             /**
              * 属于他人, 则关闭旧投放记录, 创建新投放, 订单关联新投放
              */
@@ -249,19 +286,20 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         datas.put("signType", "MD5");
         String sign = WXPayUtil.generateSignature(datas, weiXinConfig.getSecret());
 
-        OrderPayResponse orderPayResponse = new OrderPayResponse(datas.get("appId"),
+        OrderPayResponse orderPayResponse = new OrderPayResponse(iceChestPutRecord.getFreePayType(), datas.get("appId"),
                 datas.get("timeStamp"), datas.get("nonceStr"), datas.get("package"), datas.get("signType"), sign, orderNum);
         return orderPayResponse;
     }
 
     /**
      * 判断订单下单时间是否超过自定义限制时间( 10分钟 )
+     *
      * @param orderTime
      * @return true 超时 false 未超时
      */
-    private boolean assertOrderInfoTimeOut(Date orderTime){
+    private boolean assertOrderInfoTimeOut(Date orderTime) {
         long time = new DateTime().toDate().getTime() - orderTime.getTime();
-        if(time >= weiXinConfig.getOrder().getTimeout()){
+        if (time >= weiXinConfig.getOrder().getTimeout()) {
             return true;
         }
         return false;

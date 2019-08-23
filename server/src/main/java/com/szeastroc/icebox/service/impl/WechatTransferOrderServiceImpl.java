@@ -78,6 +78,13 @@ public class WechatTransferOrderServiceImpl extends ServiceImpl<WechatTransferOr
         iceChestInfo.setLastPutTime(bakIceChestPutRecord.getCreateTime());
         iceChestInfoDao.updateById(iceChestInfo);
 
+        /**
+         * 免押则直接返回
+         */
+        if(FreePayTypeEnum.IS_FREE.getType() == iceChestPutRecord.getFreePayType()){
+            return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+        }
+
         WechatTransferOrder wechatTransferOrder = new WechatTransferOrder(String.valueOf(orderInfo.getId()), iceChestId,
                 iceChestPutRecord.getId(), orderInfo.getId(), orderInfo.getOpenid(), orderInfo.getPayMoney());
 
@@ -172,6 +179,13 @@ public class WechatTransferOrderServiceImpl extends ServiceImpl<WechatTransferOr
          */
         if(!iceChestPutRecord.getId().equals(pactRecord.getPutId())){
             throw new ImproperOptionException(Constants.ErrorMsg.RECORD_DATA_ERROR + ": 电子协议投放记录不是最新投放记录");
+        }
+
+        /**
+         * 免押时, 不校验订单, 直接跳过
+         */
+        if(FreePayTypeEnum.IS_FREE.getType() == iceChestPutRecord.getFreePayType()){
+            return;
         }
 
         OrderInfo orderInfoTmp = orderInfoDao.selectOne(Wrappers.<OrderInfo>lambdaQuery().eq(OrderInfo::getChestPutRecordId, iceChestPutRecord.getId()));

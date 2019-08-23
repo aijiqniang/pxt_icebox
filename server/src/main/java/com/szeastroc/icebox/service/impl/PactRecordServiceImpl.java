@@ -37,7 +37,7 @@ public class PactRecordServiceImpl extends ServiceImpl<PactRecordDao, PactRecord
     @Autowired
     private IceChestPutRecordDao iceChestPutRecordDao;
 
-    @Transactional(value = "assetsTransactionManager")
+    @Transactional(value = "transactionManager")
     @Override
     public CommonResponse<String> createPactRecord(ClientInfoRequest clientInfoRequest) {
         //查询对应客户的鹏讯通id是否存在
@@ -60,7 +60,7 @@ public class PactRecordServiceImpl extends ServiceImpl<PactRecordDao, PactRecord
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
-    @Transactional(value = "assetsTransactionManager")
+    @Transactional(value = "transactionManager")
     @Override
     public CommonResponse<String> repairPactRecord() {
 

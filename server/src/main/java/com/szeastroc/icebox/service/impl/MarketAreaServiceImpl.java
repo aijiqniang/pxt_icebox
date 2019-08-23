@@ -20,7 +20,7 @@ public class MarketAreaServiceImpl extends ServiceImpl<MarketAreaDao, MarketArea
     @Autowired
     private MarketAreaDao marketAreaDao;
 
-    @Transactional(value = "assetsTransactionManager")
+    @Transactional(value = "transactionManager")
     @Override
     public void updateStoreMarketAreaList(List<MarketArea> marketAreas) {
         for (MarketArea marketArea : marketAreas) {

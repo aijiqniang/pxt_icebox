@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OrderPayResponse {
 
+    private Integer freePayType;
     private String appId;
     private String timeStamp;
     private String nonceStr;
@@ -20,4 +21,8 @@ public class OrderPayResponse {
     private String signType;
     private String paySign;
     private String orderNum;
+
+    public OrderPayResponse(Integer freePayType) {
+        this.freePayType = freePayType;
+    }
 }

@@ -56,11 +56,12 @@ public class IceChestController {
      * @throws ImproperOptionException
      */
     @GetMapping("/getIceChest")
-    public IceChestResponse getIceChest(String clientNumber) throws NormalOptionException, ImproperOptionException {
+    public CommonResponse<IceChestResponse> getIceChest(String clientNumber) throws NormalOptionException, ImproperOptionException {
         if (StringUtils.isBlank(clientNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        return iceChestInfoService.getIceChestByClientNumber(clientNumber);
+        IceChestResponse iceChestResponse = iceChestInfoService.getIceChestByClientNumber(clientNumber);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceChestResponse);
     }
 
     /**
@@ -72,11 +73,12 @@ public class IceChestController {
      * @throws NormalOptionException
      */
     @GetMapping("/getIceChestByQrcode")
-    public IceChestResponse getIceChestByQrcode(String qrcode, String clientNumber) throws ImproperOptionException, NormalOptionException {
+    public CommonResponse<IceChestResponse> getIceChestByQrcode(String qrcode, String clientNumber) throws ImproperOptionException, NormalOptionException {
         if (StringUtils.isBlank(qrcode)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        return iceChestInfoService.getIceChestByQrcode(qrcode, clientNumber);
+        IceChestResponse iceChestResponse = iceChestInfoService.getIceChestByQrcode(qrcode, clientNumber);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceChestResponse);
     }
 
     /**

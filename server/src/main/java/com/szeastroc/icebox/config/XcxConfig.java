@@ -18,4 +18,5 @@ public class XcxConfig {
 
     private String appid;
 
+    private Integer mchType;
 }

@@ -10,6 +10,7 @@ import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.common.utils.HttpUtils;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.dao.*;
@@ -20,6 +21,7 @@ import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.transfer.client.FeignTransferClient;
 import com.szeastroc.transfer.common.enums.MchTypeEnum;
 import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
+import com.szeastroc.transfer.common.enums.WechatPayTypeEnum;
 import com.szeastroc.transfer.common.request.TransferRequest;
 import com.szeastroc.transfer.common.response.TransferReponse;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -102,10 +105,16 @@ public class WechatTransferOrderServiceImpl extends ServiceImpl<WechatTransferOr
                 .resourceKey(String.valueOf(orderInfo.getId()))
                 .wxappid(xcxConfig.getAppid())
                 .openid(orderInfo.getOpenid())
+//                .paymentAmount(orderInfo.getPayMoney().multiply(new BigDecimal(100)))
                 .paymentAmount(orderInfo.getPayMoney())
-                .mchType(MchTypeEnum.DONG_PENG_SHANG_HU.getType())
+                .wechatPayType(WechatPayTypeEnum.FOR_TRANSFER.getType())
+                .mchType(xcxConfig.getMchType())
                 .build();
+
         TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
+//        String result = HttpUtils.postJson("http://139.199.154.215:9351/transfer/wx/transfer", JSON.toJSONString(transferRequest));
+//        log.info("转账返回值transferReponse -> [{}]", result);
+//        TransferReponse transferReponse = JSON.parseObject(result, TransferReponse.class);
 
         /**
          * 修改状态

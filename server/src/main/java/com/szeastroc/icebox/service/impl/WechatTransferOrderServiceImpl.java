@@ -11,6 +11,7 @@ import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.dao.*;
 import com.szeastroc.icebox.entity.*;
 import com.szeastroc.icebox.enums.*;
@@ -37,6 +38,8 @@ import java.util.List;
 @Service
 public class WechatTransferOrderServiceImpl extends ServiceImpl<WechatTransferOrderDao, WechatTransferOrder> implements WechatTransferOrderService {
 
+    @Autowired
+    private XcxConfig xcxConfig;
     @Autowired
     private OrderInfoDao orderInfoDao;
     @Autowired
@@ -97,6 +100,7 @@ public class WechatTransferOrderServiceImpl extends ServiceImpl<WechatTransferOr
         TransferRequest transferRequest = TransferRequest.builder()
                 .resourceType(ResourceTypeEnum.FROM_ICEBOX.getType())
                 .resourceKey(String.valueOf(orderInfo.getId()))
+                .wxappid(xcxConfig.getAppid())
                 .openid(orderInfo.getOpenid())
                 .paymentAmount(orderInfo.getPayMoney())
                 .mchType(MchTypeEnum.DONG_PENG_SHANG_HU.getType())

@@ -30,8 +30,6 @@ public class WechatTransferOrder {
     private String partnerTradeNo;
     private String openid;
     private BigDecimal amount;
-    private String paymentNo;
-    private Date paymentTime;
     private Date createTime;
     private Date updateTime;
 

@@ -119,8 +119,8 @@ public class WechatTransferOrderServiceImpl extends ServiceImpl<WechatTransferOr
         /**
          * 修改状态
          */
-        wechatTransferOrder.setPaymentNo(transferReponse.getOrderNumber());
-        wechatTransferOrderDao.updateById(wechatTransferOrder);
+//        wechatTransferOrder.setPaymentNo(transferReponse.getOrderNumber());
+//        wechatTransferOrderDao.updateById(wechatTransferOrder);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }

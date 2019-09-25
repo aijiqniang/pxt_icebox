@@ -4,15 +4,18 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.utils.SpringContextUtil;
 import com.szeastroc.icebox.entity.*;
+import com.szeastroc.icebox.enums.PutStatus;
 import com.szeastroc.icebox.service.*;
+import com.szeastroc.icebox.vo.IceChestInfoExcelVo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 
 import java.util.List;
 
 @Slf4j
 public class IceChestInfoImportThread implements Runnable{
 
-	private List<IceChestInfo> iceChestInfoList;
+	private List<IceChestInfoExcelVo> iceChestInfoList;
 
 	private Integer importId;
 
@@ -20,7 +23,7 @@ public class IceChestInfoImportThread implements Runnable{
 
 	}
 
-	public IceChestInfoImportThread(List<IceChestInfo> iceChestInfoList, Integer importId){
+	public IceChestInfoImportThread(List<IceChestInfoExcelVo> iceChestInfoList, Integer importId){
 		this.iceChestInfoList = iceChestInfoList;
 		this.importId = importId;
 	}
@@ -37,33 +40,41 @@ public class IceChestInfoImportThread implements Runnable{
 		IceChestInfoImportError iceChestInfoImportError = null;
 
 		MarketArea marketArea = null;
-		for (IceChestInfo iceChestInfo : iceChestInfoList) {
+		for (IceChestInfoExcelVo iceChestInfo : iceChestInfoList) {
 			try{
 				//查询黑名单表  是否有   没有则新增 有则修改记录
-				IceChestInfo iceChestInfo1 = iceChestInfoService.getOne(Wrappers.<IceChestInfo>lambdaQuery().eq(IceChestInfo::getAssetId, iceChestInfo.getAssetId()));
-				if(null != iceChestInfo1){
-					//数据已存在
-					errorMsg = "冰箱数据已存在";
+				IceChestInfo oldIceChestInfo = iceChestInfoService.getOne(Wrappers.<IceChestInfo>lambdaQuery().eq(IceChestInfo::getAssetId, iceChestInfo.getAssetId()));
+				if(null != oldIceChestInfo){
+
+					if(oldIceChestInfo.getPutStatus().equals(PutStatus.NO_PUT.getStatus())){
+						//更新数据
+						marketArea = marketAreaService.getOne(Wrappers.<MarketArea>lambdaQuery().eq(MarketArea::getName, iceChestInfo.getMarketAreaName()));
+
+						ClientInfo clientInfo = clientInfoService.getOne(Wrappers.<ClientInfo>lambdaQuery().eq(ClientInfo::getClientNumber, iceChestInfo.getPxtId()));
+
+						createClientInfo(clientInfoService, marketArea, iceChestInfo, clientInfo);
+
+						oldIceChestInfo.setClientId(clientInfo.getId());
+						oldIceChestInfo.setMarketAreaId(marketArea.getId());
+						iceChestInfoService.updateById(oldIceChestInfo);
+						successCount++;
+						continue;
+					}
+					errorMsg = "冰箱已投放";
 				}else{
 					//新增client数据
 					marketArea = marketAreaService.getOne(Wrappers.<MarketArea>lambdaQuery().eq(MarketArea::getName, iceChestInfo.getMarketAreaName()));
 
 					ClientInfo clientInfo = clientInfoService.getOne(Wrappers.<ClientInfo>lambdaQuery().eq(ClientInfo::getClientNumber, iceChestInfo.getPxtId()));
 
-					if(clientInfo == null) {
-						clientInfo = new ClientInfo();
-						clientInfo.setClientNumber(iceChestInfo.getPxtId());
-						clientInfo.setMarketAreaId(marketArea.getId());
-						clientInfo.setClientName(iceChestInfo.getJxsName());
-						clientInfo.setClientPlace(iceChestInfo.getJxsAddress());
-						clientInfo.setContactName(iceChestInfo.getJxsContact());
-						clientInfo.setContactMobile(iceChestInfo.getJxsContactMobile());
-						clientInfoService.save(clientInfo);
-					}
+					createClientInfo(clientInfoService, marketArea, iceChestInfo, clientInfo);
+
 					//新增冰箱数据
-					iceChestInfo.setClientId(clientInfo.getId());
-					iceChestInfo.setMarketAreaId(marketArea.getId());
-					iceChestInfoService.save(iceChestInfo);
+					IceChestInfo newIceChestInfo = new IceChestInfo();
+					BeanUtils.copyProperties(iceChestInfo, newIceChestInfo);
+					newIceChestInfo.setClientId(clientInfo.getId());
+					newIceChestInfo.setMarketAreaId(marketArea.getId());
+					iceChestInfoService.save(newIceChestInfo);
 					successCount++;
 					continue;
 				}
@@ -86,5 +97,19 @@ public class IceChestInfoImportThread implements Runnable{
 		iceChestInfoImport.setSuccessNum(successCount);
 		iceChestInfoImportService.updateById(iceChestInfoImport);
 	}
+
+	private void createClientInfo(ClientInfoService clientInfoService, MarketArea marketArea, IceChestInfoExcelVo iceChestInfo, ClientInfo clientInfo) {
+		if(clientInfo == null) {
+            clientInfo = new ClientInfo();
+            clientInfo.setClientNumber(iceChestInfo.getPxtId());
+            clientInfo.setMarketAreaId(marketArea.getId());
+            clientInfo.setClientName(iceChestInfo.getJxsName());
+            clientInfo.setClientPlace(iceChestInfo.getJxsAddress());
+            clientInfo.setContactName(iceChestInfo.getJxsContact());
+            clientInfo.setContactMobile(iceChestInfo.getJxsContactMobile());
+            clientInfoService.save(clientInfo);
+        }
+	}
+
 
 }

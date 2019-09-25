@@ -6,6 +6,7 @@ import com.szeastroc.icebox.entity.IceChestInfo;
 import com.szeastroc.icebox.entity.IceChestInfoImport;
 import com.szeastroc.icebox.service.IceChestInfoService;
 import com.szeastroc.icebox.util.excel.ExcelUtil;
+import com.szeastroc.icebox.vo.IceChestInfoExcelVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -52,14 +53,13 @@ public class ImportExcelController extends BaseController {
             tmpFile = new File(realPath, file.getOriginalFilename());
             FileUtils.copyInputStreamToFile(file.getInputStream(),tmpFile);
 
-            //黑名单导入
-            ExcelUtil<IceChestInfo> excel = new ExcelUtil<IceChestInfo>(new IceChestInfo());
-            List<IceChestInfo> list = excel.readFromFile(tmpFile, 0);
+            ExcelUtil<IceChestInfoExcelVo> excel = new ExcelUtil<>(new IceChestInfoExcelVo());
+            List<IceChestInfoExcelVo> list = excel.readFromFile(tmpFile, 0);
             IceChestInfoImport iceChestInfoImport = new IceChestInfoImport();
             iceChestInfoImport.setFilePath(tmpFile.getPath());
             iceChestInfoImport.setName(file.getOriginalFilename());
             iceChestInfoImport.setImportNo(UUID.randomUUID().toString());
-            result = iceChestInfoService.importIceInfo(list,iceChestInfoImport);
+            result = iceChestInfoService.importIceInfoExcelVo(list,iceChestInfoImport);
             if(!result.equals("success")){
                 return renderError(result);
             }

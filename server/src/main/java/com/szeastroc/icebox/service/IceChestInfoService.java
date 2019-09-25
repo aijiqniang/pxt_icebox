@@ -5,6 +5,7 @@ import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.icebox.entity.IceChestInfo;
 import com.szeastroc.icebox.entity.IceChestInfoImport;
+import com.szeastroc.icebox.vo.IceChestInfoExcelVo;
 import com.szeastroc.icebox.vo.IceChestResponse;
 
 import java.util.List;
@@ -21,6 +22,6 @@ public interface IceChestInfoService extends IService<IceChestInfo>{
 
     IceChestResponse getIceChestByQrcode(String qrcode, String clientNumber) throws NormalOptionException, ImproperOptionException;
 
-    String importIceInfo(List<IceChestInfo> list, IceChestInfoImport iceChestInfoImport);
+    String importIceInfoExcelVo(List<IceChestInfoExcelVo> list, IceChestInfoImport iceChestInfoImport);
 
 }

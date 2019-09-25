@@ -1,13 +1,8 @@
 package com.szeastroc.icebox.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.szeastroc.icebox.util.excel.Excel;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -16,6 +11,7 @@ import java.util.Date;
  * Created by Tulane
  * 2019/5/21
  */
+@Data
 public class IceChestInfoExcelVo {
 
     @Excel(name = "冰箱控制器ID")
@@ -52,19 +48,15 @@ public class IceChestInfoExcelVo {
     private Date repairBeginTime;
 
     //鹏讯通id
-    @TableField(exist = false)
     @Excel(name = "经销商鹏讯通编号")
     private String pxtId;
 
-    @TableField(exist = false)
     @Excel(name="所属服务处")
     private String marketAreaName;
 
-    @TableField(exist = false)
     @Excel(name="经销商名称")
     private String jxsName;
 
-    @TableField(exist = false)
     @Excel(name="经销商地址")
     private String jxsAddress;
 
@@ -72,7 +64,6 @@ public class IceChestInfoExcelVo {
     @Excel(name="经销商联系人")
     private String jxsContact;
 
-    @TableField(exist = false)
     @Excel(name="经销商联系人电话")
     private String jxsContactMobile;
 

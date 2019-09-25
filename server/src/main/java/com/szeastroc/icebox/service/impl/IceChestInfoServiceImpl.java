@@ -9,6 +9,7 @@ import com.szeastroc.icebox.dao.*;
 import com.szeastroc.icebox.entity.*;
 import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.service.IceChestInfoService;
+import com.szeastroc.icebox.vo.IceChestInfoExcelVo;
 import com.szeastroc.icebox.vo.IceChestResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,11 +42,11 @@ public class IceChestInfoServiceImpl extends ServiceImpl<IceChestInfoDao, IceChe
     @Override
     public IceChestResponse getIceChestByClientNumber(String clientNumber) throws NormalOptionException {
         ClientInfo clientInfo = clientInfoDao.selectOne(Wrappers.<ClientInfo>lambdaQuery().eq(ClientInfo::getClientNumber, clientNumber));
-        if(clientInfo == null){
+        if (clientInfo == null) {
             throw new NormalOptionException(ResultEnum.CLIENT_IS_NOT_REGISTER.getCode(), ResultEnum.CLIENT_IS_NOT_REGISTER.getMessage());
         }
         IceChestInfo iceChestInfo = iceChestInfoDao.selectOne(Wrappers.<IceChestInfo>lambdaQuery().eq(IceChestInfo::getClientId, clientInfo.getId()));
-        if(iceChestInfo == null){
+        if (iceChestInfo == null) {
             throw new NormalOptionException(ResultEnum.CLIENT_ICECHEST_IS_NOT_PUT.getCode(), ResultEnum.CLIENT_ICECHEST_IS_NOT_PUT.getMessage());
         }
         IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery().eq(IceEventRecord::getAssetId, iceChestInfo.getAssetId()).orderByDesc(IceEventRecord::getCreateTime).last("limit 1"));
@@ -57,7 +58,7 @@ public class IceChestInfoServiceImpl extends ServiceImpl<IceChestInfoDao, IceChe
     @Override
     public IceChestResponse getIceChestByExternalId(String externalId) throws NormalOptionException, ImproperOptionException {
         IceChestInfo iceChestInfo = iceChestInfoDao.selectOne(Wrappers.<IceChestInfo>lambdaQuery().eq(IceChestInfo::getExternalId, externalId));
-        if(iceChestInfo == null){
+        if (iceChestInfo == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         ClientInfo clientInfo = clientInfoDao.selectById(iceChestInfo.getClientId());
@@ -67,7 +68,7 @@ public class IceChestInfoServiceImpl extends ServiceImpl<IceChestInfoDao, IceChe
     @Override
     public IceChestResponse getIceChestByQrcode(String qrcode, String clientNumber) throws NormalOptionException, ImproperOptionException {
         IceChestInfo iceChestInfo = iceChestInfoDao.selectOne(Wrappers.<IceChestInfo>lambdaQuery().eq(IceChestInfo::getQrCode, qrcode));
-        if(iceChestInfo == null){
+        if (iceChestInfo == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         ClientInfo clientInfo = clientInfoDao.selectById(iceChestInfo.getClientId());
@@ -76,9 +77,9 @@ public class IceChestInfoServiceImpl extends ServiceImpl<IceChestInfoDao, IceChe
     }
 
     @Override
-    public String importIceInfo(List<IceChestInfo> list, IceChestInfoImport iceChestInfoImport){
+    public String importIceInfoExcelVo(List<IceChestInfoExcelVo> list, IceChestInfoImport iceChestInfoImport) {
         IceChestInfoImport blackImport = iceChestInfoImportDao.selectOne(Wrappers.<IceChestInfoImport>lambdaQuery().eq(IceChestInfoImport::getName, iceChestInfoImport.getName()));
-        if(null != blackImport){
+        if (null != blackImport) {
             return "不允许重复导入";
         }
         //插入、更新黑名单
@@ -90,7 +91,7 @@ public class IceChestInfoServiceImpl extends ServiceImpl<IceChestInfoDao, IceChe
         iceChestInfoImport.setStatus(1);
         iceChestInfoImport.setSuccessNum(successNum);
         iceChestInfoImportDao.insert(iceChestInfoImport);
-        IceChestInfoImportThread iceChestInfoImportThread = new IceChestInfoImportThread(list,iceChestInfoImport.getId());
+        IceChestInfoImportThread iceChestInfoImportThread = new IceChestInfoImportThread(list, iceChestInfoImport.getId());
         Thread thread = new Thread(iceChestInfoImportThread);
         thread.start();
         return "success";

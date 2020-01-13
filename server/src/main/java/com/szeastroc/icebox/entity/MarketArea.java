@@ -3,9 +3,12 @@ package com.szeastroc.icebox.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.szeastroc.icebox.vo.MarketAreaVo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 /**
  * Created by Tulane
@@ -25,4 +28,16 @@ public class MarketArea {
     private String server;
     private String region;
     private String business;
+
+
+    public MarketAreaVo convertVo() {
+        MarketAreaVo marketAreaVo = new MarketAreaVo();
+        marketAreaVo.setId(id);
+        marketAreaVo.setName(name);
+        marketAreaVo.setParentId(parentId);
+        marketAreaVo.setServer(server);
+        marketAreaVo.setRegion(region);
+        marketAreaVo.setBusiness(business);
+        return marketAreaVo;
+    }
 }

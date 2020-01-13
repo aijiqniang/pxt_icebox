@@ -1,9 +1,13 @@
 package com.szeastroc.icebox.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
@@ -18,7 +22,9 @@ import com.szeastroc.icebox.util.wechatpay.WXPayUtil;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.util.wechatpay.WeiXinService;
 import com.szeastroc.icebox.vo.ClientInfoRequest;
+import com.szeastroc.icebox.vo.IceDepositResponse;
 import com.szeastroc.icebox.vo.OrderPayResponse;
+import com.szeastroc.icebox.vo.query.IceDepositPage;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -166,6 +172,65 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         OrderPayResponse orderPayResponse = new OrderPayResponse(iceChestPutRecord.getFreePayType(), datas.get("appId"),
                 datas.get("timeStamp"), datas.get("nonceStr"), datas.get("package"), datas.get("signType"), sign, orderInfo.getOrderNum());
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
+    }
+
+    @Override
+    public IPage<IceDepositResponse> queryIceDeposits(IceDepositPage iceDepositPage) {
+        LambdaQueryWrapper<IceChestPutRecord> wrapper = Wrappers.<IceChestPutRecord>lambdaQuery();
+        wrapper.eq(IceChestPutRecord::getServiceType, ServiceType.IS_PUT.getType());
+
+        IPage<IceChestPutRecord> iceChestPutRecordIPage = iceChestPutRecordDao.customSelectPage(iceDepositPage, wrapper, iceDepositPage);
+
+        final Map<Integer, Integer> clientForeignKeyMap = Maps.newHashMap();
+        final Map<Integer, Integer> chestForeignKeyMap = Maps.newHashMap();
+        final Map<Integer, Integer> orderForeignKeyMap = Maps.newHashMap();
+        for (IceChestPutRecord record : iceChestPutRecordIPage.getRecords()) {
+            // 投放客户信息
+            clientForeignKeyMap.put(record.getId(), record.getReceiveClientId());
+            // 冰柜信息
+            chestForeignKeyMap.put(record.getId(), record.getChestId());
+            // 支付信息
+            orderForeignKeyMap.put(record.getId(), record.getId());
+        }
+
+        // 批量查询数据库
+        if(CollectionUtils.isNotEmpty(iceChestPutRecordIPage.getRecords())) {
+            return getIceDepositResponseIPage(iceChestPutRecordIPage, clientForeignKeyMap, chestForeignKeyMap, orderForeignKeyMap);
+        }
+        return null;
+    }
+
+    private IPage<IceDepositResponse> getIceDepositResponseIPage(IPage<IceChestPutRecord> iceChestPutRecordIPage, Map<Integer, Integer> clientForeignKeyMap, Map<Integer, Integer> chestForeignKeyMap, Map<Integer, Integer> orderForeignKeyMap) {
+        List<ClientInfo> clientInfos = clientInfoDao.selectList(Wrappers.<ClientInfo>lambdaQuery().in(ClientInfo::getId, clientForeignKeyMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList())));
+        List<IceChestInfo> iceChestInfos = iceChestInfoDao.selectList(Wrappers.<IceChestInfo>lambdaQuery().in(IceChestInfo::getId, chestForeignKeyMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList())));
+        List<OrderInfo> orderInfos = orderInfoDao.selectList(Wrappers.<OrderInfo>lambdaQuery().in(OrderInfo::getChestPutRecordId, orderForeignKeyMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList())));
+
+        return iceChestPutRecordIPage.convert(iceChestPutRecord -> {
+            // 投放客户信息
+            ClientInfo clientInfo = clientInfos.stream().filter(x -> x.getId().equals(clientForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
+            // 冰柜信息
+            IceChestInfo iceChestInfo = iceChestInfos.stream().filter(x -> x.getId().equals(chestForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
+            // 支付信息
+            OrderInfo orderInfo = orderInfos.stream().filter(x -> x.getChestPutRecordId().equals(orderForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
+
+            IceDepositResponse iceDepositResponse = new IceDepositResponse();
+            iceDepositResponse.setClientNumber(clientInfo.getClientNumber());
+            iceDepositResponse.setClientName(clientInfo.getClientName());
+            iceDepositResponse.setContactName(clientInfo.getContactName());
+            iceDepositResponse.setContactMobile(clientInfo.getContactMobile());
+            iceDepositResponse.setClientPlace(clientInfo.getClientPlace());
+            // TODO 未转换为服务处
+            iceDepositResponse.setMarketAreaName("" + iceChestInfo.getMarketAreaId());
+            iceDepositResponse.setChestModel(iceChestInfo.getChestModel());
+            iceDepositResponse.setChestName(iceChestInfo.getChestName());
+            iceDepositResponse.setAssetId(iceChestInfo.getAssetId());
+            // TODO BigDecimal转换
+            iceDepositResponse.setPayMoney(orderInfo.getPayMoney().toPlainString());
+            iceDepositResponse.setPayTime(new DateTime(orderInfo.getPayTime()).toString("YYYYMMdd HH:mm"));
+            iceDepositResponse.setOrderNum(orderInfo.getOrderNum());
+            iceDepositResponse.setChestMoney(iceChestInfo.getChestMoney().toPlainString());
+            return iceDepositResponse;
+        });
     }
 
     /**

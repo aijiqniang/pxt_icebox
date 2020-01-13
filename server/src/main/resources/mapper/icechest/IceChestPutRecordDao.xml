@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.dao.IceChestPutRecordDao">
+    <resultMap id="BaseResultMap" type="com.szeastroc.icebox.entity.IceChestPutRecord">
+        <!--@mbg.generated-->
+        <!--@Table t_ice_chest_put_record-->
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="chest_id" jdbcType="INTEGER" property="chestId"/>
+        <result column="applicant_qywechat_id" jdbcType="VARCHAR" property="applicantQywechatId"/>
+        <result column="apply_time" jdbcType="TIMESTAMP" property="applyTime"/>
+        <result column="send_client_id" jdbcType="INTEGER" property="sendClientId"/>
+        <result column="send_qywechat_id" jdbcType="INTEGER" property="sendQywechatId"/>
+        <result column="send_time" jdbcType="TIMESTAMP" property="sendTime"/>
+        <result column="receive_client_id" jdbcType="INTEGER" property="receiveClientId"/>
+        <result column="receive_qywechat_id" jdbcType="INTEGER" property="receiveQywechatId"/>
+        <result column="receive_time" jdbcType="TIMESTAMP" property="receiveTime"/>
+        <result column="record_status" jdbcType="TINYINT" property="recordStatus"/>
+        <result column="service_type" jdbcType="TINYINT" property="serviceType"/>
+        <result column="deposit_money" jdbcType="DECIMAL" property="depositMoney"/>
+        <result column="free_pay_type" jdbcType="TINYINT" property="freePayType"/>
+        <result column="status" jdbcType="TINYINT" property="status"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, chest_id, applicant_qywechat_id, apply_time, send_client_id, send_qywechat_id,
+        send_time, receive_client_id, receive_qywechat_id, receive_time, record_status, service_type,
+        deposit_money, free_pay_type, `status`, create_time, update_time
+    </sql>
+
+    <select id="customSelectPage" resultMap="BaseResultMap">
+        select t.* from t_ice_chest_put_record t
+        <!-- 接收的客户 -->
+        <if test="(query.clientNumber != null and query.clientNumber != '')
+                    or (query.clientName != null and query.clientName != '')
+                    or (query.contactMobile != null and query.contactMobile != '')">
+            left join t_client_info client on t.receive_client_id = client.id
+        </if>
+        <!-- 冰柜信息 -->
+        <if test="(query.chestModel != null and query.chestModel != '')
+                    or (query.assetId != null and query.assetId != '')
+                    or (query.marketAreaId != null)">
+            left join t_ice_chest_info chest on t.chest_id = chest.id
+        </if>
+        <!-- 支付信息 -->
+        <if test="(query.payStartTime != null and query.payStartTime != '')
+                    or (query.payEndTime != null and query.payEndTime != '')">
+            left join t_order_info od on t.id = od.chest_put_record_id
+        </if>
+
+        <trim prefix="WHERE" prefixOverrides="AND |OR">
+            <!-- 外联表条件: 接收的客户 -->
+            <if test="query.clientNumber != null and query.clientNumber != ''">
+                client.client_number = ${query.clientNumber}
+            </if>
+            <if test="query.clientName != null and query.clientName != ''">
+                client.client_name = ${query.clientName}
+            </if>
+            <if test="query.contactMobile != null and query.contactMobile != ''">
+                client.contact_mobile = ${query.contactMobile}
+            </if>
+
+            <!-- 外联表条件: 冰柜信息 -->
+            <if test="query.chestModel != null and query.chestModel != ''">
+                chest.chest_model = ${query.chestModel}
+            </if>
+            <if test="query.assetId != null and query.assetId != ''">
+                chest.asset_id = ${query.assetId}
+            </if>
+            <if test="query.marketAreaId != null">
+                chest.market_area_id = ${query.marketAreaId}
+            </if>
+
+            <!-- 外联表条件: 支付信息 -->
+            <if test="query.payStartTime != null and query.payStartTime != ''">
+                <![CDATA[od.pay_time > ${query.payStartTime}]]>
+            </if>
+            <if test="query.payEndTime != null and query.payEndTime != ''">
+                <![CDATA[od.pay_time < ${query.payEndTime}]]>
+            </if>
+
+            <!-- 此表条件及分页 -->
+            <if test="ew.sqlSegment!=null">
+                and ${ew.sqlSegment}
+            </if>
+        </trim>
+    </select>
+
+
+</mapper>

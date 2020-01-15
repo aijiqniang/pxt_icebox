@@ -180,6 +180,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
     public IPage<IceDepositResponse> queryIceDeposits(IceDepositPage iceDepositPage) {
         LambdaQueryWrapper<IceChestPutRecord> wrapper = Wrappers.<IceChestPutRecord>lambdaQuery();
         wrapper.eq(IceChestPutRecord::getServiceType, ServiceType.IS_PUT.getType());
+        wrapper.eq(IceChestPutRecord::getRecordStatus, RecordStatus.RECEIVE_FINISH.getStatus());
 
         IPage<IceChestPutRecord> iceChestPutRecordIPage = iceChestPutRecordDao.customSelectPage(iceDepositPage, wrapper, iceDepositPage);
 
@@ -216,14 +217,17 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             // 冰柜信息
             IceChestInfo iceChestInfo = iceChestInfos.stream().filter(x -> x.getId().equals(chestForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
             // 支付信息
-            OrderInfo orderInfo = orderInfos.stream().filter(x -> x.getChestPutRecordId().equals(orderForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
+            OrderInfo orderInfo = new OrderInfo();
+            if(iceChestPutRecord.getFreePayType().equals(FreePayTypeEnum.UN_FREE.getType())){ // 含有免押处理
+                orderInfo = orderInfos.stream().filter(x -> x.getChestPutRecordId().equals(orderForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
+            }
             // 服务处信息
             MarketArea marketArea = marketAreas.stream().filter(x -> x.getId().equals(iceChestInfo.getMarketAreaId())).findFirst().get();
-            return buildIceDepositResponse(clientInfo, iceChestInfo, orderInfo, marketArea);
+            return buildIceDepositResponse(iceChestPutRecord, clientInfo, iceChestInfo, orderInfo, marketArea);
         });
     }
 
-    private IceDepositResponse buildIceDepositResponse(ClientInfo clientInfo, IceChestInfo iceChestInfo, OrderInfo orderInfo, MarketArea marketArea) {
+    private IceDepositResponse buildIceDepositResponse(IceChestPutRecord iceChestPutRecord, ClientInfo clientInfo, IceChestInfo iceChestInfo, OrderInfo orderInfo, MarketArea marketArea) {
         IceDepositResponse iceDepositResponse = new IceDepositResponse();
         iceDepositResponse.setClientNumber(clientInfo.getClientNumber());
         iceDepositResponse.setClientName(clientInfo.getClientName());
@@ -234,10 +238,17 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         iceDepositResponse.setChestModel(iceChestInfo.getChestModel());
         iceDepositResponse.setChestName(iceChestInfo.getChestName());
         iceDepositResponse.setAssetId(iceChestInfo.getAssetId());
-        // TODO BigDecimal转换
-        iceDepositResponse.setPayMoney(orderInfo.getPayMoney().toPlainString());
-        iceDepositResponse.setPayTime(orderInfo.getPayTime().getTime());
-        iceDepositResponse.setOrderNum(orderInfo.getOrderNum());
+
+        // 初始化时 采用免押时的数据
+        iceDepositResponse.setPayMoney("0");
+        iceDepositResponse.setPayTime(iceChestPutRecord.getCreateTime().getTime());
+        iceDepositResponse.setOrderNum("");
+        if(iceChestPutRecord.getFreePayType().equals(FreePayTypeEnum.UN_FREE.getType())) {
+            iceDepositResponse.setPayMoney(orderInfo.getPayMoney().toPlainString());
+            iceDepositResponse.setPayTime(orderInfo.getPayTime().getTime());
+            iceDepositResponse.setOrderNum(orderInfo.getOrderNum());
+        }
+
         iceDepositResponse.setChestMoney(iceChestInfo.getChestMoney().toPlainString());
         return iceDepositResponse;
     }

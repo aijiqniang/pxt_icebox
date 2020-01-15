@@ -52,15 +52,15 @@ public class ReportController {
         excelUtil.exportExcel(fileName, titleName, columnName, iceDepositReports, response);
     }
 
-    @PostMapping("/excelAll")
-    public void excelAll(HttpServletResponse response){
+    @PostMapping("/excelWithoutPage")
+    public void excelWithoutPage(@RequestBody IceDepositPage iceDepositPage, HttpServletResponse response){
         response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
         String fileName = "冰柜押金明细表";
         String titleName = "冰柜押金明细表";
         String[] columnName = {"客户编号", "客户名称", "联系人", "联系电话", "门店地址", "服务处", "设备型号", "设备名称", "资产编号", "支付金额", "支付时间", "交易号", "设备价值"};
         ExcelUtil<IceDepositReport> excelUtil = new ExcelUtil<>();
 
-        IceDepositPage iceDepositPage = new IceDepositPage();
+        iceDepositPage.setCurrent(1);
         iceDepositPage.setSize(Integer.MAX_VALUE);
         List<IceDepositReport> iceDepositReports = getIceDepositReports(iceDepositPage);
         excelUtil.exportExcel(fileName, titleName, columnName, iceDepositReports, response);

@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.enums.CommonStatus;
@@ -60,6 +59,8 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
     private IceChestPutRecordDao iceChestPutRecordDao;
     @Autowired
     private PactRecordDao pactRecordDao;
+    @Autowired
+    private MarketAreaDao marketAreaDao;
 
     @Transactional(value = "transactionManager")
     @Override
@@ -206,6 +207,9 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         List<IceChestInfo> iceChestInfos = iceChestInfoDao.selectList(Wrappers.<IceChestInfo>lambdaQuery().in(IceChestInfo::getId, chestForeignKeyMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList())));
         List<OrderInfo> orderInfos = orderInfoDao.selectList(Wrappers.<OrderInfo>lambdaQuery().in(OrderInfo::getChestPutRecordId, orderForeignKeyMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList())));
 
+        // 查询服务处
+        List<MarketArea> marketAreas = marketAreaDao.selectList(Wrappers.<MarketArea>lambdaQuery().in(MarketArea::getId, iceChestInfos.stream().map(IceChestInfo::getMarketAreaId).collect(Collectors.toList())));
+
         return iceChestPutRecordIPage.convert(iceChestPutRecord -> {
             // 投放客户信息
             ClientInfo clientInfo = clientInfos.stream().filter(x -> x.getId().equals(clientForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
@@ -213,19 +217,20 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             IceChestInfo iceChestInfo = iceChestInfos.stream().filter(x -> x.getId().equals(chestForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
             // 支付信息
             OrderInfo orderInfo = orderInfos.stream().filter(x -> x.getChestPutRecordId().equals(orderForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
-            return buildIceDepositResponse(clientInfo, iceChestInfo, orderInfo);
+            // 服务处信息
+            MarketArea marketArea = marketAreas.stream().filter(x -> x.getId().equals(iceChestInfo.getMarketAreaId())).findFirst().get();
+            return buildIceDepositResponse(clientInfo, iceChestInfo, orderInfo, marketArea);
         });
     }
 
-    private IceDepositResponse buildIceDepositResponse(ClientInfo clientInfo, IceChestInfo iceChestInfo, OrderInfo orderInfo) {
+    private IceDepositResponse buildIceDepositResponse(ClientInfo clientInfo, IceChestInfo iceChestInfo, OrderInfo orderInfo, MarketArea marketArea) {
         IceDepositResponse iceDepositResponse = new IceDepositResponse();
         iceDepositResponse.setClientNumber(clientInfo.getClientNumber());
         iceDepositResponse.setClientName(clientInfo.getClientName());
         iceDepositResponse.setContactName(clientInfo.getContactName());
         iceDepositResponse.setContactMobile(clientInfo.getContactMobile());
         iceDepositResponse.setClientPlace(clientInfo.getClientPlace());
-        // TODO 未转换为服务处
-        iceDepositResponse.setMarketAreaName("" + iceChestInfo.getMarketAreaId());
+        iceDepositResponse.setMarketAreaName(marketArea.getName());
         iceDepositResponse.setChestModel(iceChestInfo.getChestModel());
         iceDepositResponse.setChestName(iceChestInfo.getChestName());
         iceDepositResponse.setAssetId(iceChestInfo.getAssetId());

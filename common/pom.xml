@@ -31,12 +31,12 @@
         <repository>
             <id>releases</id>
             <name>Internal Releases</name>
-            <url>http://10.136.15.102:8081/repository/maven-releases/</url>
+            <url>http://nexus.xdp8.cn:9090/repository/maven-releases/</url>
         </repository>
         <snapshotRepository>
             <id>releases</id>
             <name>Internal Releases</name>
-            <url>http://10.136.15.102:8081/repository/maven-releases/</url>
+            <url>http://nexus.xdp8.cn:9090/repository/maven-releases/</url>
         </snapshotRepository>
     </distributionManagement>
 </project>

@@ -25,7 +25,8 @@ public class MarketAreaController {
     @GetMapping("/get")
     public CommonResponse<List<MarketAreaVo>> getMarketAreaVos(){
         List<MarketArea> marketAreas = marketAreaService.list();
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,
-                marketAreas.stream().map(MarketArea::convertVo).collect(Collectors.toList()));
+        List<MarketAreaVo> collect = marketAreas.stream().map(MarketArea::convertVo).collect(Collectors.toList());
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,collect
+                );
     }
 }

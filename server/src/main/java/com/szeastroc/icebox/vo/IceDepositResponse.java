@@ -1,7 +1,9 @@
 package com.szeastroc.icebox.vo;
 
+import lombok.Getter;
 import lombok.Setter;
 
+@Getter
 @Setter
 public class IceDepositResponse {
 

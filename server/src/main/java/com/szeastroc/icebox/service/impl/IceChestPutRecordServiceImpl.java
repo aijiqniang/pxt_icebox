@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -197,7 +198,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         if(CollectionUtils.isNotEmpty(iceChestPutRecordIPage.getRecords())) {
             return getIceDepositResponseIPage(iceChestPutRecordIPage, clientForeignKeyMap, chestForeignKeyMap, orderForeignKeyMap);
         }
-        return null;
+        return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
     }
 
     private IPage<IceDepositResponse> getIceDepositResponseIPage(IPage<IceChestPutRecord> iceChestPutRecordIPage, Map<Integer, Integer> clientForeignKeyMap, Map<Integer, Integer> chestForeignKeyMap, Map<Integer, Integer> orderForeignKeyMap) {
@@ -212,25 +213,28 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             IceChestInfo iceChestInfo = iceChestInfos.stream().filter(x -> x.getId().equals(chestForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
             // 支付信息
             OrderInfo orderInfo = orderInfos.stream().filter(x -> x.getChestPutRecordId().equals(orderForeignKeyMap.get(iceChestPutRecord.getId()))).findFirst().get();
-
-            IceDepositResponse iceDepositResponse = new IceDepositResponse();
-            iceDepositResponse.setClientNumber(clientInfo.getClientNumber());
-            iceDepositResponse.setClientName(clientInfo.getClientName());
-            iceDepositResponse.setContactName(clientInfo.getContactName());
-            iceDepositResponse.setContactMobile(clientInfo.getContactMobile());
-            iceDepositResponse.setClientPlace(clientInfo.getClientPlace());
-            // TODO 未转换为服务处
-            iceDepositResponse.setMarketAreaName("" + iceChestInfo.getMarketAreaId());
-            iceDepositResponse.setChestModel(iceChestInfo.getChestModel());
-            iceDepositResponse.setChestName(iceChestInfo.getChestName());
-            iceDepositResponse.setAssetId(iceChestInfo.getAssetId());
-            // TODO BigDecimal转换
-            iceDepositResponse.setPayMoney(orderInfo.getPayMoney().toPlainString());
-            iceDepositResponse.setPayTime(new DateTime(orderInfo.getPayTime()).toString("YYYYMMdd HH:mm"));
-            iceDepositResponse.setOrderNum(orderInfo.getOrderNum());
-            iceDepositResponse.setChestMoney(iceChestInfo.getChestMoney().toPlainString());
-            return iceDepositResponse;
+            return buildIceDepositResponse(clientInfo, iceChestInfo, orderInfo);
         });
+    }
+
+    private IceDepositResponse buildIceDepositResponse(ClientInfo clientInfo, IceChestInfo iceChestInfo, OrderInfo orderInfo) {
+        IceDepositResponse iceDepositResponse = new IceDepositResponse();
+        iceDepositResponse.setClientNumber(clientInfo.getClientNumber());
+        iceDepositResponse.setClientName(clientInfo.getClientName());
+        iceDepositResponse.setContactName(clientInfo.getContactName());
+        iceDepositResponse.setContactMobile(clientInfo.getContactMobile());
+        iceDepositResponse.setClientPlace(clientInfo.getClientPlace());
+        // TODO 未转换为服务处
+        iceDepositResponse.setMarketAreaName("" + iceChestInfo.getMarketAreaId());
+        iceDepositResponse.setChestModel(iceChestInfo.getChestModel());
+        iceDepositResponse.setChestName(iceChestInfo.getChestName());
+        iceDepositResponse.setAssetId(iceChestInfo.getAssetId());
+        // TODO BigDecimal转换
+        iceDepositResponse.setPayMoney(orderInfo.getPayMoney().toPlainString());
+        iceDepositResponse.setPayTime(new DateTime(orderInfo.getPayTime()).toString("YYYYMMdd HH:mm"));
+        iceDepositResponse.setOrderNum(orderInfo.getOrderNum());
+        iceDepositResponse.setChestMoney(iceChestInfo.getChestMoney().toPlainString());
+        return iceDepositResponse;
     }
 
     /**

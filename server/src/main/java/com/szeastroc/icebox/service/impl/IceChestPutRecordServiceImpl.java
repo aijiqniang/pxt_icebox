@@ -236,7 +236,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         iceDepositResponse.setAssetId(iceChestInfo.getAssetId());
         // TODO BigDecimal转换
         iceDepositResponse.setPayMoney(orderInfo.getPayMoney().toPlainString());
-        iceDepositResponse.setPayTime(new DateTime(orderInfo.getPayTime()).toString("YYYYMMdd HH:mm"));
+        iceDepositResponse.setPayTime(orderInfo.getPayTime().getTime());
         iceDepositResponse.setOrderNum(orderInfo.getOrderNum());
         iceDepositResponse.setChestMoney(iceChestInfo.getChestMoney().toPlainString());
         return iceDepositResponse;

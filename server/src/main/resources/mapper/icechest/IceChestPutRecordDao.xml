@@ -52,21 +52,21 @@
         <trim prefix="WHERE" prefixOverrides="AND |OR">
             <!-- 外联表条件: 接收的客户 -->
             <if test="query.clientNumber != null and query.clientNumber != ''">
-                and client.client_number = ${query.clientNumber}
+                and client.client_number = '${query.clientNumber}'
             </if>
             <if test="query.clientName != null and query.clientName != ''">
-                and client.client_name = ${query.clientName}
+                and client.client_name = '${query.clientName}'
             </if>
             <if test="query.contactMobile != null and query.contactMobile != ''">
-                and client.contact_mobile = ${query.contactMobile}
+                and client.contact_mobile = '${query.contactMobile}'
             </if>
 
             <!-- 外联表条件: 冰柜信息 -->
             <if test="query.chestModel != null and query.chestModel != ''">
-                and chest.chest_model = ${query.chestModel}
+                and chest.chest_model = '${query.chestModel}'
             </if>
             <if test="query.assetId != null and query.assetId != ''">
-                and chest.asset_id = ${query.assetId}
+                and chest.asset_id = '${query.assetId}'
             </if>
             <if test="query.marketAreaId != null">
                 and chest.market_area_id = ${query.marketAreaId}
@@ -74,10 +74,10 @@
 
             <!-- 外联表条件: 支付信息 -->
             <if test="query.payStartTime != null and query.payStartTime != ''">
-                and <![CDATA[od.pay_time > ${query.payStartTime}]]>
+                and <![CDATA[od.pay_time > '${query.payStartTime}']]>
             </if>
             <if test="query.payEndTime != null and query.payEndTime != ''">
-                and <![CDATA[od.pay_time < ${query.payEndTime}]]>
+                and <![CDATA[od.pay_time < '${query.payEndTime}']]>
             </if>
 
             <!-- 此表条件及分页 -->

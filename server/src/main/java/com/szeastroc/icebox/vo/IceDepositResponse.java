@@ -30,7 +30,7 @@ public class IceDepositResponse {
     // 支付金额
     private String payMoney;
     // 支付时间
-    private String payTime;
+    private long payTime;
     // 交易号
     private String orderNum;
     // 设备价值

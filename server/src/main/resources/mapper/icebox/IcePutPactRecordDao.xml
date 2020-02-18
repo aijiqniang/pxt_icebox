@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IcePutPactRecordDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IcePutPactRecord">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_put_pact_record-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="store_number" jdbcType="VARCHAR" property="storeNumber" />
+    <result column="box_id" jdbcType="INTEGER" property="boxId" />
+    <result column="apply_number" jdbcType="VARCHAR" property="applyNumber" />
+    <result column="put_time" jdbcType="TIMESTAMP" property="putTime" />
+    <result column="put_expire_time" jdbcType="TIMESTAMP" property="putExpireTime" />
+    <result column="created_by" jdbcType="INTEGER" property="createdBy" />
+    <result column="created_time" jdbcType="TIMESTAMP" property="createdTime" />
+    <result column="updated_by" jdbcType="INTEGER" property="updatedBy" />
+    <result column="updated_time" jdbcType="TIMESTAMP" property="updatedTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, store_number, box_id, apply_number, put_time, put_expire_time, created_by, created_time, 
+    updated_by, updated_time
+  </sql>
+</mapper>

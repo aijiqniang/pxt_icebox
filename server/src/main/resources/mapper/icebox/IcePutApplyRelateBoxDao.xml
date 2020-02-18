@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IcePutApplyRelateBoxDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_put_apply_relate_box-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="apply_number" jdbcType="VARCHAR" property="applyNumber" />
+    <result column="box_id" jdbcType="INTEGER" property="boxId" />
+    <result column="model_id" jdbcType="INTEGER" property="modelId" />
+    <result column="free_type" jdbcType="TINYINT" property="freeType" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, apply_number, box_id, model_id, free_type
+  </sql>
+</mapper>

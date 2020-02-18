@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceApplyByUserDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IceApplyByUser">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_apply_by_user-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="model_id" jdbcType="INTEGER" property="modelId" />
+    <result column="is_free" jdbcType="TINYINT" property="isFree" />
+    <result column="created_by" jdbcType="INTEGER" property="createdBy" />
+    <result column="created_time" jdbcType="TIMESTAMP" property="createdTime" />
+    <result column="updated_by" jdbcType="INTEGER" property="updatedBy" />
+    <result column="updated_time" jdbcType="TIMESTAMP" property="updatedTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, user_id, model_id, is_free, created_by, created_time, updated_by, updated_time
+  </sql>
+</mapper>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IceBoxExtend">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_box_extend-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="external_id" jdbcType="VARCHAR" property="externalId" />
+    <result column="asset_id" jdbcType="VARCHAR" property="assetId" />
+    <result column="bluetooth_id" jdbcType="VARCHAR" property="bluetoothId" />
+    <result column="bluetooth_mac" jdbcType="VARCHAR" property="bluetoothMac" />
+    <result column="qr_code" jdbcType="VARCHAR" property="qrCode" />
+    <result column="gps_mac" jdbcType="VARCHAR" property="gpsMac" />
+    <result column="last_examine_id" jdbcType="INTEGER" property="lastExamineId" />
+    <result column="last_examine_time" jdbcType="TIMESTAMP" property="lastExamineTime" />
+    <result column="last_put_id" jdbcType="INTEGER" property="lastPutId" />
+    <result column="last_apply_number" jdbcType="VARCHAR" property="lastApplyNumber" />
+    <result column="last_put_time" jdbcType="TIMESTAMP" property="lastPutTime" />
+    <result column="release_time" jdbcType="TIMESTAMP" property="releaseTime" />
+    <result column="repair_begin_time" jdbcType="TIMESTAMP" property="repairBeginTime" />
+    <result column="open_total" jdbcType="INTEGER" property="openTotal" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, external_id, asset_id, bluetooth_id, bluetooth_mac, qr_code, gps_mac, last_examine_id, 
+    last_examine_time, last_put_id, last_apply_number, last_put_time, release_time, repair_begin_time, 
+    open_total
+  </sql>
+</mapper>

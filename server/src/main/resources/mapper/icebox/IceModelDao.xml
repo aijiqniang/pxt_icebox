@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceModelDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IceModel">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_model-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="chest_model" jdbcType="VARCHAR" property="chestModel" />
+    <result column="chest_name" jdbcType="VARCHAR" property="chestName" />
+    <result column="deposit_money" jdbcType="DECIMAL" property="depositMoney" />
+    <result column="created_by" jdbcType="INTEGER" property="createdBy" />
+    <result column="created_time" jdbcType="TIMESTAMP" property="createdTime" />
+    <result column="updated_by" jdbcType="INTEGER" property="updatedBy" />
+    <result column="updated_time" jdbcType="TIMESTAMP" property="updatedTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, chest_model, chest_name, deposit_money, created_by, created_time, updated_by, 
+    updated_time
+  </sql>
+</mapper>

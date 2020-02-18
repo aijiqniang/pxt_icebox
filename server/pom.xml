@@ -77,6 +77,16 @@
         </dependency>
 
         <dependency>
+            <groupId>com.szeastroc</groupId>
+            <artifactId>user-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.szeastroc</groupId>
+            <artifactId>customer-client</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>dom4j</groupId>
             <artifactId>dom4j</artifactId>
             <version>1.6</version>

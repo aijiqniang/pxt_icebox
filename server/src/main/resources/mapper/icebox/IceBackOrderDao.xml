@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceBackOrderDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IceBackOrder">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_back_order-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="resource_key" jdbcType="VARCHAR" property="resourceKey" />
+    <result column="box_id" jdbcType="INTEGER" property="boxId" />
+    <result column="apply_number" jdbcType="VARCHAR" property="applyNumber" />
+    <result column="put_order_id" jdbcType="INTEGER" property="putOrderId" />
+    <result column="partner_trade_no" jdbcType="VARCHAR" property="partnerTradeNo" />
+    <result column="openid" jdbcType="VARCHAR" property="openid" />
+    <result column="amount" jdbcType="DECIMAL" property="amount" />
+    <result column="created_by" jdbcType="INTEGER" property="createdBy" />
+    <result column="created_time" jdbcType="TIMESTAMP" property="createdTime" />
+    <result column="updated_by" jdbcType="INTEGER" property="updatedBy" />
+    <result column="updated_time" jdbcType="TIMESTAMP" property="updatedTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, resource_key, box_id, apply_number, put_order_id, partner_trade_no, openid, amount, 
+    created_by, created_time, updated_by, updated_time
+  </sql>
+</mapper>

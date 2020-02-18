@@ -3,7 +3,7 @@ package com.szeastroc.icebox.util;
 import com.alibaba.fastjson.JSON;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
-import com.szeastroc.icebox.vo.OrderPayBack;
+import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 import org.w3c.dom.Document;

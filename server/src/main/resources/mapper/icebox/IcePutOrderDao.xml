@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IcePutOrderDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IcePutOrder">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_put_order-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="chest_id" jdbcType="INTEGER" property="chestId" />
+    <result column="apply_number" jdbcType="VARCHAR" property="applyNumber" />
+    <result column="order_num" jdbcType="VARCHAR" property="orderNum" />
+    <result column="openid" jdbcType="VARCHAR" property="openid" />
+    <result column="total_money" jdbcType="DECIMAL" property="totalMoney" />
+    <result column="pay_money" jdbcType="DECIMAL" property="payMoney" />
+    <result column="pray_id" jdbcType="VARCHAR" property="prayId" />
+    <result column="transaction_id" jdbcType="VARCHAR" property="transactionId" />
+    <result column="trade_state" jdbcType="VARCHAR" property="tradeState" />
+    <result column="trade_state_desc" jdbcType="VARCHAR" property="tradeStateDesc" />
+    <result column="pay_time" jdbcType="TIMESTAMP" property="payTime" />
+    <result column="status" jdbcType="TINYINT" property="status" />
+    <result column="created_by" jdbcType="INTEGER" property="createdBy" />
+    <result column="created_time" jdbcType="TIMESTAMP" property="createdTime" />
+    <result column="updated_by" jdbcType="INTEGER" property="updatedBy" />
+    <result column="updated_time" jdbcType="TIMESTAMP" property="updatedTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, chest_id, apply_number, order_num, openid, total_money, pay_money, pray_id, transaction_id, 
+    trade_state, trade_state_desc, pay_time, `status`, created_by, created_time, updated_by, 
+    updated_time
+  </sql>
+</mapper>

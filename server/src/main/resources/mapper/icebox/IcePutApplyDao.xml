@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IcePutApplyDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IcePutApply">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_put_apply-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="apply_number" jdbcType="VARCHAR" property="applyNumber" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="put_store_number" jdbcType="VARCHAR" property="putStoreNumber" />
+    <result column="store_sign_status" jdbcType="TINYINT" property="storeSignStatus" />
+    <result column="examine_status" jdbcType="TINYINT" property="examineStatus" />
+    <result column="examine_id" jdbcType="INTEGER" property="examineId" />
+    <result column="old_put_id" jdbcType="INTEGER" property="oldPutId" />
+    <result column="created_by" jdbcType="INTEGER" property="createdBy" />
+    <result column="created_time" jdbcType="TIMESTAMP" property="createdTime" />
+    <result column="updated_by" jdbcType="INTEGER" property="updatedBy" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, apply_number, user_id, put_store_number, store_sign_status, examine_status, examine_id, 
+    old_put_id, created_by, created_time, updated_by, update_time
+  </sql>
+</mapper>

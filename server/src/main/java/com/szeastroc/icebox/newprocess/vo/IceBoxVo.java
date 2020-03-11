@@ -17,4 +17,5 @@ public class IceBoxVo {
     private BigDecimal depositMoney;
     private Integer openTotal;
     private String qrCode;
+    private Integer freeType;
 }

@@ -26,11 +26,10 @@ public class ClientInfoRequest {
     private String iceChestId;
     private String ip;
     private String openid;
-    private String marketAreas;
 
     public boolean validate(){
         if(StringUtils.isBlank(clientName) || StringUtils.isBlank(clientNumber) || StringUtils.isBlank(marketAreaId)
-                || StringUtils.isBlank(iceChestId) || StringUtils.isBlank(ip) || StringUtils.isBlank(openid) || StringUtils.isBlank(marketAreas)){
+                || StringUtils.isBlank(iceChestId) || StringUtils.isBlank(ip) || StringUtils.isBlank(openid)){
             return false;
         }
         return true;

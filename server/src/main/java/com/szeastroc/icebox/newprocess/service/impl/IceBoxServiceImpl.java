@@ -3,14 +3,15 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
+import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import lombok.RequiredArgsConstructor;
@@ -90,7 +91,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     private IceBoxStatusVo switchIceBoxStatus(String applyNumber, String pxtNumber, IceBox iceBox) {
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
-        switch (Objects.requireNonNull(PutStatus.convertEnum(iceBox.getStatus()))){
+        iceBoxStatusVo.setIceBoxId(iceBox.getId());
+        switch (Objects.requireNonNull(PutStatus.convertEnum(iceBox.getPutStatus()))){
             case NO_PUT:
                 // 冰柜未申请
                 iceBoxStatusVo.setSignFlag(false);
@@ -98,14 +100,27 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxStatusVo.setMessage("当前门店未申请该冰柜");
                 break;
             case LOCK_PUT:
-                iceBoxStatusVo = checkPutApplyByApplyNumber(applyNumber, pxtNumber);
+                // 冰柜在锁定中, 未走完审批流
+                iceBoxStatusVo.setSignFlag(false);
+                iceBoxStatusVo.setStatus(4);
+                iceBoxStatusVo.setMessage("冰柜未审批完成");
                 break;
             case DO_PUT:
+                // 冰柜处于投放中, 可以签收的状态
+                iceBoxStatusVo = checkPutApplyByApplyNumber(applyNumber, pxtNumber);
+                break;
             case FINISH_PUT:
+                if(iceBox.getPutStoreNumber().equals(pxtNumber)){
+                    // 已投放到当前门店
+                    iceBoxStatusVo.setSignFlag(false);
+                    iceBoxStatusVo.setStatus(6);
+                    iceBoxStatusVo.setMessage("冰柜已投放当当前门店");
+                    break;
+                }
                 // 已有投放, 不能继续
                 iceBoxStatusVo.setSignFlag(false);
                 iceBoxStatusVo.setStatus(2);
-                iceBoxStatusVo.setMessage("冰柜已投放");
+                iceBoxStatusVo.setMessage("冰柜投放到其他门店");
                 break;
         }
         return iceBoxStatusVo;
@@ -125,21 +140,27 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 冰柜申请门店非当前门店, 返回已投放的提示
             iceBoxStatusVo.setSignFlag(false);
             iceBoxStatusVo.setStatus(2);
-            iceBoxStatusVo.setMessage("冰柜已投放");
+            iceBoxStatusVo.setMessage("冰柜投放到其他门店");
             return iceBoxStatusVo;
         }
-        if(!icePutApply.getExamineStatus().equals(ExamineStatus.PASS_EXAMINE.getStatus())){
-            // 冰柜申请的审批流未完成
-            iceBoxStatusVo.setSignFlag(false);
-            iceBoxStatusVo.setStatus(4);
-            iceBoxStatusVo.setMessage("申请审批未完成");
-            return iceBoxStatusVo;
-        }
-
         // 该冰柜是当前门店申请的, 并且审批流已完成, 可以进行签收
         iceBoxStatusVo.setSignFlag(true);
         iceBoxStatusVo.setStatus(1);
         return iceBoxStatusVo;
+    }
+
+    @Override
+    public IceBoxVo getIceBoxByQrcode(String qrcode) {
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
+        IceBox iceBox = iceBoxDao.selectById(Objects.requireNonNull(iceBoxExtend).getId());
+        IceModel iceModel = iceModelDao.selectById(Objects.requireNonNull(iceBox).getModelId());
+        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+                .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                .eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+        return IceBoxConverter.convertToVo(Objects.requireNonNull(iceBox),
+                Objects.requireNonNull(iceBoxExtend),
+                Objects.requireNonNull(iceModel),
+                Objects.isNull(icePutApplyRelateBox) ? FreePayTypeEnum.UN_FREE : FreePayTypeEnum.convertVo(icePutApplyRelateBox.getFreeType()));
     }
 
 }

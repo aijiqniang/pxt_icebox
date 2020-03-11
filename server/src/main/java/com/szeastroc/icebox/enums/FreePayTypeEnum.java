@@ -17,4 +17,14 @@ public enum FreePayTypeEnum {
 
     private int type;
     private String desc;
+
+    public static FreePayTypeEnum convertVo(int type){
+        FreePayTypeEnum[] freePayTypeEnums = FreePayTypeEnum.values();
+        for (FreePayTypeEnum freePayTypeEnum : freePayTypeEnums){
+            if(freePayTypeEnum.getType() == type){
+                return freePayTypeEnum;
+            }
+        }
+        return null;
+    }
 }

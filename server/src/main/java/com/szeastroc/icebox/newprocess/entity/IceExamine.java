@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Date;
 
 @Data
 @Builder
@@ -31,17 +33,19 @@ public class IceExamine {
     @TableField(value = "store_number")
     private String storeNumber;
 
-    /**
-     * 照片的URL
-     */
-    @TableField(value = "image")
-    private String image;
 
     /**
-     * 巡检照片类型 1-冰柜外观照片 2-冰柜陈列照片
+     * 外观照片的URL
      */
-    @TableField(value = "type")
-    private Integer type;
+    @TableField(value = "exterior_image")
+    private String exteriorImage;
+
+
+    /**
+     * 陈列照片的URL
+     */
+    @TableField(value = "display_image")
+    private String displayImage;
 
     /**
      * 创建人
@@ -60,4 +64,10 @@ public class IceExamine {
      */
     @TableField(value = "update_time")
     private Date updateTime;
+
+
+    public boolean validate() {
+        return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)
+                && StringUtils.isNotBlank(displayImage) && createBy != null;
+    }
 }

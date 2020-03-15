@@ -14,7 +14,6 @@ import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
@@ -36,12 +35,9 @@ import java.util.stream.Collectors;
 public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements IceBoxService {
 
 
-    @Autowired
-    private FeignStoreClient feignStoreClient;
-    @Autowired
-    private FeignSupplierClient feignSupplierClient;
-    @Autowired
-    private IcePutPactRecordDao icePutPactRecordDao;
+    private final FeignStoreClient feignStoreClient;
+    private final FeignSupplierClient feignSupplierClient;
+    private  final IcePutPactRecordDao icePutPactRecordDao;
 
     private final IceBoxDao iceBoxDao;
     private final IceBoxExtendDao iceBoxExtendDao;
@@ -123,6 +119,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     /**
      * 根据 鹏讯通编号(门店) 找到该门店对应的投放冰柜, 并拼接Vo返回
+     *
      * @param pxtNumber
      * @return
      */
@@ -157,6 +154,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
      * 1. 是否已投放
      * 2. 是否申请投放的门店是当前门店
      * 3. 申请流程是否走完审批流
+     *
      * @param qrcode
      * @param pxtNumber
      * @return
@@ -165,7 +163,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public IceBoxStatusVo checkBoxByQrcode(String qrcode, String pxtNumber) {
 
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
-        if(Objects.isNull(iceBoxExtend)){
+        if (Objects.isNull(iceBoxExtend)) {
             // 冰柜不存在(二维码未找到)
             IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
             iceBoxStatusVo.setSignFlag(false);
@@ -181,7 +179,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceBoxStatusVo switchIceBoxStatus(String applyNumber, String pxtNumber, IceBox iceBox) {
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
         iceBoxStatusVo.setIceBoxId(iceBox.getId());
-        switch (Objects.requireNonNull(PutStatus.convertEnum(iceBox.getPutStatus()))){
+        switch (Objects.requireNonNull(PutStatus.convertEnum(iceBox.getPutStatus()))) {
             case NO_PUT:
                 // 冰柜未申请
                 iceBoxStatusVo.setSignFlag(false);
@@ -199,7 +197,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxStatusVo = checkPutApplyByApplyNumber(applyNumber, pxtNumber);
                 break;
             case FINISH_PUT:
-                if(iceBox.getPutStoreNumber().equals(pxtNumber)){
+                if (iceBox.getPutStoreNumber().equals(pxtNumber)) {
                     // 已投放到当前门店
                     iceBoxStatusVo.setSignFlag(false);
                     iceBoxStatusVo.setStatus(6);
@@ -217,6 +215,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     /**
      * 判断当前冰柜的投放申请信息
+     *
      * @param applyNumber
      * @param pxtNumber
      * @return
@@ -225,7 +224,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
 
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, applyNumber));
-        if(!icePutApply.getPutStoreNumber().equals(pxtNumber)){
+        if (!icePutApply.getPutStoreNumber().equals(pxtNumber)) {
             // 冰柜申请门店非当前门店, 返回已投放的提示
             iceBoxStatusVo.setSignFlag(false);
             iceBoxStatusVo.setStatus(2);

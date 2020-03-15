@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceExamineDao">
+  <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IceExamine">
+    <!--@mbg.generated-->
+    <!--@Table t_ice_examine-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="ice_box_id" jdbcType="INTEGER" property="iceBoxId" />
+    <result column="store_number" jdbcType="VARCHAR" property="storeNumber" />
+    <result column="image" jdbcType="VARCHAR" property="image" />
+    <result column="type" jdbcType="INTEGER" property="type" />
+    <result column="create_by" jdbcType="INTEGER" property="createBy" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, ice_box_id, store_number, image, `type`, create_by, create_time, update_time
+  </sql>
+</mapper>

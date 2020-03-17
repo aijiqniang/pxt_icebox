@@ -27,8 +27,8 @@ import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.visit.client.FeignExamineClient;
+import com.szeastroc.visit.common.RequestExamineVo;
 import com.szeastroc.visit.common.SessionExamineVo;
-import com.szeastroc.visit.common.request.RequestExamineVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -72,7 +72,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Resource
     private FeignExamineClient feignExamineClient;
 
-
+    private final IcePutPactRecordDao icePutPactRecordDao;
     private final FeignStoreClient feignStoreClient;
     private final IceEventRecordDao iceEventRecordDao;
 
@@ -238,10 +238,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if(sessionExamineVo == null){
                 continue;
             }
-            List<SessionExamineVo.SessionVisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
             if(CollectionUtil.isNotEmpty(visitExamineNodes)){
                 List<ExamineNodeVo> nodeVos = new ArrayList<>();
-                for(SessionExamineVo.SessionVisitExamineNodeVo sessionVisitExamineNodeVo:visitExamineNodes){
+                for(SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo:visitExamineNodes){
                     ExamineNodeVo nodeVo = new ExamineNodeVo();
                     BeanUtils.copyProperties(sessionVisitExamineNodeVo,nodeVo);
                     nodeVos.add(nodeVo);
@@ -295,10 +295,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if(sessionExamineVo == null){
                 continue;
             }
-            List<SessionExamineVo.SessionVisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
             if(CollectionUtil.isNotEmpty(visitExamineNodes)){
                 List<ExamineNodeVo> nodeVos = new ArrayList<>();
-                for(SessionExamineVo.SessionVisitExamineNodeVo sessionVisitExamineNodeVo:visitExamineNodes){
+                for(SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo:visitExamineNodes){
                     ExamineNodeVo nodeVo = new ExamineNodeVo();
                     BeanUtils.copyProperties(sessionVisitExamineNodeVo,nodeVo);
                     nodeVos.add(nodeVo);

@@ -126,6 +126,19 @@
                 <artifactId>transfer-client</artifactId>
                 <version>${transfer.client.version}</version>
             </dependency>
+
+            <!-- nexus本地jar管理 - visit服务 -->
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>visit-common</artifactId>
+                <version>${visit.common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.szeastroc</groupId>
+                <artifactId>visit-client</artifactId>
+                <version>${visit.client.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

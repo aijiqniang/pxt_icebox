@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -56,6 +57,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     @Override
     public IPage<IceExamineVo> findExamine(IceExamineRequest iceExamineRequest) {
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+        wrapper.orderByDesc(IceExamine::getCreateTime);
         Integer createBy = iceExamineRequest.getCreateBy();
 
         if (createBy == null) {
@@ -72,7 +74,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
         Date createTime = iceExamineRequest.getCreateTime();
         if (createTime != null) {
-            wrapper.eq(IceExamine::getCreateTime, createTime);
+            Date date = new Date(createTime.getTime());
+            date.setTime(date.getTime() + 24 * 60 * 60 * 1000);
+            wrapper.ge(IceExamine::getCreateTime, createTime).le(IceExamine::getCreateTime, date);
         }
 
         IPage<IceExamine> iPage = iceExamineDao.selectPage(iceExamineRequest, wrapper);

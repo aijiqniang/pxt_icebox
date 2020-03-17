@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.newprocess.vo.request;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.util.Date;
@@ -22,6 +23,7 @@ public class IceExamineRequest extends Page {
     /**
      * 巡检日期
      */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date createTime;
 
 

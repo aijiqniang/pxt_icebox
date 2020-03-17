@@ -78,7 +78,7 @@ public class IceChestPayController {
                 throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
             }
             //查询传入的服务处链并比对更新
-            marketAreaService.updateStoreMarketAreaList(JSON.parseArray(clientInfoRequest.getMarketAreas(), MarketArea.class));
+//            marketAreaService.updateStoreMarketAreaList(JSON.parseArray(clientInfoRequest.getMarketAreas(), MarketArea.class));
 
             return iceChestPutRecordService.applyPayIceChest(clientInfoRequest);
         } catch (ImproperOptionException e) {

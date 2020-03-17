@@ -80,4 +80,5 @@ public class IceBoxVo {
     private Integer openTotal;
     private String qrCode;
 
+    private Integer freeType;
 }

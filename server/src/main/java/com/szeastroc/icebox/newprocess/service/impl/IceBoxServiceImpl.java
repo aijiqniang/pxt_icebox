@@ -313,6 +313,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceBoxVo buildIceBoxVo(SimpleDateFormat dateFormat, IceBox iceBox) {
         IceBoxVo boxVo = new IceBoxVo();
         BeanUtils.copyProperties(iceBox, boxVo);
+        boxVo.setIceBoxId(iceBox.getId());
         IceModel iceModel = iceModelDao.selectById(iceBox.getModelId());
         if (iceModel != null) {
             boxVo.setChestModel(iceModel.getChestModel());
@@ -352,6 +353,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .eq(IcePutPactRecord::getStoreNumber, storeNumber)
                 .eq(IcePutPactRecord::getBoxId, id)
                 .eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+
+        if(record == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        }
 
         Date putTime = record.getPutTime();
         Date putExpireTime = record.getPutExpireTime();

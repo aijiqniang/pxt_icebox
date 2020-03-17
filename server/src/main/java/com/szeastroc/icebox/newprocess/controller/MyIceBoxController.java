@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @RestController
 @RequestMapping("iceBox")
-public class IceBoxController {
+public class MyIceBoxController {
 
     @Resource
     private IceBoxService iceBoxService;

@@ -10,6 +10,11 @@ import java.util.Date;
 public class IceExamineRequest extends Page {
 
     /**
+     * 冰柜的id
+     */
+    private Integer iceBoxId;
+
+    /**
      * 业务员id
      */
     private Integer createBy;

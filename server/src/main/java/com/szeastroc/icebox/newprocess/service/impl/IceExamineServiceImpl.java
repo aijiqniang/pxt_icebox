@@ -12,7 +12,9 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.enums.ExamineEnums;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
@@ -42,6 +44,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     private FeignUserClient feignUserClient;
     @Autowired
     private FeignStoreClient feignStoreClient;
+    @Autowired
+    private IceBoxExtendDao iceBoxExtendDao;
 
     @Override
     public void doExamine(IceExamine iceExamine) {
@@ -51,13 +55,29 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         }
 
         iceExamineDao.insert(iceExamine);
+        Integer iceExamineId = iceExamine.getId();
+        Integer iceBoxId = iceExamine.getIceBoxId();
 
+        IceBoxExtend iceBoxExtend = new IceBoxExtend();
+        iceBoxExtend.setLastExamineId(iceExamineId);
+        iceBoxExtend.setLastExamineTime(new Date());
+
+        iceBoxExtendDao.update(iceBoxExtend,Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId,iceBoxId));
     }
 
     @Override
     public IPage<IceExamineVo> findExamine(IceExamineRequest iceExamineRequest) {
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
         wrapper.orderByDesc(IceExamine::getCreateTime);
+
+        Integer iceBoxId = iceExamineRequest.getIceBoxId();
+
+        if (iceBoxId == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+
+        wrapper.eq(IceExamine::getIceBoxId,iceBoxId);
+
         Integer createBy = iceExamineRequest.getCreateBy();
 
         if (createBy == null) {
@@ -71,7 +91,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
-
+        wrapper.eq(IceExamine::getStoreNumber,storeNumber);
         Date createTime = iceExamineRequest.getCreateTime();
         if (createTime != null) {
             Date date = new Date(createTime.getTime());
@@ -120,14 +140,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         String storeNumber = iceExamineRequest.getStoreNumber();
         Integer createBy = iceExamineRequest.getCreateBy();
         Integer type = iceExamineRequest.getType();
+        Integer iceBoxId = iceExamineRequest.getIceBoxId();
 
-        if (createBy == null || StringUtils.isBlank(storeNumber) || type == null) {
+        if (iceBoxId == null || createBy == null || StringUtils.isBlank(storeNumber) || type == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
 
-        wrapper.eq(IceExamine::getCreateBy, createBy).eq(IceExamine::getStoreNumber, storeNumber).last("limit 1");
+        wrapper.eq(IceExamine::getCreateBy, createBy).eq(IceExamine::getStoreNumber, storeNumber).eq(IceExamine::getIceBoxId,iceBoxId).last("limit 1");
 
         if (type.equals(ExamineEnums.ExamineTime.FIRST_TIME.getType())) {
             // 第一次巡检

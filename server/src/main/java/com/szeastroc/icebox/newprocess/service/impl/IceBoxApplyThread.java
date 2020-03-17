@@ -47,7 +47,7 @@ public class IceBoxApplyThread implements Runnable{
                     IceBox iceBox = iceBoxes.get(0);
                     log.info("asjfksldfhvdjkghkjh-->"+ JSON.toJSONString(iceBox));
                     iceBox.setPutStoreNumber(iceBoxRequestVo.getStoreNumber()); //
-                    iceBox.setPutStatus(PutStatus.IS_LOCK.getStatus());
+                    iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBoxDao.updateById(iceBox);
                 }else{

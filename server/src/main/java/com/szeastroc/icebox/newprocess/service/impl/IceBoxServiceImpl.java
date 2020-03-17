@@ -5,19 +5,15 @@ import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
-import com.szeastroc.common.exception.ImproperOptionException;
-import com.szeastroc.common.utils.ExecutorServiceFactory;
-import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
-import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -25,13 +21,8 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.user.client.FeignDeptClient;
@@ -40,19 +31,15 @@ import com.szeastroc.visit.common.SessionExamineVo;
 import com.szeastroc.visit.common.request.RequestExamineVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StopWatch;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
-import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -87,14 +74,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
     private final FeignStoreClient feignStoreClient;
-    private final FeignSupplierClient feignSupplierClient;
-    private  final IcePutPactRecordDao icePutPactRecordDao;
-
-    private final IceBoxDao iceBoxDao;
-    private final IceBoxExtendDao iceBoxExtendDao;
-    private final IcePutApplyDao icePutApplyDao;
-    private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
-    private final IceModelDao iceModelDao;
     private final IceEventRecordDao iceEventRecordDao;
 
     @Override

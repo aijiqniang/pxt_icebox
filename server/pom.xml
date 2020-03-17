@@ -102,6 +102,12 @@
             <groupId>com.szeastroc</groupId>
             <artifactId>transfer-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.szeastroc</groupId>
+            <artifactId>visit-client</artifactId>
+            <version>1.1.0</version>
+            <scope>compile</scope>
+        </dependency>
 
     </dependencies>
 

@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.newprocess.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.szeastroc.common.annotation.MonitorAnnotation;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
@@ -27,6 +28,7 @@ public class ExamineController {
     private IceExamineService iceExamineService;
 
     @PostMapping("/findOneExamine")
+    @MonitorAnnotation
     public CommonResponse<IceExamineVo> findOneExamine(@RequestBody IceExamineRequest iceExamineRequest) {
         if (iceExamineRequest == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -37,6 +39,7 @@ public class ExamineController {
 
 
     @PostMapping("/findExamine")
+    @MonitorAnnotation
     public CommonResponse<IPage<IceExamineVo>> findExamine(@RequestBody IceExamineRequest iceExamineRequest) {
         if (iceExamineRequest == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -50,6 +53,7 @@ public class ExamineController {
 
 
     @PostMapping("/doExamine")
+    @MonitorAnnotation
     public CommonResponse<Boolean> doExamine(@RequestBody IceExamine iceExamine) {
         if (iceExamine == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);

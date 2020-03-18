@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.controller;
 
+import com.szeastroc.common.annotation.MonitorAnnotation;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
@@ -33,6 +34,7 @@ public class RefundController {
      * @return
      */
     @RequestMapping("/findSimpleIceBoxByAssetId")
+    @MonitorAnnotation
     public CommonResponse<SimpleIceBoxDetailVo> findIceBoxByAssetId(@RequestParam("assetId") String assetId) {
 
         if (StringUtils.isBlank(assetId)) {
@@ -51,6 +53,7 @@ public class RefundController {
      * @return
      */
     @RequestMapping("/findIceBoxById")
+    @MonitorAnnotation
     public CommonResponse<IceBoxDetailVo> findIceBoxById(@RequestParam("id") Integer id) {
 
         if (id == null) {
@@ -65,6 +68,7 @@ public class RefundController {
 
 
     @RequestMapping("/findSupplierByDeptId")
+    @MonitorAnnotation
     public CommonResponse<List<SimpleSupplierInfoVo>> findSupplierByDeptId(@RequestParam("deptId") Integer deptId) {
 
         if (deptId == null) {
@@ -79,6 +83,7 @@ public class RefundController {
 
 
     @RequestMapping("/doRefund")
+    @MonitorAnnotation
     public CommonResponse doRefund() {
 
 

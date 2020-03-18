@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     private IceBoxExtendDao iceBoxExtendDao;
 
     @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void doExamine(IceExamine iceExamine) {
 
         if (!iceExamine.validate()) {

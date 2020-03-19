@@ -1,7 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
@@ -13,7 +12,6 @@ import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
-import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -21,20 +19,19 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.vo.*;
+import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.user.client.FeignDeptClient;
-import com.szeastroc.visit.client.FeignExamineClient;
-import com.szeastroc.visit.common.RequestExamineVo;
-import com.szeastroc.visit.common.SessionExamineVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
@@ -69,8 +66,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
     @Resource
     private IceBackApplyRelateBoxDao iceBackApplyRelateBoxDao;
-    @Resource
-    private FeignExamineClient feignExamineClient;
+//    @Resource
+//    private FeignExamineClient feignExamineClient;
 
     private final IcePutPactRecordDao icePutPactRecordDao;
     private final FeignStoreClient feignStoreClient;
@@ -82,77 +79,77 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<IceBoxVo> iceBoxVos = new ArrayList<>();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         //已投放
-        if(XcxType.IS_PUTED.getStatus().equals(requestVo.getType())){
+        if (XcxType.IS_PUTED.getStatus().equals(requestVo.getType())) {
             List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStoreNumber, requestVo.getStoreNumber()).eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()));
-            if(CollectionUtil.isEmpty(iceBoxes)){
+            if (CollectionUtil.isEmpty(iceBoxes)) {
                 return iceBoxVos;
             }
-            for(IceBox iceBox:iceBoxes){
+            for (IceBox iceBox : iceBoxes) {
                 IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
                 iceBoxVos.add(boxVo);
             }
         }
         //可申请
-        if(XcxType.NO_PUT.getStatus().equals(requestVo.getType())){
-            if(requestVo.getMarketAreaId() == null){
-                throw new ImproperOptionException("门店营销区域不能为空！");
-            }
-            Integer serviceId = FeignResponseUtil.getFeignData(feignDeptClient.getServiceId(requestVo.getMarketAreaId()));
-            List<SimpleSupplierInfoVo> supplierInfoVos = FeignResponseUtil.getFeignData(feignSupplierClient.findByDeptId(serviceId));
-            if(CollectionUtil.isEmpty(supplierInfoVos)){
-                return iceBoxVos;
-            }
-            Set<Integer> supplierIds = supplierInfoVos.stream().map(x -> x.getId()).collect(Collectors.toSet());
-            Map<Integer, SimpleSupplierInfoVo> supplierInfoVoMap = supplierInfoVos.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, x -> x));
-            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getSupplierId, supplierIds).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
-            if(CollectionUtil.isEmpty(iceBoxes)){
-                return iceBoxVos;
-            }
-            Map<Integer,Integer> iceBoxCountMap = new HashMap<>();
-            for(IceBox iceBox:iceBoxes){
-                Integer count = iceBoxCountMap.get(iceBox.getModelId());
-                if(count != null){
-                    count = count + 1;
-                    iceBoxCountMap.put(iceBox.getModelId(),count);
-                    continue;
-                }
-                IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
-                SimpleSupplierInfoVo simpleSupplierInfoVo = supplierInfoVoMap.get(iceBox.getSupplierId());
-                if(simpleSupplierInfoVo != null){
-                    boxVo.setSupplierName(simpleSupplierInfoVo.getName());
-                }
-                iceBoxCountMap.put(iceBox.getModelId(),1);
-                iceBoxVos.add(boxVo);
-            }
-            if(CollectionUtil.isNotEmpty(iceBoxVos)){
-                for(IceBoxVo iceBoxVo:iceBoxVos){
-                    Integer count = iceBoxCountMap.get(iceBoxVo.getModelId());
-                    iceBoxVo.setIceBoxCount(count);
-                }
-            }
-        }
+//        if(XcxType.NO_PUT.getStatus().equals(requestVo.getType())){
+//            if(requestVo.getMarketAreaId() == null){
+//                throw new ImproperOptionException("门店营销区域不能为空！");
+//            }
+//            Integer serviceId = FeignResponseUtil.getFeignData(feignDeptClient.getServiceId(requestVo.getMarketAreaId()));
+//            List<SimpleSupplierInfoVo> supplierInfoVos = FeignResponseUtil.getFeignData(feignSupplierClient.findByDeptId(serviceId));
+//            if(CollectionUtil.isEmpty(supplierInfoVos)){
+//                return iceBoxVos;
+//            }
+//            Set<Integer> supplierIds = supplierInfoVos.stream().map(x -> x.getId()).collect(Collectors.toSet());
+//            Map<Integer, SimpleSupplierInfoVo> supplierInfoVoMap = supplierInfoVos.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, x -> x));
+//            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getSupplierId, supplierIds).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+//            if(CollectionUtil.isEmpty(iceBoxes)){
+//                return iceBoxVos;
+//            }
+//            Map<Integer,Integer> iceBoxCountMap = new HashMap<>();
+//            for(IceBox iceBox:iceBoxes){
+//                Integer count = iceBoxCountMap.get(iceBox.getModelId());
+//                if(count != null){
+//                    count = count + 1;
+//                    iceBoxCountMap.put(iceBox.getModelId(),count);
+//                    continue;
+//                }
+//                IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+//                SimpleSupplierInfoVo simpleSupplierInfoVo = supplierInfoVoMap.get(iceBox.getSupplierId());
+//                if(simpleSupplierInfoVo != null){
+//                    boxVo.setSupplierName(simpleSupplierInfoVo.getName());
+//                }
+//                iceBoxCountMap.put(iceBox.getModelId(),1);
+//                iceBoxVos.add(boxVo);
+//            }
+//            if(CollectionUtil.isNotEmpty(iceBoxVos)){
+//                for(IceBoxVo iceBoxVo:iceBoxVos){
+//                    Integer count = iceBoxCountMap.get(iceBoxVo.getModelId());
+//                    iceBoxVo.setIceBoxCount(count);
+//                }
+//            }
+//        }
         //处理中
-        if(XcxType.IS_PUTING.getStatus().equals(requestVo.getType())){
-            List<IcePutApply> icePutApplies = icePutApplyDao.selectList(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber()));
-            if(CollectionUtil.isNotEmpty(icePutApplies)){
-                List<IceBoxVo> putIceBoxVos = this.getIceBoxVosByPutApplys(icePutApplies);
-                if(CollectionUtil.isNotEmpty(putIceBoxVos)){
-                    iceBoxVos.addAll(putIceBoxVos);
-                }
-            }
-            List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber()));
-            if(CollectionUtil.isNotEmpty(iceBackApplies)){
-                List<IceBoxVo> backIceBoxVos = this.getIceBoxVosByBackApplys(iceBackApplies);
-                if(CollectionUtil.isNotEmpty(backIceBoxVos)){
-                    iceBoxVos.addAll(backIceBoxVos);
-                }
-            }
-        }
+//        if(XcxType.IS_PUTING.getStatus().equals(requestVo.getType())){
+//            List<IcePutApply> icePutApplies = icePutApplyDao.selectList(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber()));
+//            if(CollectionUtil.isNotEmpty(icePutApplies)){
+//                List<IceBoxVo> putIceBoxVos = this.getIceBoxVosByPutApplys(icePutApplies);
+//                if(CollectionUtil.isNotEmpty(putIceBoxVos)){
+//                    iceBoxVos.addAll(putIceBoxVos);
+//                }
+//            }
+//            List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber()));
+//            if(CollectionUtil.isNotEmpty(iceBackApplies)){
+//                List<IceBoxVo> backIceBoxVos = this.getIceBoxVosByBackApplys(iceBackApplies);
+//                if(CollectionUtil.isNotEmpty(backIceBoxVos)){
+//                    iceBoxVos.addAll(backIceBoxVos);
+//                }
+//            }
+//        }
         return iceBoxVos;
     }
 
-    @Override
-    public IceBoxVo findBySupplierIdAndModelId(Integer supplierId, Integer modelId) {
+//    @Override
+//    public IceBoxVo findBySupplierIdAndModelId(Integer supplierId, Integer modelId) {
 //        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(supplierId));
 //        if(subordinateInfoVo == null){
 //            throw new ImproperOptionException("无法获取经销商信息");
@@ -168,148 +165,148 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 //            iceBoxVo.setLinkmanMobile(subordinateInfoVo.getLinkmanMobile());
 //            return iceBoxVo;
 //        }
-        return null;
-    }
+//        return null;
+//    }
 
-    @Override
-    public Map<String, String> submitApply(IceBoxRequestVo iceBoxRequestVo) {
-        // 返回锁的value值，供释放锁时候进行判断
-
-        IcePutApply icePutApply = new IcePutApply();
-        String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
-        icePutApply.setApplyNumber(applyNumber);
-
-
-        StopWatch watch = new StopWatch();
-        watch.start();
-        IceBoxApplyThread iceBoxApplyThread = new IceBoxApplyThread(iceBoxDao,iceBoxRequestVo);
-
-        executorService.submit(iceBoxApplyThread);
-        try {
-            executorService.shutdown();
-            watch.stop();
-            System.out.println("耗 时:" + watch.getTotalTimeSeconds() + "秒");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    private List<IceBoxVo> getIceBoxVosByBackApplys(List<IceBackApply> iceBackApplies) {
-        List<IceBoxVo> iceBoxVos = new ArrayList<>();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Map<String, IceBackApply> iceBackApplyMap = iceBackApplies.stream().collect(Collectors.toMap(IceBackApply::getApplyNumber, x -> x));
-        List<Integer> examineIds = iceBackApplies.stream().map(x -> x.getExamineId()).collect(Collectors.toList());
-        RequestExamineVo examineVo = new RequestExamineVo();
-        examineVo.setExamineInfoIds(examineIds);
-        List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
-        if(CollectionUtil.isEmpty(sessionExamineVos)){
-            log.error("退押查询不到审批流信息");
-            return iceBoxVos;
-        }
-        Map<Integer, SessionExamineVo> sessionExamineVoMap = sessionExamineVos.stream().collect(Collectors.toMap(SessionExamineVo::getExamineInfoId, x -> x));
-        Set<String> applyNumbers = iceBackApplies.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
-        List<IceBackApplyRelateBox> iceBackApplyRelateBoxes = iceBackApplyRelateBoxDao.selectList(Wrappers.<IceBackApplyRelateBox>lambdaQuery().in(IceBackApplyRelateBox::getApplyNumber, applyNumbers));
-        if(CollectionUtil.isEmpty(iceBackApplyRelateBoxes)){
-            log.error("查询不到申请退押信息和冰柜的关联关系");
-            return iceBoxVos;
-        }
-        Map<Integer, IceBackApplyRelateBox> relateBoxMap = iceBackApplyRelateBoxes.stream().collect(Collectors.toMap(IceBackApplyRelateBox::getBoxId, x -> x));
-
-        Set<Integer> boxIds = iceBackApplyRelateBoxes.stream().map(x -> x.getBoxId()).collect(Collectors.toSet());
-        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getId, boxIds));
-        if(CollectionUtil.isEmpty(iceBoxes)){
-            log.error("查询不到申请退押信息关联的冰柜详情");
-            return iceBoxVos;
-        }
-        for(IceBox iceBox:iceBoxes){
-            IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
-            boxVo.setStatusStr(IceBoxConstant.IS_BACKING);
-            IceBackApplyRelateBox iceBackApplyRelateBox = relateBoxMap.get(iceBox.getId());
-            if(iceBackApplyRelateBox == null){
-                continue;
-            }
-            IceBackApply backApply = iceBackApplyMap.get(iceBackApplyRelateBox.getApplyNumber());
-            if(backApply == null){
-                continue;
-            }
-            SessionExamineVo sessionExamineVo = sessionExamineVoMap.get(backApply.getExamineId());
-            if(sessionExamineVo == null){
-                continue;
-            }
-            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
-            if(CollectionUtil.isNotEmpty(visitExamineNodes)){
-                List<ExamineNodeVo> nodeVos = new ArrayList<>();
-                for(SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo:visitExamineNodes){
-                    ExamineNodeVo nodeVo = new ExamineNodeVo();
-                    BeanUtils.copyProperties(sessionVisitExamineNodeVo,nodeVo);
-                    nodeVos.add(nodeVo);
-                }
-                boxVo.setExamineNodeVoList(nodeVos);
-            }
-            iceBoxVos.add(boxVo);
-        }
-        return iceBoxVos;
-    }
-
-    private List<IceBoxVo> getIceBoxVosByPutApplys(List<IcePutApply> icePutApplies) {
-        List<IceBoxVo> iceBoxVos = new ArrayList<>();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Map<String, IcePutApply> icePutApplyMap = icePutApplies.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
-        List<Integer> examineIds = icePutApplies.stream().map(x -> x.getExamineId()).collect(Collectors.toList());
-        RequestExamineVo examineVo = new RequestExamineVo();
-        examineVo.setExamineInfoIds(examineIds);
-        List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
-        if(CollectionUtil.isEmpty(sessionExamineVos)){
-            log.error("投放查询不到审批流信息");
-            return iceBoxVos;
-        }
-        Map<Integer, SessionExamineVo> sessionExamineVoMap = sessionExamineVos.stream().collect(Collectors.toMap(SessionExamineVo::getExamineInfoId, x -> x));
-        Set<String> applyNumbers = icePutApplies.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
-        List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
-        if(CollectionUtil.isEmpty(icePutApplyRelateBoxes)){
-            log.error("查询不到申请投放信息和冰柜的关联关系");
-            return iceBoxVos;
-        }
-        Map<Integer, IcePutApplyRelateBox> relateBoxMap = icePutApplyRelateBoxes.stream().collect(Collectors.toMap(IcePutApplyRelateBox::getBoxId, x -> x));
-
-        Set<Integer> boxIds = icePutApplyRelateBoxes.stream().map(x -> x.getBoxId()).collect(Collectors.toSet());
-        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getId, boxIds));
-        if(CollectionUtil.isEmpty(iceBoxes)){
-            log.error("查询不到申请投放信息关联的冰柜详情");
-            return iceBoxVos;
-        }
-        for(IceBox iceBox:iceBoxes){
-            IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
-            boxVo.setStatusStr(IceBoxConstant.IS_APPLYING);
-            IcePutApplyRelateBox icePutApplyRelateBox = relateBoxMap.get(iceBox.getId());
-            if(icePutApplyRelateBox == null){
-                continue;
-            }
-            IcePutApply putApply = icePutApplyMap.get(icePutApplyRelateBox.getApplyNumber());
-            if(putApply == null){
-                continue;
-            }
-            SessionExamineVo sessionExamineVo = sessionExamineVoMap.get(putApply.getExamineId());
-            if(sessionExamineVo == null){
-                continue;
-            }
-            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
-            if(CollectionUtil.isNotEmpty(visitExamineNodes)){
-                List<ExamineNodeVo> nodeVos = new ArrayList<>();
-                for(SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo:visitExamineNodes){
-                    ExamineNodeVo nodeVo = new ExamineNodeVo();
-                    BeanUtils.copyProperties(sessionVisitExamineNodeVo,nodeVo);
-                    nodeVos.add(nodeVo);
-                }
-                boxVo.setExamineNodeVoList(nodeVos);
-            }
-            iceBoxVos.add(boxVo);
-        }
-        return iceBoxVos;
-    }
-
+    //    @Override
+//    public Map<String, String> submitApply(IceBoxRequestVo iceBoxRequestVo) {
+//        // 返回锁的value值，供释放锁时候进行判断
+//
+//        IcePutApply icePutApply = new IcePutApply();
+//        String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+//        icePutApply.setApplyNumber(applyNumber);
+//
+//
+//        StopWatch watch = new StopWatch();
+//        watch.start();
+//        IceBoxApplyThread iceBoxApplyThread = new IceBoxApplyThread(iceBoxDao,iceBoxRequestVo);
+//
+//        executorService.submit(iceBoxApplyThread);
+//        try {
+//            executorService.shutdown();
+//            watch.stop();
+//            System.out.println("耗 时:" + watch.getTotalTimeSeconds() + "秒");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return null;
+//    }
+//
+//    private List<IceBoxVo> getIceBoxVosByBackApplys(List<IceBackApply> iceBackApplies) {
+//        List<IceBoxVo> iceBoxVos = new ArrayList<>();
+//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//        Map<String, IceBackApply> iceBackApplyMap = iceBackApplies.stream().collect(Collectors.toMap(IceBackApply::getApplyNumber, x -> x));
+//        List<Integer> examineIds = iceBackApplies.stream().map(x -> x.getExamineId()).collect(Collectors.toList());
+//        RequestExamineVo examineVo = new RequestExamineVo();
+//        examineVo.setExamineInfoIds(examineIds);
+//        List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
+//        if(CollectionUtil.isEmpty(sessionExamineVos)){
+//            log.error("退押查询不到审批流信息");
+//            return iceBoxVos;
+//        }
+//        Map<Integer, SessionExamineVo> sessionExamineVoMap = sessionExamineVos.stream().collect(Collectors.toMap(SessionExamineVo::getExamineInfoId, x -> x));
+//        Set<String> applyNumbers = iceBackApplies.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
+//        List<IceBackApplyRelateBox> iceBackApplyRelateBoxes = iceBackApplyRelateBoxDao.selectList(Wrappers.<IceBackApplyRelateBox>lambdaQuery().in(IceBackApplyRelateBox::getApplyNumber, applyNumbers));
+//        if(CollectionUtil.isEmpty(iceBackApplyRelateBoxes)){
+//            log.error("查询不到申请退押信息和冰柜的关联关系");
+//            return iceBoxVos;
+//        }
+//        Map<Integer, IceBackApplyRelateBox> relateBoxMap = iceBackApplyRelateBoxes.stream().collect(Collectors.toMap(IceBackApplyRelateBox::getBoxId, x -> x));
+//
+//        Set<Integer> boxIds = iceBackApplyRelateBoxes.stream().map(x -> x.getBoxId()).collect(Collectors.toSet());
+//        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getId, boxIds));
+//        if(CollectionUtil.isEmpty(iceBoxes)){
+//            log.error("查询不到申请退押信息关联的冰柜详情");
+//            return iceBoxVos;
+//        }
+//        for(IceBox iceBox:iceBoxes){
+//            IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+//            boxVo.setStatusStr(IceBoxConstant.IS_BACKING);
+//            IceBackApplyRelateBox iceBackApplyRelateBox = relateBoxMap.get(iceBox.getId());
+//            if(iceBackApplyRelateBox == null){
+//                continue;
+//            }
+//            IceBackApply backApply = iceBackApplyMap.get(iceBackApplyRelateBox.getApplyNumber());
+//            if(backApply == null){
+//                continue;
+//            }
+//            SessionExamineVo sessionExamineVo = sessionExamineVoMap.get(backApply.getExamineId());
+//            if(sessionExamineVo == null){
+//                continue;
+//            }
+//            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+//            if(CollectionUtil.isNotEmpty(visitExamineNodes)){
+//                List<ExamineNodeVo> nodeVos = new ArrayList<>();
+//                for(SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo:visitExamineNodes){
+//                    ExamineNodeVo nodeVo = new ExamineNodeVo();
+//                    BeanUtils.copyProperties(sessionVisitExamineNodeVo,nodeVo);
+//                    nodeVos.add(nodeVo);
+//                }
+//                boxVo.setExamineNodeVoList(nodeVos);
+//            }
+//            iceBoxVos.add(boxVo);
+//        }
+//        return iceBoxVos;
+//    }
+//
+//    private List<IceBoxVo> getIceBoxVosByPutApplys(List<IcePutApply> icePutApplies) {
+//        List<IceBoxVo> iceBoxVos = new ArrayList<>();
+//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//        Map<String, IcePutApply> icePutApplyMap = icePutApplies.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
+//        List<Integer> examineIds = icePutApplies.stream().map(x -> x.getExamineId()).collect(Collectors.toList());
+//        RequestExamineVo examineVo = new RequestExamineVo();
+//        examineVo.setExamineInfoIds(examineIds);
+//        List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
+//        if(CollectionUtil.isEmpty(sessionExamineVos)){
+//            log.error("投放查询不到审批流信息");
+//            return iceBoxVos;
+//        }
+//        Map<Integer, SessionExamineVo> sessionExamineVoMap = sessionExamineVos.stream().collect(Collectors.toMap(SessionExamineVo::getExamineInfoId, x -> x));
+//        Set<String> applyNumbers = icePutApplies.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
+//        List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
+//        if(CollectionUtil.isEmpty(icePutApplyRelateBoxes)){
+//            log.error("查询不到申请投放信息和冰柜的关联关系");
+//            return iceBoxVos;
+//        }
+//        Map<Integer, IcePutApplyRelateBox> relateBoxMap = icePutApplyRelateBoxes.stream().collect(Collectors.toMap(IcePutApplyRelateBox::getBoxId, x -> x));
+//
+//        Set<Integer> boxIds = icePutApplyRelateBoxes.stream().map(x -> x.getBoxId()).collect(Collectors.toSet());
+//        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getId, boxIds));
+//        if(CollectionUtil.isEmpty(iceBoxes)){
+//            log.error("查询不到申请投放信息关联的冰柜详情");
+//            return iceBoxVos;
+//        }
+//        for(IceBox iceBox:iceBoxes){
+//            IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+//            boxVo.setStatusStr(IceBoxConstant.IS_APPLYING);
+//            IcePutApplyRelateBox icePutApplyRelateBox = relateBoxMap.get(iceBox.getId());
+//            if(icePutApplyRelateBox == null){
+//                continue;
+//            }
+//            IcePutApply putApply = icePutApplyMap.get(icePutApplyRelateBox.getApplyNumber());
+//            if(putApply == null){
+//                continue;
+//            }
+//            SessionExamineVo sessionExamineVo = sessionExamineVoMap.get(putApply.getExamineId());
+//            if(sessionExamineVo == null){
+//                continue;
+//            }
+//            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+//            if(CollectionUtil.isNotEmpty(visitExamineNodes)){
+//                List<ExamineNodeVo> nodeVos = new ArrayList<>();
+//                for(SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo:visitExamineNodes){
+//                    ExamineNodeVo nodeVo = new ExamineNodeVo();
+//                    BeanUtils.copyProperties(sessionVisitExamineNodeVo,nodeVo);
+//                    nodeVos.add(nodeVo);
+//                }
+//                boxVo.setExamineNodeVoList(nodeVos);
+//            }
+//            iceBoxVos.add(boxVo);
+//        }
+//        return iceBoxVos;
+//    }
+//
     private IceBoxVo buildIceBoxVo(SimpleDateFormat dateFormat, IceBox iceBox) {
         IceBoxVo boxVo = new IceBoxVo();
         BeanUtils.copyProperties(iceBox, boxVo);
@@ -354,7 +351,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .eq(IcePutPactRecord::getBoxId, id)
                 .eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
-        if(record == null) {
+        if (record == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 

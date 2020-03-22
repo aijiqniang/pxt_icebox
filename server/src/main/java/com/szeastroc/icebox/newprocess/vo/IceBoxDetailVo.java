@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.vo;
 
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -89,5 +90,19 @@ public class IceBoxDetailVo {
      * 冰柜所属部门id
      */
     private Integer deptId;
+
+
+    /**
+     * 第一次巡检记录
+     */
+    private IceExamineVo firstExamine;
+
+
+
+    /**
+     * 最近一次巡检记录
+     */
+    private IceExamineVo lastExamine;
+
 
 }

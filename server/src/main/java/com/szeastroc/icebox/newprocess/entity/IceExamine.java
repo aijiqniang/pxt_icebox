@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -69,5 +70,20 @@ public class IceExamine {
     public boolean validate() {
         return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)
                 && StringUtils.isNotBlank(displayImage) && createBy != null;
+    }
+
+
+    public IceExamineVo convert(IceExamine iceExamine,String realName,String storeName,String storeNumber) {
+        return IceExamineVo.builder()
+                .id(iceExamine.getId())
+                .createBy(iceExamine.getCreateBy())
+                .createName(realName)
+                .displayImage(iceExamine.getDisplayImage())
+                .exteriorImage(iceExamine.getExteriorImage())
+                .createTime(iceExamine.getCreateTime())
+                .storeName(storeName)
+                .storeNumber(storeNumber)
+                .iceBoxId(iceExamine.getIceBoxId())
+                .build();
     }
 }

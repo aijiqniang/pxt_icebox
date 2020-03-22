@@ -67,6 +67,10 @@ public class RefundController {
     }
 
 
+    /**
+     * @param deptId 根据部门id 查看该部门下面所有有冰柜的经销商
+     * @return
+     */
     @RequestMapping("/findSupplierByDeptId")
     @MonitorAnnotation
     public CommonResponse<List<SimpleSupplierInfoVo>> findSupplierByDeptId(@RequestParam("deptId") Integer deptId) {

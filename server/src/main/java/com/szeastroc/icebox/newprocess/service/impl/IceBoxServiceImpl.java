@@ -19,14 +19,13 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.user.client.FeignDeptClient;
+import com.szeastroc.user.client.FeignUserClient;
+import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -68,6 +67,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceBackApplyRelateBoxDao iceBackApplyRelateBoxDao;
 //    @Resource
 //    private FeignExamineClient feignExamineClient;
+
+    @Resource
+    private IceExamineDao iceExamineDao;
+    @Resource
+    private FeignUserClient feignUserClient;
 
     private final IcePutPactRecordDao icePutPactRecordDao;
     private final FeignStoreClient feignStoreClient;
@@ -358,6 +362,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Date putTime = record.getPutTime();
         Date putExpireTime = record.getPutExpireTime();
 
+        IceExamine firstExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getStoreNumber, storeNumber).eq(IceExamine::getIceBoxId, id).orderByAsc(IceExamine::getCreateTime).last("limit 1"));
+        IceExamine lastExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getStoreNumber, storeNumber).eq(IceExamine::getIceBoxId, id).orderByDesc(IceExamine::getCreateTime).last("limit 1"));
+
+        List<Integer> list = new ArrayList<>();
+        Integer firstExamineCreateBy = firstExamine.getCreateBy();
+        Integer lastExamineCreateBy = lastExamine.getCreateBy();
+        list.add(firstExamineCreateBy);
+        list.add(lastExamineCreateBy);
+
+        Map<Integer, SessionUserInfoVo> map = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(list));
+
+        IceExamineVo firstExamineVo = firstExamine.convert(firstExamine, map.get(firstExamineCreateBy).getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
+        IceExamineVo lastExamineVo = firstExamine.convert(lastExamine, map.get(lastExamineCreateBy).getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
+
 
         return IceBoxDetailVo.builder()
                 .id(id)
@@ -371,6 +389,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .repairBeginTime(iceBoxExtend.getRepairBeginTime())
                 .storeAddress(storeInfoDtoVo.getAddress())
                 .releaseTime(iceBoxExtend.getReleaseTime())
+                .firstExamine(firstExamineVo)
+                .lastExamine(lastExamineVo)
                 .build();
     }
 

@@ -554,6 +554,22 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 Objects.isNull(icePutApplyRelateBox) ? FreePayTypeEnum.UN_FREE : FreePayTypeEnum.convertVo(icePutApplyRelateBox.getFreeType()));
     }
 
+    @Override
+    public boolean judgeRecordTime(Integer id) {
+
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, id));
+
+        Integer lastPutId = iceBoxExtend.getLastPutId();
+        IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectById(lastPutId);
+
+        if (icePutPactRecord == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        }
+
+        Date putExpireTime = icePutPactRecord.getPutExpireTime();
+        Date date = new Date();
+        return date.after(putExpireTime);
+    }
 }
 
 

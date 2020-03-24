@@ -81,7 +81,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             iceExamine.setGpsAddress(address);
         }
         iceExamineDao.insert(iceExamine);
-        
+
         Integer iceExamineId = iceExamine.getId();
         IceBoxExtend iceBoxExtend = new IceBoxExtend();
         iceBoxExtend.setLastExamineId(iceExamineId);
@@ -243,7 +243,11 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if ("1".equals(jsonObject.getString("code"))) {
             JSONObject data = jsonObject.getJSONObject("data");
 
-            return data.getString("address");
+            String province = data.getString("province");
+            String city = data.getString("city");
+            String area = data.getString("area");
+            String address = data.getString("address");
+            return city + address;
         } else {
             log.error("东鹏定位接口请求失败:{}", result);
         }

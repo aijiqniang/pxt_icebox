@@ -74,11 +74,11 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             Double temperature = iceEventRecord.getTemperature();
             String lat = iceEventRecord.getLat();
             String lng = iceEventRecord.getLng();
+            String detailAddress = iceEventRecord.getDetailAddress();
             iceExamine.setTemperature(temperature);
             iceExamine.setLatitude(lat);
             iceExamine.setLongitude(lng);
-            String address = getAddress(lng, lat);
-            iceExamine.setGpsAddress(address);
+            iceExamine.setGpsAddress(detailAddress);
         }
         iceExamineDao.insert(iceExamine);
 
@@ -227,30 +227,30 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     }
 
 
-    public static final String URL = "https://api.xdp8.cn/gps/getLocation";
-
-    private String getAddress(String longitude, String latitude) throws ImproperOptionException {
-
-        StringBuilder requestUrl = new StringBuilder(URL);
-        requestUrl.append("?type=5").append("&longitude=").append(longitude).append("&latitude=").append(latitude);
-        String result = "";
-        try {
-            result = HttpUtils.get(requestUrl.toString());
-        } catch (Exception e) {
-            log.error("请求东鹏定位接口异常", e);
-        }
-        JSONObject jsonObject = JSON.parseObject(result);
-        if ("1".equals(jsonObject.getString("code"))) {
-            JSONObject data = jsonObject.getJSONObject("data");
-
-            String province = data.getString("province");
-            String city = data.getString("city");
-            String area = data.getString("area");
-            String address = data.getString("address");
-            return city + address;
-        } else {
-            log.error("东鹏定位接口请求失败:{}", result);
-        }
-        return null;
-    }
+//    public static final String URL = "https://api.xdp8.cn/gps/getLocation";
+//
+//    private String getAddress(String longitude, String latitude) throws ImproperOptionException {
+//
+//        StringBuilder requestUrl = new StringBuilder(URL);
+//        requestUrl.append("?type=5").append("&longitude=").append(longitude).append("&latitude=").append(latitude);
+//        String result = "";
+//        try {
+//            result = HttpUtils.get(requestUrl.toString());
+//        } catch (Exception e) {
+//            log.error("请求东鹏定位接口异常", e);
+//        }
+//        JSONObject jsonObject = JSON.parseObject(result);
+//        if ("1".equals(jsonObject.getString("code"))) {
+//            JSONObject data = jsonObject.getJSONObject("data");
+//
+//            String province = data.getString("province");
+//            String city = data.getString("city");
+//            String area = data.getString("area");
+//            String address = data.getString("address");
+//            return city + address;
+//        } else {
+//            log.error("东鹏定位接口请求失败:{}", result);
+//        }
+//        return null;
+//    }
 }

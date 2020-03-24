@@ -67,13 +67,44 @@ public class IceExamine {
     private Date updateTime;
 
 
+    /**
+     * 经度
+     */
+    @TableField(value = "longitude")
+    private String longitude;
+    /**
+     * 纬度
+     */
+    @TableField(value = "latitude")
+    private String latitude;
+
+
+    /**
+     * 温度
+     */
+    @TableField(value = "temperature")
+    private Double temperature;
+
+    /**
+     * 开关门次数
+     */
+    @TableField(value = "open_close_count")
+    private Integer openCloseCount;
+
+    /**
+     * gps定位地址
+     */
+    @TableField(value = "gps_address")
+    private String gpsAddress;
+
+
     public boolean validate() {
         return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)
                 && StringUtils.isNotBlank(displayImage) && createBy != null;
     }
 
 
-    public IceExamineVo convert(IceExamine iceExamine,String realName,String storeName,String storeNumber) {
+    public IceExamineVo convert(IceExamine iceExamine, String realName, String storeName, String storeNumber) {
         return IceExamineVo.builder()
                 .id(iceExamine.getId())
                 .createBy(iceExamine.getCreateBy())
@@ -84,6 +115,11 @@ public class IceExamine {
                 .storeName(storeName)
                 .storeNumber(storeNumber)
                 .iceBoxId(iceExamine.getIceBoxId())
+                .latitude(iceExamine.latitude)
+                .longitude(iceExamine.longitude)
+                .temperature(iceExamine.temperature)
+                .openCloseCount(iceExamine.openCloseCount)
+                .gpsAddress(iceExamine.gpsAddress)
                 .build();
     }
 }

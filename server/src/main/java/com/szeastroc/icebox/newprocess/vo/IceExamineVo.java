@@ -62,4 +62,30 @@ public class IceExamineVo {
     private Date createTime;
 
 
+    /**
+     * 经度
+     */
+    private String longitude;
+    /**
+     * 纬度
+     */
+    private String latitude;
+
+
+    /**
+     * 温度
+     */
+    private Double temperature;
+
+    /**
+     * 开关门次数
+     */
+    private Integer openCloseCount;
+
+    /**
+     * GPS定位地址
+     */
+    private String gpsAddress;
+
+
 }

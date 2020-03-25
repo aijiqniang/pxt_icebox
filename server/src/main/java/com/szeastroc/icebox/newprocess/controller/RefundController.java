@@ -95,5 +95,24 @@ public class RefundController {
 
     }
 
+    /**
+     * 根据冰柜的id判断当前冰柜是否在协议期间内
+     *
+     * @param id
+     * @return false-还在协议期内
+     */
+    @RequestMapping("/judgeRecordTime")
+    @MonitorAnnotation
+    public CommonResponse judgeRecordTime(@RequestParam("id") Integer id) {
+
+        if (id == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+
+        boolean result = iceBoxService.judgeRecordTime(id);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, result);
+
+    }
+
 
 }

@@ -30,6 +30,8 @@ public interface IceBoxService extends IService<IceBox> {
     IceBoxStatusVo checkBoxByQrcode(String qrcode, String pxtNumber);
 
     IceBoxVo getIceBoxByQrcode(String qrcode);
+
+    boolean judgeRecordTime(Integer id);
 }
 
 

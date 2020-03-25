@@ -17,9 +17,9 @@ public interface IceBoxService extends IService<IceBox> {
 
     List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo);
 
-//    IceBoxVo findBySupplierIdAndModelId(Integer supplierId, Integer modelId);
-//
-//    Map<String, String> submitApply(IceBoxRequestVo iceBoxRequestVo);
+    IceBoxVo findBySupplierIdAndModelId(Integer supplierId, Integer modelId);
+
+    Map<String, String> submitApply(IceBoxRequestVo iceBoxRequestVo);
 
     List<IceBoxStoreVo> getIceBoxStoreVoByPxtNumber(String pxtNumber);
 

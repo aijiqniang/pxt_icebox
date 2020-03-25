@@ -42,29 +42,29 @@ public class MyIceBoxController {
      * @param modelId
      * @return
      */
-//    @RequestMapping("findBySupplierIdAndModelId")
-//    public CommonResponse<List<IceBoxVo>> findBySupplierIdAndModelId(Integer supplierId, Integer modelId){
-//        IceBoxVo iceBoxVo = iceBoxService.findBySupplierIdAndModelId(supplierId,modelId);
-//        return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVo);
-//    }
-//
-//    @RequestMapping("submitApply")
-//    public CommonResponse<Map<String,String>> submitApply(@RequestBody IceBoxRequestVo IceBoxRequestVo){
-//        Map<String,String> map = iceBoxService.submitApply(IceBoxRequestVo);
-//        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
-//    }
-//
-//    @RequestMapping("test")
-//    public CommonResponse<Map<String,String>> test(@RequestBody IceBoxRequestVo IceBoxRequestVo){
-//        for (int i = 0; i < 10; i++) {
-//            IceBoxRequestVo requestVo = new IceBoxRequestVo();
-//            requestVo.setStoreNumber("ceshi000001-->"+i);
-//            requestVo.setModelId(1);
-//            requestVo.setSupplierId(510);
-//            Map<String,String> map = iceBoxService.submitApply(requestVo);
-//        }//此处 设置数值  受限于 线程池中的数量
-//        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
-//    }
+    @RequestMapping("findBySupplierIdAndModelId")
+    public CommonResponse<List<IceBoxVo>> findBySupplierIdAndModelId(Integer supplierId, Integer modelId){
+        IceBoxVo iceBoxVo = iceBoxService.findBySupplierIdAndModelId(supplierId,modelId);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVo);
+    }
+
+    @RequestMapping("submitApply")
+    public CommonResponse<Map<String,String>> submitApply(@RequestBody IceBoxRequestVo IceBoxRequestVo){
+        Map<String,String> map = iceBoxService.submitApply(IceBoxRequestVo);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+    }
+
+    @RequestMapping("test")
+    public CommonResponse<Map<String,String>> test(@RequestBody IceBoxRequestVo IceBoxRequestVo){
+        for (int i = 0; i < 5; i++) {
+            IceBoxRequestVo requestVo = new IceBoxRequestVo();
+            requestVo.setStoreNumber("ceshi000001-->"+i);
+            requestVo.setModelId(1);
+            requestVo.setSupplierId(510);
+            Map<String,String> map = iceBoxService.submitApply(requestVo);
+        }//此处 设置数值  受限于 线程池中的数量
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
 
 
 

@@ -5,12 +5,14 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
+import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +27,9 @@ public class RefundController {
 
     @Autowired
     private IceBoxService iceBoxService;
+
+    @Autowired
+    private IceBackOrderService iceBackOrderService;
 
 
     /**
@@ -88,7 +93,11 @@ public class RefundController {
 
     @RequestMapping("/doRefund")
     @MonitorAnnotation
-    public CommonResponse doRefund() {
+    public CommonResponse doRefund(@RequestBody SimpleIceBoxDetailVo simpleIceBoxDetailVo) {
+
+        // 创建审批流
+        iceBackOrderService.doRefund(simpleIceBoxDetailVo);
+
 
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);

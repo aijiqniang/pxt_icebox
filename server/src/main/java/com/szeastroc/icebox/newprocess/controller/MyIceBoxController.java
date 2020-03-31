@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.HttpUtils;
@@ -49,19 +50,29 @@ public class MyIceBoxController {
     }
 
     @RequestMapping("submitApply")
-    public CommonResponse<Map<String,String>> submitApply(@RequestBody IceBoxRequestVo IceBoxRequestVo){
+    public CommonResponse<Map<String,String>> submitApply(@RequestBody IceBoxRequestVo IceBoxRequestVo) throws InterruptedException {
         Map<String,String> map = iceBoxService.submitApply(IceBoxRequestVo);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 
     @RequestMapping("test")
-    public CommonResponse<Map<String,String>> test(@RequestBody IceBoxRequestVo IceBoxRequestVo){
-        for (int i = 0; i < 5; i++) {
-            IceBoxRequestVo requestVo = new IceBoxRequestVo();
-            requestVo.setStoreNumber("ceshi000001-->"+i);
-            requestVo.setModelId(1);
-            requestVo.setSupplierId(510);
-            Map<String,String> map = iceBoxService.submitApply(requestVo);
+    public CommonResponse<Map<String,String>> test(@RequestBody IceBoxRequestVo IceBoxRequestVo) throws InterruptedException {
+        for (int i = 0; i < 10; i++) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    Thread thread = Thread.currentThread();
+                    IceBoxRequestVo requestVo = new IceBoxRequestVo();
+                    requestVo.setStoreNumber("ceshi000001-->"+thread.getName());
+                    requestVo.setModelId(1);
+                    requestVo.setSupplierId(510);
+                    Map<String,String> map = iceBoxService.submitApply(requestVo);
+                    log.info("申请到的冰柜---》【{}】", JSON.toJSONString(map));
+                }catch (Exception e) {
+                    log.error("通知dms客户新增人员出错");
+                    e.printStackTrace();
+                }
+            }, ExecutorServiceFactory.getInstance());
+
         }//此处 设置数值  受限于 线程池中的数量
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }

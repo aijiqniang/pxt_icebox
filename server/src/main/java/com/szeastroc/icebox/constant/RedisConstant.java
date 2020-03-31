@@ -19,4 +19,7 @@ public class RedisConstant {
     public final static String GXUAN_ACCESS_TOKEN = PRE_AFFIX + "gxuan_access_token";
 
     public final static String REGIST_HTTP_URL = PRE_AFFIX + "regist_http_url";
+
+
+    public final static String ICE_BOX_LOCK = "ice_box_lock_";
 }

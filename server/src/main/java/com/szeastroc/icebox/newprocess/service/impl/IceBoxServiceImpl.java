@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
@@ -15,6 +16,7 @@ import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.constant.IceBoxConstant;
+import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -26,6 +28,7 @@ import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
@@ -36,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
@@ -75,6 +79,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Resource
     private FeignExamineClient feignExamineClient;
 
+    @Resource
+    private RedisTemplate redisTemplate;
     @Resource
     private IceExamineDao iceExamineDao;
     @Resource
@@ -179,26 +185,36 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         return null;
     }
 
-        @Override
-    public Map<String, String> submitApply(IceBoxRequestVo iceBoxRequestVo) {
+    @Override
+    public Map<String, String> submitApply(IceBoxRequestVo iceBoxRequestVo) throws InterruptedException {
         IcePutApply icePutApply = new IcePutApply();
         String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
         icePutApply.setApplyNumber(applyNumber);
+        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, iceBoxRequestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+        IceBox iceBox = null;
+        if (CollectionUtil.isNotEmpty(iceBoxes)) {
+            iceBox = iceBoxes.get(0);
 
-
-        StopWatch watch = new StopWatch();
-        watch.start();
-        IceBoxApplyThread iceBoxApplyThread = new IceBoxApplyThread(iceBoxDao,iceBoxRequestVo);
-
-        executorService.submit(iceBoxApplyThread);
-        try {
-            executorService.shutdown();
-            watch.stop();
-            System.out.println("耗 时:" + watch.getTotalTimeSeconds() + "秒");
-        } catch (Exception e) {
-            e.printStackTrace();
+        }else{
+            throw new ImproperOptionException("无可申请冰柜");
         }
-
+        RedisLockUtil lock = new RedisLockUtil(redisTemplate, RedisConstant.ICE_BOX_LOCK+iceBox.getId(), 5000, 10000);
+        try {
+            if(lock.lock()){
+                Map<String, String> map = new HashMap<>();
+                log.info("asjfksldfhvdjkghkjh-->"+ JSON.toJSONString(iceBox));
+                iceBox.setPutStoreNumber(iceBoxRequestVo.getStoreNumber()); //
+                iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
+                iceBox.setUpdatedTime(new Date());
+                iceBoxDao.updateById(iceBox);
+                map.put("id",iceBox.getId()+"");
+                return map;
+            }
+        } catch (Exception e) {
+            throw e;
+        }finally {
+            lock.unlock();
+        }
         return null;
     }
 

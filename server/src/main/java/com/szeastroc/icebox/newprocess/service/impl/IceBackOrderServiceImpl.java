@@ -23,6 +23,7 @@ import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
+import com.szeastroc.visit.client.FeignOutExamineClient;
 import com.szeastroc.visit.common.NoticeBacklogRequestVo;
 import com.szeastroc.visit.common.SessionExamineCreateVo;
 import com.szeastroc.visit.common.SessionExamineVo;
@@ -70,7 +71,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     @Autowired
     private FeignUserClient feignUserClient;
     @Autowired
-    private FeignExamineClient feignExamineClient;
+    private FeignOutExamineClient feignOutExamineClient;
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     @Override
@@ -178,7 +179,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);
         sessionExamineVo.setSessionIceBoxRefundModel(sessionIceBoxRefundModel);
 
-        feignExamineClient.iceBoxRefund(sessionExamineVo);
+        feignOutExamineClient.iceBoxRefund(sessionExamineVo);
 
 
         IceBackApply iceBackApply = IceBackApply.builder()

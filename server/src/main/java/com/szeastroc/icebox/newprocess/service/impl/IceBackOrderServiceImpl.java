@@ -23,6 +23,7 @@ import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
+import com.szeastroc.visit.client.FeignOutBacklogClient;
 import com.szeastroc.visit.client.FeignOutExamineClient;
 import com.szeastroc.visit.common.NoticeBacklogRequestVo;
 import com.szeastroc.visit.common.SessionExamineCreateVo;
@@ -54,7 +55,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
 
     @Autowired
-    private FeignBacklogClient feignBacklogClient;
+    private FeignOutBacklogClient feignOutBacklogClient;
     @Resource
     private IceBackApplyRelateBoxDao iceBackApplyRelateBoxDao;
 
@@ -103,7 +104,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .relateCode(relateCode)
                 .sendUserId(5941)
                 .build();
-//        feignBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
+        feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
 
     }
 

@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.util.IdUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
@@ -9,6 +10,7 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
+import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
@@ -17,12 +19,17 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.BackType;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
+import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
+import com.szeastroc.icebox.oldprocess.entity.WechatTransferOrder;
+import com.szeastroc.transfer.client.FeignTransferClient;
+import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
+import com.szeastroc.transfer.common.enums.WechatPayTypeEnum;
+import com.szeastroc.transfer.common.request.TransferRequest;
+import com.szeastroc.transfer.common.response.TransferReponse;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
-import com.szeastroc.visit.client.FeignBacklogClient;
-import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignOutBacklogClient;
 import com.szeastroc.visit.client.FeignOutExamineClient;
 import com.szeastroc.visit.common.NoticeBacklogRequestVo;
@@ -73,6 +80,12 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private FeignUserClient feignUserClient;
     @Autowired
     private FeignOutExamineClient feignOutExamineClient;
+    @Autowired
+    private WechatTransferOrderDao wechatTransferOrderDao;
+    @Autowired
+    private XcxConfig xcxConfig;
+    @Autowired
+    private FeignTransferClient feignTransferClient;
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     @Override
@@ -147,7 +160,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .build();
 
 
-
         // 创建审批流
 
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(simpleIceBoxDetailVo.getUserId()));
@@ -164,7 +176,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //        userIds.add(userInfoVo2.getId());
 //        userIds.add(userInfoVo3.getId());
 
-        List<Integer> userIds = Arrays.asList(5941,2103);
+        List<Integer> userIds = Arrays.asList(5941, 2103);
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         SessionIceBoxRefundModel sessionIceBoxRefundModel = new SessionIceBoxRefundModel();
 
@@ -199,6 +211,57 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
 
     }
+
+    @Override
+    public void doTransfer(Integer iceBoxId) {
+//        IceBox iceBox = iceBoxDao.selectById(iceBoxId);
+//        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+//
+//        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+//
+//
+//        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+//                .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+//                .eq(IcePutApplyRelateBox::getBoxId, iceBoxId));
+//
+//        IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
+//                .eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+//                .eq(IcePutPactRecord::getBoxId, iceBoxId));
+
+        // 免押时, 不校验订单, 直接跳过
+//        if (FreePayTypeEnum.IS_FREE.getType() == icePutApplyRelateBox.getFreeType()) {
+//            return;
+//        }
+//
+//        IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
+//                .eq(IcePutOrder::getApplyNumber, icePutApply.getApplyNumber())
+//                .eq(IcePutOrder::getChestId, iceBoxId));
+//
+//        WechatTransferOrder wechatTransferOrder = new WechatTransferOrder(String.valueOf(icePutOrder.getId()), iceBoxId,
+//                icePutPactRecord.getId(), icePutOrder.getId(), icePutOrder.getOpenid(), icePutOrder.getPayMoney());
+//
+//        log.info("wechatTransferOrder存入数据库 -> [{}]", JSON.toJSONString(wechatTransferOrder));
+//        wechatTransferOrderDao.insert(wechatTransferOrder);
+//
+//        /**
+//         * 调用转账服务
+//         */
+//        TransferRequest transferRequest = TransferRequest.builder()
+//                .resourceType(ResourceTypeEnum.FROM_ICEBOX.getType())
+//                .resourceKey(String.valueOf(icePutOrder.getId()))
+//                .wxappid(xcxConfig.getAppid())
+//                .openid(icePutOrder.getOpenid())
+////                .paymentAmount(orderInfo.getPayMoney().multiply(new BigDecimal(100)))
+//                .paymentAmount(icePutOrder.getPayMoney())
+//                .wechatPayType(WechatPayTypeEnum.FOR_TRANSFER.getType())
+//                .mchType(xcxConfig.getMchType())
+//                .build();
+//
+//        TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
+
+        // 修改冰柜状态
+    }
+
 
     /**
      * takeBackIceChest注入对象及校验

@@ -9,5 +9,7 @@ public interface IceBackOrderService extends IService<IceBackOrder> {
     void takeBackOrder(Integer iceBoxId);
 
     void doRefund(SimpleIceBoxDetailVo simpleIceBoxDetailVo);
+
+    void doTransfer(Integer iceBoxId);
 }
 

@@ -32,9 +32,9 @@ import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
+import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignExamineClient;
-import com.szeastroc.visit.common.RequestExamineVo;
-import com.szeastroc.visit.common.SessionExamineVo;
+import com.szeastroc.visit.common.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -201,12 +201,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         try {
             if (lock.lock()) {
                 Map<String, String> map = new HashMap<>();
-                log.info("asjfksldfhvdjkghkjh-->" + JSON.toJSONString(iceBox));
+                log.info("申请到的冰柜信息-->" + JSON.toJSONString(iceBox));
                 iceBox.setPutStoreNumber(iceBoxRequestVo.getStoreNumber()); //
                 iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
                 iceBox.setUpdatedTime(new Date());
                 iceBoxDao.updateById(iceBox);
                 map.put("id", iceBox.getId() + "");
+                createIceBoxPutExamine(iceBoxRequestVo.getUserId(),applyNumber,iceBox);
                 return map;
             }
         } catch (Exception e) {
@@ -215,6 +216,50 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             lock.unlock();
         }
         return null;
+    }
+
+    private void createIceBoxPutExamine(Integer userId, String applyNumber, IceBox iceBox) {
+        // 创建审批流
+
+        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(userId));
+        Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
+//        List<Integer> userIds = new ArrayList<Integer>();
+//        获取上级部门领导
+//        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
+//        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
+//        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(2);
+//        if (userInfoVo1 == null || userInfoVo2 == null || userInfoVo3 == null) {
+//            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+//        }
+//        userIds.add(userInfoVo1.getId());
+//        userIds.add(userInfoVo2.getId());
+//        userIds.add(userInfoVo3.getId());
+
+        List<Integer> userIds = Arrays.asList(5941, 2103);
+        SessionExamineVo sessionExamineVo = new SessionExamineVo();
+        IceBoxPutModel iceBoxPutModel = new IceBoxPutModel();
+
+        BeanUtils.copyProperties(iceBox, iceBoxPutModel);
+
+        SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
+                .code(applyNumber)
+                .relateCode(applyNumber)
+                .createBy(userId)
+                .userIds(userIds)
+                .build();
+        sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);
+        sessionExamineVo.setIceBoxPutModel(iceBoxPutModel);
+
+        feignExamineClient.iceBoxPut(sessionExamineVo);
+
+
+        IcePutApply icePutApply = IcePutApply.builder()
+                .applyNumber(applyNumber)
+                .putStoreNumber(iceBox.getPutStoreNumber())
+                .userId(userId)
+                .createdBy(userId)
+                .build();
+
     }
 
     private List<IceBoxVo> getIceBoxVosByBackApplys(List<IceBackApply> iceBackApplies) {

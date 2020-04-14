@@ -19,7 +19,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     IceBoxVo findBySupplierIdAndModelId(Integer supplierId, Integer modelId);
 
-    Map<String, String> submitApply(IceBoxRequestVo iceBoxRequestVo) throws InterruptedException;
+    Map<String, String> submitApply(List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException;
 
     List<IceBoxStoreVo> getIceBoxStoreVoByPxtNumber(String pxtNumber);
 

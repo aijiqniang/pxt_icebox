@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -50,8 +51,8 @@ public class MyIceBoxController {
     }
 
     @RequestMapping("submitApply")
-    public CommonResponse<Map<String,String>> submitApply(@RequestBody IceBoxRequestVo IceBoxRequestVo) throws InterruptedException {
-        Map<String,String> map = iceBoxService.submitApply(IceBoxRequestVo);
+    public CommonResponse<Map<String,String>> submitApply(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
+        Map<String,String> map = iceBoxService.submitApply(iceBoxRequestVos);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 }

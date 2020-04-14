@@ -185,37 +185,43 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    public Map<String, String> submitApply(IceBoxRequestVo iceBoxRequestVo) throws InterruptedException {
-        IcePutApply icePutApply = new IcePutApply();
-        String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
-        icePutApply.setApplyNumber(applyNumber);
-        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, iceBoxRequestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
-        IceBox iceBox = null;
-        if (CollectionUtil.isNotEmpty(iceBoxes)) {
-            iceBox = iceBoxes.get(0);
+    public Map<String, String> submitApply(List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
+        Map<String, String> map = new HashMap<>();
+        for(IceBoxRequestVo iceBoxRequestVo:iceBoxRequestVos){
+            String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, iceBoxRequestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+            IceBox iceBox = null;
+            if (CollectionUtil.isNotEmpty(iceBoxes)) {
+                iceBox = iceBoxes.get(0);
 
-        } else {
-            throw new ImproperOptionException("无可申请冰柜");
-        }
-        RedisLockUtil lock = new RedisLockUtil(redisTemplate, RedisConstant.ICE_BOX_LOCK + iceBox.getId(), 5000, 10000);
-        try {
-            if (lock.lock()) {
-                Map<String, String> map = new HashMap<>();
-                log.info("申请到的冰柜信息-->" + JSON.toJSONString(iceBox));
-                iceBox.setPutStoreNumber(iceBoxRequestVo.getStoreNumber()); //
-                iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
-                iceBox.setUpdatedTime(new Date());
-                iceBoxDao.updateById(iceBox);
-                map.put("id", iceBox.getId() + "");
-                createIceBoxPutExamine(iceBoxRequestVo.getUserId(),applyNumber,iceBox);
-                return map;
+            } else {
+                throw new ImproperOptionException("无可申请冰柜");
             }
-        } catch (Exception e) {
-            throw e;
-        } finally {
-            lock.unlock();
+            RedisLockUtil lock = new RedisLockUtil(redisTemplate, RedisConstant.ICE_BOX_LOCK + iceBox.getId(), 5000, 10000);
+            try {
+                if (lock.lock()) {
+                    log.info("申请到的冰柜信息-->" + JSON.toJSONString(iceBox));
+                    iceBox.setPutStoreNumber(iceBoxRequestVo.getStoreNumber()); //
+                    iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
+                    iceBox.setUpdatedTime(new Date());
+                    iceBoxDao.updateById(iceBox);
+                    map.put("id", iceBox.getId() + "");
+                    createIceBoxPutExamine(iceBoxRequestVo.getUserId(),applyNumber,iceBox);
+                    IcePutApply icePutApply = IcePutApply.builder()
+                            .applyNumber(applyNumber)
+                            .putStoreNumber(iceBox.getPutStoreNumber())
+                            .userId(iceBoxRequestVo.getUserId())
+                            .createdBy(iceBoxRequestVo.getUserId())
+                            .build();
+                    icePutApplyDao.insert(icePutApply);
+                }
+            } catch (Exception e) {
+                throw e;
+            } finally {
+                lock.unlock();
+            }
         }
-        return null;
+        return map;
     }
 
     private void createIceBoxPutExamine(Integer userId, String applyNumber, IceBox iceBox) {
@@ -239,8 +245,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         IceBoxPutModel iceBoxPutModel = new IceBoxPutModel();
 
-        BeanUtils.copyProperties(iceBox, iceBoxPutModel);
-
+        iceBoxPutModel.setApplyNumber(applyNumber);
+        SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
+        if(supplier == null){
+            log.info("根据经销商id--》【{}】查询不到经销商信息",iceBox.getSupplierId());
+            throw new ImproperOptionException("查询不到经销商信息");
+        }
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        iceBoxPutModel.setAddress(supplier.getAddress());
+        iceBoxPutModel.setLinkman(supplier.getLinkman());
+        iceBoxPutModel.setLinkmanMobile(supplier.getLinkmanMobile());
+        iceBoxPutModel.setSupplierName(supplier.getName());
+        iceBoxPutModel.setCreateByName(simpleUserInfoVo.getRealname());
+        iceBoxPutModel.setCreateTimeStr(dateFormat.format(new Date()));
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
                 .code(applyNumber)
                 .relateCode(applyNumber)
@@ -253,12 +270,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         feignExamineClient.iceBoxPut(sessionExamineVo);
 
 
-        IcePutApply icePutApply = IcePutApply.builder()
-                .applyNumber(applyNumber)
-                .putStoreNumber(iceBox.getPutStoreNumber())
-                .userId(userId)
-                .createdBy(userId)
-                .build();
+
 
     }
 

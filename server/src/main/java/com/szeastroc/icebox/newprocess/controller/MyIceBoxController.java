@@ -51,8 +51,8 @@ public class MyIceBoxController {
     }
 
     @RequestMapping("submitApply")
-    public CommonResponse<Map<String,String>> submitApply(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
-        Map<String,String> map = iceBoxService.submitApply(iceBoxRequestVos);
+    public CommonResponse<Map<String,Object>> submitApply(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
+        Map<String,Object> map = iceBoxService.submitApply(iceBoxRequestVos);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 }

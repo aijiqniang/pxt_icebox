@@ -41,6 +41,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
@@ -185,49 +186,66 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    public Map<String, String> submitApply(List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
-        Map<String, String> map = new HashMap<>();
-        for(IceBoxRequestVo iceBoxRequestVo:iceBoxRequestVos){
-            String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
-            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, iceBoxRequestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
-            IceBox iceBox = null;
-            if (CollectionUtil.isNotEmpty(iceBoxes)) {
-                iceBox = iceBoxes.get(0);
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
+    public Map<String, Object> submitApply(List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
+        Map<String, Object> map = new HashMap<>();
+        IceBoxRequestVo iceBoxRequestVo = iceBoxRequestVos.get(0);
+        String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+        IcePutApply icePutApply = IcePutApply.builder()
+                .applyNumber(applyNumber)
+                .putStoreNumber(iceBoxRequestVo.getStoreNumber())
+                .userId(iceBoxRequestVo.getUserId())
+                .createdBy(iceBoxRequestVo.getUserId())
+                .build();
+        icePutApplyDao.insert(icePutApply);
+        List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
+        for(IceBoxRequestVo requestVo:iceBoxRequestVos){
+            for(int i = 0;i<requestVo.getApplyCount();i++){
+                List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, requestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+                IceBox iceBox = null;
+                if (CollectionUtil.isNotEmpty(iceBoxes)) {
+                    iceBox = iceBoxes.get(0);
 
-            } else {
-                throw new ImproperOptionException("无可申请冰柜");
-            }
-            RedisLockUtil lock = new RedisLockUtil(redisTemplate, RedisConstant.ICE_BOX_LOCK + iceBox.getId(), 5000, 10000);
-            try {
-                if (lock.lock()) {
-                    log.info("申请到的冰柜信息-->" + JSON.toJSONString(iceBox));
-                    iceBox.setPutStoreNumber(iceBoxRequestVo.getStoreNumber()); //
-                    iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
-                    iceBox.setUpdatedTime(new Date());
-                    iceBoxDao.updateById(iceBox);
-                    map.put("id", iceBox.getId() + "");
-                    createIceBoxPutExamine(iceBoxRequestVo.getUserId(),applyNumber,iceBox);
-                    IcePutApply icePutApply = IcePutApply.builder()
-                            .applyNumber(applyNumber)
-                            .putStoreNumber(iceBox.getPutStoreNumber())
-                            .userId(iceBoxRequestVo.getUserId())
-                            .createdBy(iceBoxRequestVo.getUserId())
-                            .build();
-                    icePutApplyDao.insert(icePutApply);
+                } else {
+                    throw new ImproperOptionException("无可申请冰柜");
                 }
-            } catch (Exception e) {
-                throw e;
-            } finally {
-                lock.unlock();
+                RedisLockUtil lock = new RedisLockUtil(redisTemplate, RedisConstant.ICE_BOX_LOCK + iceBox.getId(), 5000, 10000);
+                try {
+                    if (lock.lock()) {
+                        log.info("申请到的冰柜信息-->" + JSON.toJSONString(iceBox));
+                        iceBox.setPutStoreNumber(requestVo.getStoreNumber()); //
+                        iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
+                        iceBox.setUpdatedTime(new Date());
+                        iceBoxDao.updateById(iceBox);
+
+                        IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                        iceBoxExtend.setId(iceBox.getId());
+                        iceBoxExtend.setLastApplyNumber(applyNumber);
+                        iceBoxExtend.setLastPutId(icePutApply.getId());
+                        iceBoxExtend.setLastPutTime(new Date());
+                        iceBoxExtendDao.updateById(iceBoxExtend);
+
+                        IceBoxPutModel.IceBoxModel iceBoxModel = new IceBoxPutModel.IceBoxModel(requestVo.getChestModel(),iceBox.getChestName(),iceBox.getDepositMoney(),requestVo.getApplyCount(),requestVo.getIsFree());
+                        iceBoxModels.add(iceBoxModel);
+                    }
+                } catch (Exception e) {
+                    throw e;
+                } finally {
+                    lock.unlock();
+                }
             }
         }
+
+
+        List<SessionExamineVo.VisitExamineNodeVo> iceBoxPutExamine = createIceBoxPutExamine(iceBoxRequestVo, applyNumber, iceBoxModels);
+        map.put("iceBoxPutExamine",iceBoxPutExamine);
         return map;
     }
 
-    private void createIceBoxPutExamine(Integer userId, String applyNumber, IceBox iceBox) {
+    private List<SessionExamineVo.VisitExamineNodeVo> createIceBoxPutExamine(IceBoxRequestVo iceBoxRequestVo, String applyNumber, List<IceBoxPutModel.IceBoxModel> iceBoxModels) {
         // 创建审批流
 
-        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(userId));
+        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceBoxRequestVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
 //        List<Integer> userIds = new ArrayList<Integer>();
 //        获取上级部门领导
@@ -246,9 +264,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IceBoxPutModel iceBoxPutModel = new IceBoxPutModel();
 
         iceBoxPutModel.setApplyNumber(applyNumber);
-        SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
+        SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBoxRequestVo.getSupplierId()));
         if(supplier == null){
-            log.info("根据经销商id--》【{}】查询不到经销商信息",iceBox.getSupplierId());
+            log.info("根据经销商id--》【{}】查询不到经销商信息",iceBoxRequestVo.getSupplierId());
             throw new ImproperOptionException("查询不到经销商信息");
         }
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -258,19 +276,18 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPutModel.setSupplierName(supplier.getName());
         iceBoxPutModel.setCreateByName(simpleUserInfoVo.getRealname());
         iceBoxPutModel.setCreateTimeStr(dateFormat.format(new Date()));
+        iceBoxPutModel.setIceBoxModelList(iceBoxModels);
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
                 .code(applyNumber)
                 .relateCode(applyNumber)
-                .createBy(userId)
+                .createBy(iceBoxRequestVo.getUserId())
                 .userIds(userIds)
                 .build();
         sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);
         sessionExamineVo.setIceBoxPutModel(iceBoxPutModel);
-
-        feignExamineClient.iceBoxPut(sessionExamineVo);
-
-
-
+        SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxPut(sessionExamineVo));
+        List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
+        return visitExamineNodes;
 
     }
 

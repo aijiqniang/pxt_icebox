@@ -239,6 +239,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         List<SessionExamineVo.VisitExamineNodeVo> iceBoxPutExamine = createIceBoxPutExamine(iceBoxRequestVo, applyNumber, iceBoxModels);
         map.put("iceBoxPutExamine",iceBoxPutExamine);
+        if(CollectionUtil.isNotEmpty(iceBoxPutExamine)){
+            SessionExamineVo.VisitExamineNodeVo visitExamineNodeVo = iceBoxPutExamine.get(0);
+            icePutApply.setExamineId(visitExamineNodeVo.getExamineId());
+            icePutApplyDao.updateById(icePutApply);
+        }
         return map;
     }
 
@@ -287,6 +292,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         sessionExamineVo.setIceBoxPutModel(iceBoxPutModel);
         SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxPut(sessionExamineVo));
         List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
+
         return visitExamineNodes;
 
     }

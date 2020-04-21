@@ -350,34 +350,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
 
         // 门店编号和冰柜的id 以及最后的投放编号确定一个唯一的记录
-        IcePutPactRecord record = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
-                .eq(IcePutPactRecord::getStoreNumber, storeNumber)
-                .eq(IcePutPactRecord::getBoxId, id)
-                .eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+//        IcePutPactRecord record = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
+//                .eq(IcePutPactRecord::getStoreNumber, storeNumber)
+//                .eq(IcePutPactRecord::getBoxId, id)
+//                .eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+//
+//        if (record == null) {
+//            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+//        }
+//
+//        Date putTime = record.getPutTime();
+//        Date putExpireTime = record.getPutExpireTime();
 
-        if (record == null) {
-            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
-        }
-
-        Date putTime = record.getPutTime();
-        Date putExpireTime = record.getPutExpireTime();
-
-        IceExamine firstExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getStoreNumber, storeNumber).eq(IceExamine::getIceBoxId, id).orderByAsc(IceExamine::getCreateTime).last("limit 1"));
-        IceExamine lastExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getStoreNumber, storeNumber).eq(IceExamine::getIceBoxId, id).orderByDesc(IceExamine::getCreateTime).last("limit 1"));
-
-        List<Integer> list = new ArrayList<>();
-        Integer firstExamineCreateBy = firstExamine.getCreateBy();
-        Integer lastExamineCreateBy = lastExamine.getCreateBy();
-        list.add(firstExamineCreateBy);
-        list.add(lastExamineCreateBy);
-
-        Map<Integer, SessionUserInfoVo> map = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(list));
-
-        IceExamineVo firstExamineVo = firstExamine.convert(firstExamine, map.get(firstExamineCreateBy).getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
-        IceExamineVo lastExamineVo = firstExamine.convert(lastExamine, map.get(lastExamineCreateBy).getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
-
-
-        return IceBoxDetailVo.builder()
+        IceBoxDetailVo iceBoxDetailVo = IceBoxDetailVo.builder()
                 .id(id)
                 .assetId(iceBoxExtend.getAssetId())
                 .chestModel(iceModel.getChestModel())
@@ -389,9 +374,27 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .repairBeginTime(iceBoxExtend.getRepairBeginTime())
                 .storeAddress(storeInfoDtoVo.getAddress())
                 .releaseTime(iceBoxExtend.getReleaseTime())
-                .firstExamine(firstExamineVo)
-                .lastExamine(lastExamineVo)
                 .build();
+
+
+        IceExamine firstExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getStoreNumber, storeNumber).eq(IceExamine::getIceBoxId, id).orderByAsc(IceExamine::getCreateTime).last("limit 1"));
+        IceExamine lastExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getStoreNumber, storeNumber).eq(IceExamine::getIceBoxId, id).orderByDesc(IceExamine::getCreateTime).last("limit 1"));
+
+        if (firstExamine != null && lastExamine != null) {
+            List<Integer> list = new ArrayList<>();
+            Integer firstExamineCreateBy = firstExamine.getCreateBy();
+            Integer lastExamineCreateBy = lastExamine.getCreateBy();
+            list.add(firstExamineCreateBy);
+            list.add(lastExamineCreateBy);
+
+            Map<Integer, SessionUserInfoVo> map = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(list));
+
+            IceExamineVo firstExamineVo = firstExamine.convert(firstExamine, map.get(firstExamineCreateBy).getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
+            IceExamineVo lastExamineVo = firstExamine.convert(lastExamine, map.get(lastExamineCreateBy).getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
+            iceBoxDetailVo.setFirstExamine(firstExamineVo);
+            iceBoxDetailVo.setLastExamine(lastExamineVo);
+        }
+        return iceBoxDetailVo;
     }
 
     @Override

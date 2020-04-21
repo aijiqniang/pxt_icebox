@@ -134,6 +134,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 SimpleSupplierInfoVo simpleSupplierInfoVo = supplierInfoVoMap.get(iceBox.getSupplierId());
                 if (simpleSupplierInfoVo != null) {
                     boxVo.setSupplierName(simpleSupplierInfoVo.getName());
+                    boxVo.setSupplierAddress(simpleSupplierInfoVo.getAddress());
+                    boxVo.setLinkman(simpleSupplierInfoVo.getLinkMan());
+                    boxVo.setLinkmanMobile(simpleSupplierInfoVo.getLinkManMobile());
                 }
                 iceBoxCountMap.put(iceBox.getModelId(), 1);
                 iceBoxVos.add(boxVo);

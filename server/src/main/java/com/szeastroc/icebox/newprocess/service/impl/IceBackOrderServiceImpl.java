@@ -1,8 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.util.IdUtil;
-import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
@@ -22,12 +20,7 @@ import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
-import com.szeastroc.icebox.oldprocess.entity.WechatTransferOrder;
 import com.szeastroc.transfer.client.FeignTransferClient;
-import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
-import com.szeastroc.transfer.common.enums.WechatPayTypeEnum;
-import com.szeastroc.transfer.common.request.TransferRequest;
-import com.szeastroc.transfer.common.response.TransferReponse;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;

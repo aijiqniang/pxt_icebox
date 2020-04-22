@@ -50,7 +50,7 @@ public class OldIceBoxController {
 
     @RequestMapping("/import")
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
-    public CommonResponse importExcel(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws IOException, ImproperOptionException {
+    public CommonResponse importExcel(@RequestParam("excelFile") MultipartFile file) throws IOException, ImproperOptionException {
         Workbook book = WorkbookUtil.createBook(file.getInputStream(), true);
         ExcelReader excelReader = new ExcelReader(book, 0);
         List<List<Object>> reads = excelReader.read();

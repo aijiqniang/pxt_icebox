@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class OldIceBoxController {
 
     @RequestMapping("/import")
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
-    public CommonResponse importExcel(@RequestParam("file") MultipartFile file) throws IOException, ImproperOptionException {
+    public CommonResponse importExcel(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws IOException, ImproperOptionException {
         Workbook book = WorkbookUtil.createBook(file.getInputStream(), true);
         ExcelReader excelReader = new ExcelReader(book, 0);
         List<List<Object>> reads = excelReader.read();

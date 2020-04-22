@@ -8,6 +8,7 @@ import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
+import com.szeastroc.icebox.vo.IceBoxRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,8 @@ public interface IceBoxService extends IService<IceBox> {
     IceBoxVo getIceBoxByQrcode(String qrcode);
 
     boolean judgeRecordTime(Integer id);
+
+    void checkIceBox(IceBoxRequest iceBoxRequest);
 }
 
 

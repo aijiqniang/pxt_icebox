@@ -55,7 +55,7 @@ public class OldIceBoxController {
         Workbook book = WorkbookUtil.createBook(file.getInputStream(), true);
         ExcelReader excelReader = new ExcelReader(book, 0);
         List<List<Object>> reads = excelReader.read();
-        log.info("获取excel文件数据,reads的大小-->[{}]",reads.size());
+        log.info("获取excel文件数据,reads的大小-->[{}]", reads.size());
 //        List<Integer> pxtIds = new ArrayList<>();
 //        reads.forEach(x -> {
 //            String s = x.get(6).toString();
@@ -74,70 +74,73 @@ public class OldIceBoxController {
 
         log.info("开始处理数据");
         for (int i = 0, readsSize = reads.size(); i < readsSize; i++) {
+            log.info("---------------第" + i + "次循环---------------");
             List<Object> x = reads.get(i);
             String s = x.get(6).toString();
             if (StringUtils.isNotBlank(s)) {
-                log.info("---------------第" + i + "次循环---------------");
-                IceBox iceBox = new IceBox();
-                IceBoxExtend iceBoxExtend = new IceBoxExtend();
-                // 资产编号
-                String assetId = x.get(0).toString();
-                // 冰柜名称
-                String chestName = x.get(1).toString();
-                // 品牌
-                String brandName = x.get(2).toString();
-                // 冰柜型号
-                String modelName = x.get(3).toString();
-                // 冰柜规格
-                String chestNorm = x.get(4).toString();
-
-//                Integer pxtId = Integer.valueOf(s);
-//                StoreInfoDtoVo storeInfoDtoVo = map.get(pxtId);
                 StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtId(s));
                 if (storeInfoDtoVo != null) {
+                    IceBox iceBox = new IceBox();
+                    IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                    // 资产编号
+                    String assetId = x.get(0).toString();
+                    // 冰柜名称
+                    String chestName = x.get(1).toString();
+                    // 品牌
+                    String brandName = x.get(2).toString();
+                    // 冰柜型号
+                    String modelName = x.get(3).toString();
+                    // 冰柜规格
+                    String chestNorm = x.get(4).toString();
+
                     String storeNumber = storeInfoDtoVo.getStoreNumber();
                     Integer deptId = storeInfoDtoVo.getMarketArea();
+
+                    // 投放的门店
                     iceBox.setPutStoreNumber(storeNumber);
+                    // 冰柜所属部门id， 旧冰柜采用的是
                     iceBox.setDeptId(deptId);
-                }
-                // 备注
-                Object remarkObject = x.get(8);
 
-                if (remarkObject != null) {
-                    String remark = remarkObject.toString();
-                    if (StringUtils.isNotBlank(remark)) {
-                        iceBox.setRemark(remark);
+                    // 备注
+                    Object remarkObject = x.get(8);
+
+                    if (remarkObject != null) {
+                        String remark = remarkObject.toString();
+                        if (StringUtils.isNotBlank(remark)) {
+                            iceBox.setRemark(remark);
+                        }
                     }
-                }
 
-                // 押金
-                Object depositMoneyObject = x.get(5);
-                if (null != depositMoneyObject) {
-                    String depositMoney = depositMoneyObject.toString();
-                    if (StringUtils.isNotBlank(depositMoney)) {
-                        iceBox.setDepositMoney(new BigDecimal(depositMoney));
+                    // 押金
+                    Object depositMoneyObject = x.get(5);
+                    if (null != depositMoneyObject) {
+                        String depositMoney = depositMoneyObject.toString();
+                        if (StringUtils.isNotBlank(depositMoney)) {
+                            iceBox.setDepositMoney(new BigDecimal(depositMoney));
+                        }
                     }
-                }
-                // 投放日期
-                String lastPutTime = x.get(9).toString();
-                iceBoxExtend.setAssetId(assetId);
-                iceBox.setChestName(chestName);
-                iceBox.setBrandName(brandName);
-                iceBox.setChestNorm(chestNorm);
-                IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
-                if (null != iceModel) {
-                    iceBox.setModelId(iceModel.getId());
-                }
-                if (StringUtils.isNotBlank(lastPutTime)) {
-                    DateTime parse = DateUtil.parse(lastPutTime, "dd/MM/yyyy HH:mm:ss");
-                    iceBoxExtend.setLastPutTime(parse);
-                }
+                    // 投放日期
+                    String lastPutTime = x.get(9).toString();
+                    iceBoxExtend.setAssetId(assetId);
+                    iceBox.setChestName(chestName);
+                    iceBox.setBrandName(brandName);
+                    iceBox.setChestNorm(chestNorm);
+                    IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
+                    if (null != iceModel) {
+                        iceBox.setModelId(iceModel.getId());
+                    }
+                    if (StringUtils.isNotBlank(lastPutTime)) {
+                        DateTime parse = DateUtil.parse(lastPutTime, "dd/MM/yyyy HH:mm:ss");
+                        iceBoxExtend.setLastPutTime(parse);
+                    }
 
-                iceBoxDao.insert(iceBox);
-                iceBoxExtend.setId(iceBox.getId());
-                iceBoxExtendDao.insert(iceBoxExtend);
+                    iceBoxDao.insert(iceBox);
+                    iceBoxExtend.setId(iceBox.getId());
+                    iceBoxExtendDao.insert(iceBoxExtend);
+                }
             }
         }
+        log.info("处理数据结束");
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 

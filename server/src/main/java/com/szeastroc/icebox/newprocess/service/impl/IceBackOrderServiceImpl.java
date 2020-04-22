@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.util.IdUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
@@ -16,12 +17,16 @@ import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.BackType;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
+import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.transfer.client.FeignTransferClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
+import com.szeastroc.user.common.vo.DeptNameRequest;
+import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignOutBacklogClient;
@@ -33,6 +38,8 @@ import com.szeastroc.visit.common.SessionIceBoxRefundModel;
 import com.szeastroc.visit.common.enums.NoticeTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -254,6 +261,52 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //        TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
 
         // 修改冰柜状态
+    }
+
+    @Override
+    public IPage findPage(IceBoxPage iceBoxPage) {
+        Integer deptId = iceBoxPage.getDeptId(); // 营销区域id
+        if (deptId != null) {
+            DeptNameRequest request = new DeptNameRequest();
+            request.setParentIds(deptId.toString());
+            // 查询出当前部门下面的服务处
+            List<SessionDeptInfoVo> deptInfoVos = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoListByParentId(request));
+            List<Integer> deptIds = new ArrayList<>();
+            if (CollectionUtils.isNotEmpty(deptInfoVos)) {
+                deptInfoVos.forEach(i -> {
+                    deptIds.add(i.getId());
+                });
+            }
+            deptIds.add(deptId);
+            iceBoxPage.setDeptIds(deptIds);
+        }
+        // 当所在对象编号或者所在对象名称不为空时,所在对象字段为必填
+        if ((StringUtils.isNotBlank(iceBoxPage.getBelongObjNumber()) || StringUtils.isNotBlank(iceBoxPage.getBelongObjName()))
+                && iceBoxPage.getBelongObj() == null) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择所在对象类型");
+        }
+
+        // 所在对象  (put_status  投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放; 当经销商时为 0-未投放;当门店时为非未投放状态;)
+        String belongObjNumber = iceBoxPage.getBelongObjNumber();
+        String belongObjName = iceBoxPage.getBelongObjName();
+        // 所在对象为 经销商
+        if (iceBoxPage.getBelongObj() != null && PutStatus.NO_PUT.getStatus() == iceBoxPage.getBelongObj()) {
+            if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
+
+            }
+            if (StringUtils.isNotBlank(belongObjNumber)) { // 用 name 去查
+
+            }
+        }
+        // 所在对象为 门店
+        if (iceBoxPage.getBelongObj() != null && PutStatus.NO_PUT.getStatus() != iceBoxPage.getBelongObj()) {
+
+        }
+
+        List<IceBox> iceBoxList = iceBoxDao.findPage(iceBoxPage);
+
+
+        return null;
     }
 
 

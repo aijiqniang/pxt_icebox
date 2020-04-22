@@ -21,17 +21,17 @@
         <java.version>1.8</java.version>
         <spring-cloud.version>Finchley.SR2</spring-cloud.version>
         <!-- 公共jar -->
-        <pxt.common>0.3.2</pxt.common>
+        <pxt.common>0.3.7</pxt.common>
         <pxt.common.db>0.4.3</pxt.common.db>
         <!-- user服务 -->
-        <user.common.version>1.2.2</user.common.version>
-        <user.client.version>1.2.2</user.client.version>
+        <user.common.version>1.2.3</user.common.version>
+        <user.client.version>1.2.3</user.client.version>
         <!-- customer服务 -->
-        <customer.common.version>1.2.2</customer.common.version>
-        <customer.client.version>1.2.2</customer.client.version>
+        <customer.common.version>1.2.3</customer.common.version>
+        <customer.client.version>1.2.3</customer.client.version>
         <!-- visit -->
-        <visit.common.version>1.2.2</visit.common.version>
-        <visit.client.version>1.2.2</visit.client.version>
+        <visit.common.version>1.2.3</visit.common.version>
+        <visit.client.version>1.2.3</visit.client.version>
 
         <!-- icebox服务 -->
         <icebox.common.version>1.1.0</icebox.common.version>
@@ -41,8 +41,8 @@
         <transfer.client.version>0.1.0</transfer.client.version>
 
         <!-- esign服务 -->
-        <esign.common.version>1.1.0</esign.common.version>
-        <esign.client.version>1.1.0</esign.client.version>
+        <esign.common.version>1.2.0</esign.common.version>
+        <esign.client.version>1.2.0</esign.client.version>
     </properties>
 
     <parent>

@@ -1,7 +1,7 @@
 package com.szeastroc.icebox.newprocess.controller.store;
 
 import com.alibaba.fastjson.JSON;
-import com.szeastroc.common.annotation.IgnoreResponseAdvice;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -13,6 +13,7 @@ import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -51,7 +53,7 @@ public class IceBoxController {
      * @throws ImproperOptionException
      */
     @GetMapping("/getIceBox")
-    public CommonResponse<List<IceBoxStoreVo>> getIceBox(String pxtNumber){
+    public CommonResponse<List<IceBoxStoreVo>> getIceBox(String pxtNumber) {
         if (StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
@@ -60,12 +62,13 @@ public class IceBoxController {
 
     /**
      * 检查当前冰柜状态
+     *
      * @param qrcode
      * @param pxtNumber
      * @return
      */
     @GetMapping("/checkIceBoxByQrcode")
-    public CommonResponse<IceBoxStatusVo> checkIceBoxByQrcode(String qrcode, String pxtNumber){
+    public CommonResponse<IceBoxStatusVo> checkIceBoxByQrcode(String qrcode, String pxtNumber) {
         if (StringUtils.isBlank(qrcode) || StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
@@ -82,7 +85,7 @@ public class IceBoxController {
      * @throws NormalOptionException
      */
     @GetMapping("/getIceBoxByQrcode")
-    public CommonResponse<IceBoxVo> getIceBoxByQrcode(String qrcode, String pxtNumber){
+    public CommonResponse<IceBoxVo> getIceBoxByQrcode(String qrcode, String pxtNumber) {
         if (StringUtils.isBlank(qrcode) || StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
@@ -92,12 +95,13 @@ public class IceBoxController {
 
     /**
      * 门店老板签署电子协议
+     *
      * @param clientInfoRequest
      * @return
      * @throws ImproperOptionException
      */
     @PostMapping("/createPactRecord")
-    public CommonResponse<Void> createPactRecord(@RequestBody ClientInfoRequest clientInfoRequest){
+    public CommonResponse<Void> createPactRecord(@RequestBody ClientInfoRequest clientInfoRequest) {
         if (!clientInfoRequest.validate()) {
             log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -108,11 +112,12 @@ public class IceBoxController {
 
     /**
      * 检查协议是否完成
+     *
      * @param iceBoxId
      * @return
      */
     @GetMapping("/checkPactRecordByBoxId")
-    public CommonResponse<Boolean> checkPactRecordByBoxId(Integer iceBoxId){
+    public CommonResponse<Boolean> checkPactRecordByBoxId(Integer iceBoxId) {
         if (Objects.isNull(iceBoxId)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
@@ -121,6 +126,7 @@ public class IceBoxController {
 
     /**
      * 获取微信支付信息
+     *
      * @param clientInfoRequest
      * @return
      */
@@ -168,15 +174,27 @@ public class IceBoxController {
 
     /**
      * 退回冰柜
+     *
      * @param iceBoxId
      * @return
      */
     @GetMapping("/takeBackIceBox")
-    public CommonResponse<String> takeBackIceBox(Integer iceBoxId){
-        if(iceBoxId == null){
+    public CommonResponse<String> takeBackIceBox(Integer iceBoxId) {
+        if (iceBoxId == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         iceBackOrderService.takeBackOrder(iceBoxId);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+    /**
+     * @Date: 2020/4/21 16:57 xiao
+     * 冰柜管理列表
+     */
+    @PostMapping("/findPage")
+    public CommonResponse<IPage> findPage(@RequestBody IceBoxPage iceBoxPage) {
+
+        IPage iPage = iceBackOrderService.findPage(iceBoxPage);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,iPage);
     }
 }

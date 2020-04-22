@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  * 2020.04.22
  */
 @FeignClient(name = RegisterConstant.REGISTER_NAME)
-public interface FeignDeptClient {
+public interface FeignIceBoxClient {
 
     @PostMapping("/iceBox/checkIceBox")
     CommonResponse<IceBoxRequest> checkIceBox(@RequestBody IceBoxRequest iceBoxRequest);

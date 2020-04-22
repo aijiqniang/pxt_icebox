@@ -9,7 +9,9 @@ import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
@@ -81,12 +83,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private FeignUserClient feignUserClient;
     @Autowired
     private FeignOutExamineClient feignOutExamineClient;
-    @Autowired
     private WechatTransferOrderDao wechatTransferOrderDao;
-    @Autowired
     private XcxConfig xcxConfig;
-    @Autowired
     private FeignTransferClient feignTransferClient;
+    private FeignSupplierClient feignSupplierClient;
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     @Override
@@ -285,13 +285,19 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 && iceBoxPage.getBelongObj() == null) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择所在对象类型");
         }
+        List<Integer> supplierIdList=null; // 拥有者的经销商
+        List<String> putStoreNumberList=null; // 投放的门店number
 
         // 所在对象  (put_status  投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放; 当经销商时为 0-未投放;当门店时为非未投放状态;)
         String belongObjNumber = iceBoxPage.getBelongObjNumber();
         String belongObjName = iceBoxPage.getBelongObjName();
+        String limit=" limit 30";
         // 所在对象为 经销商
         if (iceBoxPage.getBelongObj() != null && PutStatus.NO_PUT.getStatus() == iceBoxPage.getBelongObj()) {
+            // supplier_type 客户类型：1-经销商，2-分销商，3-邮差，4-批发商
+            // status 状态：0-禁用，1-启用
             if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
+                List<SubordinateInfoVo> infoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.getByNameOrNumber(null, belongObjNumber, 1, 1, limit));
 
             }
             if (StringUtils.isNotBlank(belongObjNumber)) { // 用 name 去查

@@ -66,8 +66,7 @@ public class OldIceBoxController {
 //            map.putAll(FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtIds(list)));
 //        }
         Map<Integer, StoreInfoDtoVo> map = new HashMap<>(FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtIds(pxtIds)));
-        for (int i = 1, readsSize = reads.size(); i < readsSize; i++) {
-            List<Object> x = reads.get(i);
+        reads.forEach(x -> {
             String s = x.get(6).toString();
             if (StringUtils.isNotBlank(s)) {
                 IceBox iceBox = new IceBox();
@@ -128,7 +127,7 @@ public class OldIceBoxController {
                 iceBoxExtend.setId(iceBox.getId());
                 iceBoxExtendDao.insert(iceBoxExtend);
             }
-        }
+        });
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 

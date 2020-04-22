@@ -49,11 +49,13 @@ public class OldIceBoxController {
     private IceModelDao iceModelDao;
 
     @RequestMapping("/import")
-//    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public CommonResponse importExcel(@RequestParam("excelFile") MultipartFile file) throws IOException, ImproperOptionException {
+        log.info("开始读取数据");
         Workbook book = WorkbookUtil.createBook(file.getInputStream(), true);
         ExcelReader excelReader = new ExcelReader(book, 0);
         List<List<Object>> reads = excelReader.read();
+        log.info("获取excel文件数据,reads的大小-->[{}]",reads.size());
         List<Integer> pxtIds = new ArrayList<>();
         reads.forEach(x -> {
             String s = x.get(6).toString();
@@ -61,12 +63,14 @@ public class OldIceBoxController {
                 pxtIds.add(Integer.valueOf(s));
             }
         });
+        log.info("pxtIds的大小-->[{}]",pxtIds.size());
 //        List<List<Integer>> partition = Lists.partition(pxtIds, 3000);
 
         //        for (List<Integer> list : partition) {
 //            map.putAll(FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtIds(list)));
 //        }
         Map<Integer, StoreInfoDtoVo> map = new HashMap<>(FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtIds(pxtIds)));
+        log.info("map的大小-->[{}]",map.size());
         reads.forEach(x -> {
             String s = x.get(6).toString();
             if (StringUtils.isNotBlank(s)) {

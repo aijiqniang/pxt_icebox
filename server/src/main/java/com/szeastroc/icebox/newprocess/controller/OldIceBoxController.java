@@ -56,24 +56,28 @@ public class OldIceBoxController {
         ExcelReader excelReader = new ExcelReader(book, 0);
         List<List<Object>> reads = excelReader.read();
         log.info("获取excel文件数据,reads的大小-->[{}]",reads.size());
-        List<Integer> pxtIds = new ArrayList<>();
-        reads.forEach(x -> {
-            String s = x.get(6).toString();
-            if (StringUtils.isNotBlank(s)) {
-                pxtIds.add(Integer.valueOf(s));
-            }
-        });
-        log.info("pxtIds的大小-->[{}]",pxtIds.size());
+//        List<Integer> pxtIds = new ArrayList<>();
+//        reads.forEach(x -> {
+//            String s = x.get(6).toString();
+//            if (StringUtils.isNotBlank(s)) {
+//                pxtIds.add(Integer.valueOf(s));
+//            }
+//        });
+//        log.info("pxtIds的大小-->[{}]",pxtIds.size());
 //        List<List<Integer>> partition = Lists.partition(pxtIds, 3000);
 
         //        for (List<Integer> list : partition) {
 //            map.putAll(FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtIds(list)));
 //        }
-        Map<Integer, StoreInfoDtoVo> map = new HashMap<>(FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtIds(pxtIds)));
-        log.info("map的大小-->[{}]",map.size());
-        reads.forEach(x -> {
+//        Map<Integer, StoreInfoDtoVo> map = new HashMap<>(FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtIds(pxtIds)));
+//        log.info("map的大小-->[{}]",map.size());
+
+        log.info("开始处理数据");
+        for (int i = 0, readsSize = reads.size(); i < readsSize; i++) {
+            List<Object> x = reads.get(i);
             String s = x.get(6).toString();
             if (StringUtils.isNotBlank(s)) {
+                log.info("---------------第" + i + "次循环---------------");
                 IceBox iceBox = new IceBox();
                 IceBoxExtend iceBoxExtend = new IceBoxExtend();
                 // 资产编号
@@ -87,8 +91,9 @@ public class OldIceBoxController {
                 // 冰柜规格
                 String chestNorm = x.get(4).toString();
 
-                Integer pxtId = Integer.valueOf(s);
-                StoreInfoDtoVo storeInfoDtoVo = map.get(pxtId);
+//                Integer pxtId = Integer.valueOf(s);
+//                StoreInfoDtoVo storeInfoDtoVo = map.get(pxtId);
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtId(s));
                 if (storeInfoDtoVo != null) {
                     String storeNumber = storeInfoDtoVo.getStoreNumber();
                     Integer deptId = storeInfoDtoVo.getMarketArea();
@@ -132,7 +137,7 @@ public class OldIceBoxController {
                 iceBoxExtend.setId(iceBox.getId());
                 iceBoxExtendDao.insert(iceBoxExtend);
             }
-        });
+        }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 

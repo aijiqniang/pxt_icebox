@@ -197,4 +197,9 @@ public class IceBoxController {
         IPage iPage = iceBackOrderService.findPage(iceBoxPage);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,iPage);
     }
+
+    /**
+     * @Date: 2020/4/23 9:32 xiao
+     * 冰柜管理列表
+     */
 }

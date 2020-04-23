@@ -125,9 +125,9 @@ public class RefundController {
 
 
     @RequestMapping("/doTransfer")
-    public CommonResponse doTransfer(@RequestParam("iceBoxId") Integer iceBoxId) {
+    public CommonResponse doTransfer(@RequestParam("applyNumber") String applyNumber) {
 
-        iceBackOrderService.doTransfer(iceBoxId);
+        iceBackOrderService.doTransfer(applyNumber);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
     }

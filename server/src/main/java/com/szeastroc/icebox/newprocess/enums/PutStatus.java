@@ -16,7 +16,7 @@ public enum PutStatus {
     DO_PUT(2, "投放中"),
     FINISH_PUT(3, "已投放");
 
-    private int status;
+    private Integer status;
     private String desc;
 
     public static PutStatus convertEnum(int status){

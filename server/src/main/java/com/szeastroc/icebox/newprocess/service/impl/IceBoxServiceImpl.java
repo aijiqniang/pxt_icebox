@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
+import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.Streams;
@@ -18,10 +19,7 @@ import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
-import com.szeastroc.icebox.enums.ExamineStatusEnum;
-import com.szeastroc.icebox.enums.FreePayTypeEnum;
-import com.szeastroc.icebox.enums.IceBoxStatus;
-import com.szeastroc.icebox.enums.OrderStatus;
+import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
@@ -43,6 +41,7 @@ import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.common.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -63,7 +62,8 @@ import java.util.stream.Collectors;
 public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements IceBoxService {
 
 
-    private ExecutorService executorService = ExecutorServiceFactory.getInstance();
+    private final String FWCJL = "服务处经理";
+    private final String DQZJ = "大区总监";
 
     @Resource
     private IceBoxDao iceBoxDao;
@@ -94,6 +94,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private FeignUserClient feignUserClient;
 
     private final IcePutPactRecordDao icePutPactRecordDao;
+    private final IceTransferRecordDao iceTransferRecordDao;
     private final FeignStoreClient feignStoreClient;
     private final IceEventRecordDao iceEventRecordDao;
     private final IcePutOrderDao icePutOrderDao;
@@ -229,7 +230,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
                         iceBox.setUpdatedTime(new Date());
                         iceBoxDao.updateById(iceBox);
-                        totalMoney.add(iceBox.getDepositMoney());
+                        totalMoney = totalMoney.add(iceBox.getDepositMoney());
 
                         IceBoxExtend iceBoxExtend = new IceBoxExtend();
                         iceBoxExtend.setId(iceBox.getId());
@@ -245,6 +246,32 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         relateBox.setFreeType(requestVo.getFreeType());
                         icePutApplyRelateBoxDao.insert(relateBox);
 
+                        DateTime dateTime = new DateTime(System.currentTimeMillis()).plusYears(1);
+                        IcePutPactRecord icePutPactRecord = IcePutPactRecord.builder()
+                                .applyNumber(applyNumber)
+                                .boxId(iceBox.getId())
+                                .storeNumber(requestVo.getStoreNumber())
+                                .putTime(new Date())
+                                .putExpireTime(dateTime.toDate())
+                                .build();
+                        icePutPactRecordDao.insert(icePutPactRecord);
+
+                        IceTransferRecord iceTransferRecord = IceTransferRecord.builder()
+                                .applyNumber(applyNumber)
+                                .applyTime(new Date())
+                                .applyUserId(requestVo.getUserId())
+                                .boxId(iceBox.getId())
+                                .createTime(new Date())
+                                .recordStatus(RecordStatus.APPLY_ING.getStatus())
+                                .serviceType(ServiceType.IS_PUT.getType())
+                                .storeNumber(requestVo.getStoreNumber())
+                                .supplierId(requestVo.getSupplierId())
+                                .build();
+                        iceTransferRecord.setTransferMoney(new BigDecimal(0));
+                        if(FreePayTypeEnum.UN_FREE.getType() == requestVo.getFreeType().intValue()){
+                            iceTransferRecord.setTransferMoney(iceBox.getDepositMoney());
+                        }
+                        iceTransferRecordDao.insert(iceTransferRecord);
                         IceBoxPutModel.IceBoxModel iceBoxModel = new IceBoxPutModel.IceBoxModel(requestVo.getChestModel(),iceBox.getChestName(),iceBox.getDepositMoney(),requestVo.getApplyCount(),requestVo.getFreeType());
                         iceBoxModels.add(iceBoxModel);
                     }
@@ -280,19 +307,28 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceBoxRequestVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
-//        List<Integer> userIds = new ArrayList<Integer>();
-//        获取上级部门领导
-//        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
-//        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
-//        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(2);
-//        if (userInfoVo1 == null || userInfoVo2 == null || userInfoVo3 == null) {
-//            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
-//        }
-//        userIds.add(userInfoVo1.getId());
-//        userIds.add(userInfoVo2.getId());
-//        userIds.add(userInfoVo3.getId());
+        List<Integer> userIds = new ArrayList<Integer>();
+        //获取上级部门领导
+        if(CollectionUtil.isEmpty(sessionUserInfoMap)){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+        }
+        for(Integer key:sessionUserInfoMap.keySet()){
+            SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
+            if(sessionUserInfoVo != null && FWCJL.equals(sessionUserInfoVo.getOfficeName())){
+                userIds.add(sessionUserInfoVo.getId());
+                continue;
+            }
+            if(sessionUserInfoVo != null && DQZJ.equals(sessionUserInfoVo.getOfficeName())){
+                userIds.add(sessionUserInfoVo.getId());
+                break;
+            }
+        }
 
-        List<Integer> userIds = Arrays.asList(5941, 2103,3088);
+        if (CollectionUtil.isEmpty(userIds)) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+        }
+
+//        List<Integer> userIds = Arrays.asList(5941, 2103,3088);
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         IceBoxPutModel iceBoxPutModel = new IceBoxPutModel();
 

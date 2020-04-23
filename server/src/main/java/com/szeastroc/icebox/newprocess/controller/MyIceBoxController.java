@@ -58,6 +58,11 @@ public class MyIceBoxController {
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 
+    /**
+     * 审批冰柜
+     * @param iceBoxRequest
+     * @return
+     */
     @PostMapping("/checkIceBox")
     public CommonResponse<IceBoxRequest> checkIceBox(@RequestBody IceBoxRequest iceBoxRequest){
         iceBoxService.checkIceBox(iceBoxRequest);

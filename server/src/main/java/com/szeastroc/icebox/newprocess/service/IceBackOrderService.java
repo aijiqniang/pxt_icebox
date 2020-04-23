@@ -6,16 +6,13 @@ import com.szeastroc.icebox.newprocess.entity.IceBackOrder;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 
-import java.util.List;
-import java.util.Map;
-
 public interface IceBackOrderService extends IService<IceBackOrder> {
 
     void takeBackOrder(Integer iceBoxId);
 
     void doRefund(SimpleIceBoxDetailVo simpleIceBoxDetailVo);
 
-    void doTransfer(Integer iceBoxId);
+    void doTransfer(String applyNumber);
 
     IPage findPage(IceBoxPage iceBoxPage);
 

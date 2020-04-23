@@ -8,7 +8,9 @@ import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
+import com.szeastroc.icebox.vo.IceBoxRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -54,5 +56,11 @@ public class MyIceBoxController {
     public CommonResponse<Map<String,Object>> submitApply(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
         Map<String,Object> map = iceBoxService.submitApply(iceBoxRequestVos);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+    }
+
+    @PostMapping("/checkIceBox")
+    public CommonResponse<IceBoxRequest> checkIceBox(@RequestBody IceBoxRequest iceBoxRequest){
+        iceBoxService.checkIceBox(iceBoxRequest);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 }

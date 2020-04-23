@@ -10,6 +10,7 @@ import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
+import com.szeastroc.icebox.vo.IceBoxRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -124,10 +125,10 @@ public class RefundController {
     }
 
 
-    @RequestMapping("/doTransfer")
-    public CommonResponse doTransfer(@RequestParam("applyNumber") String applyNumber) {
+    @RequestMapping("/updateExamineStatus")
+    public CommonResponse updateExamineStatus(@RequestBody IceBoxRequest iceBoxRequest) {
 
-        iceBackOrderService.doTransfer(applyNumber);
+        iceBackOrderService.updateExamineStatus(iceBoxRequest);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
     }

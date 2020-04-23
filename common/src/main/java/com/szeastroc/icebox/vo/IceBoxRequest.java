@@ -14,6 +14,6 @@ import lombok.NoArgsConstructor;
 public class IceBoxRequest {
 
     private String applyNumber;
-    private Integer stauts;
+    private Integer status;
     private Integer updateBy;
 }

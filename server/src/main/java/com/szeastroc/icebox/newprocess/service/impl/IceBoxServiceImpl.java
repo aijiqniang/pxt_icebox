@@ -707,7 +707,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Override
     public void checkIceBox(IceBoxRequest iceBoxRequest) {
         //驳回
-        if(IceBoxStatus.NO_PUT.getStatus().equals(iceBoxRequest.getStauts())){
+        if(IceBoxStatus.NO_PUT.getStatus().equals(iceBoxRequest.getStatus())){
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
             if(icePutApply != null){
                 icePutApply.setExamineStatus(ExamineStatusEnum.UN_PASS.getStatus());
@@ -738,7 +738,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
         //审批中
-        if(IceBoxStatus.IS_PUTING.getStatus().equals(iceBoxRequest.getStauts())){
+        if(IceBoxStatus.IS_PUTING.getStatus().equals(iceBoxRequest.getStatus())){
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
             if(icePutApply != null){
                 icePutApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
@@ -761,7 +761,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
         //审批通过
-        if(IceBoxStatus.IS_PUTED.getStatus().equals(iceBoxRequest.getStauts())){
+        if(IceBoxStatus.IS_PUTED.getStatus().equals(iceBoxRequest.getStatus())){
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
             if(icePutApply != null){
                 icePutApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());

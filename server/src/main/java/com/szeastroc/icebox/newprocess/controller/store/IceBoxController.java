@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -194,8 +193,8 @@ public class IceBoxController {
     @PostMapping("/findPage")
     public CommonResponse<IPage> findPage(@RequestBody IceBoxPage iceBoxPage) {
 
-        IPage iPage = iceBackOrderService.findPage(iceBoxPage);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,iPage);
+        IPage iPage = iceBoxService.findPage(iceBoxPage);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage);
     }
 
     /**

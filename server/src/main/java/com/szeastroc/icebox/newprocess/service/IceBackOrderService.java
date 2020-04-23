@@ -14,7 +14,5 @@ public interface IceBackOrderService extends IService<IceBackOrder> {
 
     void doTransfer(String applyNumber);
 
-    IPage findPage(IceBoxPage iceBoxPage);
-
 }
 

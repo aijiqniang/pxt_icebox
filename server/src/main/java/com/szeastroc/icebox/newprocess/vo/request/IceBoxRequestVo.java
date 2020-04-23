@@ -45,6 +45,6 @@ public class IceBoxRequestVo {
     /**
      * 是否免押 0:不免押1:免押
      */
-    private Integer isFree;
+    private Integer freeType;
 
 }

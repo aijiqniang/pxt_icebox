@@ -8,5 +8,7 @@ public interface IceBoxExtendService extends IService<IceBoxExtend> {
 
 
     SimpleIceBoxDetailVo getByAssetId(String assetId);
+
+    void advanceRefund(String assetId);
 }
 

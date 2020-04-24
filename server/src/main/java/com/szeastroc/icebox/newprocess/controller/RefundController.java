@@ -134,4 +134,13 @@ public class RefundController {
     }
 
 
+    @RequestMapping("/advanceRefund")
+    public CommonResponse advanceRefund(@RequestParam("assetId") String assetId) {
+
+        iceBoxExtendService.advanceRefund(assetId);
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
+    }
+
+
 }

@@ -7,24 +7,17 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IceModelDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutApplyRelateBoxDao;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IceModel;
-import com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox;
+import com.szeastroc.icebox.newprocess.dao.*;
+import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
+import com.szeastroc.icebox.oldprocess.dao.PactRecordDao;
+import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
 
 @Service
@@ -41,6 +34,10 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
 
     @Autowired
     private FeignStoreClient feignStoreClient;
+
+    @Resource
+    private IcePutPactRecordDao icePutPactRecordDao;
+
 
     @Override
     public SimpleIceBoxDetailVo getByAssetId(String assetId) {
@@ -82,6 +79,24 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
                 .deptId(iceBox.getDeptId())
                 .supplierId(iceBox.getSupplierId())
                 .build();
+    }
+
+    @Override
+    public void advanceRefund(String assetId) {
+
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getAssetId, assetId));
+
+        if(iceBoxExtend == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        }
+
+        IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery().eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+        if(icePutPactRecord == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        }
+        icePutPactRecord.setPutExpireTime(new Date());
+        icePutPactRecordDao.updateById(icePutPactRecord);
+
     }
 }
 

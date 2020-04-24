@@ -53,7 +53,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     IPage readExamine(IceExaminePage iceExaminePage);
 
-    void importExcel(MultipartFile file);
+    void importExcel(MultipartFile file)throws Exception;
 
 }
 

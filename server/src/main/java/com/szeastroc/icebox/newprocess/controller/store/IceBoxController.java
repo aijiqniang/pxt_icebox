@@ -256,7 +256,7 @@ public class IceBoxController {
      * 冰柜管理--导入excel
      */
     @PostMapping("/importExcel")
-    public CommonResponse<String> importExcel(MultipartFile file) {
+    public CommonResponse<String> importExcel(@RequestParam("excelFile") MultipartFile file) throws Exception{
         iceBoxService.importExcel(file);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
     }

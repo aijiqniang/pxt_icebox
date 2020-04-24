@@ -40,8 +40,8 @@
                     #{item}
                 </foreach>
             </if>
-            order by b.id desc
         </trim>
+        order by b.id desc
     </select>
 
 </mapper>

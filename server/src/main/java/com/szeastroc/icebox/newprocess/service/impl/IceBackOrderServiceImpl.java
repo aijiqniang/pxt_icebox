@@ -202,6 +202,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void updateExamineStatus(IceBoxRequest iceBoxRequest) {
 
         Integer status = iceBoxRequest.getStatus();

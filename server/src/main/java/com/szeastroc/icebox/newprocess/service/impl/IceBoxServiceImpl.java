@@ -557,8 +557,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             iceBoxDetailVo.setFirstExamine(firstExamineVo);
             iceBoxDetailVo.setLastExamine(lastExamineVo);
         }
-
-
         return iceBoxDetailVo;
     }
 

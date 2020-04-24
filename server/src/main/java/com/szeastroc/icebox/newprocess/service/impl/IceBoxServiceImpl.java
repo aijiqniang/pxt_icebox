@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -123,7 +124,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             Set<Integer> supplierIds = supplierInfoVos.stream().map(x -> x.getId()).collect(Collectors.toSet());
             Map<Integer, SimpleSupplierInfoVo> supplierInfoVoMap = supplierInfoVos.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, x -> x));
-            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getSupplierId, supplierIds).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+            LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
+            wrapper.in(IceBox::getSupplierId, supplierIds).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
+            if(StringUtils.isNotEmpty(requestVo.getSearchContent())){
+                List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestModel, requestVo.getSearchContent()));
+                if(CollectionUtil.isNotEmpty(iceModels)){
+                    Set<Integer> iceModelIds = iceModels.stream().map(x -> x.getId()).collect(Collectors.toSet());
+                    wrapper.and(x -> x.like(IceBox::getChestName,requestVo.getSearchContent()).or().in(IceBox::getModelId,iceModelIds));
+                }else {
+                    wrapper.like(IceBox::getChestName,requestVo.getSearchContent());
+                }
+
+            }
+            List<IceBox> iceBoxes = iceBoxDao.selectList(wrapper);
             if (CollectionUtil.isEmpty(iceBoxes)) {
                 return iceBoxVos;
             }

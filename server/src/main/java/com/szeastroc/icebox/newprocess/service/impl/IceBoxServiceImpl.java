@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -15,10 +16,7 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.Streams;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.SimpleStoreVo;
-import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
-import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
+import com.szeastroc.customer.common.vo.*;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.enums.*;
@@ -32,6 +30,8 @@ import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
+import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
+import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.icebox.util.CommonUtil;
@@ -40,10 +40,8 @@ import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
-import com.szeastroc.user.common.vo.DeptNameRequest;
-import com.szeastroc.user.common.vo.SessionDeptInfoVo;
-import com.szeastroc.user.common.vo.SessionUserInfoVo;
-import com.szeastroc.user.common.vo.SimpleUserInfoVo;
+import com.szeastroc.user.client.FeignXcxBaseClient;
+import com.szeastroc.user.common.vo.*;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.common.IceBoxPutModel;
 import com.szeastroc.visit.common.RequestExamineVo;
@@ -59,8 +57,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -76,39 +74,26 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final String FWCJL = "服务处经理";
     private final String DQZJ = "大区总监";
 
-    @Resource
-    private IceBoxDao iceBoxDao;
-    @Resource
-    private IceBoxExtendDao iceBoxExtendDao;
-    @Resource
-    private IceModelDao iceModelDao;
-    @Resource
-    private FeignDeptClient feignDeptClient;
-    @Resource
-    private FeignSupplierClient feignSupplierClient;
-    @Resource
-    private IcePutApplyDao icePutApplyDao;
-    @Resource
-    private IceBackApplyDao iceBackApplyDao;
-    @Resource
-    private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
-    @Resource
-    private IceBackApplyRelateBoxDao iceBackApplyRelateBoxDao;
-    @Resource
-    private FeignExamineClient feignExamineClient;
-
-    @Resource
-    private RedisTemplate redisTemplate;
-    @Resource
-    private IceExamineDao iceExamineDao;
-    @Resource
-    private FeignUserClient feignUserClient;
+    private final IceBoxDao iceBoxDao;
+    private final IceBoxExtendDao iceBoxExtendDao;
+    private final IceModelDao iceModelDao;
+    private final FeignDeptClient feignDeptClient;
+    private final FeignSupplierClient feignSupplierClient;
+    private final IcePutApplyDao icePutApplyDao;
+    private final IceBackApplyDao iceBackApplyDao;
+    private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
+    private final IceBackApplyRelateBoxDao iceBackApplyRelateBoxDao;
+    private final FeignExamineClient feignExamineClient;
+    private final RedisTemplate redisTemplate;
+    private final IceExamineDao iceExamineDao;
+    private final FeignUserClient feignUserClient;
     private final IcePutPactRecordDao icePutPactRecordDao;
     private final IceTransferRecordDao iceTransferRecordDao;
     private final FeignStoreClient feignStoreClient;
     private final IceEventRecordDao iceEventRecordDao;
     private final IcePutOrderDao icePutOrderDao;
     private final FeignCacheClient feignCacheClient;
+    private final FeignXcxBaseClient feignXcxBaseClient;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -862,7 +847,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         String belongObjName = iceBoxPage.getBelongObjName();
         String limit = " limit 30";
         // 所在对象为 经销商
-        if (iceBoxPage.getBelongObj() != null && PutStatus.NO_PUT.getStatus() == iceBoxPage.getBelongObj()) {
+        if (iceBoxPage.getBelongObj() != null && PutStatus.NO_PUT.getStatus().equals(iceBoxPage.getBelongObj())) {
             // supplier_type 客户类型：1-经销商，2-分销商，3-邮差，4-批发商
             // status 状态：0-禁用，1-启用
             if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
@@ -884,7 +869,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         Set<String> putStoreNumberList = new HashSet<>(); // 投放的门店number
         // 所在对象为 门店
-        if (iceBoxPage.getBelongObj() != null && PutStatus.NO_PUT.getStatus() != iceBoxPage.getBelongObj()) {
+        if (iceBoxPage.getBelongObj() != null && !PutStatus.NO_PUT.getStatus().equals(iceBoxPage.getBelongObj())) {
             if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
                 List<SimpleStoreVo> storeVoList = FeignResponseUtil.getFeignData(feignStoreClient.getByNameOrNumber(belongObjNumber, null, 1, null, limit));
                 Optional.ofNullable(storeVoList).ifPresent(list -> {
@@ -941,7 +926,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         for (IceBox iceBox : iceBoxList) {
             // t_ice_box 的id 和 t_ice_box_extend 的id是一一对应的
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
-            Map<String, Object> map = new HashMap<>();
+            Map<String, Object> map = new HashMap<>(32);
             map.put("statusStr", IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 设备状态
             String deptStr = null;
             if (deptMap != null) {
@@ -987,6 +972,283 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
 
         return new Page(iceBoxPage.getCurrent(), iceBoxPage.getSize(), iceBoxPage.getTotal()).setRecords(list);
+    }
+
+    @Override
+    public Map<String, Object> readBasic(Integer id) {
+
+        IceBox iceBox = iceBoxDao.selectById(id);
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
+        Map<String, Object> map = new HashMap<>(32);
+        map.put("bluetoothId", iceBoxExtend.getBluetoothId()); // 设备编号 --蓝牙设备ID
+        map.put("chestName", iceBox.getChestName()); // 名称
+        IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getId, iceBox.getModelId()).last(" limit 1"));
+        map.put("chestModel", iceModel == null ? null : iceModel.getChestModel()); // 型号
+        map.put("chestNorm", iceBox.getChestNorm()); // 规格
+        map.put("brandName", iceBox.getBrandName()); // 品牌
+        map.put("chestMoney", iceBox.getChestMoney()); // 价值
+        map.put("depositMoney", iceBox.getDepositMoney()); // 标准押金
+        map.put("statusStr", IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 状态
+        map.put("releaseTime", iceBoxExtend.getReleaseTime()); // 生产日期
+        map.put("repairBeginTime", iceBoxExtend.getRepairBeginTime()); // 保修起算日期
+        // 营销区域对应得部门  服务处->大区->事业部
+        String deptStr = null;
+        if (iceBox.getDeptId() != null) {
+            deptStr = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(iceBox.getDeptId()));
+        }
+        map.put("deptStr", deptStr); // 责任部门
+        map.put("putStatusStr", PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) ? "经销商" : "门店"); // 客户类型
+
+        String khName = null;
+        String khAddress = null;
+        String khGrade = null;
+        String khStatusStr = null;
+        String khContactPerson = null;
+        String khContactNumber = null;
+        if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus())) { // 经销商
+            SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readId(iceBox.getSupplierId()));
+            if (infoVo != null) {
+                khName = infoVo.getName();
+                khAddress = infoVo.getAddress();
+                khGrade = infoVo.getLevel();
+                // 状态：0-禁用，1-启用
+                khStatusStr = infoVo.getStatus().equals(1) ? "启用" : "禁用";
+                khContactPerson = infoVo.getLinkman();
+                khContactNumber = infoVo.getLinkmanMobile();
+            }
+        } else { // 门店
+            StoreInfoDtoVo dtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+            Map<String, SessionStoreInfoVo> storeInfoVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Lists.newArrayList(iceBox.getPutStoreNumber())));
+            if (dtoVo != null) {
+                khName = dtoVo.getStoreName();
+                khAddress = dtoVo.getAddress();
+                khGrade = dtoVo.getStoreLevel();
+                // 状态：0-禁用，1-启用
+                khStatusStr = dtoVo.getStatus().equals(1) ? "启用" : "禁用";
+                if (storeInfoVoMap != null && storeInfoVoMap.get(iceBox.getPutStoreNumber()) != null) {
+                    SessionStoreInfoVo infoVo = storeInfoVoMap.get(iceBox.getPutStoreNumber());
+                    khContactPerson = infoVo.getMemberName();
+                    khContactNumber = infoVo.getMemberMobile();
+                }
+            }
+        }
+        map.put("khName", khName); // 客户名称
+        map.put("khAddress", khAddress); // 客户地址
+        map.put("khGrade", khGrade); // 客户等级
+        map.put("khStatusStr", khStatusStr); // 客户状态
+        map.put("khContactPerson", khContactPerson); // 联系人
+        map.put("khContactNumber", khContactNumber); // 联系电话
+
+        return map;
+    }
+
+    @Override
+    public Map<String, Object> readModule(Integer id) {
+
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
+        Map<String, Object> map = Maps.newHashMap();
+        map.put("bluetoothId", iceBoxExtend.getBluetoothId()); // 设备蓝牙ID
+        map.put("bluetoothMac", iceBoxExtend.getBluetoothMac()); // 设备蓝牙地址
+        map.put("gpsMac", iceBoxExtend.getGpsMac()); // GPS模块地址
+        map.put("qrCode", iceBoxExtend.getQrCode()); // 唯一二维码
+
+        return map;
+    }
+
+    @Override
+    public Map<String, Object> readEquipNews(Integer id) {
+
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
+        IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery()
+                .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId()).orderByDesc(IceEventRecord::getId)
+                .last(" limit 1"));
+        Map<String, Object> map = Maps.newHashMap();
+        Optional.ofNullable(iceEventRecord).ifPresent(info -> {
+            map.put("temperature", info.getTemperature()); // 温度
+            String assetId = iceBoxExtend.getAssetId();
+            DateTime now = new DateTime();
+            // 开关门次数 -- 累计总数
+            Integer totalSum = iceEventRecordDao.sumTotalOpenCloseCount(assetId);
+
+            // 开关门次数 -- 月累计
+            Date monStart = now.dayOfMonth().withMinimumValue().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+            Date monEnd = now.dayOfMonth().withMaximumValue().withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
+            Integer monthSum = iceEventRecordDao.sumOpenCloseCount(assetId, monStart, monEnd);
+
+            // 开关门次数 -- 今日累计
+            Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+            Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
+            Integer todaySum = iceEventRecordDao.sumOpenCloseCount(assetId, todayStart, todayEnd);
+
+            map.put("totalSum", totalSum);
+            map.put("monthSum", monthSum);
+            map.put("todaySum", todaySum);
+            String address = info.getDetailAddress();
+            if (StringUtils.isBlank(address)) {
+                if (StringUtils.isNotBlank(info.getLng()) && StringUtils.isNotBlank(info.getLat())) {
+                    AddressVo addressVo = FeignResponseUtil.getFeignData(feignXcxBaseClient.getAddressBylatAndLng(info.getLng(), info.getLat()));
+                    if (addressVo != null) {
+                        address = addressVo.getAddress();
+                    }
+                }
+            }
+            map.put("address", address); // 定位位置
+            map.put("occurrenceTime", info.getOccurrenceTime()); // 最近采集时间
+        });
+
+        return map;
+    }
+
+    @Override
+    public IPage readTransferRecord(IceTransferRecordPage iceTransferRecordPage) {
+
+        IPage page = iceTransferRecordDao.selectPage(iceTransferRecordPage, Wrappers.<IceTransferRecord>lambdaQuery()
+                .eq(IceTransferRecord::getBoxId, iceTransferRecordPage.getIceBoxId())
+        .orderByDesc(IceTransferRecord::getId));
+        List<IceTransferRecord> iceTransferRecordList = page.getRecords();
+        if (CollectionUtils.isEmpty(iceTransferRecordList)) {
+            return page;
+        }
+
+        // 参与的门店  map
+        Map<String, SimpleStoreVo> storeVoMap = null;
+        Set<String> storeNumbers = iceTransferRecordList.stream().map(IceTransferRecord::getStoreNumber).collect(Collectors.toSet());
+        if (CollectionUtils.isNotEmpty(storeNumbers)) {
+            storeVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumberList(Lists.newArrayList(storeNumbers)));
+        }
+        // 参与的经销商 map
+        Map<Integer, SubordinateInfoVo> supplierMap = null;
+        Set<Integer> supplierIds = iceTransferRecordList.stream().map(IceTransferRecord::getSupplierId).collect(Collectors.toSet());
+        if (CollectionUtils.isNotEmpty(supplierIds)) {
+            supplierMap = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(Lists.newArrayList(supplierIds)));
+        }
+        // 经办人  map
+        Map<Integer, SessionUserInfoVo> userInfoVoMap = null;
+        Set<Integer> userIds = iceTransferRecordList.stream().map(IceTransferRecord::getApplyUserId).collect(Collectors.toSet());
+        if (CollectionUtils.isNotEmpty(userIds)) {
+            userInfoVoMap = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(Lists.newArrayList(userIds)));
+        }
+
+        List<Map<String, Object>> transferRecordList = Lists.newArrayList(); // 收集数据
+        for (IceTransferRecord transferRecord : iceTransferRecordList) {
+            Map<String, Object> map = Maps.newHashMap();
+            Integer serviceType = transferRecord.getServiceType(); //  业务类型 0:入库 1:投放 2:退还
+            map.put("serviceTypeStr", com.szeastroc.icebox.newprocess.enums.ServiceType.getDesc(serviceType)); // 业务类型
+            Integer supplierId = transferRecord.getSupplierId(); // 参与的经销商ID
+            String storeNumber = transferRecord.getStoreNumber(); // 参与的门店Number
+            String sendName = null;
+            String receiveName = null;
+            if (com.szeastroc.icebox.newprocess.enums.ServiceType.ENTER_WAREHOUSE.getType().equals(serviceType)) { // 入库  (厂家-->经销商)
+                if (supplierMap != null && supplierId != null) {
+                    SubordinateInfoVo infoVo = supplierMap.get(supplierId);
+                    receiveName = infoVo == null ? null : infoVo.getName();
+                }
+            } else if (com.szeastroc.icebox.newprocess.enums.ServiceType.IS_PUT.getType().equals(serviceType)) { // 投放  (经销商-->门店)
+                if (supplierMap != null && supplierId != null) {
+                    SubordinateInfoVo infoVo = supplierMap.get(supplierId);
+                    sendName = infoVo == null ? null : infoVo.getName();
+                }
+                if (storeVoMap != null && StringUtils.isNotBlank(storeNumber)) {
+                    SimpleStoreVo storeVo = storeVoMap.get(storeNumber);
+                    receiveName = storeVo == null ? null : storeVo.getStoreName();
+                }
+            } else if (com.szeastroc.icebox.newprocess.enums.ServiceType.IS_RETURN.getType().equals(serviceType)) { // 退还  (门店-->经销商)
+                if (storeVoMap != null && StringUtils.isNotBlank(storeNumber)) {
+                    SimpleStoreVo storeVo = storeVoMap.get(storeNumber);
+                    sendName = storeVo == null ? null : storeVo.getStoreName();
+                }
+                if (supplierMap != null && supplierId != null) {
+                    SubordinateInfoVo infoVo = supplierMap.get(supplierId);
+                    receiveName = infoVo == null ? null : infoVo.getName();
+                }
+            }
+
+            map.put("sendName", sendName); // 发出方
+            map.put("sendTime", transferRecord.getSendTime()); // 发出日期
+            map.put("receiveName", receiveName); // 接收方
+            map.put("receiveTime", transferRecord.getReceiveTime()); // 接收日期
+            SessionUserInfoVo userInfoVo = null;
+            if (userInfoVoMap != null && transferRecord.getSupplierId() != null) {
+                userInfoVo = userInfoVoMap.get(transferRecord.getSupplierId());
+            }
+            map.put("applyUser", userInfoVo == null ? null : userInfoVo.getRealname()); // 经办人
+            map.put("applyTime", transferRecord.getApplyTime()); // 经办日期
+            map.put("transferMoney", transferRecord.getTransferMoney()); // 交易金额
+            map.put("applyNumber", transferRecord.getApplyNumber()); // 业务单号
+            map.put("recordStatusStr", com.szeastroc.icebox.newprocess.enums.RecordStatus.getDesc(transferRecord.getRecordStatus())); // 状态
+//            map.put("supplierId", transferRecord.getSupplierId()); // 备注
+
+            transferRecordList.add(map);
+        }
+
+        return page.setRecords(transferRecordList);
+    }
+
+    @Override
+    public IPage readExamine(IceExaminePage iceExaminePage) {
+
+        IPage page = iceExamineDao.selectPage(iceExaminePage, Wrappers.<IceExamine>lambdaQuery()
+                .eq(IceExamine::getIceBoxId, iceExaminePage.getIceBoxId())
+        .orderByDesc(IceExamine::getId));
+        List<IceExamine> iceExamineList = page.getRecords();
+        if (CollectionUtils.isEmpty(iceExamineList)) {
+            return page;
+        }
+        Set<String> storeNumbers = iceExamineList.stream().map(IceExamine::getStoreNumber).collect(Collectors.toSet());
+        Set<Integer> userIds = iceExamineList.stream().map(IceExamine::getCreateBy).collect(Collectors.toSet());
+        Map<String, SimpleStoreVo> storeVoMap = null; // 客户集合
+        if (CollectionUtils.isNotEmpty(storeNumbers)) {
+            storeVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumberList(Lists.newArrayList(storeNumbers)));
+        }
+        Map<Integer, SessionUserInfoVo> userInfoVoMap = null; // 巡检人员集合
+        if (CollectionUtils.isNotEmpty(userIds)) {
+            userInfoVoMap = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(Lists.newArrayList(userIds)));
+        }
+
+        List<Map<String, Object>> examineList = Lists.newArrayList(); // 收集数据
+        for (IceExamine i : iceExamineList) {
+            Map<String, Object> map = Maps.newHashMap();
+            map.put("storeNumber", i.getStoreNumber()); // 门店编号
+            SimpleStoreVo storeVo = null;
+            if (storeVoMap != null) {
+                storeVo = storeVoMap.get(i.getStoreNumber());
+            }
+            map.put("storeName", storeVo == null ? null : storeVo.getStoreName()); // 客户名称
+            SessionUserInfoVo userInfoVo = null;
+            if (userInfoVoMap != null) {
+                userInfoVo = userInfoVoMap.get(i.getCreateBy());
+            }
+            map.put("realname", userInfoVo == null ? null : userInfoVo.getRealname()); // 巡检人员
+            map.put("createTime", i.getCreateTime()); // 巡检日期
+            map.put("displayImage", i.getDisplayImage()); // 现场图片
+//            map.put("storeNumber", i.getStoreNumber()); // 备注
+            examineList.add(map);
+        }
+
+        return page.setRecords(examineList);
+    }
+
+    @Override
+    public void importExcel(MultipartFile file) {
+
+      /*  if (StringUtils.isBlank(filePath)){
+            return null;
+        }
+        ImportParams params = new ImportParams();
+        params.setTitleRows(titleRows);
+        params.setHeadRows(headerRows);
+        List<T> list = null;
+        try {
+            list = ExcelImportUtil.importExcel(new File(filePath), pojoClass, params);
+        }catch (NoSuchElementException e){
+//            throw new BusinessException("模板不能为空",false);
+        } catch (Exception e) {
+            e.printStackTrace();
+//            throw new BusinessException(e.getMessage(), false);
+        }*/
+
+
+
     }
 }
 

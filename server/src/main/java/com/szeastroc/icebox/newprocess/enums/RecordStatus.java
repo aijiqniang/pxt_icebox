@@ -19,4 +19,13 @@ public enum RecordStatus {
     private Integer status;
     private String desc;
 
+    public static String getDesc(Integer type) {
+        for (RecordStatus enu : RecordStatus.values()) {
+            if (enu.getStatus().equals(type)) {
+                return enu.getDesc();
+            }
+        }
+        return "";
+    }
+
 }

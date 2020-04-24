@@ -14,6 +14,15 @@ public enum ServiceType {
     IS_PUT(1, "投放"),
     IS_RETURN(2, "退还");
 
-    private int type;
+    private Integer type;
     private String desc;
+
+    public static String getDesc(Integer type) {
+        for (ServiceType enu : ServiceType.values()) {
+            if (enu.getType().equals(type)) {
+                return enu.getDesc();
+            }
+        }
+        return "";
+    }
 }

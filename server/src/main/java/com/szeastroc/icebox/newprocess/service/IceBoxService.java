@@ -10,7 +10,10 @@ import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
+import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
+import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.vo.IceBoxRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,19 @@ public interface IceBoxService extends IService<IceBox> {
     void checkIceBox(IceBoxRequest iceBoxRequest);
 
     IPage findPage(IceBoxPage iceBoxPage);
+
+    Map<String, Object> readBasic(Integer id);
+
+    Map<String, Object> readModule(Integer id);
+
+    Map<String, Object> readEquipNews(Integer id);
+
+    IPage readTransferRecord(IceTransferRecordPage iceTransferRecordPage);
+
+    IPage readExamine(IceExaminePage iceExaminePage);
+
+    void importExcel(MultipartFile file);
+
 }
 
 

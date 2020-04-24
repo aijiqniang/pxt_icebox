@@ -14,6 +14,8 @@ import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
+import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
+import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
@@ -23,9 +25,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -188,9 +192,9 @@ public class IceBoxController {
 
     /**
      * @Date: 2020/4/21 16:57 xiao
-     * 冰柜管理列表
+     * 冰柜管理--列表
      */
-    @PostMapping("/findPage")
+    @PostMapping("/readPage")
     public CommonResponse<IPage> findPage(@RequestBody IceBoxPage iceBoxPage) {
 
         IPage iPage = iceBoxService.findPage(iceBoxPage);
@@ -199,6 +203,62 @@ public class IceBoxController {
 
     /**
      * @Date: 2020/4/23 9:32 xiao
-     * 冰柜管理列表
+     * 冰柜管理--基本信息
      */
+    @GetMapping("/readBasic")
+    public CommonResponse<Map<String, Object>> readBasic(Integer id) {
+        Map<String, Object> map = iceBoxService.readBasic(id);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, map);
+    }
+
+    /**
+     * @Date: 2020/4/23 15:56 xiao
+     * 冰柜管理--模块信息
+     */
+    @GetMapping("/readModule")
+    public CommonResponse<Map<String, Object>> readModule(Integer id) {
+        Map<String, Object> map = iceBoxService.readModule(id);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, map);
+    }
+
+    /**
+     * @Date: 2020/4/23 16:05 xiao
+     * 冰柜管理--设备动态
+     */
+    @GetMapping("/readEquipNews")
+    public CommonResponse<Map<String, Object>> readEquipNews(Integer id) {
+        Map<String, Object> map = iceBoxService.readEquipNews(id);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, map);
+    }
+
+    /**
+     * @Date: 2020/4/23 16:19 xiao
+     * 冰柜管理--往来记录
+     */
+    @PostMapping("/readTransferRecord")
+    public CommonResponse<IPage> readTransferRecord(@RequestBody IceTransferRecordPage iceTransferRecordPage) {
+        IPage iPage = iceBoxService.readTransferRecord(iceTransferRecordPage);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage);
+    }
+
+    /**
+     * @Date: 2020/4/23 16:19 xiao
+     * 冰柜管理--巡检记录
+     */
+    @PostMapping("/readExamine")
+    public CommonResponse<IPage> readExamine(@RequestBody IceExaminePage iceExaminePage) {
+        IPage iPage = iceBoxService.readExamine(iceExaminePage);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage);
+    }
+
+    /**
+     * @Date: 2020/4/24 10:44 xiao
+     * 冰柜管理--导入excel
+     */
+    @PostMapping("/importExcel")
+    public CommonResponse<String> importExcel(MultipartFile file) {
+        iceBoxService.importExcel(file);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
+    }
+
 }

@@ -202,6 +202,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void updateExamineStatus(IceBoxRequest iceBoxRequest) {
 
         Integer status = iceBoxRequest.getStatus();
@@ -215,7 +216,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         }else if(status == 1) {
             //批准
-//            doTransfer(applyNumber);
+            doTransfer(applyNumber);
             IceBackApply iceBackApply = new IceBackApply();
             iceBackApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
             iceBackApplyDao.update(iceBackApply,Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber,applyNumber));

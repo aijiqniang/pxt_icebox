@@ -2,6 +2,8 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.poi.excel.ExcelReader;
+import cn.hutool.poi.excel.WorkbookUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -51,6 +53,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -953,13 +956,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             String number = null;
             if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && suppMap != null) { // 经销商
                 SubordinateInfoVo infoVo = suppMap.get(iceBox.getSupplierId());
-                name = infoVo.getName();
-                number = infoVo.getNumber();
+                name = infoVo == null ? null : infoVo.getName();
+                number = infoVo == null ? null : infoVo.getNumber();
             }
             if (!PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && storeMap != null) { // 门店
                 SimpleStoreVo storeVo = storeMap.get(iceBox.getPutStoreNumber());
-                name = storeVo.getStoreName();
-                number = storeVo.getStoreNumber();
+                name = storeVo == null ? null : storeVo.getStoreName();
+                number = storeVo == null ? null : storeVo.getStoreNumber();
             }
             map.put("number", number); // 客户编号
             map.put("name", name); // 客户名称
@@ -1012,7 +1015,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 khAddress = infoVo.getAddress();
                 khGrade = infoVo.getLevel();
                 // 状态：0-禁用，1-启用
-                khStatusStr = infoVo.getStatus().equals(1) ? "启用" : "禁用";
+                khStatusStr = (infoVo.getStatus() != null && infoVo.getStatus().equals(1)) ? "启用" : "禁用";
                 khContactPerson = infoVo.getLinkman();
                 khContactNumber = infoVo.getLinkmanMobile();
             }
@@ -1024,7 +1027,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 khAddress = dtoVo.getAddress();
                 khGrade = dtoVo.getStoreLevel();
                 // 状态：0-禁用，1-启用
-                khStatusStr = dtoVo.getStatus().equals(1) ? "启用" : "禁用";
+                khStatusStr = (dtoVo.getStatus() != null && dtoVo.getStatus().equals(1)) ? "启用" : "禁用";
                 if (storeInfoVoMap != null && storeInfoVoMap.get(iceBox.getPutStoreNumber()) != null) {
                     SessionStoreInfoVo infoVo = storeInfoVoMap.get(iceBox.getPutStoreNumber());
                     khContactPerson = infoVo.getMemberName();
@@ -1104,7 +1107,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         IPage page = iceTransferRecordDao.selectPage(iceTransferRecordPage, Wrappers.<IceTransferRecord>lambdaQuery()
                 .eq(IceTransferRecord::getBoxId, iceTransferRecordPage.getIceBoxId())
-        .orderByDesc(IceTransferRecord::getId));
+                .orderByDesc(IceTransferRecord::getId));
         List<IceTransferRecord> iceTransferRecordList = page.getRecords();
         if (CollectionUtils.isEmpty(iceTransferRecordList)) {
             return page;
@@ -1189,7 +1192,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         IPage page = iceExamineDao.selectPage(iceExaminePage, Wrappers.<IceExamine>lambdaQuery()
                 .eq(IceExamine::getIceBoxId, iceExaminePage.getIceBoxId())
-        .orderByDesc(IceExamine::getId));
+                .orderByDesc(IceExamine::getId));
         List<IceExamine> iceExamineList = page.getRecords();
         if (CollectionUtils.isEmpty(iceExamineList)) {
             return page;
@@ -1229,26 +1232,26 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    public void importExcel(MultipartFile file) {
+    public void importExcel(MultipartFile file) throws Exception {
 
-      /*  if (StringUtils.isBlank(filePath)){
-            return null;
+        log.info("开始读取数据");
+        Workbook book = WorkbookUtil.createBook(file.getInputStream(), true);
+        ExcelReader excelReader = new ExcelReader(book, 0);
+        List<List<Object>> reads = excelReader.read();
+        log.info("获取excel文件数据,reads的大小-->[{}]", reads.size());
+        log.info("开始处理数据");
+        for (int i = 0, readsSize = reads.size(); i < readsSize; i++) {
+            log.info("---------------第" + i + "次循环---------------");
+            List<Object> x = reads.get(i);
+//            String s = x.get(6).toString();
+//            if (StringUtils.isNotBlank(s)) {
+//                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtId(s));
+//
+//            }
+
+            log.info("{}", x.get(3));
         }
-        ImportParams params = new ImportParams();
-        params.setTitleRows(titleRows);
-        params.setHeadRows(headerRows);
-        List<T> list = null;
-        try {
-            list = ExcelImportUtil.importExcel(new File(filePath), pojoClass, params);
-        }catch (NoSuchElementException e){
-//            throw new BusinessException("模板不能为空",false);
-        } catch (Exception e) {
-            e.printStackTrace();
-//            throw new BusinessException(e.getMessage(), false);
-        }*/
-
-
-
+        log.info("处理数据结束");
     }
 }
 

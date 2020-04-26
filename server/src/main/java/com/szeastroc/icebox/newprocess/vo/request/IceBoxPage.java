@@ -16,7 +16,7 @@ import java.util.Set;
 public class IceBoxPage extends Page {
 
     private Integer deptId; // 营销区域id
-    private String bluetoothId; // 设备编号(蓝牙设备ID)
+    private String assetId; // 设备编号(东鹏资产id)
     private String belongObjNumber; // 所在对象编号
     private String belongObjName; // 所在对象名称
     private Integer status; // 设备状态 (冰柜状态 1:正常 0:异常)

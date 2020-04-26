@@ -258,15 +258,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         relateBox.setFreeType(requestVo.getFreeType());
                         icePutApplyRelateBoxDao.insert(relateBox);
 
-                        DateTime dateTime = new DateTime(System.currentTimeMillis()).plusYears(1);
-                        IcePutPactRecord icePutPactRecord = IcePutPactRecord.builder()
-                                .applyNumber(applyNumber)
-                                .boxId(iceBox.getId())
-                                .storeNumber(requestVo.getStoreNumber())
-                                .putTime(new Date())
-                                .putExpireTime(dateTime.toDate())
-                                .build();
-                        icePutPactRecordDao.insert(icePutPactRecord);
+                        //在商户小程序同意《冷藏设备使用陈列协议》时创建
+//                        DateTime dateTime = new DateTime(System.currentTimeMillis()).plusYears(1);
+//                        IcePutPactRecord icePutPactRecord = IcePutPactRecord.builder()
+//                                .applyNumber(applyNumber)
+//                                .boxId(iceBox.getId())
+//                                .storeNumber(requestVo.getStoreNumber())
+//                                .putTime(new Date())
+//                                .putExpireTime(dateTime.toDate())
+//                                .build();
+//                        icePutPactRecordDao.insert(icePutPactRecord);
 
                         IceTransferRecord iceTransferRecord = IceTransferRecord.builder()
                                 .applyNumber(applyNumber)

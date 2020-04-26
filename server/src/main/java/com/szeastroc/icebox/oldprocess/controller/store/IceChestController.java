@@ -58,7 +58,7 @@ public class IceChestController {
      * @throws ImproperOptionException
      * @throws NormalOptionException
      */
-    @GetMapping("/getIceChestByQrcode")
+    @PostMapping("/getIceChestByQrcode")
     public CommonResponse<IceChestResponse> getIceChestByQrcode(String qrcode, String clientNumber) throws ImproperOptionException, NormalOptionException {
         if (StringUtils.isBlank(qrcode)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);

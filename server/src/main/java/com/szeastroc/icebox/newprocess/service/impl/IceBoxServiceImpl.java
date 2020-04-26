@@ -5,6 +5,7 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.WorkbookUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -126,7 +127,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             Set<Integer> supplierIds = supplierInfoVos.stream().map(x -> x.getId()).collect(Collectors.toSet());
             Map<Integer, SimpleSupplierInfoVo> supplierInfoVoMap = supplierInfoVos.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, x -> x));
-            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getSupplierId, supplierIds).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+            LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
+            wrapper.in(IceBox::getSupplierId, supplierIds).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
+            if(StringUtils.isNotEmpty(requestVo.getSearchContent())){
+                List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestModel, requestVo.getSearchContent()));
+                if(CollectionUtil.isNotEmpty(iceModels)){
+                    Set<Integer> iceModelIds = iceModels.stream().map(x -> x.getId()).collect(Collectors.toSet());
+                    wrapper.and(x -> x.like(IceBox::getChestName,requestVo.getSearchContent()).or().in(IceBox::getModelId,iceModelIds));
+                }else {
+                    wrapper.like(IceBox::getChestName,requestVo.getSearchContent());
+                }
+
+            }
+            List<IceBox> iceBoxes = iceBoxDao.selectList(wrapper);
             if (CollectionUtil.isEmpty(iceBoxes)) {
                 return iceBoxVos;
             }
@@ -245,15 +258,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         relateBox.setFreeType(requestVo.getFreeType());
                         icePutApplyRelateBoxDao.insert(relateBox);
 
-                        DateTime dateTime = new DateTime(System.currentTimeMillis()).plusYears(1);
-                        IcePutPactRecord icePutPactRecord = IcePutPactRecord.builder()
-                                .applyNumber(applyNumber)
-                                .boxId(iceBox.getId())
-                                .storeNumber(requestVo.getStoreNumber())
-                                .putTime(new Date())
-                                .putExpireTime(dateTime.toDate())
-                                .build();
-                        icePutPactRecordDao.insert(icePutPactRecord);
+                        //在商户小程序同意《冷藏设备使用陈列协议》时创建
+//                        DateTime dateTime = new DateTime(System.currentTimeMillis()).plusYears(1);
+//                        IcePutPactRecord icePutPactRecord = IcePutPactRecord.builder()
+//                                .applyNumber(applyNumber)
+//                                .boxId(iceBox.getId())
+//                                .storeNumber(requestVo.getStoreNumber())
+//                                .putTime(new Date())
+//                                .putExpireTime(dateTime.toDate())
+//                                .build();
+//                        icePutPactRecordDao.insert(icePutPactRecord);
 
                         IceTransferRecord iceTransferRecord = IceTransferRecord.builder()
                                 .applyNumber(applyNumber)

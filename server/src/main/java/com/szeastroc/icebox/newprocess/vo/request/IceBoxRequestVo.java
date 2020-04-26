@@ -47,4 +47,9 @@ public class IceBoxRequestVo {
      */
     private Integer freeType;
 
+    /**
+     * 查询条件
+     */
+    private String searchContent;
+
 }

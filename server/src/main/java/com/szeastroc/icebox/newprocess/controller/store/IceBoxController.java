@@ -55,7 +55,7 @@ public class IceBoxController {
      * @throws NormalOptionException
      * @throws ImproperOptionException
      */
-    @GetMapping("/getIceBox")
+    @PostMapping("/getIceBox")
     public CommonResponse<List<IceBoxStoreVo>> getIceBox(String pxtNumber) {
         if (StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -70,7 +70,7 @@ public class IceBoxController {
      * @param pxtNumber
      * @return
      */
-    @GetMapping("/checkIceBoxByQrcode")
+    @PostMapping("/checkIceBoxByQrcode")
     public CommonResponse<IceBoxStatusVo> checkIceBoxByQrcode(String qrcode, String pxtNumber) {
         if (StringUtils.isBlank(qrcode) || StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -87,7 +87,7 @@ public class IceBoxController {
      * @throws ImproperOptionException
      * @throws NormalOptionException
      */
-    @GetMapping("/getIceBoxByQrcode")
+    @PostMapping("/getIceBoxByQrcode")
     public CommonResponse<IceBoxVo> getIceBoxByQrcode(String qrcode, String pxtNumber) {
         if (StringUtils.isBlank(qrcode) || StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -104,7 +104,7 @@ public class IceBoxController {
      * @throws ImproperOptionException
      */
     @PostMapping("/createPactRecord")
-    public CommonResponse<Void> createPactRecord(@RequestBody ClientInfoRequest clientInfoRequest) {
+    public CommonResponse<Void> createPactRecord(ClientInfoRequest clientInfoRequest) {
         if (!clientInfoRequest.validate()) {
             log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -119,7 +119,7 @@ public class IceBoxController {
      * @param iceBoxId
      * @return
      */
-    @GetMapping("/checkPactRecordByBoxId")
+    @PostMapping("/checkPactRecordByBoxId")
     public CommonResponse<Boolean> checkPactRecordByBoxId(Integer iceBoxId) {
         if (Objects.isNull(iceBoxId)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);

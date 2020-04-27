@@ -181,7 +181,7 @@ public class IceBoxController {
      * @param iceBoxId
      * @return
      */
-    @GetMapping("/takeBackIceBox")
+    @RequestMapping("/takeBackIceBox")
     public CommonResponse<String> takeBackIceBox(Integer iceBoxId) {
         if (iceBoxId == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);

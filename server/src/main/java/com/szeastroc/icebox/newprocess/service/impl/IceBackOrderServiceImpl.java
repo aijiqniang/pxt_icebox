@@ -91,7 +91,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         // 创建通知
         DateTime date = new DateTime();
         String prefix = date.toString("yyyyMMdd");
-        String blockName = "冰柜退押确认";
+//        String blockName = "冰柜退还确认单";
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
         IceBox iceBox = iceBoxDao.selectById(iceBoxId);
         String putStoreNumber = iceBox.getPutStoreNumber();
@@ -105,7 +105,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         String assetId = iceBoxExtend.getAssetId();
         String relateCode = prefix + "_" + assetId;
         NoticeBacklogRequestVo noticeBacklogRequestVo = NoticeBacklogRequestVo.builder()
-                .backlogName(blockName)
+                .backlogName(NoticeTypeEnum.ICEBOX_REFUND_CONFIRM.getDesc())
                 .noticeTypeEnum(NoticeTypeEnum.ICEBOX_REFUND_CONFIRM)
                 .relateCode(relateCode)
                 .sendUserId(userId) //

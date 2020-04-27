@@ -22,6 +22,7 @@ public class IceBoxConverter {
         iceBoxVo.setDepositMoney(iceBox.getDepositMoney());
         iceBoxVo.setOpenTotal(iceBoxExtend.getOpenTotal());
         iceBoxVo.setQrCode(iceBoxExtend.getQrCode());
+        iceBoxVo.setLastPutTime(iceBoxExtend.getLastPutTime());
         return iceBoxVo;
     }
 

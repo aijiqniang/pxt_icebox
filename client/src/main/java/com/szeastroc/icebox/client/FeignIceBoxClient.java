@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public interface FeignIceBoxClient {
 
     @PostMapping("/iceBox/checkIceBox")
-    CommonResponse<IceBoxRequest> checkIceBox(@RequestBody IceBoxRequest iceBoxRequest);
+    void checkIceBox(@RequestBody IceBoxRequest iceBoxRequest);
 
 
     @RequestMapping("/refund/updateExamineStatus")

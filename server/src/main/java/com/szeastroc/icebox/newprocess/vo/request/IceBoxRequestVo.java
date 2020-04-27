@@ -3,6 +3,8 @@ package com.szeastroc.icebox.newprocess.vo.request;
 import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class IceBoxRequestVo {
 
@@ -10,6 +12,10 @@ public class IceBoxRequestVo {
      * 门店编码
      */
     private String storeNumber;
+    /**
+     * 门店名称
+     */
+    private String storeName;
     /**
      * 门店营销区域
      */
@@ -42,6 +48,10 @@ public class IceBoxRequestVo {
      * 申请数量
      */
     private Integer applyCount;
+    /**
+     * 押金
+     */
+    private BigDecimal depositMoney;
     /**
      * 是否免押 0:不免押1:免押
      */

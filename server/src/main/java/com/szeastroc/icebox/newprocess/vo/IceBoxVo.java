@@ -62,6 +62,10 @@ public class IceBoxVo {
     /**
      * 投放日期
      */
+    private Date lastPutTime;
+    /**
+     * 投放日期
+     */
     private String lastPutTimeStr;
     /**
      * 处理状态：退押中，申请中

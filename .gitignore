@@ -30,3 +30,10 @@ target/*
 *.versionsBackup
 */*.versionsBackup
 .factorypath
+/client/*.iml
+/client/target
+/common/*.iml
+/common/target
+/*.iml
+/server/*.iml
+/server/target

@@ -55,6 +55,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     void importExcel(MultipartFile file)throws Exception;
 
+    List<IceBox> getIceBoxList(String pxtNumber);
 }
 
 

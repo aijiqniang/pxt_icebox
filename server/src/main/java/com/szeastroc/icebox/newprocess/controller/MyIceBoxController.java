@@ -2,14 +2,19 @@ package com.szeastroc.icebox.newprocess.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.exception.ImproperOptionException;
+import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.HttpUtils;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,8 +69,23 @@ public class MyIceBoxController {
      * @return
      */
     @PostMapping("/checkIceBox")
-    public CommonResponse<IceBoxRequest> checkIceBox(@RequestBody IceBoxRequest iceBoxRequest){
+    public void checkIceBox(@RequestBody IceBoxRequest iceBoxRequest){
         iceBoxService.checkIceBox(iceBoxRequest);
-        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+//        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+    /**
+     * 根据门店编号获取所属冰柜信息
+     *
+     * @param pxtNumber
+     * @return
+     * @throws NormalOptionException
+     * @throws ImproperOptionException
+     */
+    @RequestMapping("/getIceBoxList")
+    public CommonResponse<List<IceBox>> getIceBoxList(String pxtNumber) {
+        if (StringUtils.isBlank(pxtNumber)) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxList(pxtNumber));
     }
 }

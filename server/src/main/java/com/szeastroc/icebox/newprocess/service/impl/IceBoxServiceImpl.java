@@ -171,7 +171,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         //处理中
         if (XcxType.IS_PUTING.getStatus().equals(requestVo.getType())) {
-            List<IcePutApply> icePutApplies = icePutApplyDao.selectList(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber()));
+            LambdaQueryWrapper<IcePutApply> wrapper = Wrappers.<IcePutApply>lambdaQuery();
+            wrapper.eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber());
+            wrapper.and(x -> x.eq(IcePutApply::getExamineStatus,ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IcePutApply::getExamineStatus,ExamineStatusEnum.IS_DEFAULT.getStatus()));
+            List<IcePutApply> icePutApplies = icePutApplyDao.selectList(wrapper);
             if (CollectionUtil.isNotEmpty(icePutApplies)) {
                 List<IceBoxVo> putIceBoxVos = this.getIceBoxVosByPutApplys(icePutApplies);
                 if (CollectionUtil.isNotEmpty(putIceBoxVos)) {
@@ -285,8 +288,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceTransferRecord.setTransferMoney(iceBox.getDepositMoney());
                         }
                         iceTransferRecordDao.insert(iceTransferRecord);
-                        IceBoxPutModel.IceBoxModel iceBoxModel = new IceBoxPutModel.IceBoxModel(requestVo.getChestModel(), iceBox.getChestName(), iceBox.getDepositMoney(), requestVo.getApplyCount(), requestVo.getFreeType());
-                        iceBoxModels.add(iceBoxModel);
+
                     }
                 } catch (Exception e) {
                     throw e;
@@ -294,6 +296,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     lock.unlock();
                 }
             }
+            IceBoxPutModel.IceBoxModel iceBoxModel = new IceBoxPutModel.IceBoxModel(requestVo.getChestModel(), requestVo.getChestName(), requestVo.getDepositMoney(), requestVo.getApplyCount(), requestVo.getFreeType());
+            iceBoxModels.add(iceBoxModel);
         }
         String orderNum = CommonUtil.generateOrderNumber();
         IcePutOrder icePutOrder = IcePutOrder.builder()
@@ -359,6 +363,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPutModel.setCreateByName(simpleUserInfoVo.getRealname());
         iceBoxPutModel.setCreateTimeStr(dateFormat.format(new Date()));
         iceBoxPutModel.setIceBoxModelList(iceBoxModels);
+        iceBoxPutModel.setApplyStoreName(iceBoxRequestVo.getStoreName());
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
                 .code(applyNumber)
                 .relateCode(applyNumber)
@@ -465,6 +470,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (icePutApplyRelateBox == null) {
                 continue;
             }
+            boxVo.setFreeType(icePutApplyRelateBox.getFreeType());
             IcePutApply putApply = icePutApplyMap.get(icePutApplyRelateBox.getApplyNumber());
             if (putApply == null) {
                 continue;
@@ -1264,6 +1270,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             log.info("{}", x.get(3));
         }
         log.info("处理数据结束");
+    }
+
+    @Override
+    public List<IceBox> getIceBoxList(String pxtNumber) {
+        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStoreNumber, pxtNumber));
+        return iceBoxes;
     }
 }
 

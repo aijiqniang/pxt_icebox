@@ -5,8 +5,10 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
@@ -41,6 +43,15 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
     @Resource
     private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
 
+    @Resource
+    private IceBackApplyDao iceBackApplyDao;
+
+    @Resource
+    private IceBackApplyRelateBoxDao iceBackApplyRelateBoxDao;
+
+    @Resource
+    private FeignSupplierClient feignSupplierClient;
+
 
     @Override
     public SimpleIceBoxDetailVo getByAssetId(String assetId) {
@@ -70,7 +81,8 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
 
         SessionStoreInfoVo sessionStoreInfoVo = map.get(storeNumber);
 
-        return SimpleIceBoxDetailVo.builder()
+
+        SimpleIceBoxDetailVo simpleIceBoxDetailVo = SimpleIceBoxDetailVo.builder()
                 .id(iceBox.getId())
                 .assetId(assetId)
                 .chestModelId(iceModel.getId())
@@ -87,6 +99,23 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
                 .supplierId(iceBox.getSupplierId())
                 .freeType(icePutApplyRelateBox.getFreeType())
                 .build();
+
+
+
+        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, id).orderByDesc(IceBackApplyRelateBox::getCreateTime).last("limit 1"));
+
+
+        if(iceBackApplyRelateBox != null) {
+            Integer backSupplierId = iceBackApplyRelateBox.getBackSupplierId();
+            simpleIceBoxDetailVo.setBackType(iceBackApplyRelateBox.getBackType());
+            SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(backSupplierId));
+            if(subordinateInfoVo != null) {
+                simpleIceBoxDetailVo.setNewSupplierId(subordinateInfoVo.getId());
+                simpleIceBoxDetailVo.setNewSupplierName(subordinateInfoVo.getName());
+                simpleIceBoxDetailVo.setNewSupplierNumber(subordinateInfoVo.getNumber());
+            }
+        }
+        return simpleIceBoxDetailVo;
     }
 
     @Override

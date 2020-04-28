@@ -20,6 +20,7 @@ import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
 import com.szeastroc.icebox.util.CommonUtil;
+import com.szeastroc.icebox.util.ExcelUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -28,6 +29,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -269,6 +273,41 @@ public class IceBoxController {
     public CommonResponse<List<String>> importExcelAndUpdate(@RequestParam("excelFile") MultipartFile file) throws Exception {
         List<String> list = iceBoxService.importExcelAndUpdate(file);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, list);
+    }
+
+    /**
+     * @Date: 2020/4/28 10:22 xiao
+     * 获取模板 (冰柜管理--导入excel)
+     */
+    @GetMapping("/getImportExcel")
+    public void getImportExcel(HttpServletResponse response) throws Exception {
+        String fileName = "19年冰柜需交押导入样例表";
+        response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+        String titleName = "19年冰柜需交押导入excel";
+        String[] columnName = {"序号", "冰箱控制器ID", "设备编号", "蓝牙设备ID", "蓝牙设备地址", "冰箱二维码链接", "gps模块mac地址", "设备名称", "生产厂家"
+                , "设备型号", "设备规格", "冰柜价值", "冰柜押金", "经销商鹏讯通编号", "经销商名称", "经销商地址", "经销商联系人"
+                , "经销商联系人电话", "所属服务处", "生产日期", "保修起算日期"
+        };
+        ExcelUtil excelUtil = new ExcelUtil();
+        List storeExcelVoList = new ArrayList();
+        excelUtil.exportExcel(fileName, titleName, columnName, storeExcelVoList, response, null);
+    }
+
+    /**
+     * @Date: 2020/4/28 10:23 xiao
+     * 获取模板 (冰柜管理--根据导入的excel更新数据库)
+     */
+    @GetMapping("/getImportExcelAndUpdate")
+    public void getImportExcelAndUpdate(HttpServletResponse response) throws Exception {
+        response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+        String fileName = "19年冰柜数据导入待更新样例表";
+        String titleName = "19年冰柜数据导入待更新excel";
+        String[] columnName = {"序号", "设备编号", "冰柜押金", "经销商鹏讯通编号", "经销商名称", "经销商地址", "经销商联系人"
+                , "经销商联系人电话", "所属服务处"
+        };
+        ExcelUtil excelUtil = new ExcelUtil();
+        List storeExcelVoList = new ArrayList();
+        excelUtil.exportExcel(fileName, titleName, columnName, storeExcelVoList, response, null);
     }
 
 }

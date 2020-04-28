@@ -38,6 +38,9 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
     @Resource
     private IcePutPactRecordDao icePutPactRecordDao;
 
+    @Resource
+    private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
+
 
     @Override
     public SimpleIceBoxDetailVo getByAssetId(String assetId) {
@@ -52,6 +55,10 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
         IceModel iceModel = iceModelDao.selectById(modelId);
 
         String storeNumber = iceBox.getPutStoreNumber();
+
+        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+                .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                .eq(IcePutApplyRelateBox::getBoxId, id));
 
 //        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(storeNumber));
 
@@ -78,6 +85,7 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
                 .memberName(sessionStoreInfoVo.getMemberName())
                 .deptId(iceBox.getDeptId())
                 .supplierId(iceBox.getSupplierId())
+                .freeType(icePutApplyRelateBox.getFreeType())
                 .build();
     }
 

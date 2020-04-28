@@ -169,26 +169,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
             }
         }
-        //处理中
-        if (XcxType.IS_PUTING.getStatus().equals(requestVo.getType())) {
-            LambdaQueryWrapper<IcePutApply> wrapper = Wrappers.<IcePutApply>lambdaQuery();
-            wrapper.eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber());
-            wrapper.and(x -> x.eq(IcePutApply::getExamineStatus,ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IcePutApply::getExamineStatus,ExamineStatusEnum.IS_DEFAULT.getStatus()));
-            List<IcePutApply> icePutApplies = icePutApplyDao.selectList(wrapper);
-            if (CollectionUtil.isNotEmpty(icePutApplies)) {
-                List<IceBoxVo> putIceBoxVos = this.getIceBoxVosByPutApplys(icePutApplies);
-                if (CollectionUtil.isNotEmpty(putIceBoxVos)) {
-                    iceBoxVos.addAll(putIceBoxVos);
-                }
-            }
-            List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber()));
-            if (CollectionUtil.isNotEmpty(iceBackApplies)) {
-                List<IceBoxVo> backIceBoxVos = this.getIceBoxVosByBackApplys(iceBackApplies);
-                if (CollectionUtil.isNotEmpty(backIceBoxVos)) {
-                    iceBoxVos.addAll(backIceBoxVos);
-                }
-            }
-        }
         return iceBoxVos;
     }
 
@@ -470,6 +450,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (icePutApplyRelateBox == null) {
                 continue;
             }
+            boxVo.setApplyNumber(icePutApplyRelateBox.getApplyNumber());
             boxVo.setFreeType(icePutApplyRelateBox.getFreeType());
             IcePutApply putApply = icePutApplyMap.get(icePutApplyRelateBox.getApplyNumber());
             if (putApply == null) {
@@ -1420,5 +1401,32 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public List<IceBox> getIceBoxList(String pxtNumber) {
         List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStoreNumber, pxtNumber));
         return iceBoxes;
+    }
+
+    @Override
+    public Map<String, List<IceBoxVo>> findPutingIceBoxList(IceBoxRequestVo requestVo) {
+        List<IceBoxVo> iceBoxVos = new ArrayList<>();
+        //处理中
+        if (XcxType.IS_PUTING.getStatus().equals(requestVo.getType())) {
+            LambdaQueryWrapper<IcePutApply> wrapper = Wrappers.<IcePutApply>lambdaQuery();
+            wrapper.eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber());
+            wrapper.and(x -> x.eq(IcePutApply::getExamineStatus,ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IcePutApply::getExamineStatus,ExamineStatusEnum.IS_DEFAULT.getStatus()));
+            List<IcePutApply> icePutApplies = icePutApplyDao.selectList(wrapper);
+            if (CollectionUtil.isNotEmpty(icePutApplies)) {
+                List<IceBoxVo> putIceBoxVos = this.getIceBoxVosByPutApplys(icePutApplies);
+                if (CollectionUtil.isNotEmpty(putIceBoxVos)) {
+                    iceBoxVos.addAll(putIceBoxVos);
+                }
+            }
+            List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber()));
+            if (CollectionUtil.isNotEmpty(iceBackApplies)) {
+                List<IceBoxVo> backIceBoxVos = this.getIceBoxVosByBackApplys(iceBackApplies);
+                if (CollectionUtil.isNotEmpty(backIceBoxVos)) {
+                    iceBoxVos.addAll(backIceBoxVos);
+                }
+            }
+        }
+        Map<String, List<IceBoxVo>> map = Streams.toStream(iceBoxVos).collect(Collectors.groupingBy(IceBoxVo::getApplyNumber));
+        return map;
     }
 }

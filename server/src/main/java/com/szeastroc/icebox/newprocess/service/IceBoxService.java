@@ -58,6 +58,8 @@ public interface IceBoxService extends IService<IceBox> {
     List<String> importExcelAndUpdate(MultipartFile file) throws Exception;
 
     List<IceBox> getIceBoxList(String pxtNumber);
+
+    Map<String, List<IceBoxVo>> findPutingIceBoxList(IceBoxRequestVo requestVo);
 }
 
 

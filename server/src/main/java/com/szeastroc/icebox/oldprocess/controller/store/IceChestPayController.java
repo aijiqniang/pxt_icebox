@@ -5,7 +5,10 @@ import com.szeastroc.common.annotation.IgnoreResponseAdvice;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.icebox.oldprocess.entity.MarketArea;
 import com.szeastroc.icebox.oldprocess.service.IceChestPutRecordService;
 import com.szeastroc.icebox.oldprocess.service.MarketAreaService;
@@ -38,6 +41,8 @@ public class IceChestPayController {
     private OrderInfoService orderInfoService;
     @Autowired
     private MarketAreaService marketAreaService;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
     /**
      * 创建订单并返回参数, 用于调起小程序
@@ -77,6 +82,12 @@ public class IceChestPayController {
                 log.error("applyPayIceChest传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
                 throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
             }
+            StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
+            if(storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null){
+                log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+                throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+            }
+            clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea()+"");
             //查询传入的服务处链并比对更新
 //            marketAreaService.updateStoreMarketAreaList(JSON.parseArray(clientInfoRequest.getMarketAreas(), MarketArea.class));
 

@@ -5,7 +5,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.common.utils.HttpUtils;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
@@ -28,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,6 +51,7 @@ public class IceBoxController {
     private final IcePutPactRecordService icePutPactRecordService;
     private final IcePutOrderService icePutOrderService;
     private final IceBackOrderService iceBackOrderService;
+    private final FeignStoreClient feignStoreClient;
 
     /**
      * 根据门店编号获取所属冰柜信息
@@ -109,6 +115,12 @@ public class IceBoxController {
             log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
+        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
+        if(storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null){
+            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea()+"");
         icePutPactRecordService.createPactRecord(clientInfoRequest);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
@@ -139,6 +151,12 @@ public class IceBoxController {
             log.error("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
+        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
+        if(storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null){
+            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea()+"");
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
     }
 
@@ -286,6 +304,61 @@ public class IceBoxController {
     public CommonResponse<List<String>> importExcelAndUpdate(@RequestParam("excelFile") MultipartFile file) throws Exception {
         List<String> list = iceBoxService.importExcelAndUpdate(file);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, list);
+    }
+
+    /**
+     * 轮训订单状态
+     * @param orderNumber
+     * @return
+     * @throws InterruptedException
+     */
+    @PostMapping("/loopPutOrderPayStatus")
+    public CommonResponse<Boolean> loopPutOrderPayStatus(String orderNumber)
+            throws Exception {
+
+        long startTime = System.currentTimeMillis();
+        int breakCode = -1;
+        boolean flag = false;
+        while (true) {
+            Thread.sleep(2000);
+
+            flag = icePutOrderService.getPayStatus(orderNumber);
+
+            // 订单未完成时, 长连接时间判断
+            long nowTime = System.currentTimeMillis();
+            if (breakCode < 0 && (nowTime - startTime) > 8000) {
+                //一次长连接结束
+                breakCode = -3;
+            }
+
+            if (breakCode == -2) {
+                /**
+                 * 如果breakCode等于-2, 代表查询订单未支付, 继续死循环
+                 */
+            } else if (breakCode == -1) {
+                /**
+                 * 如果breakCode等于-1, 系统错误, 终止
+                 */
+                break;
+            } else if(breakCode == 0) {
+                /**
+                 * 如果breakCode等于0, 代表订单已支付, 终止
+                 */
+                break;
+            } else if(breakCode == -3){
+                /**
+                 * 如果breakCode等于-3, 代表长链接结束, 终止
+                 */
+                break;
+            } else {
+                /**
+                 * 如果breakCode等于其他值, 可允许错误, 终止
+                 */
+                break;
+            }
+
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, flag);
     }
 
 }

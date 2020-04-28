@@ -28,8 +28,11 @@ public class ClientInfoRequest {
     private String openid;
 
     public boolean validate(){
-        if(StringUtils.isBlank(clientName) || StringUtils.isBlank(clientNumber) || StringUtils.isBlank(marketAreaId)
-                || StringUtils.isBlank(iceChestId) || StringUtils.isBlank(ip) || StringUtils.isBlank(openid)){
+//        if(StringUtils.isBlank(clientName) || StringUtils.isBlank(clientNumber) || StringUtils.isBlank(marketAreaId)
+//                || StringUtils.isBlank(iceChestId) || StringUtils.isBlank(ip) || StringUtils.isBlank(openid))
+        //modify by hbl 20200427 商户小程序没有营销区域id，需要在自己查
+        if(StringUtils.isBlank(clientName) || StringUtils.isBlank(clientNumber) || StringUtils.isBlank(iceChestId)
+                || StringUtils.isBlank(ip) || StringUtils.isBlank(openid)){
             return false;
         }
         return true;

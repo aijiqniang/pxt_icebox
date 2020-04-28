@@ -257,7 +257,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             orderPayBack.setTradeState(resultMap.get("trade_state"));
             orderPayBack.setResultCode(resultMap.get("result_code"));
             orderPayBack.setOutTradeNo(resultMap.get("out_trade_no"));
-            if (resultMap.get("trade_state").equals("SUCCESS") && resultMap.get("result_code").equals("SUCCESS")) {
+            if (resultMap.get("trade_state") != null && resultMap.get("trade_state").equals("SUCCESS") && resultMap.get("result_code").equals("SUCCESS")) {
                 orderPayBack.setOpenid(resultMap.get("openid"));
                 orderPayBack.setTransactionId(resultMap.get("transaction_id"));
                 orderPayBack.setTimeEnd(resultMap.get("time_end"));

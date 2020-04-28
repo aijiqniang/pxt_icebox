@@ -4,6 +4,7 @@ import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -165,18 +166,18 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(simpleIceBoxDetailVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
         //        获取上级部门领导
-//        List<Integer> userIds = new ArrayList<Integer>();
-//        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
-//        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
-//        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(2);
-//        if (userInfoVo1 == null || userInfoVo2 == null || userInfoVo3 == null) {
-//            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
-//        }
-//        userIds.add(userInfoVo1.getId());
-//        userIds.add(userInfoVo2.getId());
-//        userIds.add(userInfoVo3.getId());
+        List<Integer> userIds = new ArrayList<Integer>();
+        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
+        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
+        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(2);
+        if (userInfoVo1 == null || userInfoVo2 == null || userInfoVo3 == null) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+        }
+        userIds.add(userInfoVo1.getId());
+        userIds.add(userInfoVo2.getId());
+        userIds.add(userInfoVo3.getId());
 
-        List<Integer> userIds = Arrays.asList(5941, 2103);
+//        List<Integer> userIds = Arrays.asList(5941, 2103);
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         SessionIceBoxRefundModel sessionIceBoxRefundModel = new SessionIceBoxRefundModel();
 
@@ -440,7 +441,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .backlogName(NoticeTypeEnum.ICEBOX_REFUND_CONFIRM.getDesc())
                 .noticeTypeEnum(NoticeTypeEnum.ICEBOX_REFUND_CONFIRM)
                 .relateCode(relateCode)
-                .sendUserId(5941) //
+                .sendUserId(userId) //
                 .build();
         // 创建通知
         feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);

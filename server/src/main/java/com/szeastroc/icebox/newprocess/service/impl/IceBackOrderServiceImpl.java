@@ -23,6 +23,7 @@ import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
+import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.icebox.oldprocess.entity.WechatTransferOrder;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.transfer.client.FeignTransferClient;
@@ -30,7 +31,6 @@ import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
 import com.szeastroc.transfer.common.enums.WechatPayTypeEnum;
 import com.szeastroc.transfer.common.request.TransferRequest;
 import com.szeastroc.transfer.common.response.TransferReponse;
-import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
@@ -83,34 +83,37 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     @Override
     public void takeBackOrder(Integer iceBoxId) {
-        // 校验
+        // 校验是否可申请退还
         validateTakeBack(iceBoxId);
 
         // TODO 由崔梦阳实现退还逻辑
 
-        // 创建通知
-        DateTime date = new DateTime();
-        String prefix = date.toString("yyyyMMdd");
-//        String blockName = "冰柜退还确认单";
-        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
-        IceBox iceBox = iceBoxDao.selectById(iceBoxId);
-        String putStoreNumber = iceBox.getPutStoreNumber();
+        IceBackOrder selectIceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery()
+                .eq(IceBackOrder::getBoxId, iceBoxId)
+                .orderByDesc(IceBackOrder::getCreatedTime)
+                .last("limit 1"));
 
-        Map<String, SessionStoreInfoVo> map = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Collections.singletonList(putStoreNumber)));
+        if(selectIceBackOrder != null) {
+            // 该冰柜存在过退还
+            String selectApplyNumber = selectIceBackOrder.getApplyNumber();
+            IceBackApply selectIceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, selectApplyNumber));
 
-        SessionStoreInfoVo sessionStoreInfoVo = map.get(putStoreNumber);
+            Integer examineStatus = selectIceBackApply.getExamineStatus();
 
-        Integer userId = sessionStoreInfoVo.getUserId();
+            if (examineStatus.equals(ExamineStatusEnum.IS_PASS.getStatus()) || examineStatus.equals(ExamineStatusEnum.UN_PASS.getStatus())) {
+                log.info("该冰柜最后一次申请退还已经通过或者驳回,冰柜id-->[{}]", iceBoxId);
+                // 退还编号
+                doBack(iceBoxId);
+            } else {
 
-        String assetId = iceBoxExtend.getAssetId();
-        String relateCode = prefix + "_" + assetId;
-        NoticeBacklogRequestVo noticeBacklogRequestVo = NoticeBacklogRequestVo.builder()
-                .backlogName(NoticeTypeEnum.ICEBOX_REFUND_CONFIRM.getDesc())
-                .noticeTypeEnum(NoticeTypeEnum.ICEBOX_REFUND_CONFIRM)
-                .relateCode(relateCode)
-                .sendUserId(userId) //
-                .build();
-        feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
+                log.info("该冰柜最后一次申请退还已经未通过或者未驳回,冰柜id-->[{}]", iceBoxId);
+                throw new NormalOptionException(ResultEnum.ICE_BOX_IS_REFUNDING.getCode(),ResultEnum.ICE_BOX_IS_REFUNDING.getMessage());
+            }
+        }else {
+            // 该冰柜第一次进行退还
+            doBack(iceBoxId);
+        }
+
 
     }
 
@@ -119,57 +122,62 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     public void doRefund(SimpleIceBoxDetailVo simpleIceBoxDetailVo) {
 
         // 退还编号
-        String applyNumber = "BAC" + IdUtil.simpleUUID().substring(0, 29);
-        Integer iceBoxId = simpleIceBoxDetailVo.getId();
-
-        IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
-                .eq(IcePutOrder::getApplyNumber, simpleIceBoxDetailVo.getLastPutNumber())
-                .eq(IcePutOrder::getChestId, iceBoxId));
-
-
-        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
-                .eq(IcePutApplyRelateBox::getApplyNumber, simpleIceBoxDetailVo.getLastPutNumber())
-                .eq(IcePutApplyRelateBox::getBoxId, iceBoxId));
-
-        Integer backType = simpleIceBoxDetailVo.getBackType();
-
-        IceBackOrder iceBackOrder = IceBackOrder.builder()
-                .boxId(iceBoxId)
-                .amount(backType.equals(BackType.BACK_MONEY.getType()) ? icePutOrder.getPayMoney() : BigDecimal.ZERO)
-                .applyNumber(applyNumber)
-                .openid(icePutOrder.getOpenid())
-                .putOrderId(icePutOrder.getId())
-                .partnerTradeNo(icePutOrder.getOrderNum())
-                .build();
-
-
-        IceBackApplyRelateBox iceBackApplyRelateBox = IceBackApplyRelateBox.builder()
-                .applyNumber(applyNumber)
-                .backSupplierId(simpleIceBoxDetailVo.getSupplierId())
-                .backType(backType)
-                .freeType(icePutApplyRelateBox.getFreeType())
-                .boxId(iceBoxId)
-                .modelId(simpleIceBoxDetailVo.getChestModelId())
-                .build();
+//        String applyNumber = "BAC" + IdUtil.simpleUUID().substring(0, 29);
+//        Integer iceBoxId = simpleIceBoxDetailVo.getId();
+//
+//        IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
+//                .eq(IcePutOrder::getApplyNumber, simpleIceBoxDetailVo.getLastPutNumber())
+//                .eq(IcePutOrder::getChestId, iceBoxId));
+//
+//
+//        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+//                .eq(IcePutApplyRelateBox::getApplyNumber, simpleIceBoxDetailVo.getLastPutNumber())
+//                .eq(IcePutApplyRelateBox::getBoxId, iceBoxId));
+//
+//        Integer backType = simpleIceBoxDetailVo.getBackType();
+//
+//        IceBackOrder iceBackOrder = IceBackOrder.builder()
+//                .boxId(iceBoxId)
+//                .amount(backType.equals(BackType.BACK_MONEY.getType()) ? icePutOrder.getPayMoney() : BigDecimal.ZERO)
+//                .applyNumber(applyNumber)
+//                .openid(icePutOrder.getOpenid())
+//                .putOrderId(icePutOrder.getId())
+//                .partnerTradeNo(icePutOrder.getOrderNum())
+//                .build();
+//
+//
+//        IceBackApplyRelateBox iceBackApplyRelateBox = IceBackApplyRelateBox.builder()
+//                .applyNumber(applyNumber)
+//                .backSupplierId(simpleIceBoxDetailVo.getSupplierId())
+//                .backType(backType)
+//                .freeType(icePutApplyRelateBox.getFreeType())
+//                .boxId(iceBoxId)
+//                .modelId(simpleIceBoxDetailVo.getChestModelId())
+//                .build();
 
 
         // 创建审批流
+        IceBackOrder iceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getBoxId, simpleIceBoxDetailVo.getId()).orderByDesc(IceBackOrder::getCreatedTime).last("limit 1"));
+        String applyNumber = iceBackOrder.getApplyNumber();
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
+        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
+
 
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(simpleIceBoxDetailVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
-        List<Integer> userIds = new ArrayList<Integer>();
-//        获取上级部门领导
-        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
-        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
-        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(2);
-        if (userInfoVo1 == null || userInfoVo2 == null || userInfoVo3 == null) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
-        }
-        userIds.add(userInfoVo1.getId());
-        userIds.add(userInfoVo2.getId());
-        userIds.add(userInfoVo3.getId());
+        //        获取上级部门领导
+//        List<Integer> userIds = new ArrayList<Integer>();
+//        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
+//        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
+//        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(2);
+//        if (userInfoVo1 == null || userInfoVo2 == null || userInfoVo3 == null) {
+//            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+//        }
+//        userIds.add(userInfoVo1.getId());
+//        userIds.add(userInfoVo2.getId());
+//        userIds.add(userInfoVo3.getId());
 
-//        List<Integer> userIds = Arrays.asList(5941, 2103);
+        List<Integer> userIds = Arrays.asList(5941, 2103);
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         SessionIceBoxRefundModel sessionIceBoxRefundModel = new SessionIceBoxRefundModel();
 
@@ -185,20 +193,27 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);
         sessionExamineVo.setSessionIceBoxRefundModel(sessionIceBoxRefundModel);
 
+
         Integer examineId = FeignResponseUtil.getFeignData(feignOutExamineClient.iceBoxRefund(sessionExamineVo));
+        Integer backType = simpleIceBoxDetailVo.getBackType();
+        IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
+                .eq(IcePutOrder::getApplyNumber, simpleIceBoxDetailVo.getLastPutNumber())
+                .eq(IcePutOrder::getChestId, simpleIceBoxDetailVo.getId()));
+        // 更新退还数据
+        iceBackOrder.setAmount(backType.equals(BackType.BACK_MONEY.getType()) ? icePutOrder.getPayMoney() : BigDecimal.ZERO);
+        iceBackApplyRelateBox.setBackSupplierId(simpleIceBoxDetailVo.getNewSupplierId());
+        iceBackApplyRelateBox.setBackType(backType);
 
-        IceBackApply iceBackApply = IceBackApply.builder()
-                .applyNumber(applyNumber)
-                .backStoreNumber(simpleIceBoxDetailVo.getPutStoreNumber())
-                .userId(simpleIceBoxDetailVo.getUserId())
-                .createdBy(simpleIceBoxDetailVo.getUserId())
-                .examineId(examineId)
-                .build();
-        iceBackOrderDao.insert(iceBackOrder);
+        iceBackApply.setUserId(simpleIceBoxDetailVo.getUserId());
+        iceBackApply.setCreatedBy(simpleIceBoxDetailVo.getUserId());
+        iceBackApply.setExamineId(examineId);
+        iceBackApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
 
-        iceBackApplyRelateBoxDao.insert(iceBackApplyRelateBox);
+        iceBackOrderDao.updateById(iceBackOrder);
 
-        iceBackApplyDao.insert(iceBackApply);
+        iceBackApplyRelateBoxDao.updateById(iceBackApplyRelateBox);
+
+        iceBackApplyDao.updateById(iceBackApply);
     }
 
     @Override
@@ -208,24 +223,57 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         Integer status = iceBoxRequest.getStatus();
         String applyNumber = iceBoxRequest.getApplyNumber();
 
-        if(status == 0) {
+        if (status == 0) {
             // 审批中
             IceBackApply iceBackApply = new IceBackApply();
             iceBackApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
-            iceBackApplyDao.update(iceBackApply,Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber,applyNumber));
+            iceBackApplyDao.update(iceBackApply, Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
 
-        }else if(status == 1) {
+        } else if (status == 1) {
             //批准
             doTransfer(applyNumber);
             IceBackApply iceBackApply = new IceBackApply();
             iceBackApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
-            iceBackApplyDao.update(iceBackApply,Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber,applyNumber));
-        }else if(status == 2) {
+            iceBackApplyDao.update(iceBackApply, Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
+        } else if (status == 2) {
             // 驳回
             IceBackApply iceBackApply = new IceBackApply();
             iceBackApply.setExamineStatus(ExamineStatusEnum.UN_PASS.getStatus());
-            iceBackApplyDao.update(iceBackApply,Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber,applyNumber));
+            iceBackApplyDao.update(iceBackApply, Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
         }
+    }
+
+    @Override
+    public String checkBackIceBox(Integer iceBoxId) {
+
+        String result = "";
+
+        // // TODO: 2020/4/28  需要倒序
+
+        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, iceBoxId).last("limit 1"));
+
+        if (iceBackApplyRelateBox == null) {
+            result = "退还";
+        } else {
+            String applyNumber = iceBackApplyRelateBox.getApplyNumber();
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
+            Integer examineStatus = iceBackApply.getExamineStatus();
+            switch (examineStatus) {
+                case 0:
+                    result = "未审核";
+                    break;
+                case 1:
+                    result = "审核中";
+                    break;
+                case 2:
+                    result = "审核通过";
+                    break;
+                case 3:
+                    result = "审核驳回";
+                    break;
+            }
+        }
+        return result;
     }
 
     /**
@@ -241,13 +289,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         // 校验: 冰柜表中数据
         if (Objects.isNull(iceBox) || Objects.isNull(iceBoxExtend)) {
-            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+            throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_BOX.getCode(),ResultEnum.CANNOT_FIND_ICE_BOX.getMessage());
         }
 
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
         // 校验: 投放表中数据
         if (Objects.isNull(icePutApply)) {
-            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+            throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_BOX_APPLY.getCode(),ResultEnum.CANNOT_FIND_ICE_BOX_APPLY.getMessage())
         }
 
         IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
@@ -260,7 +308,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         // 校验: 电子协议
         if (icePutPactRecord == null) {
-            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD + ": 未找到对应的电子协议");
+            throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_PUT_PACT_RECORD.getCode(),ResultEnum.CANNOT_FIND_ICE_PUT_PACT_RECORD.getMessage());
         }
 
         // 校验退还到期时间
@@ -280,10 +328,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
          * 校验: 订单号
          */
         if (Objects.isNull(icePutOrder)) {
-            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+            throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_PUT_ORDER.getCode(),ResultEnum.CANNOT_FIND_ICE_PUT_ORDER.getMessage());
         }
         if (!icePutOrder.getStatus().equals(OrderStatus.IS_FINISH.getStatus())) {
-            throw new ImproperOptionException(Constants.ErrorMsg.RECORD_DATA_ERROR + ": 订单未完成");
+            throw new NormalOptionException(ResultEnum.PUT_ORDER_IS_NOT_FINISH.getCode(),ResultEnum.PUT_ORDER_IS_NOT_FINISH.getMessage());
         }
     }
 
@@ -364,6 +412,70 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
 
         // 修改冰柜状态
+    }
+
+
+
+    private void doBack(Integer iceBoxId) {
+        // 退还编号
+        String applyNumber = "BAC" + IdUtil.simpleUUID().substring(0, 29);
+
+        // 创建通知
+        DateTime date = new DateTime();
+        String prefix = date.toString("yyyyMMdd");
+//        String blockName = "冰柜退还确认单";
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+        IceBox iceBox = iceBoxDao.selectById(iceBoxId);
+        String putStoreNumber = iceBox.getPutStoreNumber();
+
+        Map<String, SessionStoreInfoVo> map = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Collections.singletonList(putStoreNumber)));
+
+        SessionStoreInfoVo sessionStoreInfoVo = map.get(putStoreNumber);
+
+        Integer userId = sessionStoreInfoVo.getUserId();
+
+        String assetId = iceBoxExtend.getAssetId();
+        String relateCode = prefix + "_" + assetId;
+        NoticeBacklogRequestVo noticeBacklogRequestVo = NoticeBacklogRequestVo.builder()
+                .backlogName(NoticeTypeEnum.ICEBOX_REFUND_CONFIRM.getDesc())
+                .noticeTypeEnum(NoticeTypeEnum.ICEBOX_REFUND_CONFIRM)
+                .relateCode(relateCode)
+                .sendUserId(5941) //
+                .build();
+        // 创建通知
+        feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
+
+        IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
+                .eq(IcePutOrder::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                .eq(IcePutOrder::getChestId, iceBoxId));
+
+        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+                .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                .eq(IcePutApplyRelateBox::getBoxId, iceBoxId));
+
+        IceBackOrder iceBackOrder = IceBackOrder.builder()
+                .boxId(iceBoxId)
+                .applyNumber(applyNumber)
+                .openid(icePutOrder.getOpenid())
+                .putOrderId(icePutOrder.getId())
+                .partnerTradeNo(icePutOrder.getOrderNum())
+                .build();
+
+        IceBackApplyRelateBox iceBackApplyRelateBox = IceBackApplyRelateBox.builder()
+                .applyNumber(applyNumber)
+                .freeType(icePutApplyRelateBox.getFreeType())
+                .boxId(iceBoxId)
+                .modelId(iceBox.getModelId())
+                .build();
+
+        IceBackApply iceBackApply = IceBackApply.builder()
+                .applyNumber(applyNumber)
+                .backStoreNumber(putStoreNumber)
+                .build();
+
+        iceBackOrderDao.insert(iceBackOrder);
+        iceBackApplyRelateBoxDao.insert(iceBackApplyRelateBox);
+        iceBackApplyDao.insert(iceBackApply);
     }
 
 }

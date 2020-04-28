@@ -190,6 +190,23 @@ public class IceBoxController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+
+    /**
+     * 退回冰柜
+     *
+     * @param iceBoxId
+     * @return
+     */
+    @RequestMapping("/checkBackIceBox")
+    public CommonResponse<String> checkBackIceBox(Integer iceBoxId) {
+        if (iceBoxId == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        String status = iceBackOrderService.checkBackIceBox(iceBoxId);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, status);
+    }
+
+
     /**
      * @Date: 2020/4/21 16:57 xiao
      * 冰柜管理--列表

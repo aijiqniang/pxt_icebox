@@ -35,7 +35,7 @@ public class MyIceBoxController {
     private IceBoxService iceBoxService;
 
     /**
-     * 查询冰柜列表：0-已投放，1-可供申请，2-处理中
+     * 查询冰柜列表：0-已投放，1-可供申请
      * @param requestVo
      * @return
      */
@@ -43,6 +43,16 @@ public class MyIceBoxController {
     public CommonResponse<List<IceBoxVo>> findIceBoxList(@RequestBody IceBoxRequestVo requestVo){
         List<IceBoxVo> iceBoxVos = iceBoxService.findIceBoxList(requestVo);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVos);
+    }
+    /**
+     * 查询冰柜列表：2-处理中
+     * @param requestVo
+     * @return
+     */
+    @RequestMapping("findPutingIceBoxList")
+    public CommonResponse<Map<String,List<IceBoxVo>>> findPutingIceBoxList(@RequestBody IceBoxRequestVo requestVo){
+        Map<String,List<IceBoxVo>> map = iceBoxService.findPutingIceBoxList(requestVo);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 
     /**

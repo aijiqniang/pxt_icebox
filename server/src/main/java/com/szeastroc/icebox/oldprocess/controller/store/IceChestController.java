@@ -6,7 +6,10 @@ import com.szeastroc.common.annotation.IgnoreResponseAdvice;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.icebox.oldprocess.entity.ClientInfo;
 import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import com.szeastroc.icebox.oldprocess.service.*;
@@ -32,6 +35,8 @@ public class IceChestController {
     private ClientInfoService clientInfoService;
     @Autowired
     private IceChestInfoService iceChestInfoService;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
     /**
      * 根据门店编号获取所属冰柜信息
@@ -128,6 +133,12 @@ public class IceChestController {
             log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
+        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
+        if(storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null){
+            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea()+"");
         return pactRecordService.createPactRecord(clientInfoRequest);
     }
 

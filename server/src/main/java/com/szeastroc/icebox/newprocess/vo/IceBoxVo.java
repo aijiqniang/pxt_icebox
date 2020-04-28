@@ -18,6 +18,10 @@ public class IceBoxVo {
      */
     private String chestName;
     /**
+     * 申请编号
+     */
+    private String applyNumber;
+    /**
      * 冰柜型号id
      */
     private Integer modelId;

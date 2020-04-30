@@ -393,10 +393,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (iceBackApplyRelateBox == null) {
                 continue;
             }
+            boxVo.setApplyNumber(iceBackApplyRelateBox.getApplyNumber());
+            boxVo.setFreeType(iceBackApplyRelateBox.getFreeType());
             IceBackApply backApply = iceBackApplyMap.get(iceBackApplyRelateBox.getApplyNumber());
             if (backApply == null) {
                 continue;
             }
+            boxVo.setApplyTimeStr(dateFormat.format(backApply.getCreatedTime()));
             SessionExamineVo sessionExamineVo = sessionExamineVoMap.get(backApply.getExamineId());
             if (sessionExamineVo == null) {
                 continue;
@@ -456,6 +459,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (putApply == null) {
                 continue;
             }
+            boxVo.setApplyTimeStr(dateFormat.format(putApply.getCreatedTime()));
             SessionExamineVo sessionExamineVo = sessionExamineVoMap.get(putApply.getExamineId());
             if (sessionExamineVo == null) {
                 continue;

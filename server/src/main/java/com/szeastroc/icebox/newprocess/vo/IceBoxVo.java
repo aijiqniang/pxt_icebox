@@ -89,4 +89,6 @@ public class IceBoxVo {
     private String qrCode;
 
     private Integer freeType;
+
+    private String applyTimeStr;
 }

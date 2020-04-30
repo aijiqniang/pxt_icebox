@@ -57,4 +57,22 @@ public class IceBackApplyRelateBox {
      */
     @TableField(value = "back_supplier_id")
     private Integer backSupplierId;
+
+
+
+
+    /**
+     * 创建时间
+     */
+    @TableField(value = "create_time")
+    private Integer createTime;
+
+
+    /**
+     * 更新时间
+     */
+    @TableField(value = "update_time")
+    private Integer updateTime;
+
+
 }

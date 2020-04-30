@@ -12,5 +12,7 @@ public interface IceBackOrderService extends IService<IceBackOrder> {
     void doRefund(SimpleIceBoxDetailVo simpleIceBoxDetailVo);
 
     void updateExamineStatus(IceBoxRequest iceBoxRequest);
+
+    String checkBackIceBox(Integer iceBoxId);
 }
 

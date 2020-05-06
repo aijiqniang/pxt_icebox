@@ -77,6 +77,11 @@ public class IceBoxVo {
     private String statusStr;
 
     /**
+     * 0未审核 1:审核中 2:审核通过 3:审核驳回";
+     */
+    private Integer backStatus;
+
+    /**
      * 审批流节点
      */
     private List<ExamineNodeVo> examineNodeVoList;

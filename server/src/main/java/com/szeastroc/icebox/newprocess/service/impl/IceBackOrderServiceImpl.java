@@ -84,14 +84,23 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         // TODO 由崔梦阳实现退还逻辑
 
-        IceBackOrder selectIceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery()
-                .eq(IceBackOrder::getBoxId, iceBoxId)
-                .orderByDesc(IceBackOrder::getCreatedTime)
-                .last("limit 1"));
+//        IceBackOrder selectIceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery()
+//                .eq(IceBackOrder::getBoxId, iceBoxId)
+//                .orderByDesc(IceBackOrder::getCreatedTime)
+//                .last("limit 1"));
 
-        if (selectIceBackOrder != null) {
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+        Integer icePutApplyId = icePutApply.getId();
+
+
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApplyId));
+
+
+//        selectIceBackOrder
+        if (iceBackApply != null) {
             // 该冰柜存在过退还
-            String selectApplyNumber = selectIceBackOrder.getApplyNumber();
+            String selectApplyNumber = iceBackApply.getApplyNumber();
             IceBackApply selectIceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, selectApplyNumber));
 
             Integer examineStatus = selectIceBackApply.getExamineStatus();

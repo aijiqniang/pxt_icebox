@@ -13,6 +13,7 @@ import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.oldprocess.entity.IceChestInfo;
 import com.szeastroc.icebox.oldprocess.entity.IceChestPutRecord;
@@ -64,11 +65,17 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         IceBox iceBox = iceBoxDao.selectById(clientInfoRequest.getIceChestId());
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(clientInfoRequest.getIceChestId());
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+        if(icePutApply == null){
+            throw new ImproperOptionException("该冰柜不存在申请单");
+        }
+        icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+        icePutApplyDao.updateById(icePutApply);
+
         IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                 .eq(IcePutApplyRelateBox::getApplyNumber, icePutApply.getApplyNumber())
                 .eq(IcePutApplyRelateBox::getBoxId, clientInfoRequest.getIceChestId()));
 
-        if(icePutApplyRelateBox.getFreeType() == FreePayTypeEnum.IS_FREE.getType()){
+        if(icePutApplyRelateBox.getFreeType().equals(FreePayTypeEnum.IS_FREE.getType())){
 //            throw new ImproperOptionException("不免押流程的申请存在免押冰柜");
             return createByFree(clientInfoRequest, iceBox);
         }

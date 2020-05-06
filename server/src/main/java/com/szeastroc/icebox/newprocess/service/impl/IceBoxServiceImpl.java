@@ -28,6 +28,7 @@ import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.*;
@@ -279,16 +280,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             IceBoxPutModel.IceBoxModel iceBoxModel = new IceBoxPutModel.IceBoxModel(requestVo.getChestModel(), requestVo.getChestName(), requestVo.getDepositMoney(), requestVo.getApplyCount(), requestVo.getFreeType());
             iceBoxModels.add(iceBoxModel);
         }
-        String orderNum = CommonUtil.generateOrderNumber();
-        IcePutOrder icePutOrder = IcePutOrder.builder()
-                .applyNumber(applyNumber)
-                .orderNum(orderNum)
-                .totalMoney(totalMoney)
-                .status(OrderStatus.IS_PAY_ING.getStatus())
-                .createdBy(iceBoxRequestVo.getUserId())
-                .createdTime(new Date())
-                .build();
-        icePutOrderDao.insert(icePutOrder);
+//        String orderNum = CommonUtil.generateOrderNumber();
+//        IcePutOrder icePutOrder = IcePutOrder.builder()
+//                .applyNumber(applyNumber)
+//                .orderNum(orderNum)
+//                .totalMoney(totalMoney)
+//                .status(OrderStatus.IS_PAY_ING.getStatus())
+//                .createdBy(iceBoxRequestVo.getUserId())
+//                .createdTime(new Date())
+//                .build();
+//        icePutOrderDao.insert(icePutOrder);
         List<SessionExamineVo.VisitExamineNodeVo> iceBoxPutExamine = createIceBoxPutExamine(iceBoxRequestVo, applyNumber, iceBoxModels);
         map.put("iceBoxPutExamine", iceBoxPutExamine);
         if (CollectionUtil.isNotEmpty(iceBoxPutExamine)) {
@@ -776,30 +777,30 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
         //审批中
+//        if (IceBoxStatus.IS_PUTING.getStatus().equals(iceBoxRequest.getStatus())) {
+//            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
+//            if (icePutApply != null) {
+//                icePutApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
+//                icePutApply.setUpdatedBy(0);
+//                icePutApply.setUpdateTime(new Date());
+//                icePutApplyDao.updateById(icePutApply);
+//            }
+//
+//            List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxRequest.getApplyNumber()));
+//            Set<Integer> iceBoxIds = Streams.toStream(icePutApplyRelateBoxes).map(x -> x.getBoxId()).collect(Collectors.toSet());
+//            if (CollectionUtil.isNotEmpty(iceBoxIds)) {
+//                for (Integer iceBoxId : iceBoxIds) {
+//                    IceBox iceBox = new IceBox();
+//                    iceBox.setId(iceBoxId);
+//                    iceBox.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
+//                    iceBox.setUpdatedTime(new Date());
+//                    iceBox.setCreatedBy(0);
+//                    iceBoxDao.updateById(iceBox);
+//                }
+//            }
+//        }
+        //审批通过将冰箱置为投放中状态，商户签收将状态置为已投放
         if (IceBoxStatus.IS_PUTING.getStatus().equals(iceBoxRequest.getStatus())) {
-            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
-            if (icePutApply != null) {
-                icePutApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
-                icePutApply.setUpdatedBy(0);
-                icePutApply.setUpdateTime(new Date());
-                icePutApplyDao.updateById(icePutApply);
-            }
-
-            List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxRequest.getApplyNumber()));
-            Set<Integer> iceBoxIds = Streams.toStream(icePutApplyRelateBoxes).map(x -> x.getBoxId()).collect(Collectors.toSet());
-            if (CollectionUtil.isNotEmpty(iceBoxIds)) {
-                for (Integer iceBoxId : iceBoxIds) {
-                    IceBox iceBox = new IceBox();
-                    iceBox.setId(iceBoxId);
-                    iceBox.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
-                    iceBox.setUpdatedTime(new Date());
-                    iceBox.setCreatedBy(0);
-                    iceBoxDao.updateById(iceBox);
-                }
-            }
-        }
-        //审批通过
-        if (IceBoxStatus.IS_PUTED.getStatus().equals(iceBoxRequest.getStatus())) {
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
             if (icePutApply != null) {
                 icePutApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
@@ -814,7 +815,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 for (Integer iceBoxId : iceBoxIds) {
                     IceBox iceBox = new IceBox();
                     iceBox.setId(iceBoxId);
-                    iceBox.setPutStatus(IceBoxStatus.IS_PUTED.getStatus());
+                    iceBox.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBox.setCreatedBy(0);
                     iceBoxDao.updateById(iceBox);
@@ -1412,17 +1413,21 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<IceBoxVo> iceBoxVos = new ArrayList<>();
         //处理中
         if (XcxType.IS_PUTING.getStatus().equals(requestVo.getType())) {
-            LambdaQueryWrapper<IcePutApply> wrapper = Wrappers.<IcePutApply>lambdaQuery();
-            wrapper.eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber());
-            wrapper.and(x -> x.eq(IcePutApply::getExamineStatus,ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IcePutApply::getExamineStatus,ExamineStatusEnum.IS_DEFAULT.getStatus()));
-            List<IcePutApply> icePutApplies = icePutApplyDao.selectList(wrapper);
+            LambdaQueryWrapper<IcePutApply> applyWrapper = Wrappers.<IcePutApply>lambdaQuery();
+            applyWrapper.eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber());
+            applyWrapper.eq(IcePutApply::getStoreSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus());
+            List<IcePutApply> icePutApplies = icePutApplyDao.selectList(applyWrapper);
             if (CollectionUtil.isNotEmpty(icePutApplies)) {
                 List<IceBoxVo> putIceBoxVos = this.getIceBoxVosByPutApplys(icePutApplies);
                 if (CollectionUtil.isNotEmpty(putIceBoxVos)) {
                     iceBoxVos.addAll(putIceBoxVos);
                 }
             }
-            List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber()));
+            LambdaQueryWrapper<IceBackApply> backWrapper = Wrappers.<IceBackApply>lambdaQuery();
+            backWrapper.eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber());
+            backWrapper.and(x -> x.eq(IceBackApply::getExamineStatus,ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IceBackApply::getExamineStatus,ExamineStatusEnum.IS_DEFAULT.getStatus()));
+
+            List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(backWrapper);
             if (CollectionUtil.isNotEmpty(iceBackApplies)) {
                 List<IceBoxVo> backIceBoxVos = this.getIceBoxVosByBackApplys(iceBackApplies);
                 if (CollectionUtil.isNotEmpty(backIceBoxVos)) {

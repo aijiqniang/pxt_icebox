@@ -130,13 +130,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Map<Integer, SimpleSupplierInfoVo> supplierInfoVoMap = supplierInfoVos.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, x -> x));
             LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
             wrapper.in(IceBox::getSupplierId, supplierIds).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
-            if(StringUtils.isNotEmpty(requestVo.getSearchContent())){
+            if (StringUtils.isNotEmpty(requestVo.getSearchContent())) {
                 List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestModel, requestVo.getSearchContent()));
-                if(CollectionUtil.isNotEmpty(iceModels)){
+                if (CollectionUtil.isNotEmpty(iceModels)) {
                     Set<Integer> iceModelIds = iceModels.stream().map(x -> x.getId()).collect(Collectors.toSet());
-                    wrapper.and(x -> x.like(IceBox::getChestName,requestVo.getSearchContent()).or().in(IceBox::getModelId,iceModelIds));
-                }else {
-                    wrapper.like(IceBox::getChestName,requestVo.getSearchContent());
+                    wrapper.and(x -> x.like(IceBox::getChestName, requestVo.getSearchContent()).or().in(IceBox::getModelId, iceModelIds));
+                } else {
+                    wrapper.like(IceBox::getChestName, requestVo.getSearchContent());
                 }
 
             }
@@ -618,7 +618,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
             IceModel iceModel = iceModelDao.selectById(iceBox.getModelId());
 
-            IceBoxStoreVo iceBoxStoreVo = IceBoxConverter.convertToStoreVo(iceBox, iceBoxExtend, iceModel, icePutApplyRelateBox, iceEventRecord);
+            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApply.getId()));
+
+            IceBoxStoreVo iceBoxStoreVo = IceBoxConverter.convertToStoreVo(iceBox, iceBoxExtend, iceModel, icePutApplyRelateBox, iceEventRecord, iceBackApply);
             iceBoxStoreVos.add(iceBoxStoreVo);
         }
         return iceBoxStoreVos;
@@ -1425,7 +1429,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             LambdaQueryWrapper<IceBackApply> backWrapper = Wrappers.<IceBackApply>lambdaQuery();
             backWrapper.eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber());
-            backWrapper.and(x -> x.eq(IceBackApply::getExamineStatus,ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IceBackApply::getExamineStatus,ExamineStatusEnum.IS_DEFAULT.getStatus()));
+            backWrapper.and(x -> x.eq(IceBackApply::getExamineStatus, ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IceBackApply::getExamineStatus, ExamineStatusEnum.IS_DEFAULT.getStatus()));
 
             List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(backWrapper);
             if (CollectionUtil.isNotEmpty(iceBackApplies)) {

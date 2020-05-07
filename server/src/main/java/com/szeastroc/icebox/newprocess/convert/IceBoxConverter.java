@@ -1,17 +1,14 @@
 package com.szeastroc.icebox.newprocess.convert;
 
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
-import com.szeastroc.icebox.newprocess.entity.IceModel;
-import com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox;
+import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 
 public class IceBoxConverter {
 
-    public static IceBoxVo convertToVo(IceBox iceBox, IceBoxExtend iceBoxExtend, IceModel iceModel){
+    public static IceBoxVo convertToVo(IceBox iceBox, IceBoxExtend iceBoxExtend, IceModel iceModel, IceBackApply iceBackApply) {
         IceBoxVo iceBoxVo = new IceBoxVo();
         iceBoxVo.setIceBoxId(iceBox.getId());
         iceBoxVo.setAssetId(iceBoxExtend.getAssetId());
@@ -24,10 +21,14 @@ public class IceBoxConverter {
         iceBoxVo.setQrCode(iceBoxExtend.getQrCode());
         iceBoxVo.setLastPutTime(iceBoxExtend.getLastPutTime());
         iceBoxVo.setPutStatus(iceBox.getPutStatus());
+        if(iceBackApply != null) {
+            Integer examineStatus = iceBackApply.getExamineStatus();
+            iceBoxVo.setBackStatus(examineStatus);
+        }
         return iceBoxVo;
     }
 
-    public static IceBoxVo convertToVo(IceBox iceBox, IceBoxExtend iceBoxExtend, IceModel iceModel, FreePayTypeEnum freePayTypeEnum){
+    public static IceBoxVo convertToVo(IceBox iceBox, IceBoxExtend iceBoxExtend, IceModel iceModel, FreePayTypeEnum freePayTypeEnum) {
         IceBoxVo iceBoxVo = new IceBoxVo();
         iceBoxVo.setIceBoxId(iceBox.getId());
         iceBoxVo.setAssetId(iceBoxExtend.getAssetId());
@@ -42,9 +43,9 @@ public class IceBoxConverter {
         return iceBoxVo;
     }
 
-    public static IceBoxStoreVo convertToStoreVo(IceBox iceBox, IceBoxExtend iceBoxExtend, IceModel iceModel, IcePutApplyRelateBox icePutApplyRelateBox, IceEventRecord iceEventRecord){
-        IceBoxStoreVo iceBoxStoreVo =  new IceBoxStoreVo();
-        iceBoxStoreVo.setIceBoxVo(convertToVo(iceBox, iceBoxExtend, iceModel));
+    public static IceBoxStoreVo convertToStoreVo(IceBox iceBox, IceBoxExtend iceBoxExtend, IceModel iceModel, IcePutApplyRelateBox icePutApplyRelateBox, IceEventRecord iceEventRecord, IceBackApply iceBackApply) {
+        IceBoxStoreVo iceBoxStoreVo = new IceBoxStoreVo();
+        iceBoxStoreVo.setIceBoxVo(convertToVo(iceBox, iceBoxExtend, iceModel, iceBackApply));
         iceBoxStoreVo.setIcePutApplyRelateBoxVo(IcePutApplyRelateBoxConverter.convertToVo(icePutApplyRelateBox));
         iceBoxStoreVo.setIceEventRecord(iceEventRecord);
         return iceBoxStoreVo;

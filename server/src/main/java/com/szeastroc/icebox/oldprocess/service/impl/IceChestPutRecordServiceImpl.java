@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.oldprocess.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -12,7 +13,14 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.common.utils.Streams;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.icebox.newprocess.dao.*;
+import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.oldprocess.dao.*;
 import com.szeastroc.icebox.oldprocess.entity.*;
 import com.szeastroc.icebox.enums.*;
@@ -26,6 +34,7 @@ import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -61,6 +70,22 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
     private PactRecordDao pactRecordDao;
     @Autowired
     private MarketAreaDao marketAreaDao;
+
+
+    @Autowired
+    private IceBoxDao iceBoxDao;
+    @Autowired
+    private IceBoxExtendDao iceBoxExtendDao;
+    @Autowired
+    private IcePutApplyDao icePutApplyDao;
+    @Autowired
+    private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
+    @Autowired
+    private IceModelDao iceModelDao;
+    @Autowired
+    private IcePutOrderDao icePutOrderDao;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
     @Transactional(value = "transactionManager")
     @Override
@@ -200,6 +225,101 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         if(CollectionUtils.isNotEmpty(iceChestPutRecordIPage.getRecords())) {
             return getIceDepositResponseIPage(iceChestPutRecordIPage, clientForeignKeyMap, chestForeignKeyMap, orderForeignKeyMap);
         }
+        return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
+    }
+
+    @Override
+    public IPage<IceDepositResponse> queryIceDepositsForPut(IceDepositPage iceDepositPage) {
+        LambdaQueryWrapper<IcePutApply> wrapper = Wrappers.<IcePutApply>lambdaQuery();
+        wrapper.eq(IcePutApply::getStoreSignStatus, StoreSignStatus.ALREADY_SIGN.getStatus());
+        if(StringUtils.isNotEmpty(iceDepositPage.getClientNumber())){
+            wrapper.like(IcePutApply::getPutStoreNumber, iceDepositPage.getClientNumber());
+        }
+        if(StringUtils.isNotEmpty(iceDepositPage.getClientName())){
+            List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByName(iceDepositPage.getClientName()));
+            if(CollectionUtil.isNotEmpty(storeInfoDtoVos)){
+                List<String> storeNumbers = storeInfoDtoVos.stream().map(x -> x.getStoreNumber()).collect(Collectors.toList());
+                wrapper.in(IcePutApply::getPutStoreNumber, storeNumbers);
+            }else {
+                wrapper.eq(IcePutApply::getPutStoreNumber, "");
+            }
+        }
+        if(StringUtils.isNotEmpty(iceDepositPage.getContactMobile())){
+            List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByMobile(iceDepositPage.getContactMobile()));
+            if(CollectionUtil.isNotEmpty(storeInfoDtoVos)){
+                List<String> storeNumbers = storeInfoDtoVos.stream().map(x -> x.getStoreNumber()).collect(Collectors.toList());
+                wrapper.in(IcePutApply::getPutStoreNumber, storeNumbers);
+            }else {
+                wrapper.eq(IcePutApply::getPutStoreNumber, "");
+            }
+        }
+        if(StringUtils.isNotEmpty(iceDepositPage.getChestModel())){
+            List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestModel, iceDepositPage.getChestModel()));
+            if(CollectionUtil.isNotEmpty(iceModels)){
+                List<Integer> modelIds = iceModels.stream().map(x -> x.getId()).collect(Collectors.toList());
+                List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getModelId, modelIds));
+                if(CollectionUtil.isNotEmpty(icePutApplyRelateBoxes)){
+                    List<String> applyNumbers = icePutApplyRelateBoxes.stream().map(x -> x.getApplyNumber()).collect(Collectors.toList());
+                    wrapper.in(IcePutApply::getApplyNumber, applyNumbers);
+                }else {
+                    wrapper.eq(IcePutApply::getApplyNumber, "");
+                }
+            }else {
+                wrapper.eq(IcePutApply::getApplyNumber, "");
+            }
+        }
+        if(StringUtils.isNotEmpty(iceDepositPage.getAssetId())){
+            List<IceBoxExtend> iceBoxExtends = iceBoxExtendDao.selectList(Wrappers.<IceBoxExtend>lambdaQuery().like(IceBoxExtend::getAssetId, iceDepositPage.getAssetId()));
+            if(CollectionUtil.isNotEmpty(iceBoxExtends)){
+                List<Integer> iceBoxIds = iceBoxExtends.stream().map(x -> x.getId()).collect(Collectors.toList());
+                List<IceBox> iceBoxes = iceBoxDao.selectBatchIds(iceBoxIds);
+                iceBoxes = Streams.toStream(iceBoxes).filter(x -> StringUtils.isNotEmpty(x.getPutStoreNumber())).collect(Collectors.toList());
+                if(CollectionUtil.isNotEmpty(iceBoxes)){
+                    List<String> storeNumbers = iceBoxes.stream().map(x -> x.getPutStoreNumber()).collect(Collectors.toList());
+                    wrapper.in(IcePutApply::getPutStoreNumber, storeNumbers);
+                }else {
+                    wrapper.eq(IcePutApply::getPutStoreNumber, "");
+                }
+            }
+        }
+
+        if(StringUtils.isNotEmpty(iceDepositPage.getPayStartTime()) && StringUtils.isNotEmpty(iceDepositPage.getPayEndTime()) ){
+            List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().ge(IcePutOrder::getPayTime, iceDepositPage.getPayStartTime()).le(IcePutOrder::getPayTime, iceDepositPage.getPayEndTime()));
+            if(CollectionUtil.isNotEmpty(icePutOrders)){
+                List<String> applyNumbers = icePutOrders.stream().map(x -> x.getApplyNumber()).collect(Collectors.toList());
+                wrapper.in(IcePutApply::getApplyNumber, applyNumbers);
+            }else {
+                wrapper.eq(IcePutApply::getApplyNumber, "");
+            }
+        }
+        if(iceDepositPage.getMarketAreaId() != null){
+            List<IceBox> iceBoxs = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getDeptId, iceDepositPage.getMarketAreaId()));
+            if(CollectionUtil.isNotEmpty(iceBoxs)){
+                List<String> storeNumbers = iceBoxs.stream().map(x -> x.getPutStoreNumber()).collect(Collectors.toList());
+
+            }else {
+                wrapper.eq(IcePutApply::getApplyNumber, "");
+            }
+        }
+
+//        IPage<IcePutApply> icePutApplyIPage = icePutApplyDao.customSelectPage(iceDepositPage, wrapper, iceDepositPage);
+//
+//        final Map<Integer, Integer> clientForeignKeyMap = Maps.newHashMap();
+//        final Map<Integer, Integer> chestForeignKeyMap = Maps.newHashMap();
+//        final Map<Integer, Integer> orderForeignKeyMap = Maps.newHashMap();
+//        for (IceChestPutRecord record : iceChestPutRecordIPage.getRecords()) {
+//            // 投放客户信息
+//            clientForeignKeyMap.put(record.getId(), record.getReceiveClientId());
+//            // 冰柜信息
+//            chestForeignKeyMap.put(record.getId(), record.getChestId());
+//            // 支付信息
+//            orderForeignKeyMap.put(record.getId(), record.getId());
+//        }
+//
+//        // 批量查询数据库
+//        if(CollectionUtils.isNotEmpty(iceChestPutRecordIPage.getRecords())) {
+//            return getIceDepositResponseIPage(iceChestPutRecordIPage, clientForeignKeyMap, chestForeignKeyMap, orderForeignKeyMap);
+//        }
         return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
     }
 

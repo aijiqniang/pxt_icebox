@@ -40,6 +40,19 @@ public class ReportController {
                 iceChestPutRecordService.queryIceDeposits(iceDepositPage));
     }
 
+    /**
+     * 查询押金支付明细
+     * @param iceDepositPage
+     * @return
+     */
+    @PostMapping("/queryIceDepositsForPut")
+    public CommonResponse<IPage<IceDepositResponse>> queryIceDepositsForPut(@RequestBody IceDepositPage iceDepositPage){
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,
+                iceChestPutRecordService.queryIceDepositsForPut(iceDepositPage));
+    }
+
+
+
     @PostMapping("/excel")
     public void excel(@RequestBody IceDepositPage iceDepositPage, HttpServletResponse response){
         response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");

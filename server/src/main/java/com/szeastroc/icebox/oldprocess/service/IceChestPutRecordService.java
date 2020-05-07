@@ -18,4 +18,6 @@ public interface IceChestPutRecordService extends IService<IceChestPutRecord> {
     CommonResponse<OrderPayResponse> applyPayIceChest(ClientInfoRequest clientInfoRequest) throws Exception;
 
     IPage<IceDepositResponse> queryIceDeposits(IceDepositPage iceDepositPage);
+
+    IPage<IceDepositResponse> queryIceDepositsForPut(IceDepositPage iceDepositPage);
 }

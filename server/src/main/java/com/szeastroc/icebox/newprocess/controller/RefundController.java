@@ -1,15 +1,22 @@
 package com.szeastroc.icebox.newprocess.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.annotation.MonitorAnnotation;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
+import com.szeastroc.icebox.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
+import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
+import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 @RestController
@@ -92,6 +100,11 @@ public class RefundController {
     }
 
 
+    /**
+     * 业务员待办事项提交之后触发 创建审批流
+     * @param simpleIceBoxDetailVo
+     * @return
+     */
     @RequestMapping("/doRefund")
     @MonitorAnnotation
     public CommonResponse doRefund(@RequestBody SimpleIceBoxDetailVo simpleIceBoxDetailVo) {
@@ -125,6 +138,11 @@ public class RefundController {
     }
 
 
+    /**
+     * 用于修改back_order表审批流状态 当审批状态未通过的时候 调用转账服务
+     * @param iceBoxRequest
+     * @return
+     */
     @RequestMapping("/updateExamineStatus")
     public CommonResponse updateExamineStatus(@RequestBody IceBoxRequest iceBoxRequest) {
 
@@ -143,4 +161,12 @@ public class RefundController {
     }
 
 
+
+    @RequestMapping("/findRefundTransferByPage")
+    public CommonResponse<IPage<IceDepositResponse>> findRefundTransferByPage(@RequestBody IceDepositPage iceDepositPage){
+
+        IPage<IceDepositResponse> iPage =  iceBackOrderService.findRefundTransferByPage(iceDepositPage);
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage);
+    }
 }

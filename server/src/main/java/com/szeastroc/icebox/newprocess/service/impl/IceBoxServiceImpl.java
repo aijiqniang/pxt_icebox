@@ -1471,7 +1471,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApply.getId()));
 
             if (iceBackApply != null) {
-                // 说明至少申请了投放
+                // 说明至少申请了退还
                 boxVo.setBackStatus(iceBackApply.getExamineStatus());
             }
             iceBoxVos.add(boxVo);

@@ -98,4 +98,14 @@ public class MyIceBoxController {
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxList(pxtNumber));
     }
+    /**
+     * 根据门店编号已签收的冰柜信息
+     * @param pxtNumber
+     * @return
+     */
+    @RequestMapping("findPutIceBoxList")
+    public CommonResponse<List<IceBoxVo>> findPutIceBoxList(String pxtNumber){
+        List<IceBoxVo> iceBoxVos = iceBoxService.findPutIceBoxList(pxtNumber);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVos);
+    }
 }

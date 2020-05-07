@@ -1438,4 +1438,31 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<String, List<IceBoxVo>> map = Streams.toStream(iceBoxVos).collect(Collectors.groupingBy(IceBoxVo::getApplyNumber));
         return map;
     }
+
+    @Override
+    public List<IceBoxVo> findPutIceBoxList(String pxtNumber) {
+        List<IceBoxVo> iceBoxVos = new ArrayList<>();
+        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStoreNumber, pxtNumber).eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()));
+        if (CollectionUtil.isEmpty(iceBoxes)) {
+            return iceBoxVos;
+        }
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        for (IceBox iceBox : iceBoxes) {
+            IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+            IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
+            if(iceBoxExtend != null){
+                boxVo.setQrCode(iceBoxExtend.getQrCode());
+            }
+
+            IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery()
+                    .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId())
+                    .orderByDesc(IceEventRecord::getCreateTime)
+                    .last("limit 1"));
+            if(iceEventRecord != null){
+                boxVo.setDetailAddress(iceEventRecord.getDetailAddress());
+            }
+            iceBoxVos.add(boxVo);
+        }
+        return iceBoxVos;
+    }
 }

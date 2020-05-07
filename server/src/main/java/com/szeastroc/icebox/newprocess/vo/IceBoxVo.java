@@ -75,6 +75,10 @@ public class IceBoxVo {
      * 处理状态：退押中，申请中
      */
     private String statusStr;
+    /**
+     * 投放状态：0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放',
+     */
+    private Integer putStatus;
 
     /**
      * 审批流节点
@@ -91,4 +95,5 @@ public class IceBoxVo {
     private Integer freeType;
 
     private String applyTimeStr;
+    private String detailAddress;
 }

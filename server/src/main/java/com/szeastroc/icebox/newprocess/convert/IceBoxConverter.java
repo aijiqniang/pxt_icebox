@@ -23,6 +23,7 @@ public class IceBoxConverter {
         iceBoxVo.setOpenTotal(iceBoxExtend.getOpenTotal());
         iceBoxVo.setQrCode(iceBoxExtend.getQrCode());
         iceBoxVo.setLastPutTime(iceBoxExtend.getLastPutTime());
+        iceBoxVo.setPutStatus(iceBox.getPutStatus());
         return iceBoxVo;
     }
 

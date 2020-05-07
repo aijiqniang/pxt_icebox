@@ -81,7 +81,7 @@ public class IceBoxVo {
     private Integer putStatus;
 
     /**
-     * 0未审核 1:审核中 2:审核通过 3:审核驳回";
+     * -1 当前没有退还记录 0未审核 1:审核中 2:审核通过 3:审核驳回";
      */
     private Integer backStatus;
 

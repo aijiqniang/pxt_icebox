@@ -1470,10 +1470,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
             IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApply.getId()));
 
-            if (iceBackApply != null) {
-                // 说明至少申请了退还
-                boxVo.setBackStatus(iceBackApply.getExamineStatus());
-            }
+            boxVo.setBackStatus(iceBackApply == null ? -1 : iceBackApply.getExamineStatus());
             iceBoxVos.add(boxVo);
         }
         return iceBoxVos;

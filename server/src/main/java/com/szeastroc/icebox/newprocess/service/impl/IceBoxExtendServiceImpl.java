@@ -101,8 +101,11 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
                 .memberName(sessionStoreInfoVo.getMemberName())
                 .deptId(iceBox.getDeptId())
                 .supplierId(iceBox.getSupplierId())
-                .freeType(icePutApplyRelateBox.getFreeType())
                 .build();
+
+        if(icePutApplyRelateBox != null) {
+            simpleIceBoxDetailVo.setFreeType(icePutApplyRelateBox.getFreeType());
+        }
 
 
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));

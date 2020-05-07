@@ -1454,7 +1454,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         for (IceBox iceBox : iceBoxes) {
             IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
-            if(iceBoxExtend != null){
+            if (iceBoxExtend != null) {
                 boxVo.setQrCode(iceBoxExtend.getQrCode());
             }
 
@@ -1462,8 +1462,17 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId())
                     .orderByDesc(IceEventRecord::getCreateTime)
                     .last("limit 1"));
-            if(iceEventRecord != null){
+            if (iceEventRecord != null) {
                 boxVo.setDetailAddress(iceEventRecord.getDetailAddress());
+            }
+
+            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApply.getId()));
+
+            if (iceBackApply != null) {
+                // 说明至少申请了投放
+                boxVo.setBackStatus(iceBackApply.getExamineStatus());
             }
             iceBoxVos.add(boxVo);
         }

@@ -16,6 +16,7 @@ import com.szeastroc.icebox.oldprocess.dao.PactRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import javax.annotation.Resource;
 import java.util.*;
 
@@ -52,6 +53,9 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
     @Resource
     private FeignSupplierClient feignSupplierClient;
 
+    @Resource
+    private IcePutApplyDao icePutApplyDao;
+
 
     @Override
     public SimpleIceBoxDetailVo getByAssetId(String assetId) {
@@ -75,7 +79,7 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
 
         Map<String, SessionStoreInfoVo> map = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Collections.singletonList(storeNumber)));
 
-        if(map == null) {
+        if (map == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 
@@ -101,15 +105,17 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
                 .build();
 
 
+        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
-        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, id).orderByDesc(IceBackApplyRelateBox::getCreateTime).last("limit 1"));
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApply.getId()));
 
+        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, id).eq(IceBackApplyRelateBox::getApplyNumber, iceBackApply.getApplyNumber()));
 
-        if(iceBackApplyRelateBox != null) {
+        if (iceBackApplyRelateBox != null) {
             Integer backSupplierId = iceBackApplyRelateBox.getBackSupplierId();
             simpleIceBoxDetailVo.setBackType(iceBackApplyRelateBox.getBackType());
             SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(backSupplierId));
-            if(subordinateInfoVo != null) {
+            if (subordinateInfoVo != null) {
                 simpleIceBoxDetailVo.setNewSupplierId(subordinateInfoVo.getId());
                 simpleIceBoxDetailVo.setNewSupplierName(subordinateInfoVo.getName());
                 simpleIceBoxDetailVo.setNewSupplierNumber(subordinateInfoVo.getNumber());
@@ -123,12 +129,12 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
 
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getAssetId, assetId));
 
-        if(iceBoxExtend == null) {
+        if (iceBoxExtend == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 
         IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery().eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
-        if(icePutPactRecord == null) {
+        if (icePutPactRecord == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         icePutPactRecord.setPutExpireTime(new Date());

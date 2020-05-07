@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.Date;
+
 @Getter
 @Setter
 @ToString
@@ -65,14 +67,14 @@ public class IceBackApplyRelateBox {
      * 创建时间
      */
     @TableField(value = "create_time")
-    private Integer createTime;
+    private Date createTime;
 
 
     /**
      * 更新时间
      */
     @TableField(value = "update_time")
-    private Integer updateTime;
+    private Date updateTime;
 
 
 }

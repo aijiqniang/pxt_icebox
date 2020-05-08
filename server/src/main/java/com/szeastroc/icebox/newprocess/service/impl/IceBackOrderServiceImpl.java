@@ -1,7 +1,9 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -12,6 +14,7 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
+import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -42,6 +45,7 @@ import com.szeastroc.visit.common.SessionIceBoxRefundModel;
 import com.szeastroc.visit.common.enums.NoticeTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -288,6 +293,95 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
     @Override
     public IPage<IceDepositResponse> findRefundTransferByPage(IceDepositPage iceDepositPage) {
+
+        // 主表条件
+        String payEndTime = iceDepositPage.getPayEndTime();
+        String payStartTime = iceDepositPage.getPayStartTime();
+
+        LambdaQueryWrapper<IceBackOrder> wrapper = Wrappers.<IceBackOrder>lambdaQuery();
+
+        if(StringUtils.isNotBlank(payStartTime)) {
+            wrapper.ge(IceBackOrder::getUpdatedTime,payStartTime);
+        }
+
+        if(StringUtils.isNotBlank(payEndTime)) {
+            wrapper.le(IceBackOrder::getUpdatedTime,payEndTime);
+        }
+
+        // 副表条件
+        String assetId = iceDepositPage.getAssetId();
+        String chestModel = iceDepositPage.getChestModel();
+        String clientName = iceDepositPage.getClientName();
+        String clientNumber = iceDepositPage.getClientNumber();
+        String contactMobile = iceDepositPage.getContactMobile();
+        Integer marketAreaId = iceDepositPage.getMarketAreaId();
+
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        LambdaQueryWrapper<IceBoxExtend> iceBoxExtendWrapper = Wrappers.<IceBoxExtend>lambdaQuery();
+        LambdaQueryWrapper<IceBackApply> iceBackApplyWrapper = Wrappers.<IceBackApply>lambdaQuery();
+
+
+
+        if(StringUtils.isNotBlank(clientNumber)) {
+            iceBackApplyWrapper.eq(IceBackApply::getBackStoreNumber,clientNumber);
+        }
+
+        if (StringUtils.isNotBlank(clientName)) {
+            List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByName(clientName));
+
+            List<String> storeNumberList = storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList());
+            iceBackApplyWrapper.in(IceBackApply::getBackStoreNumber,storeNumberList);
+        }
+
+        if(StringUtils.isNotBlank(contactMobile)) {
+            List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByMobile(contactMobile));
+            List<String> storeNumberList = storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList());
+            iceBackApplyWrapper.in(IceBackApply::getBackStoreNumber,storeNumberList);
+        }
+        if(StringUtils.isNotBlank(chestModel)) {
+
+            List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestName, chestModel));
+            List<Integer> iceModelIds = iceModels.stream().map(IceModel::getId).collect(Collectors.toList());
+
+            iceBoxWrapper.in(IceBox::getModelId,iceModelIds);
+        }
+
+        if(StringUtils.isNotBlank(assetId)) {
+            iceBoxExtendWrapper.like(IceBoxExtend::getAssetId,assetId);
+        }
+
+        if(marketAreaId != null) {
+            iceBoxWrapper.eq(IceBox::getDeptId,marketAreaId);
+        }
+
+
+        // 取 iceBoxId 的交集
+
+        List<IceBox> iceBoxes = iceBoxDao.selectList(iceBoxWrapper);
+        List<IceBoxExtend> iceBoxExtends = iceBoxExtendDao.selectList(iceBoxExtendWrapper);
+        List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(iceBackApplyWrapper);
+
+        List<Integer> list = new ArrayList<>();
+
+        if(CollectionUtil.isNotEmpty(iceBoxes)) {
+
+
+
+        }
+        if(CollectionUtil.isNotEmpty(iceBoxExtends)) {
+
+
+
+        }
+        if(CollectionUtil.isNotEmpty(iceBackApplies)) {
+
+
+
+        }
+
+
+        IPage<IceBackOrder> iPage = iceBackOrderDao.selectPage(iceDepositPage, wrapper);
+
 
         return null;
     }

@@ -31,10 +31,22 @@ public class IceBox {
     private String chestName;
 
     /**
+     * 东鹏资产id
+     */
+    @TableField(value = "asset_id")
+    private String assetId;
+
+    /**
      * 冰柜型号
      */
     @TableField(value = "model_id")
     private Integer modelId;
+
+    /**
+     * 冰柜型号
+     */
+    @TableField(value = "model_name")
+    private String modelName;
 
     /**
      * 品牌

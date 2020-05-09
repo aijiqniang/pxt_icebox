@@ -421,10 +421,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_PUT_PACT_RECORD.getCode(), ResultEnum.CANNOT_FIND_ICE_PUT_PACT_RECORD.getMessage());
         }
 
-        // 校验退还到期时间
-        if (icePutPactRecord.getPutExpireTime().getTime() > new Date().getTime()) {
-            throw new NormalOptionException(ResultEnum.TAKE_BAKE_ERR_WITH_EXPIRE_TIME.getCode(), ResultEnum.TAKE_BAKE_ERR_WITH_EXPIRE_TIME.getMessage());
-        }
+        // 校验退还到期时间 //注释掉了这段代码，即使未到期也能退还
+//        if (icePutPactRecord.getPutExpireTime().getTime() > new Date().getTime()) {
+//            throw new NormalOptionException(ResultEnum.TAKE_BAKE_ERR_WITH_EXPIRE_TIME.getCode(), ResultEnum.TAKE_BAKE_ERR_WITH_EXPIRE_TIME.getMessage());
+//        }
 
         // 免押时, 不校验订单, 直接跳过
         if (FreePayTypeEnum.IS_FREE.getType() == icePutApplyRelateBox.getFreeType()) {

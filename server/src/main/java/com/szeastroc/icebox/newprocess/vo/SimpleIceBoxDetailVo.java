@@ -71,6 +71,12 @@ public class SimpleIceBoxDetailVo {
 
 
     /**
+     * 门店名称
+     */
+    private String storeName;
+
+
+    /**
      * 拥有者的经销商
      */
     private Integer supplierId;

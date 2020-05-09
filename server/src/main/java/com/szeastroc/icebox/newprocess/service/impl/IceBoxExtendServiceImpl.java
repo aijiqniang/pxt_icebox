@@ -97,6 +97,7 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
                 .lastPutTime(iceBoxExtend.getLastPutTime())
                 .putStoreNumber(storeNumber)
                 .storeAddress(sessionStoreInfoVo.getParserAddress())
+                .storeName(sessionStoreInfoVo.getStoreName())
                 .memberMobile(sessionStoreInfoVo.getMemberMobile())
                 .memberName(sessionStoreInfoVo.getMemberName())
                 .deptId(iceBox.getDeptId())

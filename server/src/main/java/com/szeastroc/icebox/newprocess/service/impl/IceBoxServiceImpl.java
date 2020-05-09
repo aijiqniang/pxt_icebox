@@ -494,6 +494,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (iceBoxExtend.getLastPutTime() != null) {
                 boxVo.setLastPutTimeStr(dateFormat.format(iceBoxExtend.getLastPutTime()));
             }
+            IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+            if(relateBox != null){
+                boxVo.setFreeType(relateBox.getFreeType());
+            }
         }
         return boxVo;
     }

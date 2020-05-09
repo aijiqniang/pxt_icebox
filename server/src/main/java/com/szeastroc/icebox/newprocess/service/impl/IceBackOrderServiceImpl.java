@@ -82,6 +82,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final IceModelDao iceModelDao;
     private final IceTransferRecordDao iceTransferRecordDao;
 
+    private final String group = "销售组长";
+    private final String service = "服务处经理";
+    private final String divion = "大区总监";
+
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     @Override
@@ -139,7 +143,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //
 //        IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
 //                .eq(IcePutOrder::getApplyNumber, simpleIceBoxDetailVo.getLastPutNumber())
-//                .eq(IcePutOrder::getChestId, iceBoxId));
+//                .eq(IcePutOrder::getChestId, iceBoxId)
+//                .eq(IcePutOrder::getStatus,OrderStatus.IS_FINISH.getStatus()));
 //
 //
 //        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
@@ -180,15 +185,31 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
         //        获取上级部门领导
         List<Integer> userIds = new ArrayList<Integer>();
-        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
-        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
-        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(2);
-        if (userInfoVo1 == null || userInfoVo2 == null || userInfoVo3 == null) {
+//        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
+//        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
+//        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(3);
+
+
+        for (Integer key : sessionUserInfoMap.keySet()) {
+            SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
+            if (sessionUserInfoVo != null && group.equals(sessionUserInfoVo.getOfficeName())) {
+                userIds.add(sessionUserInfoVo.getId());
+                continue;
+            }
+            if (sessionUserInfoVo != null && service.equals(sessionUserInfoVo.getOfficeName())) {
+                userIds.add(sessionUserInfoVo.getId());
+                continue;
+            }
+            if (sessionUserInfoVo != null && divion.equals(sessionUserInfoVo.getOfficeName())) {
+                userIds.add(sessionUserInfoVo.getId());
+                break;
+            }
+        }
+
+
+        if (CollectionUtil.isEmpty(userIds)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
         }
-        userIds.add(userInfoVo1.getId());
-        userIds.add(userInfoVo2.getId());
-        userIds.add(userInfoVo3.getId());
 
 //        List<Integer> userIds = Arrays.asList(5941, 2103);
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
@@ -210,7 +231,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         Integer backType = simpleIceBoxDetailVo.getBackType();
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
                 .eq(IcePutOrder::getApplyNumber, simpleIceBoxDetailVo.getLastPutNumber())
-                .eq(IcePutOrder::getChestId, simpleIceBoxDetailVo.getId()));
+                .eq(IcePutOrder::getChestId, simpleIceBoxDetailVo.getId())
+                .eq(IcePutOrder::getStatus, OrderStatus.IS_FINISH.getStatus()));
 
         // 更新退还数据
         if (icePutOrder != null) {
@@ -300,12 +322,12 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         LambdaQueryWrapper<IceBackOrder> wrapper = Wrappers.<IceBackOrder>lambdaQuery();
 
-        if(StringUtils.isNotBlank(payStartTime)) {
-            wrapper.ge(IceBackOrder::getUpdatedTime,payStartTime);
+        if (StringUtils.isNotBlank(payStartTime)) {
+            wrapper.ge(IceBackOrder::getUpdatedTime, payStartTime);
         }
 
-        if(StringUtils.isNotBlank(payEndTime)) {
-            wrapper.le(IceBackOrder::getUpdatedTime,payEndTime);
+        if (StringUtils.isNotBlank(payEndTime)) {
+            wrapper.le(IceBackOrder::getUpdatedTime, payEndTime);
         }
 
         // 副表条件
@@ -321,37 +343,36 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         LambdaQueryWrapper<IceBackApply> iceBackApplyWrapper = Wrappers.<IceBackApply>lambdaQuery();
 
 
-
-        if(StringUtils.isNotBlank(clientNumber)) {
-            iceBackApplyWrapper.eq(IceBackApply::getBackStoreNumber,clientNumber);
+        if (StringUtils.isNotBlank(clientNumber)) {
+            iceBackApplyWrapper.eq(IceBackApply::getBackStoreNumber, clientNumber);
         }
 
         if (StringUtils.isNotBlank(clientName)) {
             List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByName(clientName));
 
             List<String> storeNumberList = storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList());
-            iceBackApplyWrapper.in(IceBackApply::getBackStoreNumber,storeNumberList);
+            iceBackApplyWrapper.in(IceBackApply::getBackStoreNumber, storeNumberList);
         }
 
-        if(StringUtils.isNotBlank(contactMobile)) {
+        if (StringUtils.isNotBlank(contactMobile)) {
             List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByMobile(contactMobile));
             List<String> storeNumberList = storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList());
-            iceBackApplyWrapper.in(IceBackApply::getBackStoreNumber,storeNumberList);
+            iceBackApplyWrapper.in(IceBackApply::getBackStoreNumber, storeNumberList);
         }
-        if(StringUtils.isNotBlank(chestModel)) {
+        if (StringUtils.isNotBlank(chestModel)) {
 
             List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestName, chestModel));
             List<Integer> iceModelIds = iceModels.stream().map(IceModel::getId).collect(Collectors.toList());
 
-            iceBoxWrapper.in(IceBox::getModelId,iceModelIds);
+            iceBoxWrapper.in(IceBox::getModelId, iceModelIds);
         }
 
-        if(StringUtils.isNotBlank(assetId)) {
-            iceBoxExtendWrapper.like(IceBoxExtend::getAssetId,assetId);
+        if (StringUtils.isNotBlank(assetId)) {
+            iceBoxExtendWrapper.like(IceBoxExtend::getAssetId, assetId);
         }
 
-        if(marketAreaId != null) {
-            iceBoxWrapper.eq(IceBox::getDeptId,marketAreaId);
+        if (marketAreaId != null) {
+            iceBoxWrapper.eq(IceBox::getDeptId, marketAreaId);
         }
 
 
@@ -363,18 +384,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         List<Integer> list = new ArrayList<>();
 
-        if(CollectionUtil.isNotEmpty(iceBoxes)) {
-
-
-
-        }
-        if(CollectionUtil.isNotEmpty(iceBoxExtends)) {
-
+        if (CollectionUtil.isNotEmpty(iceBoxes)) {
 
 
         }
-        if(CollectionUtil.isNotEmpty(iceBackApplies)) {
+        if (CollectionUtil.isNotEmpty(iceBoxExtends)) {
 
+
+        }
+        if (CollectionUtil.isNotEmpty(iceBackApplies)) {
 
 
         }
@@ -433,7 +451,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
                 .eq(IcePutOrder::getApplyNumber, icePutApply.getApplyNumber())
-                .eq(IcePutOrder::getChestId, iceBoxId));
+                .eq(IcePutOrder::getChestId, iceBoxId)
+                .eq(IcePutOrder::getStatus, OrderStatus.IS_FINISH.getStatus()));
         /**
          * 校验: 订单号
          */
@@ -503,7 +522,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
                 .eq(IcePutOrder::getApplyNumber, icePutApply.getApplyNumber())
-                .eq(IcePutOrder::getChestId, iceBoxId));
+                .eq(IcePutOrder::getChestId, iceBoxId)
+                .eq(IcePutOrder::getStatus, OrderStatus.IS_FINISH.getStatus()));
 
         /**
          * 调用转账服务
@@ -583,7 +603,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             // 非免押
             IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
                     .eq(IcePutOrder::getApplyNumber, iceBoxExtend.getLastApplyNumber())
-                    .eq(IcePutOrder::getChestId, iceBoxId));
+                    .eq(IcePutOrder::getChestId, iceBoxId)
+                    .eq(IcePutOrder::getStatus, OrderStatus.IS_FINISH.getStatus()));
             if (icePutOrder != null) {
                 IceBackOrder iceBackOrder = IceBackOrder.builder()
                         .boxId(iceBoxId)

@@ -192,6 +192,9 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         for (Integer key : sessionUserInfoMap.keySet()) {
             SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
+            if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
+                continue;
+            }
             if (sessionUserInfoVo != null && group.equals(sessionUserInfoVo.getOfficeName())) {
                 userIds.add(sessionUserInfoVo.getId());
                 continue;

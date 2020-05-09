@@ -28,6 +28,7 @@ import com.szeastroc.icebox.oldprocess.dao.*;
 import com.szeastroc.icebox.oldprocess.entity.*;
 import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.oldprocess.service.IceChestPutRecordService;
+import com.szeastroc.icebox.oldprocess.vo.report.IceDepositReport;
 import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.util.wechatpay.WXPayUtil;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
@@ -237,6 +238,48 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
 
     @Override
     public IPage<IceDepositResponse> queryIceDepositsForPut(IceDepositPage iceDepositPage) {
+        LambdaQueryWrapper<IcePutApply> wrapper = getIcePutApplyWrapper(iceDepositPage);
+
+        List<IcePutApply> icePutApplys = icePutApplyDao.selectList(wrapper);
+
+        if(CollectionUtil.isEmpty(icePutApplys)){
+            return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
+        }
+        Set<String> applyNumbers = icePutApplys.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
+        IPage<IcePutApplyRelateBox> relateBoxIPage = icePutApplyRelateBoxDao.selectPage(iceDepositPage, Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
+
+        Map<String, IcePutApply> putApplyMap = icePutApplys.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
+        Set<String> storeNumbers = new HashSet<>();
+        Set<String> applyNumberSet = new HashSet<>();
+        for (IcePutApplyRelateBox relateBox : relateBoxIPage.getRecords()) {
+            // 投放客户信息
+            IcePutApply icePutApply = putApplyMap.get(relateBox.getApplyNumber());
+            if(icePutApply != null){
+                storeNumbers.add(icePutApply.getPutStoreNumber());
+            }
+            // 冰柜信息
+            applyNumberSet.add(relateBox.getApplyNumber());
+
+        }
+        if(CollectionUtils.isNotEmpty(relateBoxIPage.getRecords())){
+            //投放的门店信息
+            List<SimpleStoreVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumbers(new ArrayList<>(storeNumbers)));
+            //冰柜信息
+            List<IceBox> iceBoxes = new ArrayList<>();
+            List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
+            if(CollectionUtil.isNotEmpty(icePutApplyRelateBoxes)){
+                Set<Integer> iceBoxIds = icePutApplyRelateBoxes.stream().map(x -> x.getBoxId()).collect(Collectors.toSet());
+                iceBoxes = iceBoxDao.selectBatchIds(iceBoxIds);
+            }
+            //支付信息
+            List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getApplyNumber, applyNumbers));
+            return getNewIceDepositResponseIPage(relateBoxIPage, storeInfoDtoVos, iceBoxes, icePutOrders,putApplyMap);
+
+        }
+        return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
+    }
+
+    private LambdaQueryWrapper<IcePutApply> getIcePutApplyWrapper(IceDepositPage iceDepositPage) {
         LambdaQueryWrapper<IcePutApply> wrapper = Wrappers.<IcePutApply>lambdaQuery();
         wrapper.eq(IcePutApply::getStoreSignStatus, StoreSignStatus.ALREADY_SIGN.getStatus());
         if(StringUtils.isNotEmpty(iceDepositPage.getClientNumber())){
@@ -298,22 +341,29 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
                 List<String> storeNumbers = iceBoxs.stream().map(x -> x.getPutStoreNumber()).collect(Collectors.toList());
                 wrapper.in(IcePutApply::getPutStoreNumber, storeNumbers);
             }else {
-                wrapper.eq(IcePutApply::getApplyNumber, "");
+                wrapper.eq(IcePutApply::getPutStoreNumber, "");
             }
         }
+        return wrapper;
+    }
+
+    @Override
+    public List<IceDepositReport> exportDepositsForPut(IceDepositPage iceDepositPage) {
+        List<IceDepositReport> iceDepositReports = new ArrayList<>();
+        LambdaQueryWrapper<IcePutApply> wrapper = getIcePutApplyWrapper(iceDepositPage);
 
         List<IcePutApply> icePutApplys = icePutApplyDao.selectList(wrapper);
 
         if(CollectionUtil.isEmpty(icePutApplys)){
-            return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
+            return iceDepositReports;
         }
         Set<String> applyNumbers = icePutApplys.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
-        IPage<IcePutApplyRelateBox> relateBoxIPage = icePutApplyRelateBoxDao.selectPage(iceDepositPage, Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
+        List<IcePutApplyRelateBox> relateBoxs = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
 
         Map<String, IcePutApply> putApplyMap = icePutApplys.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
         Set<String> storeNumbers = new HashSet<>();
         Set<String> applyNumberSet = new HashSet<>();
-        for (IcePutApplyRelateBox relateBox : relateBoxIPage.getRecords()) {
+        for (IcePutApplyRelateBox relateBox : relateBoxs) {
             // 投放客户信息
             IcePutApply icePutApply = putApplyMap.get(relateBox.getApplyNumber());
             if(icePutApply != null){
@@ -323,7 +373,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             applyNumberSet.add(relateBox.getApplyNumber());
 
         }
-        if(CollectionUtils.isNotEmpty(relateBoxIPage.getRecords())){
+        if(CollectionUtils.isNotEmpty(relateBoxs)){
             //投放的门店信息
             List<SimpleStoreVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumbers(new ArrayList<>(storeNumbers)));
             //冰柜信息
@@ -335,10 +385,28 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             }
             //支付信息
             List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getApplyNumber, applyNumbers));
-            return getNewIceDepositResponseIPage(relateBoxIPage, storeInfoDtoVos, iceBoxes, icePutOrders,putApplyMap);
+            return getIceDepositResponseList(relateBoxs, storeInfoDtoVos, iceBoxes, icePutOrders,putApplyMap);
 
         }
-        return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
+        return iceDepositReports;
+    }
+
+    private List<IceDepositReport> getIceDepositResponseList(List<IcePutApplyRelateBox> relateBoxs, List<SimpleStoreVo> storeInfoDtoVos, List<IceBox> iceBoxes, List<IcePutOrder> icePutOrders, Map<String, IcePutApply> putApplyMap) {
+        Map<String, SimpleStoreVo> storeVoMap = Streams.toStream(storeInfoDtoVos).collect(Collectors.toMap(SimpleStoreVo::getStoreNumber, x -> x));
+        Map<Integer, IceBox> iceBoxMap = Streams.toStream(iceBoxes).collect(Collectors.toMap(IceBox::getId,x->x));
+        Map<String, IcePutOrder> putOrderMap = Streams.toStream(icePutOrders).collect(Collectors.toMap(IcePutOrder::getApplyNumber, x -> x));
+        List<IceDepositResponse> iceDepositResponses = getIceDepositResponses(putApplyMap, storeVoMap, iceBoxMap, putOrderMap, relateBoxs);
+        List<IceDepositReport> reportList = new ArrayList<>();
+        if(CollectionUtil.isEmpty(iceDepositResponses)){
+           return reportList;
+        }
+        for(IceDepositResponse response:iceDepositResponses){
+            IceDepositReport iceDepositReport = new IceDepositReport();
+            BeanUtils.copyProperties(response, iceDepositReport);
+            iceDepositReport.setPayTimeStr(new DateTime(response.getPayTime()).toString("YYYY-MM-dd HH:mm"));
+            reportList.add(iceDepositReport);
+        }
+        return reportList;
     }
 
     private IPage<IceDepositResponse> getNewIceDepositResponseIPage(IPage<IcePutApplyRelateBox> applyRelateBoxIPage, List<SimpleStoreVo> storeInfoDtoVos, List<IceBox> iceBoxes, List<IcePutOrder> icePutOrders, Map<String, IcePutApply> putApplyMap) {
@@ -346,6 +414,16 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         Map<Integer, IceBox> iceBoxMap = Streams.toStream(iceBoxes).collect(Collectors.toMap(IceBox::getId,x->x));
         Map<String, IcePutOrder> putOrderMap = Streams.toStream(icePutOrders).collect(Collectors.toMap(IcePutOrder::getApplyNumber, x -> x));
         List<IcePutApplyRelateBox> records = applyRelateBoxIPage.getRecords();
+        List<IceDepositResponse> iceDepositResponses = getIceDepositResponses(putApplyMap, storeVoMap, iceBoxMap, putOrderMap, records);
+        IPage<IceDepositResponse> page = new Page<>();
+        page.setCurrent(applyRelateBoxIPage.getCurrent());
+        page.setSize(applyRelateBoxIPage.getSize());
+        page.setTotal(applyRelateBoxIPage.getTotal());
+        page.setRecords(iceDepositResponses);
+        return page;
+    }
+
+    private List<IceDepositResponse> getIceDepositResponses(Map<String, IcePutApply> putApplyMap, Map<String, SimpleStoreVo> storeVoMap, Map<Integer, IceBox> iceBoxMap, Map<String, IcePutOrder> putOrderMap, List<IcePutApplyRelateBox> records) {
         List<IceDepositResponse> iceDepositResponses = new ArrayList<>();
         for(IcePutApplyRelateBox relateBox:records){
             IceDepositResponse iceDepositResponse = new IceDepositResponse();
@@ -392,12 +470,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             }
             iceDepositResponses.add(iceDepositResponse);
         }
-        IPage<IceDepositResponse> page = new Page<>();
-        page.setCurrent(applyRelateBoxIPage.getCurrent());
-        page.setSize(applyRelateBoxIPage.getSize());
-        page.setTotal(applyRelateBoxIPage.getTotal());
-        page.setRecords(iceDepositResponses);
-        return page;
+        return iceDepositResponses;
     }
 
     private IPage<IceDepositResponse> getIceDepositResponseIPage(IPage<IceChestPutRecord> iceChestPutRecordIPage, Map<Integer, Integer> clientForeignKeyMap, Map<Integer, Integer> chestForeignKeyMap, Map<Integer, Integer> orderForeignKeyMap) {

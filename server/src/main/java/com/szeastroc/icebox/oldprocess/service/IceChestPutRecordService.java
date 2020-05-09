@@ -8,6 +8,9 @@ import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
+import com.szeastroc.icebox.oldprocess.vo.report.IceDepositReport;
+
+import java.util.List;
 
 /**
  * Created by Tulane
@@ -20,4 +23,6 @@ public interface IceChestPutRecordService extends IService<IceChestPutRecord> {
     IPage<IceDepositResponse> queryIceDeposits(IceDepositPage iceDepositPage);
 
     IPage<IceDepositResponse> queryIceDepositsForPut(IceDepositPage iceDepositPage);
+
+    List<IceDepositReport> exportDepositsForPut(IceDepositPage iceDepositPage);
 }

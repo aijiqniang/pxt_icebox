@@ -1328,8 +1328,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Date releaseTime = (Date) x.get(19); // 生产日期
             Date repairBeginTime = (Date) x.get(20); // 保修起算日期
 
-            IceBox iceBox = new IceBox(null, chestName,
-                    modelId, brandName, chestNorm,
+            IceBox iceBox = new IceBox(null, chestName,assetId,
+                    modelId,modelStr, brandName, chestNorm,
                     new BigDecimal(chestMoney), new BigDecimal(depositMoney), supplierId,
                     null, deptId, null, PutStatus.NO_PUT.getStatus(), null, null,
                     null, null, null);

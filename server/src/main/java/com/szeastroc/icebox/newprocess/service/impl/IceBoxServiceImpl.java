@@ -1427,6 +1427,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             LambdaQueryWrapper<IcePutApply> applyWrapper = Wrappers.<IcePutApply>lambdaQuery();
             applyWrapper.eq(IcePutApply::getPutStoreNumber, requestVo.getStoreNumber());
             applyWrapper.eq(IcePutApply::getStoreSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus());
+            applyWrapper.ne(IcePutApply::getExamineStatus, ExamineStatusEnum.UN_PASS.getStatus());
             List<IcePutApply> icePutApplies = icePutApplyDao.selectList(applyWrapper);
             if (CollectionUtil.isNotEmpty(icePutApplies)) {
                 List<IceBoxVo> putIceBoxVos = this.getIceBoxVosByPutApplys(icePutApplies);

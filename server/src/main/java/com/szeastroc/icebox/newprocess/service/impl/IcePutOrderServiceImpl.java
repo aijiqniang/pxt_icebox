@@ -68,8 +68,6 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         if(icePutApply == null){
             throw new ImproperOptionException("该冰柜不存在申请单");
         }
-        icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
-        icePutApplyDao.updateById(icePutApply);
 
         IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                 .eq(IcePutApplyRelateBox::getApplyNumber, icePutApply.getApplyNumber())
@@ -77,6 +75,8 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         if(icePutApplyRelateBox.getFreeType().equals(FreePayTypeEnum.IS_FREE.getType())){
 //            throw new ImproperOptionException("不免押流程的申请存在免押冰柜");
+            icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+            icePutApplyDao.updateById(icePutApply);
             return createByFree(clientInfoRequest, iceBox);
         }
 
@@ -198,13 +198,15 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         icePutOrder.setPayMoney(new BigDecimal(orderPayBack.getTotalFee()).divide(new BigDecimal(100), mc));
         icePutOrderDao.updateById(icePutOrder);
 
-        //TODO 修改投放记录, 申请投放记录现在是汇总信息
-//        //查询对应冰柜投放记录信息
-//        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, icePutOrder.getApplyNumber()));
-//        if(icePutApply == null){
-//            log.error("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(icePutOrder));
-//            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
-//        }
+        //修改投放记录, 申请投放记录现在是汇总信息
+        //查询对应冰柜投放记录信息
+        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, icePutOrder.getApplyNumber()));
+        if(icePutApply == null){
+            log.error("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(icePutOrder));
+            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        }
+        icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+        icePutApplyDao.updateById(icePutApply);
 
         //修改冰柜投放信息
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());

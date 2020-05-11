@@ -106,25 +106,29 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
 
         if(icePutApplyRelateBox != null) {
             simpleIceBoxDetailVo.setFreeType(icePutApplyRelateBox.getFreeType());
-        }
 
 
-        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
-        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApply.getId()));
+//            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
-        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, id).eq(IceBackApplyRelateBox::getApplyNumber, iceBackApply.getApplyNumber()));
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApplyRelateBox.getId()));
 
-        if (iceBackApplyRelateBox != null) {
-            Integer backSupplierId = iceBackApplyRelateBox.getBackSupplierId();
-            simpleIceBoxDetailVo.setBackType(iceBackApplyRelateBox.getBackType());
-            SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(backSupplierId));
-            if (subordinateInfoVo != null) {
-                simpleIceBoxDetailVo.setNewSupplierId(subordinateInfoVo.getId());
-                simpleIceBoxDetailVo.setNewSupplierName(subordinateInfoVo.getName());
-                simpleIceBoxDetailVo.setNewSupplierNumber(subordinateInfoVo.getNumber());
+            IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, id).eq(IceBackApplyRelateBox::getApplyNumber, iceBackApply.getApplyNumber()));
+
+            if (iceBackApplyRelateBox != null) {
+                Integer backSupplierId = iceBackApplyRelateBox.getBackSupplierId();
+                simpleIceBoxDetailVo.setBackType(iceBackApplyRelateBox.getBackType());
+                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(backSupplierId));
+                if (subordinateInfoVo != null) {
+                    simpleIceBoxDetailVo.setNewSupplierId(subordinateInfoVo.getId());
+                    simpleIceBoxDetailVo.setNewSupplierName(subordinateInfoVo.getName());
+                    simpleIceBoxDetailVo.setNewSupplierNumber(subordinateInfoVo.getNumber());
+                }
             }
+
         }
+
+
         return simpleIceBoxDetailVo;
     }
 

@@ -101,11 +101,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //                .last("limit 1"));
 
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
-        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
-        Integer icePutApplyId = icePutApply.getId();
+//        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+//        Integer icePutApplyId = icePutApply.getId();
 
 
-        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApplyId));
+        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBoxId));
+        Integer putApplyRelateBoxId = icePutApplyRelateBox.getId();
+
+
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, putApplyRelateBoxId));
 
 
 //        selectIceBackOrder
@@ -590,13 +594,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .modelId(iceBox.getModelId())
                 .build();
 
-        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+//        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
 
         IceBackApply iceBackApply = IceBackApply.builder()
                 .applyNumber(applyNumber)
                 .backStoreNumber(putStoreNumber)
-                .oldPutId(icePutApply.getId())
+                .oldPutId(icePutApplyRelateBox.getId())
                 .build();
 
         iceBackApplyRelateBoxDao.insert(iceBackApplyRelateBox);

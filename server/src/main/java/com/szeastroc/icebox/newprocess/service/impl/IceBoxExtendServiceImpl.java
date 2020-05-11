@@ -14,6 +14,7 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.PactRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.PactRecord;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -77,13 +78,6 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
 
 //        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(storeNumber));
 
-        Map<String, SessionStoreInfoVo> map = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Collections.singletonList(storeNumber)));
-
-        if (map == null) {
-            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
-        }
-
-        SessionStoreInfoVo sessionStoreInfoVo = map.get(storeNumber);
 
 
         SimpleIceBoxDetailVo simpleIceBoxDetailVo = SimpleIceBoxDetailVo.builder()
@@ -95,39 +89,39 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
                 .depositMoney(iceBox.getDepositMoney())
                 .lastPutNumber(iceBoxExtend.getLastApplyNumber())
                 .lastPutTime(iceBoxExtend.getLastPutTime())
-                .putStoreNumber(storeNumber)
-                .storeAddress(sessionStoreInfoVo.getParserAddress())
-                .storeName(sessionStoreInfoVo.getStoreName())
-                .memberMobile(sessionStoreInfoVo.getMemberMobile())
-                .memberName(sessionStoreInfoVo.getMemberName())
                 .deptId(iceBox.getDeptId())
                 .supplierId(iceBox.getSupplierId())
                 .build();
 
         if(icePutApplyRelateBox != null) {
             simpleIceBoxDetailVo.setFreeType(icePutApplyRelateBox.getFreeType());
-
-
-
 //            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
-
             IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApplyRelateBox.getId()));
-
-            IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, id).eq(IceBackApplyRelateBox::getApplyNumber, iceBackApply.getApplyNumber()));
-
-            if (iceBackApplyRelateBox != null) {
-                Integer backSupplierId = iceBackApplyRelateBox.getBackSupplierId();
-                simpleIceBoxDetailVo.setBackType(iceBackApplyRelateBox.getBackType());
-                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(backSupplierId));
-                if (subordinateInfoVo != null) {
-                    simpleIceBoxDetailVo.setNewSupplierId(subordinateInfoVo.getId());
-                    simpleIceBoxDetailVo.setNewSupplierName(subordinateInfoVo.getName());
-                    simpleIceBoxDetailVo.setNewSupplierNumber(subordinateInfoVo.getNumber());
+            if(iceBackApply != null) {
+                storeNumber = iceBackApply.getBackStoreNumber();
+                IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, id).eq(IceBackApplyRelateBox::getApplyNumber, iceBackApply.getApplyNumber()));
+                if (iceBackApplyRelateBox != null) {
+                    Integer backSupplierId = iceBackApplyRelateBox.getBackSupplierId();
+                    simpleIceBoxDetailVo.setBackType(iceBackApplyRelateBox.getBackType());
+                    SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(backSupplierId));
+                    if (subordinateInfoVo != null) {
+                        simpleIceBoxDetailVo.setNewSupplierId(subordinateInfoVo.getId());
+                        simpleIceBoxDetailVo.setNewSupplierName(subordinateInfoVo.getName());
+                        simpleIceBoxDetailVo.setNewSupplierNumber(subordinateInfoVo.getNumber());
+                    }
                 }
             }
-
         }
-
+        Map<String, SessionStoreInfoVo> map = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Collections.singletonList(storeNumber)));
+        if (map == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        }
+        SessionStoreInfoVo sessionStoreInfoVo = map.get(storeNumber);
+        simpleIceBoxDetailVo.setPutStoreNumber(storeNumber);
+        simpleIceBoxDetailVo.setStoreAddress(sessionStoreInfoVo.getParserAddress());
+        simpleIceBoxDetailVo.setStoreName(sessionStoreInfoVo.getStoreName());
+        simpleIceBoxDetailVo.setMemberMobile(sessionStoreInfoVo.getMemberMobile());
+        simpleIceBoxDetailVo.setMemberName(sessionStoreInfoVo.getMemberName());
 
         return simpleIceBoxDetailVo;
     }

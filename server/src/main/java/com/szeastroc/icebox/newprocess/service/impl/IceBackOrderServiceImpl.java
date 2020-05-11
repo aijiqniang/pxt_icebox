@@ -508,10 +508,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceTransferRecordDao.insert(iceTransferRecord);
 
         // 更新冰柜状态
-        iceBoxExtend.setLastPutTime(date);
-        iceBoxExtend.setLastPutId(iceTransferRecord.getId());
-        iceBoxExtend.setLastApplyNumber(applyNumber);
-        iceBoxExtendDao.updateById(iceBoxExtend);
+//        iceBoxExtend.setLastPutTime(date);
+//        iceBoxExtend.setLastPutId(iceTransferRecord.getId());
+//        iceBoxExtend.setLastApplyNumber(applyNumber);
+//        iceBoxExtendDao.updateById(iceBoxExtend);
 
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());

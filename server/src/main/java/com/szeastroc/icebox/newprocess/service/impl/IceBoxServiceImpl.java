@@ -1436,6 +1436,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             LambdaQueryWrapper<IceBackApply> backWrapper = Wrappers.<IceBackApply>lambdaQuery();
             backWrapper.eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber());
+            backWrapper.ne(IceBackApply::getExamineStatus, ExamineStatusEnum.NO_DEFAULT.getStatus());
             backWrapper.and(x -> x.eq(IceBackApply::getExamineStatus, ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IceBackApply::getExamineStatus, ExamineStatusEnum.IS_DEFAULT.getStatus()));
 
             List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(backWrapper);

@@ -1251,6 +1251,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("realname", userInfoVo == null ? null : userInfoVo.getRealname()); // 巡检人员
             map.put("createTime", i.getCreateTime()); // 巡检日期
             map.put("displayImage", i.getDisplayImage()); // 现场图片
+            map.put("exteriorImage",i.getExteriorImage()); // 外观照片的URL
 //            map.put("storeNumber", i.getStoreNumber()); // 备注
             examineList.add(map);
         }

@@ -1198,8 +1198,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("receiveName", receiveName); // 接收方
             map.put("receiveTime", transferRecord.getReceiveTime()); // 接收日期
             SessionUserInfoVo userInfoVo = null;
-            if (userInfoVoMap != null && transferRecord.getSupplierId() != null) {
-                userInfoVo = userInfoVoMap.get(transferRecord.getSupplierId());
+            if (userInfoVoMap != null && transferRecord.getApplyUserId() != null) {
+                userInfoVo = userInfoVoMap.get(transferRecord.getApplyUserId());
             }
             map.put("applyUser", userInfoVo == null ? null : userInfoVo.getRealname()); // 经办人
             map.put("applyTime", transferRecord.getApplyTime()); // 经办日期

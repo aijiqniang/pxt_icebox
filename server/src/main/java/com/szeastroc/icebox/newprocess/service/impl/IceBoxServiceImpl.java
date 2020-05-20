@@ -1354,6 +1354,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         log.info("importExcel 处理数据结束-->{}", in);
     }
 
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     @Override
     public List<String> importByEasyExcel(MultipartFile mfile) throws Exception {
 

@@ -292,19 +292,10 @@ public class IceBoxController {
      * 冰柜管理--导入excel
      */
     @PostMapping("/importExcel")
-    public CommonResponse<String> importExcel(@RequestParam("excelFile") MultipartFile file) throws Exception {
-        iceBoxService.importExcel(file);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
-    }
-
-    /**
-     * @Date: 2020/4/26 15:11 xiao
-     * 冰柜管理--根据导入的excel更新数据库
-     */
-    @PostMapping("/importExcelAndUpdate")
-    public CommonResponse<List<String>> importExcelAndUpdate(@RequestParam("excelFile") MultipartFile file) throws Exception {
-        List<String> list = iceBoxService.importExcelAndUpdate(file);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, list);
+    public CommonResponse<List<String>> importExcel(@RequestParam("excelFile") MultipartFile mfile) throws Exception {
+//        iceBoxService.importExcel(mfile);
+        List<String> messages = iceBoxService.importByEasyExcel(mfile);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, messages);
     }
 
     /**

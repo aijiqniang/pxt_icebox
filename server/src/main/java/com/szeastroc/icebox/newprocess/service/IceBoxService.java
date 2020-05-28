@@ -55,7 +55,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     void importExcel(MultipartFile file) throws Exception;
 
-    List<String> importByEasyExcel(MultipartFile mfile) throws Exception;
+    void importByEasyExcel(MultipartFile mfile) throws Exception;
 
     List<IceBox> getIceBoxList(String pxtNumber);
 

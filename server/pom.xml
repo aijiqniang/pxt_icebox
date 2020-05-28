@@ -19,6 +19,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+            <version>2.2.3</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.szeastroc</groupId>
             <artifactId>common-utils</artifactId>
             <version>1.0.2</version>

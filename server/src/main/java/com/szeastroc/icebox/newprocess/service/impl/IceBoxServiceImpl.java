@@ -1388,7 +1388,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (StringUtils.isBlank(assetId)) {
 //                message.add(boxVo.getSerialNumber() + "行:设备编号为空");
 //                continue;
-                throw new NormalOptionException(Constants.API_CODE_FAIL, boxVo.getSerialNumber() + "行:设备编号为空");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:设备编号为空");
             }
 
             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).last(" limit 1"));
@@ -1396,7 +1396,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if ((iceBox == null && iceBoxExtend != null) || (iceBox != null && iceBoxExtend == null)) { // 两者要么同时存在,要不同时不存在
 //                message.add(boxVo.getSerialNumber() + "行:数据库存在脏数据");
 //                continue;
-                throw new NormalOptionException(Constants.API_CODE_FAIL, boxVo.getSerialNumber() + "行:数据库存在脏数据");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:数据库存在脏数据");
             }
 
             String bluetoothId = boxVo.getBluetoothId();// 蓝牙设备ID
@@ -1409,7 +1409,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (iceModelMap == null || iceModelMap.get(modelStr) == null) {
 //                message.add(boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
 //                continue;
-                throw new NormalOptionException(Constants.API_CODE_FAIL, boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
             }
             Integer modelId = iceModelMap.get(modelStr); // 设备型号
             String chestNorm = boxVo.getChestNorm();// 设备规格
@@ -1422,7 +1422,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (StringUtils.isBlank(supplierNumber)) {
 //                message.add(boxVo.getSerialNumber() + "行:经销商编号为空");
 //                continue;
-                throw new NormalOptionException(Constants.API_CODE_FAIL, boxVo.getSerialNumber() + "行:经销商编号为空");
+                throw new NormalOptionException(Constants.API_CODE_FAIL,"第"+ boxVo.getSerialNumber() + "行:经销商编号为空");
             }
 
             SubordinateInfoVo subordinateInfoVo = supplierNumberMap.get(supplierNumber);
@@ -1434,7 +1434,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if (infoVo == null) {
 //                    message.add(boxVo.getSerialNumber() + "行:经销商编号不存在");
 //                    continue;
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, boxVo.getSerialNumber() + "行:经销商编号不存在");
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:经销商编号不存在");
                 }
                 supplierId = infoVo.getSupplierId();
                 supplierNumberMap.put(supplierNumber, infoVo);
@@ -1486,7 +1486,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     log.error("插入冰柜数据错误", e);
                     iceBoxDao.deleteById(iceBox.getId());
                     iceBoxExtendDao.deleteById(iceBox.getId());
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             } else {
                 try {
@@ -1494,7 +1494,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExtendDao.updateById(iceBoxExtend);
                 } catch (Exception e) {
                     log.error("更新冰柜数据错误", e);
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
+                    throw new NormalOptionException(Constants.API_CODE_FAIL,"第"+ boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             }
         }

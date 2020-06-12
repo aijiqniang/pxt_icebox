@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.WorkbookUtil;
+import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -38,7 +39,6 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
-import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.user.client.FeignCacheClient;
@@ -504,7 +504,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 boxVo.setLastPutTimeStr(dateFormat.format(iceBoxExtend.getLastPutTime()));
             }
             IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
-            if(relateBox != null){
+            if (relateBox != null) {
                 boxVo.setFreeType(relateBox.getFreeType());
             }
         }
@@ -1257,7 +1257,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("realname", userInfoVo == null ? null : userInfoVo.getRealname()); // 巡检人员
             map.put("createTime", i.getCreateTime()); // 巡检日期
             map.put("displayImage", i.getDisplayImage()); // 现场图片
-            map.put("exteriorImage",i.getExteriorImage()); // 外观照片的URL
+            map.put("exteriorImage", i.getExteriorImage()); // 外观照片的URL
 //            map.put("storeNumber", i.getStoreNumber()); // 备注
             examineList.add(map);
         }
@@ -1267,157 +1267,149 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     @Override
-    public void importExcel(MultipartFile file) throws Exception {
+    public void importByEasyExcel(MultipartFile mfile) throws Exception {
 
-        Workbook book = WorkbookUtil.createBook(file.getInputStream(), true);
-        ExcelReader excelReader = new ExcelReader(book, 0);
-        List<List<Object>> reads = excelReader.read();
-        log.info("获取excel文件数据,reads的大小-->[{}]", reads.size());
+        /**
+         * @Date: 2020/5/20 9:19 xiao
+         *  同步的返回，不推荐使用，如果数据量大会把数据放到内存里面
+         */
+        // 这里 需要指定读用哪个class去读，然后读取第一个sheet 同步读取会自动finish
+        List<ImportIceBoxVo> importDataList = EasyExcel.read(mfile.getInputStream()).head(ImportIceBoxVo.class).sheet().doReadSync();
+        if (CollectionUtils.isEmpty(importDataList)) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "数据读取为空");
+        }
 
         // 获取设备型号集合
         List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery());
-        Map<String, Integer> iceModelMap = new HashMap<>();
+        Map<String, Integer> iceModelMap = Maps.newHashMap();
         Optional.ofNullable(iceModels).ifPresent(list -> {
             list.forEach(i -> {
                 iceModelMap.put(i.getChestModel(), i.getId());
             });
         });
-        Map<String, SubordinateInfoVo> supplierNumberMap = new HashMap<>(); // 存储经销商编号和id
+        Map<String, SubordinateInfoVo> supplierNumberMap = Maps.newHashMap(); // 存储经销商编号和id
 
-//        Map<String, Integer> deptMap = new HashMap<>(); // 存储服务处名称和id
-        int in = 0;
-        for (int i = 1, readsSize = reads.size(); i < readsSize; i++) {
-            in = i + 1;
-            log.info("---------------第" + i + "次循环---------------");
-            List<Object> x = reads.get(i);
-            String externalId = (String) x.get(1); // 冰箱控制器ID
-            String assetId = (String) x.get(2); // 设备编号
+        int importSize = importDataList.size();
+        //List<String> message = Lists.newArrayList();
+        for (ImportIceBoxVo boxVo : importDataList) {
+
+            String externalId = boxVo.getExternalId();  // 冰箱控制器ID
+            String assetId = boxVo.getAssetId();// 设备编号
             // 根据 设备编号--东鹏资产id 校验此冰柜是否插入数据库
             if (StringUtils.isBlank(assetId)) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + in + "行:" + "设备编号为空");
-            }
-            IceBoxExtend boxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getAssetId, assetId).last(" limit 1"));
-            if (boxExtend != null) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + in + "行:" + "设备编号已存在:" + assetId);
+//                message.add(boxVo.getSerialNumber() + "行:设备编号为空");
+//                continue;
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:设备编号为空");
             }
 
-            String bluetoothId = (String) x.get(3); // 蓝牙设备ID
-            String bluetoothMac = (String) x.get(4); // 蓝牙设备地址
-            String qrCode = (String) x.get(5); // 冰箱二维码
-            String gpsMac = (String) x.get(6); // gps模块MAC
-            String chestName = (String) x.get(7); // 设备名称
-            String brandName = (String) x.get(8); // 生产厂家
-            String modelStr = (String) x.get(9); // 设备型号
+            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).last(" limit 1"));
+            IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getAssetId, assetId).last(" limit 1"));
+            if ((iceBox == null && iceBoxExtend != null) || (iceBox != null && iceBoxExtend == null)) { // 两者要么同时存在,要不同时不存在
+//                message.add(boxVo.getSerialNumber() + "行:数据库存在脏数据");
+//                continue;
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:数据库存在脏数据");
+            }
+
+            String bluetoothId = boxVo.getBluetoothId();// 蓝牙设备ID
+            String bluetoothMac = boxVo.getBluetoothMac();// 蓝牙设备地址
+            String qrCode = boxVo.getQrCode();// 冰箱二维码
+            String gpsMac = boxVo.getGpsMac();// gps模块MAC
+            String chestName = boxVo.getChestName();// 设备名称
+            String brandName = boxVo.getBrandName();// 生产厂家
+            String modelStr = boxVo.getModelStr();// 设备型号
             if (iceModelMap == null || iceModelMap.get(modelStr) == null) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + in + "行:" + "设备型号不存在:" + modelStr);
+//                message.add(boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
+//                continue;
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
             }
             Integer modelId = iceModelMap.get(modelStr); // 设备型号
-            String chestNorm = (String) x.get(10); // 设备规格
-            Long chestMoney = (Long) x.get(11); // 冰柜价值
-            Long depositMoney = (Long) x.get(12); // 冰柜押金
+            String chestNorm = boxVo.getChestNorm();// 设备规格
+            Long chestMoney = boxVo.getChestMoney();// 冰柜价值
+            Long depositMoney = boxVo.getDepositMoney();// 冰柜押金
 
             // 经销商id
             Integer supplierId = null;
-            String supplierNumber = (String) x.get(13);
+            String supplierNumber = boxVo.getSupplierNumber();
             if (StringUtils.isBlank(supplierNumber)) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + in + "行:" + "经销商编号为空");
+//                message.add(boxVo.getSerialNumber() + "行:经销商编号为空");
+//                continue;
+                throw new NormalOptionException(Constants.API_CODE_FAIL,"第"+ boxVo.getSerialNumber() + "行:经销商编号为空");
             }
-            if (supplierNumberMap.get(supplierNumber) == null) {
+
+            SubordinateInfoVo subordinateInfoVo = supplierNumberMap.get(supplierNumber);
+            if (subordinateInfoVo != null && subordinateInfoVo.getSupplierId() != null) {
+                supplierId =subordinateInfoVo.getSupplierId();
+            } else {
                 // 去数据库查询
                 SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
                 if (infoVo == null) {
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + in + "行:" + "经销商编号不存在:" + supplierNumber);
+//                    message.add(boxVo.getSerialNumber() + "行:经销商编号不存在");
+//                    continue;
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:经销商编号不存在");
                 }
-                supplierId = infoVo.getId();
+                supplierId = infoVo.getSupplierId();
                 supplierNumberMap.put(supplierNumber, infoVo);
-            } else {
-                supplierId = supplierNumberMap.get(supplierNumber).getId();
-            }
-            String deptName = (String) x.get(18);
-            if (StringUtils.isBlank(deptName)) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + in + "行:" + "服务处名称为空");
             }
             // 鉴于服务处就是对应经销商的服务处,所以直接用经销商的
             Integer deptId = supplierNumberMap.get(supplierNumber).getMarketAreaId(); // 所属服务处
-            Date releaseTime = (Date) x.get(19); // 生产日期
-            Date repairBeginTime = (Date) x.get(20); // 保修起算日期
+            Date releaseTime = boxVo.getReleaseTime();// 生产日期
+            Date repairBeginTime = boxVo.getRepairBeginTime();// 保修起算日期
 
-            IceBox iceBox = new IceBox(null, chestName,assetId,
-                    modelId,modelStr, brandName, chestNorm,
-                    new BigDecimal(chestMoney), new BigDecimal(depositMoney), supplierId,
-                    null, deptId, null, PutStatus.NO_PUT.getStatus(), null, null,
-                    null, null, null);
-
-            iceBoxDao.insert(iceBox);
-
-            IceBoxExtend iceBoxExtend = new IceBoxExtend(iceBox.getId(), externalId, assetId, bluetoothId,
-                    bluetoothMac, qrCode, gpsMac, null,
-                    null, null, null, null,
-                    releaseTime, repairBeginTime, null);
-            iceBoxExtendDao.insert(iceBoxExtend);
-
-        }
-        log.info("importExcel 处理数据结束-->{}", in);
-    }
-
-
-    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
-    @Override
-    public List<String> importExcelAndUpdate(MultipartFile file) throws Exception {
-
-        Workbook book = WorkbookUtil.createBook(file.getInputStream(), true);
-        ExcelReader excelReader = new ExcelReader(book, 0);
-        List<List<Object>> reads = excelReader.read();
-        log.info("获取excel文件数据,reads的大小-->[{}]", reads.size());
-
-        Map<String, SubordinateInfoVo> supplierNumberMap = new HashMap<>(); // 存储经销商编号和id
-        List<String> assetIdList = Lists.newArrayList(); // 设备编号集合 (更新失败的)
-        for (int i = 1, readsSize = reads.size(); i < readsSize; i++) {
-            log.info("---------------第" + i + "次循环---------------");
-            List<Object> x = reads.get(i);
-            String assetId = (String) x.get(1); // 设备编号
-            // 根据 设备编号--东鹏资产id 校验此冰柜是否插入数据库
-            if (StringUtils.isBlank(assetId)) {
-                continue;
-            }
-            assetIdList.add(assetId);
-            IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getAssetId, assetId).last(" limit 1"));
-            if (iceBoxExtend == null) {
-                continue;
-            }
-            IceBox iceBox = iceBoxDao.selectById(iceBoxExtend.getId());
             if (iceBox == null) {
-                continue;
+                iceBox = new IceBox();
+                iceBox.setPutStatus(PutStatus.NO_PUT.getStatus()); // 未投放
+                iceBoxExtend = new IceBoxExtend();
             }
-            Long depositMoney = (Long) x.get(2); // 冰柜押金
-
-            // 经销商id
-            Integer supplierId = null;
-            String supplierNumber = (String) x.get(3);
-            if (StringUtils.isBlank(supplierNumber)) {
-                continue;
-            }
-            if (supplierNumberMap.get(supplierNumber) == null) {
-                // 去数据库查询
-                SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
-                if (infoVo == null) {
-                    continue;
-                }
-                supplierId = infoVo.getId();
-                supplierNumberMap.put(supplierNumber, infoVo);
-            } else {
-                supplierId = supplierNumberMap.get(supplierNumber).getId();
-            }
-            // 鉴于服务处就是对应经销商的服务处,所以直接用经销商的
-            Integer deptId = supplierNumberMap.get(supplierNumber).getMarketAreaId(); // 所属服务处
+            iceBox.setChestName(chestName);
+            iceBox.setAssetId(assetId);
+            iceBox.setModelId(modelId);
+            iceBox.setModelName(modelStr);
+            iceBox.setBrandName(brandName);
+            iceBox.setChestNorm(chestNorm);
+            iceBox.setChestMoney(new BigDecimal(chestMoney));
             iceBox.setDepositMoney(new BigDecimal(depositMoney));
             iceBox.setSupplierId(supplierId);
             iceBox.setDeptId(deptId);
-            iceBoxDao.updateById(iceBox);
-            assetIdList.remove(assetIdList.size() - 1);
+
+            iceBoxExtend.setExternalId(externalId);
+            iceBoxExtend.setAssetId(assetId);
+            iceBoxExtend.setBluetoothId(bluetoothId);
+            iceBoxExtend.setBluetoothMac(bluetoothMac);
+            iceBoxExtend.setQrCode(qrCode);
+            iceBoxExtend.setGpsMac(gpsMac);
+            iceBoxExtend.setReleaseTime(releaseTime);
+            iceBoxExtend.setRepairBeginTime(repairBeginTime);
+
+            /**
+             * @Date: 2020/5/20 11:07 xiao
+             *  需求:
+             *  冰柜控制器ID  蓝牙设备ID     蓝牙设备地址     冰箱二维码链接 如果有值,必须是唯一的,不允许重复导入
+             *  external_id   bluetooth_id  bluetooth_mac    qr_code
+             */
+//            iceBoxExtendDao.selectCount(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getExternalId,externalId));
+
+            if (iceBox.getId() == null) {
+                try {
+                    iceBoxDao.insert(iceBox);
+                    iceBoxExtend.setId(iceBox.getId());
+                    iceBoxExtendDao.insert(iceBoxExtend);
+                } catch (Exception e) {
+                    log.error("插入冰柜数据错误", e);
+                    iceBoxDao.deleteById(iceBox.getId());
+                    iceBoxExtendDao.deleteById(iceBox.getId());
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
+                }
+            } else {
+                try {
+                    iceBoxDao.updateById(iceBox);
+                    iceBoxExtendDao.updateById(iceBoxExtend);
+                } catch (Exception e) {
+                    log.error("更新冰柜数据错误", e);
+                    throw new NormalOptionException(Constants.API_CODE_FAIL,"第"+ boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
+                }
+            }
         }
-        log.info("importExcelAndUpdate 处理数据结束");
-        return assetIdList;
+        log.info("importExcel 处理数据结束-->{}", importSize);
     }
 
     @Override
@@ -1484,7 +1476,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
             IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
-            if(relateBox != null){
+            if (relateBox != null) {
                 boxVo.setFreeType(relateBox.getFreeType());
                 IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, relateBox.getId()));
                 boxVo.setBackStatus(iceBackApply == null ? -1 : iceBackApply.getExamineStatus());

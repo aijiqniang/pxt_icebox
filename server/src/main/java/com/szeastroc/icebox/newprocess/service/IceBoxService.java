@@ -53,9 +53,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     IPage readExamine(IceExaminePage iceExaminePage);
 
-    void importExcel(MultipartFile file) throws Exception;
-
-    List<String> importExcelAndUpdate(MultipartFile file) throws Exception;
+    void importByEasyExcel(MultipartFile mfile) throws Exception;
 
     List<IceBox> getIceBoxList(String pxtNumber);
 

@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.controller.store;
 
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -234,6 +235,9 @@ public class IceBoxController {
     public CommonResponse<IPage> findPage(@RequestBody IceBoxPage iceBoxPage) {
 
         IPage iPage = iceBoxService.findPage(iceBoxPage);
+        if(iPage==null){
+            iPage=new Page();
+        }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage);
     }
 

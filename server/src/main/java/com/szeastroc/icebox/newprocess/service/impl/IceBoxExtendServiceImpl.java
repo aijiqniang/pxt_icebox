@@ -12,6 +12,7 @@ import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
+import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.oldprocess.dao.PactRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import org.apache.commons.lang3.StringUtils;

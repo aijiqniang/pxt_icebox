@@ -6,10 +6,13 @@ import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface IceBoxDao extends BaseMapper<IceBox> {
 
     List<IceBox> findPage(IceBoxPage iceBoxPage);
+
+    List<IceBox> exportExcel(Map<String, Object> param);
 
 }

@@ -24,5 +24,6 @@ public class IceBoxPage extends Page {
     private Set<Integer> deptIds; // 营销区域id集合
     private Set<Integer> supplierIdList; // 拥有者的经销商
     private Set<String> putStoreNumberList; // 投放的门店number
+    private int export = 0; // 此次操作是否是导出的开关, 0-不导出;1-导出;
 
 }

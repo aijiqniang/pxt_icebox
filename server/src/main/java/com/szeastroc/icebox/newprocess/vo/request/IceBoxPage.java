@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -25,5 +26,7 @@ public class IceBoxPage extends Page {
     private Set<Integer> supplierIdList; // 拥有者的经销商
     private Set<String> putStoreNumberList; // 投放的门店number
     private int export = 0; // 此次操作是否是导出的开关, 0-不导出;1-导出;
+    private Integer exportRecordId; // 下载列表的id
+    private List<Integer> deptIdList;
 
 }

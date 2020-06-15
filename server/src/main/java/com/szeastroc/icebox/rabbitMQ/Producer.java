@@ -7,5 +7,5 @@ package com.szeastroc.icebox.rabbitMQ;
  */
 public abstract class Producer {
 
-    abstract void sendMsg(String queue, String routingKey, DataPack dataPack); // 向队列中发送消息
+    abstract void sendMsg(String routingKey, DataPack dataPack); // 向队列中发送消息
 }

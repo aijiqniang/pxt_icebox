@@ -50,6 +50,7 @@ import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.client.FeignXcxBaseClient;
 import com.szeastroc.user.common.vo.*;
 import com.szeastroc.visit.client.FeignExamineClient;
+import com.szeastroc.visit.client.FeignExportRecordsClient;
 import com.szeastroc.visit.common.IceBoxPutModel;
 import com.szeastroc.visit.common.RequestExamineVo;
 import com.szeastroc.visit.common.SessionExamineCreateVo;
@@ -107,6 +108,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final FeignCacheClient feignCacheClient;
     private final FeignXcxBaseClient feignXcxBaseClient;
     private final ImageUploadUtil imageUploadUtil;
+    private final FeignExportRecordsClient feignExportRecordsClient;
+
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -934,7 +937,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     private boolean dealIceBoxPage(IceBoxPage iceBoxPage) {
         // 获取当前登陆人可查看的部门
-        List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
+        // List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
+        List<Integer> deptIdList = iceBoxPage.getDeptIdList();
         if (CollectionUtils.isEmpty(deptIdList)) {
             log.info("此人暂无查看数据的权限");
             return true;
@@ -1602,15 +1606,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         File xlsxFile = new File(xlsxPath);
         @Cleanup InputStream in = new FileInputStream(xlsxFile);
         try {
-
             String frontName = new DateTime().toString("yyyy-MM-dd-HH-mm-ss");
-
             // todo 上传临时文件到网络
-            String imgUrl = imageUploadUtil.wechatUpload(in,IceBoxConstant.ICE_BOX, "BGDC" + frontName, "xlsx");
-            exportRecords.setNetPath(imgUrl);
-            exportRecords.setType(ExportRecordsEnums.TypeEnum.COMPLETED.getStatus());
-            exportRecords.setEndRequestTime(new Date());
-            exportRecordsDao.updateById(exportRecords);
+            String imgUrl = imageUploadUtil.wechatUpload(in, IceBoxConstant.ICE_BOX, "BGDC" + frontName, "xlsx");
+            // 更新下载列表中的数据
+            feignExportRecordsClient.updateExportRecord(imgUrl, 1, iceBoxPage.getExportRecordId());
         } catch (Exception e) {
             log.error("付费陈列导出excel错误", e);
         } finally {

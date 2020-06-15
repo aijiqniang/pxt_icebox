@@ -3,6 +3,8 @@ package com.szeastroc.icebox.rabbitMQ;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 /**
  * @Author xiao
  * @Date create in 2020/6/14 14:14
@@ -10,7 +12,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class DataPack {
+public class DataPack implements Serializable {
     private String methodName;
     private Object obj;
 }

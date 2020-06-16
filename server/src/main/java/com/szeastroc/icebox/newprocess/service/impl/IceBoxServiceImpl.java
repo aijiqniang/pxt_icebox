@@ -849,6 +849,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     //@RoutingDataSource(value = Datasources.SLAVE_DB)
     @Override
     public IPage findPage(IceBoxPage iceBoxPage) {
+        // 获取当前登陆人可查看的部门
+         List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
+        iceBoxPage.setDeptIdList(deptIdList);
         if (dealIceBoxPage(iceBoxPage)) {
             return null;
         }
@@ -936,8 +939,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     private boolean dealIceBoxPage(IceBoxPage iceBoxPage) {
-        // 获取当前登陆人可查看的部门
-        // List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
         List<Integer> deptIdList = iceBoxPage.getDeptIdList();
         if (CollectionUtils.isEmpty(deptIdList)) {
             log.info("此人暂无查看数据的权限");

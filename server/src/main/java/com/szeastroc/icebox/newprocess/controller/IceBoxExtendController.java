@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
@@ -16,6 +17,7 @@ import com.szeastroc.user.common.session.UserManageVo;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,10 +57,10 @@ public class IceBoxExtendController {
         // 控制导出的请求频率
         String key = "ice_export_excel_" + userId;
         String value = jedisClient.get(key);
-//        if (StringUtils.isNotBlank(value)) {
-//            throw new NormalOptionException(Constants.API_CODE_FAIL, "请到“首页-下载任务”中查看导出结果，请勿频繁操作(间隔3分钟)...");
-//        }
-//        jedisClient.setnx(key, userId.toString(), 180);
+        if (StringUtils.isNotBlank(value)) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "请到“首页-下载任务”中查看导出结果，请勿频繁操作(间隔3分钟)...");
+        }
+        jedisClient.setnx(key, userId.toString(), 180);
 
         // 塞入数据到下载列表中  exportRecordId
         Integer exportRecordId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userId, userName, JSON.toJSONString(iceBoxPage), "冰柜记录导出"));

@@ -31,6 +31,10 @@ public class IceBoxVo {
      */
     private String chestModel;
     /**
+     * 冰柜价值
+     */
+    private BigDecimal chestMoney;
+    /**
      * 资产编号
      */
     private String assetId;

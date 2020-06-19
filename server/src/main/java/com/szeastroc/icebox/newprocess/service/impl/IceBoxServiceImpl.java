@@ -155,29 +155,35 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (CollectionUtil.isEmpty(iceBoxes)) {
                 return iceBoxVos;
             }
-            Map<Integer, Integer> iceBoxCountMap = new HashMap<>();
-            for (IceBox iceBox : iceBoxes) {
-                Integer count = iceBoxCountMap.get(iceBox.getModelId());
-                if (count != null) {
-                    count = count + 1;
-                    iceBoxCountMap.put(iceBox.getModelId(), count);
-                    continue;
+            Map<Integer, List<IceBox>> iceGroupMap = iceBoxes.stream().collect(Collectors.groupingBy(IceBox::getSupplierId));
+            for(Integer supplierId:iceGroupMap.keySet()){
+                List<IceBoxVo> iceBoxVoList = new ArrayList<>();
+                List<IceBox> iceBoxList = iceGroupMap.get(supplierId);
+                Map<Integer, Integer> iceBoxCountMap = new HashMap<>();
+                for (IceBox iceBox : iceBoxList) {
+                    Integer count = iceBoxCountMap.get(iceBox.getModelId());
+                    if (count != null) {
+                        count = count + 1;
+                        iceBoxCountMap.put(iceBox.getModelId(), count);
+                        continue;
+                    }
+                    IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+                    SimpleSupplierInfoVo simpleSupplierInfoVo = supplierInfoVoMap.get(iceBox.getSupplierId());
+                    if (simpleSupplierInfoVo != null) {
+                        boxVo.setSupplierName(simpleSupplierInfoVo.getName());
+                        boxVo.setSupplierAddress(simpleSupplierInfoVo.getAddress());
+                        boxVo.setLinkman(simpleSupplierInfoVo.getLinkMan());
+                        boxVo.setLinkmanMobile(simpleSupplierInfoVo.getLinkManMobile());
+                    }
+                    iceBoxCountMap.put(iceBox.getModelId(), 1);
+                    iceBoxVoList.add(boxVo);
                 }
-                IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
-                SimpleSupplierInfoVo simpleSupplierInfoVo = supplierInfoVoMap.get(iceBox.getSupplierId());
-                if (simpleSupplierInfoVo != null) {
-                    boxVo.setSupplierName(simpleSupplierInfoVo.getName());
-                    boxVo.setSupplierAddress(simpleSupplierInfoVo.getAddress());
-                    boxVo.setLinkman(simpleSupplierInfoVo.getLinkMan());
-                    boxVo.setLinkmanMobile(simpleSupplierInfoVo.getLinkManMobile());
-                }
-                iceBoxCountMap.put(iceBox.getModelId(), 1);
-                iceBoxVos.add(boxVo);
-            }
-            if (CollectionUtil.isNotEmpty(iceBoxVos)) {
-                for (IceBoxVo iceBoxVo : iceBoxVos) {
-                    Integer count = iceBoxCountMap.get(iceBoxVo.getModelId());
-                    iceBoxVo.setIceBoxCount(count);
+                if (CollectionUtil.isNotEmpty(iceBoxVoList)) {
+                    for (IceBoxVo iceBoxVo : iceBoxVoList) {
+                        Integer count = iceBoxCountMap.get(iceBoxVo.getModelId());
+                        iceBoxVo.setIceBoxCount(count);
+                    }
+                    iceBoxVos.addAll(iceBoxVoList);
                 }
             }
         }

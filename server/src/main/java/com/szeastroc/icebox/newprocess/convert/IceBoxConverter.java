@@ -35,6 +35,7 @@ public class IceBoxConverter {
         iceBoxVo.setChestName(iceBox.getChestName());
         iceBoxVo.setChestModel(iceModel.getChestModel());
         iceBoxVo.setChestNorm(iceBox.getChestNorm());
+        iceBoxVo.setChestMoney(iceBox.getChestMoney());
         iceBoxVo.setBrandName(iceBox.getBrandName());
         iceBoxVo.setDepositMoney(iceBox.getDepositMoney());
         iceBoxVo.setOpenTotal(iceBoxExtend.getOpenTotal());

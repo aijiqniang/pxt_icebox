@@ -1,15 +1,11 @@
 package com.szeastroc.icebox.newprocess.controller;
 
-import com.alibaba.fastjson.JSON;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.common.utils.ExecutorServiceFactory;
-import com.szeastroc.common.utils.HttpUtils;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.vo.IceBoxRequest;
@@ -21,10 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -67,9 +61,27 @@ public class MyIceBoxController {
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVo);
     }
 
+    /**
+     * 申请冰柜
+     * @param iceBoxRequestVos
+     * @return
+     * @throws InterruptedException
+     */
     @RequestMapping("submitApply")
     public CommonResponse<Map<String,Object>> submitApply(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
         Map<String,Object> map = iceBoxService.submitApply(iceBoxRequestVos);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+    }
+
+    /**
+     * 申请冰柜(新)
+     * @param iceBoxRequestVos
+     * @return
+     * @throws InterruptedException
+     */
+    @RequestMapping("submitApplyNew")
+    public CommonResponse<Map<String,Object>> submitApplyNew(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
+        Map<String,Object> map = iceBoxService.submitApplyNew(iceBoxRequestVos);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 

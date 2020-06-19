@@ -2,8 +2,6 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.poi.excel.ExcelReader;
-import cn.hutool.poi.excel.WorkbookUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -45,7 +43,10 @@ import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.client.FeignXcxBaseClient;
-import com.szeastroc.user.common.vo.*;
+import com.szeastroc.user.common.vo.DeptNameRequest;
+import com.szeastroc.user.common.vo.SessionDeptInfoVo;
+import com.szeastroc.user.common.vo.SessionUserInfoVo;
+import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.common.IceBoxPutModel;
 import com.szeastroc.visit.common.RequestExamineVo;
@@ -55,7 +56,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1484,5 +1484,91 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             iceBoxVos.add(boxVo);
         }
         return iceBoxVos;
+    }
+
+    @Override
+    public Map<String, Object> submitApplyNew(List<IceBoxRequestVo> requestNewVos) throws InterruptedException {
+        Map<String, Object> map = new HashMap<>();
+        IceBoxRequestVo iceBoxRequestVo = requestNewVos.get(0);
+        String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+        IcePutApply icePutApply = IcePutApply.builder()
+                .applyNumber(applyNumber)
+                .putStoreNumber(iceBoxRequestVo.getStoreNumber())
+                .userId(iceBoxRequestVo.getUserId())
+                .createdBy(iceBoxRequestVo.getUserId())
+                .build();
+        icePutApplyDao.insert(icePutApply);
+        List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
+        BigDecimal totalMoney = new BigDecimal(0);
+        for (IceBoxRequestVo requestVo : requestNewVos) {
+            for (int i = 0; i < requestVo.getApplyCount(); i++) {
+                List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, requestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+                IceBox iceBox = null;
+                if (CollectionUtil.isNotEmpty(iceBoxes)) {
+                    iceBox = iceBoxes.get(0);
+
+                } else {
+                    throw new ImproperOptionException("无可申请冰柜");
+                }
+                RedisLockUtil lock = new RedisLockUtil(redisTemplate, RedisConstant.ICE_BOX_LOCK + iceBox.getId(), 5000, 10000);
+                try {
+                    if (lock.lock()) {
+                        log.info("申请到的冰柜信息-->" + JSON.toJSONString(iceBox));
+                        iceBox.setPutStoreNumber(requestVo.getStoreNumber()); //
+                        iceBox.setPutStatus(PutStatus.LOCK_PUT.getStatus());
+                        iceBox.setUpdatedTime(new Date());
+                        iceBoxDao.updateById(iceBox);
+                        totalMoney = totalMoney.add(iceBox.getDepositMoney());
+
+                        IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                        iceBoxExtend.setId(iceBox.getId());
+                        iceBoxExtend.setLastApplyNumber(applyNumber);
+                        iceBoxExtend.setLastPutId(icePutApply.getId());
+                        iceBoxExtend.setLastPutTime(new Date());
+                        iceBoxExtendDao.updateById(iceBoxExtend);
+
+                        IcePutApplyRelateBox relateBox = new IcePutApplyRelateBox();
+                        relateBox.setApplyNumber(applyNumber);
+                        relateBox.setBoxId(iceBox.getId());
+                        relateBox.setModelId(iceBox.getModelId());
+                        relateBox.setFreeType(requestVo.getFreeType());
+                        icePutApplyRelateBoxDao.insert(relateBox);
+
+
+                        IceTransferRecord iceTransferRecord = IceTransferRecord.builder()
+                                .applyNumber(applyNumber)
+                                .applyTime(new Date())
+                                .applyUserId(requestVo.getUserId())
+                                .boxId(iceBox.getId())
+                                .createTime(new Date())
+                                .recordStatus(RecordStatus.APPLY_ING.getStatus())
+                                .serviceType(ServiceType.IS_PUT.getType())
+                                .storeNumber(requestVo.getStoreNumber())
+                                .supplierId(requestVo.getSupplierId())
+                                .build();
+                        iceTransferRecord.setTransferMoney(new BigDecimal(0));
+                        if (FreePayTypeEnum.UN_FREE.getType() == requestVo.getFreeType().intValue()) {
+                            iceTransferRecord.setTransferMoney(iceBox.getDepositMoney());
+                        }
+                        iceTransferRecordDao.insert(iceTransferRecord);
+
+                    }
+                } catch (Exception e) {
+                    throw e;
+                } finally {
+                    lock.unlock();
+                }
+            }
+            IceBoxPutModel.IceBoxModel iceBoxModel = new IceBoxPutModel.IceBoxModel(requestVo.getChestModel(), requestVo.getChestName(), requestVo.getDepositMoney(), requestVo.getApplyCount(), requestVo.getFreeType());
+            iceBoxModels.add(iceBoxModel);
+        }
+        List<SessionExamineVo.VisitExamineNodeVo> iceBoxPutExamine = createIceBoxPutExamine(iceBoxRequestVo, applyNumber, iceBoxModels);
+        map.put("iceBoxPutExamine", iceBoxPutExamine);
+        if (CollectionUtil.isNotEmpty(iceBoxPutExamine)) {
+            SessionExamineVo.VisitExamineNodeVo visitExamineNodeVo = iceBoxPutExamine.get(0);
+            icePutApply.setExamineId(visitExamineNodeVo.getExamineId());
+            icePutApplyDao.updateById(icePutApply);
+        }
+        return map;
     }
 }

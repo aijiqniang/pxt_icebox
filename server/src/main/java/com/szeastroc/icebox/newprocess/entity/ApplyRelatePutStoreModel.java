@@ -37,6 +37,12 @@ public class ApplyRelatePutStoreModel {
     @TableField(value = "store_relate_model_id")
     private Integer storeRelateModelId;
 
+    /**
+     * 是否免押
+     */
+    @TableField(value = "free_type")
+    private Integer freeType;
+
     public static ApplyRelatePutStoreModel.ApplyRelatePutStoreModelBuilder builder() {
         return new ApplyRelatePutStoreModel.ApplyRelatePutStoreModelBuilder();
     }

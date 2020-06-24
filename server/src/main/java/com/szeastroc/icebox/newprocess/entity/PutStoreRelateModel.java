@@ -47,7 +47,7 @@ public class PutStoreRelateModel {
      * 冰柜投放状态
      */
     @TableField(value = "put_status")
-    private Integer put_status;
+    private Integer putStatus;
 
 
     /**
@@ -61,6 +61,12 @@ public class PutStoreRelateModel {
      */
     @TableField(value = "create_time")
     private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    @TableField(value = "update_time")
+    private Date updateTime;
 
 
 

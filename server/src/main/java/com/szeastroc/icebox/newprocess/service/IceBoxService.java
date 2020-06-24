@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
@@ -62,6 +63,14 @@ public interface IceBoxService extends IService<IceBox> {
     List<IceBoxVo> findPutIceBoxList(String pxtNumber);
 
     Map<String, Object> submitApplyNew(List<IceBoxRequestVo> requestNewVos) throws InterruptedException;
+
+    void checkIceBoxNew(IceBoxRequest iceBoxRequest);
+
+    List<IceBoxVo> findIceBoxListNew(IceBoxRequestVo requestVo);
+
+    List<PutStoreRelateModel> getIceBoxListNew(String pxtNumber);
+
+    IceBoxStatusVo checkIceBoxByQrcodeNew(String qrcode, String pxtNumber);
 }
 
 

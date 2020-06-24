@@ -188,7 +188,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(simpleIceBoxDetailVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
         //        获取上级部门领导
-        List<Integer> userIds = new ArrayList<Integer>();
+        Set<Integer> userIds = new HashSet<>();
 //        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
 //        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
 //        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(3);
@@ -228,7 +228,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .code(applyNumber)
                 .relateCode(applyNumber)
                 .createBy(simpleIceBoxDetailVo.getUserId())
-                .userIds(userIds)
+                .userIds(new ArrayList<>(userIds))
                 .build();
 
         sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);

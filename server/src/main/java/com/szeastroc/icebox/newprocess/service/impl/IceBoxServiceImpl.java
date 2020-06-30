@@ -77,7 +77,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
     private final String FWCJL = "服务处经理";
+    private final String FWCFJL = "服务处副经理";
     private final String DQZJ = "大区总监";
+    private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
     private final IceBoxExtendDao iceBoxExtendDao;
@@ -321,11 +323,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (sessionUserInfoVo != null && FWCJL.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (FWCJL.equals(sessionUserInfoVo.getOfficeName()) || FWCFJL.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 continue;
             }
-            if (sessionUserInfoVo != null && DQZJ.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (DQZJ.equals(sessionUserInfoVo.getOfficeName()) || DQFZJ.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }

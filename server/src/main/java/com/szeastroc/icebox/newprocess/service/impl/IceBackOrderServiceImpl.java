@@ -84,7 +84,9 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
     private final String group = "销售组长";
     private final String service = "服务处经理";
+    private final String serviceOther = "服务处副经理";
     private final String divion = "大区总监";
+    private final String divionOther = "大区副总监";
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -199,15 +201,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (sessionUserInfoVo != null && group.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (group.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 continue;
             }
-            if (sessionUserInfoVo != null && service.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (service.equals(sessionUserInfoVo.getOfficeName()) || serviceOther.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 continue;
             }
-            if (sessionUserInfoVo != null && divion.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (divion.equals(sessionUserInfoVo.getOfficeName()) || divionOther.equals(sessionUserInfoVo.getOfficeName())) ) {
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }

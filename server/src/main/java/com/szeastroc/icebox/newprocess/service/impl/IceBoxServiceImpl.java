@@ -1723,6 +1723,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         LambdaQueryWrapper<PutStoreRelateModel> wrappers = Wrappers.lambdaQuery();
         wrappers.eq(PutStoreRelateModel::getSupplierId,iceBox.getSupplierId());
         wrappers.eq(PutStoreRelateModel::getModelId,iceBox.getModelId());
+        wrappers.eq(PutStoreRelateModel::getPutStoreNumber,pxtNumber);
         wrappers.and(x -> x.eq(PutStoreRelateModel::getPutStatus,PutStatus.LOCK_PUT.getStatus()).or().eq(PutStoreRelateModel::getPutStatus,PutStatus.DO_PUT.getStatus()));
         List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(wrappers);
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
@@ -1756,6 +1757,22 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             return iceBoxStatusVo;
         }
 
+
+        if(putStatus.contains(PutStatus.FINISH_PUT.getStatus())){
+            if (iceBox.getPutStoreNumber().equals(pxtNumber)) {
+                // 已投放到当前门店
+                iceBoxStatusVo.setSignFlag(false);
+                iceBoxStatusVo.setStatus(6);
+                iceBoxStatusVo.setMessage("冰柜已投放当当前门店");
+                return iceBoxStatusVo;
+            }
+            // 已有投放, 不能继续
+            iceBoxStatusVo.setSignFlag(false);
+            iceBoxStatusVo.setStatus(2);
+            iceBoxStatusVo.setMessage("冰柜投放到其他门店");
+            return iceBoxStatusVo;
+        }
+
         List<String> applyNumbers = applyRelatePutStoreModels.stream().map(x -> x.getApplyNumber()).collect(Collectors.toList());
         List<IcePutApply> icePutApplies = icePutApplyDao.selectList(Wrappers.<IcePutApply>lambdaQuery().in(IcePutApply::getApplyNumber, applyNumbers));
         if(CollectionUtil.isEmpty(icePutApplies)){
@@ -1770,7 +1787,5 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IcePutApply icePutApply = icePutApplies.get(0);
         iceBoxStatusVo = checkPutApplyByApplyNumber(icePutApply.getApplyNumber(), pxtNumber);
         return iceBoxStatusVo;
-
-//        return switchIceBoxStatus(iceBoxExtend.getLastApplyNumber(), pxtNumber, iceBox);
     }
 }

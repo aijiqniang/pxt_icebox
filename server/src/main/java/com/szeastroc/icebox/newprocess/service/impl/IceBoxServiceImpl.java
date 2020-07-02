@@ -77,7 +77,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
     private final String FWCJL = "服务处经理";
+    private final String FWCFJL = "服务处副经理";
     private final String DQZJ = "大区总监";
+    private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
     private final IceBoxExtendDao iceBoxExtendDao;
@@ -311,7 +313,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceBoxRequestVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
-        List<Integer> userIds = new ArrayList<Integer>();
+        Set<Integer> userIds = new HashSet<>();
         //获取上级部门领导
         if (CollectionUtil.isEmpty(sessionUserInfoMap)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
@@ -321,11 +323,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (sessionUserInfoVo != null && FWCJL.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (FWCJL.equals(sessionUserInfoVo.getOfficeName()) || FWCFJL.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 continue;
             }
-            if (sessionUserInfoVo != null && DQZJ.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (DQZJ.equals(sessionUserInfoVo.getOfficeName()) || DQFZJ.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }
@@ -358,7 +360,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .code(applyNumber)
                 .relateCode(applyNumber)
                 .createBy(iceBoxRequestVo.getUserId())
-                .userIds(userIds)
+                .userIds(new ArrayList<>(userIds))
                 .build();
         sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);
         sessionExamineVo.setIceBoxPutModel(iceBoxPutModel);

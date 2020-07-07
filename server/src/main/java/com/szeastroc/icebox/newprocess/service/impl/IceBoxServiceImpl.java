@@ -325,6 +325,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             if (sessionUserInfoVo != null && (FWCJL.equals(sessionUserInfoVo.getOfficeName()) || FWCFJL.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
+                break;
+            }
+        }
+        for (Integer key : sessionUserInfoMap.keySet()) {
+            SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
+            if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
             if (sessionUserInfoVo != null && (DQZJ.equals(sessionUserInfoVo.getOfficeName()) || DQFZJ.equals(sessionUserInfoVo.getOfficeName()))) {

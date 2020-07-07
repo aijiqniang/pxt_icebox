@@ -190,7 +190,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(simpleIceBoxDetailVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
         //        获取上级部门领导
-        Set<Integer> userIds = new HashSet<>();
+        List<Integer> userIds = new ArrayList<>();
 //        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
 //        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
 //        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(3);
@@ -199,6 +199,9 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         for (Integer key : sessionUserInfoMap.keySet()) {
             SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
+                continue;
+            }
+            if(userIds.contains(sessionUserInfoVo.getId())){
                 continue;
             }
             if (sessionUserInfoVo != null && (group.equals(sessionUserInfoVo.getOfficeName()))) {
@@ -230,7 +233,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .code(applyNumber)
                 .relateCode(applyNumber)
                 .createBy(simpleIceBoxDetailVo.getUserId())
-                .userIds(new ArrayList<>(userIds))
+                .userIds(userIds)
                 .build();
 
         sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);

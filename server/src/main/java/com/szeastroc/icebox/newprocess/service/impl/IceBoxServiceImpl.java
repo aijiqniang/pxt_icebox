@@ -313,7 +313,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceBoxRequestVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
-        Set<Integer> userIds = new HashSet<>();
+        List<Integer> userIds = new ArrayList<>();
         //获取上级部门领导
         if (CollectionUtil.isEmpty(sessionUserInfoMap)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
@@ -324,6 +324,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 continue;
             }
             if (sessionUserInfoVo != null && (FWCJL.equals(sessionUserInfoVo.getOfficeName()) || FWCFJL.equals(sessionUserInfoVo.getOfficeName()))) {
+                if(userIds.contains(sessionUserInfoVo.getId())){
+                    continue;
+                }
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }
@@ -334,6 +337,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 continue;
             }
             if (sessionUserInfoVo != null && (DQZJ.equals(sessionUserInfoVo.getOfficeName()) || DQFZJ.equals(sessionUserInfoVo.getOfficeName()))) {
+                if(userIds.contains(sessionUserInfoVo.getId())){
+                    continue;
+                }
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }
@@ -366,7 +372,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .code(applyNumber)
                 .relateCode(applyNumber)
                 .createBy(iceBoxRequestVo.getUserId())
-                .userIds(new ArrayList<>(userIds))
+                .userIds(userIds)
                 .build();
         sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);
         sessionExamineVo.setIceBoxPutModel(iceBoxPutModel);

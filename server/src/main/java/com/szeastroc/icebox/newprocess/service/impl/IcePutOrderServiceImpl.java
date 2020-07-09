@@ -6,19 +6,20 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.customer.client.FeignCusLabelClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
+import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.oldprocess.entity.IceChestInfo;
-import com.szeastroc.icebox.oldprocess.entity.IceChestPutRecord;
-import com.szeastroc.icebox.oldprocess.entity.OrderInfo;
-import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
@@ -28,6 +29,7 @@ import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.util.wechatpay.WeiXinService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -42,6 +44,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -56,6 +59,9 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
     private final IcePutOrderDao icePutOrderDao;
     private final IceBoxExtendDao iceBoxExtendDao;
+    private final IcePutPactRecordDao icePutPactRecordDao;
+    private final FeignSupplierClient feignSupplierClient;
+    private final FeignCusLabelClient feignCusLabelClient;
 
 
     @Override
@@ -211,6 +217,35 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //修改冰柜投放信息
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         iceBoxDao.updateById(iceBox);
+
+        CompletableFuture.runAsync(() -> {
+            Integer iceBoxId = iceBox.getId();
+            String putStoreNumber = iceBox.getPutStoreNumber();
+            IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+            String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
+            IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
+                    .eq(IcePutPactRecord::getBoxId, iceBoxId)
+                    .eq(IcePutPactRecord::getApplyNumber, lastApplyNumber));
+            Date putTime = icePutPactRecord.getPutTime();
+            Date putExpireTime = icePutPactRecord.getPutExpireTime();
+            String assetId = iceBoxExtend.getAssetId();
+            CustomerLabelDetailDto customerLabelDetailDto = new CustomerLabelDetailDto();
+            customerLabelDetailDto.setLabelId(9999);
+            customerLabelDetailDto.setCreateTime(putTime);
+            customerLabelDetailDto.setCustomerNumber(putStoreNumber);
+            customerLabelDetailDto.setCreateBy(0);
+            customerLabelDetailDto.setCreateByName("系统");
+            customerLabelDetailDto.setPutProject("冰柜");
+            customerLabelDetailDto.setCancelTime(putExpireTime);
+            customerLabelDetailDto.setRemarks(assetId);
+            SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(putStoreNumber));
+            if (subordinateInfoVo != null && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+                customerLabelDetailDto.setCustomerType(1);
+            } else {
+                customerLabelDetailDto.setCustomerType(0);
+            }
+            feignCusLabelClient.createCustomerLabelDetail(customerLabelDetailDto);
+        }, ExecutorServiceFactory.getInstance());
     }
 
     @Override

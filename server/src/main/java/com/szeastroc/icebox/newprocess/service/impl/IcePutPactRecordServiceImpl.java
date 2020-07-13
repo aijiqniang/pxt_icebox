@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @_(@Autowired))
-public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao, IcePutPactRecord> implements IcePutPactRecordService{
+public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao, IcePutPactRecord> implements IcePutPactRecordService {
 
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IcePutApplyDao icePutApplyDao;
@@ -56,27 +56,9 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
         icePutPactRecord.setUpdatedBy(0);
         icePutPactRecord.setUpdatedTime(new Date());
         updateById(icePutPactRecord);
-        
+        // 添加标签
         CompletableFuture.runAsync(() -> {
-            Date putTime = icePutPactRecord.getPutTime();
-            Date putExpireTime = icePutPactRecord.getPutExpireTime();
-            String assetId = iceBoxExtend.getAssetId();
-            CustomerLabelDetailDto customerLabelDetailDto = new CustomerLabelDetailDto();
-            customerLabelDetailDto.setLabelId(9999);
-            customerLabelDetailDto.setCreateTime(putTime);
-            customerLabelDetailDto.setCustomerNumber(icePutPactRecord.getStoreNumber());
-            customerLabelDetailDto.setCreateBy(0);
-            customerLabelDetailDto.setCreateByName("系统");
-            customerLabelDetailDto.setPutProject("冰柜");
-            customerLabelDetailDto.setCancelTime(putExpireTime);
-            customerLabelDetailDto.setRemarks(assetId);
-            SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(icePutPactRecord.getStoreNumber()));
-            if (subordinateInfoVo != null && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
-                customerLabelDetailDto.setCustomerType(1);
-            } else {
-                customerLabelDetailDto.setCustomerType(0);
-            }
-            feignCusLabelClient.createCustomerLabelDetail(customerLabelDetailDto);
+            addLabel(icePutPactRecord,iceBoxExtend.getAssetId());
         }, ExecutorServiceFactory.getInstance());
     }
 
@@ -98,6 +80,10 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
         icePutPactRecord.setUpdatedBy(0);
         icePutPactRecord.setUpdatedTime(icePutPactRecord.getCreatedTime());
         save(icePutPactRecord);
+        // 添加标签
+        CompletableFuture.runAsync(() -> {
+           addLabel(icePutPactRecord,iceBoxExtend.getAssetId());
+        }, ExecutorServiceFactory.getInstance());
     }
 
     @Override
@@ -112,6 +98,27 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
                 .eq(IcePutPactRecord::getBoxId, iceBoxExtend.getId())
                 .eq(IcePutPactRecord::getStoreNumber, icePutApply.getPutStoreNumber()));
         return count > 0;
+    }
+
+    private void addLabel(IcePutPactRecord icePutPactRecord, String assetId) {
+        Date putTime = icePutPactRecord.getPutTime();
+        Date putExpireTime = icePutPactRecord.getPutExpireTime();
+        CustomerLabelDetailDto customerLabelDetailDto = new CustomerLabelDetailDto();
+        customerLabelDetailDto.setLabelId(9999);
+        customerLabelDetailDto.setCreateTime(putTime);
+        customerLabelDetailDto.setCustomerNumber(icePutPactRecord.getStoreNumber());
+        customerLabelDetailDto.setCreateBy(0);
+        customerLabelDetailDto.setCreateByName("系统");
+        customerLabelDetailDto.setPutProject("冰柜");
+        customerLabelDetailDto.setCancelTime(putExpireTime);
+        customerLabelDetailDto.setRemarks(assetId);
+        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(icePutPactRecord.getStoreNumber()));
+        if (subordinateInfoVo != null && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+            customerLabelDetailDto.setCustomerType(1);
+        } else {
+            customerLabelDetailDto.setCustomerType(0);
+        }
+        feignCusLabelClient.createCustomerLabelDetail(customerLabelDetailDto);
     }
 
 }

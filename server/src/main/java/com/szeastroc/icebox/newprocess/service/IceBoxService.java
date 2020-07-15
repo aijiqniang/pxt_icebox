@@ -60,6 +60,9 @@ public interface IceBoxService extends IService<IceBox> {
     Map<String, List<IceBoxVo>> findPutingIceBoxList(IceBoxRequestVo requestVo);
 
     List<IceBoxVo> findPutIceBoxList(String pxtNumber);
+
+    void autoAddLabel();
+
 }
 
 

@@ -117,6 +117,21 @@ public class IceBoxController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxByQrcode(qrcode));
     }
 
+    /**
+     * 根据冰柜二维码查找冰柜信息
+     *
+     * @param qrcode
+     * @return
+     * @throws ImproperOptionException
+     * @throws NormalOptionException
+     */
+    @PostMapping("/getIceBoxByQrcodeNew")
+    public CommonResponse<IceBoxVo> getIceBoxByQrcodeNew(String qrcode, String pxtNumber) {
+        if (StringUtils.isBlank(qrcode) || StringUtils.isBlank(pxtNumber)) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxByQrcodeNew(qrcode,pxtNumber));
+    }
 
     /**
      * 门店老板签署电子协议

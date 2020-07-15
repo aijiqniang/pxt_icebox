@@ -22,13 +22,13 @@ import com.szeastroc.customer.common.vo.*;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.enums.*;
+import com.szeastroc.icebox.enums.RecordStatus;
+import com.szeastroc.icebox.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
-import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
-import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
@@ -465,6 +465,96 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             boxVo.setApplyNumber(icePutApplyRelateBox.getApplyNumber());
             boxVo.setFreeType(icePutApplyRelateBox.getFreeType());
             IcePutApply putApply = icePutApplyMap.get(icePutApplyRelateBox.getApplyNumber());
+            if (putApply == null) {
+                continue;
+            }
+            boxVo.setApplyTimeStr(dateFormat.format(putApply.getCreatedTime()));
+            SessionExamineVo sessionExamineVo = sessionExamineVoMap.get(putApply.getExamineId());
+            if (sessionExamineVo == null) {
+                continue;
+            }
+            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+            if (CollectionUtil.isNotEmpty(visitExamineNodes)) {
+                List<ExamineNodeVo> nodeVos = new ArrayList<>();
+                for (SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo : visitExamineNodes) {
+                    ExamineNodeVo nodeVo = new ExamineNodeVo();
+                    BeanUtils.copyProperties(sessionVisitExamineNodeVo, nodeVo);
+                    nodeVos.add(nodeVo);
+                }
+                boxVo.setExamineNodeVoList(nodeVos);
+            }
+            iceBoxVos.add(boxVo);
+        }
+        return iceBoxVos;
+    }
+
+    private List<IceBoxVo> getIceBoxVosByPutApplysNew(List<PutStoreRelateModel> relateModelList) {
+        List<IceBoxVo> iceBoxVos = new ArrayList<>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Map<Integer, List<PutStoreRelateModel>> relateModelGroup = relateModelList.stream().collect(Collectors.groupingBy(PutStoreRelateModel::getModelId));
+        Set<Integer> relateModelIds = relateModelList.stream().map(x -> x.getId()).collect(Collectors.toSet());
+        List<ApplyRelatePutStoreModel> putStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().in(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModelIds));
+        if (CollectionUtil.isEmpty(putStoreModels)) {
+            log.error("查询不到申请投放信息和冰柜的关联关系");
+            return iceBoxVos;
+        }
+        Map<Integer, ApplyRelatePutStoreModel> putStoreModelMap = putStoreModels.stream().collect(Collectors.toMap(ApplyRelatePutStoreModel::getStoreRelateModelId, x -> x));
+        Set<String> applyNumbers = putStoreModels.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
+        List<IcePutApply> icePutApplies = icePutApplyDao.selectList(Wrappers.<IcePutApply>lambdaQuery().in(IcePutApply::getApplyNumber, applyNumbers));
+        if (CollectionUtil.isEmpty(icePutApplies)) {
+            log.error("查询不到申请投放信息和冰柜的关联关系");
+            return iceBoxVos;
+        }
+        Map<String, IcePutApply> icePutApplyMap = icePutApplies.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
+        List<Integer> examineIds = icePutApplies.stream().map(x -> x.getExamineId()).collect(Collectors.toList());
+        RequestExamineVo examineVo = new RequestExamineVo();
+        examineVo.setExamineInfoIds(examineIds);
+        List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
+        if (CollectionUtil.isEmpty(sessionExamineVos)) {
+            log.error("投放查询不到审批流信息");
+            return iceBoxVos;
+        }
+        Map<Integer, SessionExamineVo> sessionExamineVoMap = sessionExamineVos.stream().collect(Collectors.toMap(SessionExamineVo::getExamineInfoId, x -> x));
+
+
+        List<IceBox> iceBoxes = new ArrayList<>();
+        Set<Integer> modelIds = relateModelList.stream().map(x -> x.getModelId()).collect(Collectors.toSet());
+        Set<Integer> supplierIds = relateModelList.stream().map(x -> x.getSupplierId()).collect(Collectors.toSet());
+        for(Integer modelId:modelIds){
+            for(Integer supplierId:supplierIds){
+                List<IceBox> iceBoxeList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, modelId).eq(IceBox::getSupplierId, supplierId));
+                if(CollectionUtil.isNotEmpty(iceBoxeList)){
+                    iceBoxes.add(iceBoxeList.get(0));
+                }
+            }
+        }
+        if (CollectionUtil.isEmpty(iceBoxes)) {
+            log.error("查询不到申请投放信息关联的冰柜详情");
+            return iceBoxVos;
+        }
+        for (IceBox iceBox : iceBoxes) {
+            IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+            boxVo.setStatusStr(IceBoxConstant.IS_APPLYING);
+            List<PutStoreRelateModel> relateModelList1 = relateModelGroup.get(iceBox.getModelId());
+            if (relateModelList1 == null) {
+                continue;
+            }
+            PutStoreRelateModel storeRelateModel = null;
+            for(PutStoreRelateModel relateModel:relateModelList1){
+                if(relateModel.getSupplierId().equals(iceBox.getSupplierId())){
+                    storeRelateModel = relateModel;
+                }
+            }
+            if(storeRelateModel == null){
+                continue;
+            }
+            ApplyRelatePutStoreModel applyRelatePutStoreModel = putStoreModelMap.get(storeRelateModel.getId());
+            if(applyRelatePutStoreModel == null){
+                continue;
+            }
+            boxVo.setApplyNumber(applyRelatePutStoreModel.getApplyNumber());
+            boxVo.setFreeType(applyRelatePutStoreModel.getFreeType());
+            IcePutApply putApply = icePutApplyMap.get(applyRelatePutStoreModel.getApplyNumber());
             if (putApply == null) {
                 continue;
             }
@@ -1473,7 +1563,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 boxVo.setDetailAddress(iceEventRecord.getDetailAddress());
             }
 
-            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+//            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
             IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
             if (relateBox != null) {
                 boxVo.setFreeType(relateBox.getFreeType());
@@ -1559,6 +1649,31 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Override
     public void checkIceBoxNew(IceBoxRequest iceBoxRequest) {
+        //审批中
+        if (iceBoxRequest.getStatus() == null) {
+            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
+            if (icePutApply != null) {
+                icePutApply.setExamineStatus(iceBoxRequest.getExamineStatus());
+                icePutApply.setUpdatedBy(iceBoxRequest.getUpdateBy());
+                icePutApply.setUpdateTime(new Date());
+                icePutApplyDao.updateById(icePutApply);
+            }
+
+            List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxRequest.getApplyNumber()));
+            Set<Integer> storeRelateModelIds = Streams.toStream(applyRelatePutStoreModels).map(x -> x.getStoreRelateModelId()).collect(Collectors.toSet());
+            if (CollectionUtil.isNotEmpty(storeRelateModelIds)) {
+                for (Integer storeRelateModelId : storeRelateModelIds) {
+                    PutStoreRelateModel putStoreRelateModel = PutStoreRelateModel.builder()
+                            .id(storeRelateModelId)
+                            .examineStatus(ExamineStatus.DOING_EXAMINE.getStatus())
+                            .updateTime(new Date())
+                            .createBy(0)
+                            .build();
+                    putStoreRelateModelDao.updateById(putStoreRelateModel);
+                }
+            }
+
+        }
         //驳回
         if (IceBoxStatus.NO_PUT.getStatus().equals(iceBoxRequest.getStatus())) {
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
@@ -1576,7 +1691,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     PutStoreRelateModel putStoreRelateModel = PutStoreRelateModel.builder()
                             .id(storeRelateModelId)
                             .putStatus(IceBoxStatus.NO_PUT.getStatus())
-                            .putStoreNumber("")
+                            .examineStatus(ExamineStatus.REJECT_EXAMINE.getStatus())
                             .updateTime(new Date())
                             .createBy(0)
                             .build();
@@ -1602,7 +1717,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     PutStoreRelateModel putStoreRelateModel = PutStoreRelateModel.builder()
                             .id(storeRelateModelId)
                             .putStatus(IceBoxStatus.IS_PUTING.getStatus())
-                            .putStoreNumber("")
+                            .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
                             .updateTime(new Date())
                             .createBy(0)
                             .build();
@@ -1702,17 +1817,17 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public List<PutStoreRelateModel> getIceBoxListNew(String pxtNumber) {
         LambdaQueryWrapper<PutStoreRelateModel> wrappers = Wrappers.lambdaQuery();
         wrappers.eq(PutStoreRelateModel::getPutStoreNumber,pxtNumber);
-        wrappers.and(x -> x.eq(PutStoreRelateModel::getPutStatus,PutStatus.LOCK_PUT.getStatus()).or().eq(PutStoreRelateModel::getPutStatus,PutStatus.DO_PUT.getStatus()));
+        wrappers.ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus());
         List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(wrappers);
         return putStoreRelateModels;
     }
 
     @Override
     public IceBoxStatusVo checkIceBoxByQrcodeNew(String qrcode, String pxtNumber) {
+        IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
         if (Objects.isNull(iceBoxExtend)) {
             // 冰柜不存在(二维码未找到)
-            IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
             iceBoxStatusVo.setSignFlag(false);
             iceBoxStatusVo.setStatus(5);
             iceBoxStatusVo.setMessage("冰柜不存在(二维码未找到)");
@@ -1720,15 +1835,30 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
 
         IceBox iceBox = iceBoxDao.selectById(iceBoxExtend.getId());
+        if(iceBox.getPutStatus().equals(PutStatus.FINISH_PUT.getStatus())){
+            if (iceBox.getPutStoreNumber().equals(pxtNumber)) {
+                // 已投放到当前门店
+                iceBoxStatusVo.setIceBoxId(iceBox.getId());
+                iceBoxStatusVo.setSignFlag(false);
+                iceBoxStatusVo.setStatus(6);
+                iceBoxStatusVo.setMessage("冰柜已投放到当前门店");
+                return iceBoxStatusVo;
+            }
+            // 已有投放, 不能继续
+            iceBoxStatusVo.setSignFlag(false);
+            iceBoxStatusVo.setStatus(2);
+            iceBoxStatusVo.setMessage("冰柜投放到其他门店");
+            return iceBoxStatusVo;
+        }
         LambdaQueryWrapper<PutStoreRelateModel> wrappers = Wrappers.lambdaQuery();
         wrappers.eq(PutStoreRelateModel::getSupplierId,iceBox.getSupplierId());
         wrappers.eq(PutStoreRelateModel::getModelId,iceBox.getModelId());
         wrappers.eq(PutStoreRelateModel::getPutStoreNumber,pxtNumber);
         wrappers.and(x -> x.eq(PutStoreRelateModel::getPutStatus,PutStatus.LOCK_PUT.getStatus()).or().eq(PutStoreRelateModel::getPutStatus,PutStatus.DO_PUT.getStatus()));
         List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(wrappers);
-        IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
         if(CollectionUtil.isEmpty(putStoreRelateModels)){
             // 冰柜未申请
+            iceBoxStatusVo.setIceBoxId(iceBox.getId());
             iceBoxStatusVo.setSignFlag(false);
             iceBoxStatusVo.setStatus(3);
             iceBoxStatusVo.setMessage("当前门店未申请该冰柜");
@@ -1738,6 +1868,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<Integer> putStatus = putStoreRelateModels.stream().map(x -> x.getPutStatus()).collect(Collectors.toList());
         if(!putStatus.contains(PutStatus.DO_PUT.getStatus())){
             // 冰柜在锁定中, 未走完审批流
+            iceBoxStatusVo.setIceBoxId(iceBox.getId());
             iceBoxStatusVo.setSignFlag(false);
             iceBoxStatusVo.setStatus(4);
             iceBoxStatusVo.setMessage("冰柜未审批完成");
@@ -1750,26 +1881,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().in(ApplyRelatePutStoreModel::getStoreRelateModelId, putStoreRelateModelIds));
         if(CollectionUtil.isEmpty(applyRelatePutStoreModels)){
             // 冰柜未申请
+            iceBoxStatusVo.setIceBoxId(iceBox.getId());
             iceBoxStatusVo.setSignFlag(false);
-
             iceBoxStatusVo.setStatus(3);
             iceBoxStatusVo.setMessage("当前门店未申请该冰柜");
-            return iceBoxStatusVo;
-        }
-
-
-        if(putStatus.contains(PutStatus.FINISH_PUT.getStatus())){
-            if (iceBox.getPutStoreNumber().equals(pxtNumber)) {
-                // 已投放到当前门店
-                iceBoxStatusVo.setSignFlag(false);
-                iceBoxStatusVo.setStatus(6);
-                iceBoxStatusVo.setMessage("冰柜已投放当当前门店");
-                return iceBoxStatusVo;
-            }
-            // 已有投放, 不能继续
-            iceBoxStatusVo.setSignFlag(false);
-            iceBoxStatusVo.setStatus(2);
-            iceBoxStatusVo.setMessage("冰柜投放到其他门店");
             return iceBoxStatusVo;
         }
 
@@ -1777,6 +1892,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<IcePutApply> icePutApplies = icePutApplyDao.selectList(Wrappers.<IcePutApply>lambdaQuery().in(IcePutApply::getApplyNumber, applyNumbers));
         if(CollectionUtil.isEmpty(icePutApplies)){
             // 冰柜未申请
+            iceBoxStatusVo.setIceBoxId(iceBox.getId());
             iceBoxStatusVo.setSignFlag(false);
             iceBoxStatusVo.setStatus(3);
             iceBoxStatusVo.setMessage("当前门店未申请该冰柜");
@@ -1787,5 +1903,88 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IcePutApply icePutApply = icePutApplies.get(0);
         iceBoxStatusVo = checkPutApplyByApplyNumber(icePutApply.getApplyNumber(), pxtNumber);
         return iceBoxStatusVo;
+    }
+
+    @Override
+    public Map<String, List<IceBoxVo>> findPutingIceBoxListNew(IceBoxRequestVo requestVo) {
+        List<IceBoxVo> iceBoxVos = new ArrayList<>();
+
+        LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
+        wrapper.eq(PutStoreRelateModel::getPutStoreNumber, requestVo.getStoreNumber());
+        wrapper.ne(PutStoreRelateModel::getPutStatus, PutStatus.FINISH_PUT.getStatus());
+        wrapper.ne(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.UN_PASS.getStatus());
+        List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
+        if (CollectionUtil.isNotEmpty(relateModelList)) {
+            List<IceBoxVo> putIceBoxVos = this.getIceBoxVosByPutApplysNew(relateModelList);
+            if (CollectionUtil.isNotEmpty(putIceBoxVos)) {
+                iceBoxVos.addAll(putIceBoxVos);
+            }
+        }
+        LambdaQueryWrapper<IceBackApply> backWrapper = Wrappers.<IceBackApply>lambdaQuery();
+        backWrapper.eq(IceBackApply::getBackStoreNumber, requestVo.getStoreNumber());
+        backWrapper.ne(IceBackApply::getExamineStatus, ExamineStatusEnum.NO_DEFAULT.getStatus());
+        backWrapper.and(x -> x.eq(IceBackApply::getExamineStatus, ExamineStatusEnum.NO_DEFAULT.getStatus()).or().eq(IceBackApply::getExamineStatus, ExamineStatusEnum.IS_DEFAULT.getStatus()));
+
+        List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(backWrapper);
+        if (CollectionUtil.isNotEmpty(iceBackApplies)) {
+            List<IceBoxVo> backIceBoxVos = this.getIceBoxVosByBackApplys(iceBackApplies);
+            if (CollectionUtil.isNotEmpty(backIceBoxVos)) {
+                iceBoxVos.addAll(backIceBoxVos);
+            }
+        }
+
+        Map<String, List<IceBoxVo>> map = Streams.toStream(iceBoxVos).collect(Collectors.groupingBy(IceBoxVo::getApplyNumber));
+        return map;
+    }
+
+    @Override
+    public IceBoxVo getIceBoxByQrcodeNew(String qrcode, String pxtNumber) {
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
+        IceBox iceBox = iceBoxDao.selectById(Objects.requireNonNull(iceBoxExtend).getId());
+        IceModel iceModel = iceModelDao.selectById(Objects.requireNonNull(iceBox).getModelId());
+        LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
+        wrapper.eq(PutStoreRelateModel::getPutStoreNumber,pxtNumber);
+        wrapper.eq(PutStoreRelateModel::getModelId,iceBox.getModelId());
+        wrapper.eq(PutStoreRelateModel::getSupplierId,iceBox.getSupplierId());
+        wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
+        List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
+        if(CollectionUtil.isEmpty(relateModelList)){
+            return IceBoxConverter.convertToVo(Objects.requireNonNull(iceBox),
+                    Objects.requireNonNull(iceBoxExtend),
+                    Objects.requireNonNull(iceModel),
+                    FreePayTypeEnum.UN_FREE);
+        }
+        PutStoreRelateModel relateModel = relateModelList.get(0);
+        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
+        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
+
+        //创建冰柜和投放申请编号的关联关系
+        IcePutApplyRelateBox isExist = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, icePutApply.getApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+        if(isExist == null){
+            IcePutApplyRelateBox applyRelateBox = new IcePutApplyRelateBox();
+            applyRelateBox.setApplyNumber(icePutApply.getApplyNumber());
+            applyRelateBox.setBoxId(iceBox.getId());
+            applyRelateBox.setModelId(iceBox.getModelId());
+            applyRelateBox.setFreeType(applyRelatePutStoreModel.getFreeType());
+            icePutApplyRelateBoxDao.insert(applyRelateBox);
+
+            //更新和冰柜关联关系
+            iceBox.setPutStoreNumber(pxtNumber);
+            iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
+            iceBox.setUpdatedTime(new Date());
+            iceBoxDao.updateById(iceBox);
+
+            iceBoxExtend.setLastApplyNumber(icePutApply.getApplyNumber());
+            iceBoxExtend.setLastPutTime(icePutApply.getCreatedTime());
+            iceBoxExtend.setLastPutId(icePutApply.getId());
+            iceBoxExtend.setLastExamineId(icePutApply.getExamineId());
+            iceBoxExtend.setLastExamineTime(icePutApply.getUpdateTime());
+            iceBoxExtendDao.updateById(iceBoxExtend);
+        }
+
+        return IceBoxConverter.convertToVo(Objects.requireNonNull(iceBox),
+                Objects.requireNonNull(iceBoxExtend),
+                Objects.requireNonNull(iceModel),
+                Objects.isNull(applyRelatePutStoreModel) ? FreePayTypeEnum.UN_FREE : FreePayTypeEnum.convertVo(applyRelatePutStoreModel.getFreeType()));
     }
 }

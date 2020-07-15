@@ -71,6 +71,10 @@ public interface IceBoxService extends IService<IceBox> {
     List<PutStoreRelateModel> getIceBoxListNew(String pxtNumber);
 
     IceBoxStatusVo checkIceBoxByQrcodeNew(String qrcode, String pxtNumber);
+
+    Map<String, List<IceBoxVo>> findPutingIceBoxListNew(IceBoxRequestVo requestVo);
+
+    IceBoxVo getIceBoxByQrcodeNew(String qrcode, String pxtNumber);
 }
 
 

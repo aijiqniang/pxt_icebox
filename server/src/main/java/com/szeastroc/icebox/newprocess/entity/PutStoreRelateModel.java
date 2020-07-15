@@ -49,6 +49,11 @@ public class PutStoreRelateModel {
     @TableField(value = "put_status")
     private Integer putStatus;
 
+    /**
+     * 审批流状态 0:未审核1:审核中2:通过3:驳回
+     */
+    @TableField(value = "examine_status")
+    private Integer examineStatus;
 
     /**
      * 业务员id

@@ -1,15 +1,14 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.icebox.enums.FreePayTypeEnum;
-import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.enums.RecordStatus;
-import com.szeastroc.icebox.enums.ResultEnum;
+import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
@@ -38,10 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -56,6 +52,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
     private final IcePutOrderDao icePutOrderDao;
     private final IceBoxExtendDao iceBoxExtendDao;
+    private final PutStoreRelateModelDao putStoreRelateModelDao;
 
 
     @Override
@@ -160,6 +157,18 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //修改冰柜信息的投放状态
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         iceBoxDao.updateById(iceBox);
+        LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
+        wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
+        wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+        wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
+        wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
+        List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
+        if(CollectionUtil.isNotEmpty(relateModelList)){
+            PutStoreRelateModel relateModel = relateModelList.get(0);
+            relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+            relateModel.setUpdateTime(new Date());
+            putStoreRelateModelDao.updateById(relateModel);
+        }
         OrderPayResponse orderPayResponse = new OrderPayResponse(FreePayTypeEnum.IS_FREE.getType());
         return orderPayResponse;
     }

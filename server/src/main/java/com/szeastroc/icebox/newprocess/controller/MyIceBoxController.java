@@ -61,6 +61,17 @@ public class MyIceBoxController {
     }
 
     /**
+     * 查询冰柜列表：2-处理中
+     * @param requestVo
+     * @return
+     */
+    @RequestMapping("findPutingIceBoxListNew")
+    public CommonResponse<Map<String,List<IceBoxVo>>> findPutingIceBoxListNew(@RequestBody IceBoxRequestVo requestVo){
+        Map<String,List<IceBoxVo>> map = iceBoxService.findPutingIceBoxListNew(requestVo);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+    }
+
+    /**
      * 根据冰柜所属经销商和冰柜型号查询冰柜信息
      * @param supplierId
      * @param modelId

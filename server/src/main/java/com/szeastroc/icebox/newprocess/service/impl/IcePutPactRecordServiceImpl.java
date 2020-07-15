@@ -1,16 +1,16 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.enums.CommonStatus;
+import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.enums.ClientType;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
-import com.szeastroc.icebox.newprocess.entity.IcePutApply;
+import com.szeastroc.icebox.newprocess.dao.*;
+import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.oldprocess.entity.ClientInfo;
 import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
@@ -24,15 +24,19 @@ import java.util.List;
 import java.util.Objects;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
-import com.szeastroc.icebox.newprocess.dao.IcePutPactRecordDao;
 import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor(onConstructor = @_(@Autowired))
 public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao, IcePutPactRecord> implements IcePutPactRecordService{
 
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IcePutApplyDao icePutApplyDao;
+    private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
+    private final IceBoxDao iceBoxDao;
+    private final PutStoreRelateModelDao putStoreRelateModelDao;
+    private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
 
     @Override
     public void createPactRecord(ClientInfoRequest clientInfoRequest) {

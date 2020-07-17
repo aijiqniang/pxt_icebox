@@ -61,6 +61,9 @@ public interface IceBoxService extends IService<IceBox> {
 
     List<IceBoxVo> findPutIceBoxList(String pxtNumber);
 
+    void autoAddLabel();
+
+
     void exportExcel(IceBoxPage iceBoxPage)throws Exception;
 }
 

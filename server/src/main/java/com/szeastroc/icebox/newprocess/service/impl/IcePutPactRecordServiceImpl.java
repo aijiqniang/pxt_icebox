@@ -1,38 +1,39 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.enums.CommonStatus;
-import com.szeastroc.common.vo.CommonResponse;
-import com.szeastroc.icebox.enums.ClientType;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.customer.client.FeignCusLabelClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
+import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.dao.IcePutPactRecordDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IcePutApply;
-import com.szeastroc.icebox.oldprocess.entity.ClientInfo;
-import com.szeastroc.icebox.oldprocess.entity.PactRecord;
+import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
+import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
-import com.szeastroc.icebox.newprocess.dao.IcePutPactRecordDao;
-import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
+import java.util.Date;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+
 @Service
 @RequiredArgsConstructor(onConstructor = @_(@Autowired))
-public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao, IcePutPactRecord> implements IcePutPactRecordService{
+public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao, IcePutPactRecord> implements IcePutPactRecordService {
 
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IcePutApplyDao icePutApplyDao;
+    private final FeignSupplierClient feignSupplierClient;
+    private final FeignCusLabelClient feignCusLabelClient;
 
     @Override
     public void createPactRecord(ClientInfoRequest clientInfoRequest) {
@@ -55,6 +56,10 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
         icePutPactRecord.setUpdatedBy(0);
         icePutPactRecord.setUpdatedTime(new Date());
         updateById(icePutPactRecord);
+        // 添加标签
+        CompletableFuture.runAsync(() -> {
+            addLabel(icePutPactRecord,iceBoxExtend.getAssetId());
+        }, ExecutorServiceFactory.getInstance());
     }
 
     private Date expireTimeRule(Date createdTime) {
@@ -75,6 +80,10 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
         icePutPactRecord.setUpdatedBy(0);
         icePutPactRecord.setUpdatedTime(icePutPactRecord.getCreatedTime());
         save(icePutPactRecord);
+        // 添加标签
+        CompletableFuture.runAsync(() -> {
+           addLabel(icePutPactRecord,iceBoxExtend.getAssetId());
+        }, ExecutorServiceFactory.getInstance());
     }
 
     @Override
@@ -89,6 +98,27 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
                 .eq(IcePutPactRecord::getBoxId, iceBoxExtend.getId())
                 .eq(IcePutPactRecord::getStoreNumber, icePutApply.getPutStoreNumber()));
         return count > 0;
+    }
+
+    private void addLabel(IcePutPactRecord icePutPactRecord, String assetId) {
+        Date putTime = icePutPactRecord.getPutTime();
+        Date putExpireTime = icePutPactRecord.getPutExpireTime();
+        CustomerLabelDetailDto customerLabelDetailDto = new CustomerLabelDetailDto();
+        customerLabelDetailDto.setLabelId(9999);
+        customerLabelDetailDto.setCreateTime(putTime);
+        customerLabelDetailDto.setCustomerNumber(icePutPactRecord.getStoreNumber());
+        customerLabelDetailDto.setCreateBy(0);
+        customerLabelDetailDto.setCreateByName("系统");
+        customerLabelDetailDto.setPutProject("冰柜");
+        customerLabelDetailDto.setCancelTime(putExpireTime);
+        customerLabelDetailDto.setRemarks(assetId);
+        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(icePutPactRecord.getStoreNumber()));
+        if (subordinateInfoVo != null && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+            customerLabelDetailDto.setCustomerType(1);
+        } else {
+            customerLabelDetailDto.setCustomerType(0);
+        }
+        feignCusLabelClient.createCustomerLabelDetail(customerLabelDetailDto);
     }
 
 }

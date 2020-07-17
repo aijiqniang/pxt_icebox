@@ -20,8 +20,10 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.common.utils.Streams;
+import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
+import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
 import com.szeastroc.customer.common.vo.*;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
@@ -85,7 +87,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
     private final String FWCJL = "服务处经理";
+    private final String FWCFJL = "服务处副经理";
     private final String DQZJ = "大区总监";
+    private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
     private final IceBoxExtendDao iceBoxExtendDao;
@@ -107,6 +111,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IcePutOrderDao icePutOrderDao;
     private final FeignCacheClient feignCacheClient;
     private final FeignXcxBaseClient feignXcxBaseClient;
+    private final FeignCusLabelClient feignCusLabelClient;
     private final ImageUploadUtil imageUploadUtil;
     private final FeignExportRecordsClient feignExportRecordsClient;
 
@@ -156,7 +161,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 return iceBoxVos;
             }
             Map<Integer, List<IceBox>> iceGroupMap = iceBoxes.stream().collect(Collectors.groupingBy(IceBox::getSupplierId));
-            for(Integer supplierId:iceGroupMap.keySet()){
+            for (Integer supplierId : iceGroupMap.keySet()) {
                 List<IceBoxVo> iceBoxVoList = new ArrayList<>();
                 List<IceBox> iceBoxList = iceGroupMap.get(supplierId);
                 Map<Integer, Integer> iceBoxCountMap = new HashMap<>();
@@ -322,7 +327,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceBoxRequestVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
-        List<Integer> userIds = new ArrayList<Integer>();
+        List<Integer> userIds = new ArrayList<>();
         //获取上级部门领导
         if (CollectionUtil.isEmpty(sessionUserInfoMap)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
@@ -332,11 +337,23 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (sessionUserInfoVo != null && FWCJL.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (FWCJL.equals(sessionUserInfoVo.getOfficeName()) || FWCFJL.equals(sessionUserInfoVo.getOfficeName()))) {
+                if (userIds.contains(sessionUserInfoVo.getId())) {
+                    continue;
+                }
                 userIds.add(sessionUserInfoVo.getId());
+                break;
+            }
+        }
+        for (Integer key : sessionUserInfoMap.keySet()) {
+            SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
+            if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (sessionUserInfoVo != null && DQZJ.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (DQZJ.equals(sessionUserInfoVo.getOfficeName()) || DQFZJ.equals(sessionUserInfoVo.getOfficeName()))) {
+                if (userIds.contains(sessionUserInfoVo.getId())) {
+                    continue;
+                }
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }
@@ -1626,5 +1643,58 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 FileUtils.deleteQuietly(xlsxFile);
             }
         }
+    }
+
+    @Override
+    public void autoAddLabel() {
+        // 查找所有已投放的冰柜
+
+        List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery()
+                .eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).ne(IceBox::getSupplierId,0));
+
+        if (CollectionUtil.isNotEmpty(iceBoxList)) {
+            iceBoxList.forEach(iceBox -> {
+                String putStoreNumber = iceBox.getPutStoreNumber();
+
+                if (StringUtils.isNotBlank(putStoreNumber)) {
+                    Integer iceBoxId = iceBox.getId();
+
+                    IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+
+                    String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
+
+                    IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
+                            .eq(IcePutPactRecord::getBoxId, iceBoxId)
+                            .eq(IcePutPactRecord::getApplyNumber, lastApplyNumber));
+                    if(icePutPactRecord != null) {
+                        Date putTime = icePutPactRecord.getPutTime();
+                        Date putExpireTime = icePutPactRecord.getPutExpireTime();
+                        String assetId = iceBoxExtend.getAssetId();
+                        //存在门店
+                        addLabel(assetId, putStoreNumber, putTime, putExpireTime);
+                    }
+                }
+            });
+        }
+    }
+
+
+    private void addLabel(String assetId, String putStoreNumber, Date putTime, Date putExpireTime) {
+        CustomerLabelDetailDto customerLabelDetailDto = new CustomerLabelDetailDto();
+        customerLabelDetailDto.setLabelId(9999);
+        customerLabelDetailDto.setCreateTime(putTime);
+        customerLabelDetailDto.setCustomerNumber(putStoreNumber);
+        customerLabelDetailDto.setCreateBy(0);
+        customerLabelDetailDto.setCreateByName("系统");
+        customerLabelDetailDto.setPutProject("冰柜");
+        customerLabelDetailDto.setCancelTime(putExpireTime);
+        customerLabelDetailDto.setRemarks(assetId);
+        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(putStoreNumber));
+        if (subordinateInfoVo != null && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+            customerLabelDetailDto.setCustomerType(1);
+        } else {
+            customerLabelDetailDto.setCustomerType(0);
+        }
+        feignCusLabelClient.createCustomerLabelDetail(customerLabelDetailDto);
     }
 }

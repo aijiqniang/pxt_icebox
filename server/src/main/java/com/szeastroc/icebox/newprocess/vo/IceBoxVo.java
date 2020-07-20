@@ -105,4 +105,5 @@ public class IceBoxVo {
 
     private String applyTimeStr;
     private String detailAddress;
+    private Integer applyCount;
 }

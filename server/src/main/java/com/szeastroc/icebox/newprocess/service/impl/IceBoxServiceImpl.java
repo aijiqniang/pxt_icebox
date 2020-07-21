@@ -1556,8 +1556,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         ExcelWriter excelWriter = EasyExcel.write(xlsxPath, IceBoxExcelVo.class).build();
         // 这里注意 如果同一个sheet只要创建一次
         WriteSheet writeSheet = EasyExcel.writerSheet("冰柜投放报表").build();
-
+        int ii=0;
         for (List<IceBox> iceBoxes : partitions) {
+            log.info("页码-->{}",ii++);
             List<Integer> deptIds = iceBoxes.stream().map(IceBox::getDeptId).collect(Collectors.toSet()).stream().collect(Collectors.toList());
             // 营销区域对应得部门  服务处->大区->事业部
             Map<Integer, String> deptMap = null;
@@ -1572,16 +1573,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             // 门店集合
             Map<String, Map<String, String>> storeMaps = null;
-            List<String> storeNumbers = iceBoxList.stream().filter(i -> !i.getPutStatus().equals(PutStatus.NO_PUT.getStatus())).map(IceBox::getPutStoreNumber).collect(Collectors.toList());
+            List<String> storeNumbers = iceBoxes.stream().filter(i -> !i.getPutStatus().equals(PutStatus.NO_PUT.getStatus())).map(IceBox::getPutStoreNumber).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(storeNumbers)) {
                 storeMaps = FeignResponseUtil.getFeignData(feignStoreClient.getSimpledataByNumber(storeNumbers));
             }
+            List<Integer> idsList = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
+            List<IceBoxExtend> boxExtendList = iceBoxExtendDao.selectBatchIds(idsList);
+            Map<Integer, IceBoxExtend> boxExtendMap = boxExtendList.stream().collect(Collectors.toMap(IceBoxExtend::getId, i -> i));
             // 对结果塞入到excel中
             List<IceBoxExcelVo> iceBoxExcelVoList = new ArrayList<>(iceBoxes.size());
             // 组装集合
             for (IceBox iceBox : iceBoxes) {
                 Integer iceBoxId = iceBox.getId();
-                IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+//                IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+                IceBoxExtend iceBoxExtend = boxExtendMap.get(iceBoxId);
                 IceBoxExcelVo iceBoxExcelVo = new IceBoxExcelVo();
                 if (deptMap != null) {
                     String deptStr = deptMap.get(iceBox.getDeptId());

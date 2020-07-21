@@ -67,7 +67,7 @@ public class IceBoxExtendController {
         iceBoxPage.setExportRecordId(exportRecordId);
         List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
         iceBoxPage.setDeptIdList(deptIdList);
-        DataPack dataPack = new DataPack();
+        DataPack dataPack = new DataPack(); // 数据包
         dataPack.setMethodName(MethodNameOfMQ.EXPORT_EXCEL_METHOD);
         dataPack.setObj(iceBoxPage);
         directProducer.sendMsg(MqConstant.directRoutingKey, dataPack);

@@ -10,7 +10,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
@@ -54,6 +56,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -81,6 +84,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final FeignSupplierClient feignSupplierClient;
     private final IceModelDao iceModelDao;
     private final IceTransferRecordDao iceTransferRecordDao;
+    private final FeignCusLabelClient feignCusLabelClient;
 
     private final String group = "销售组长";
     private final String service = "服务处经理";
@@ -201,7 +205,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if(userIds.contains(sessionUserInfoVo.getId())){
+            if (userIds.contains(sessionUserInfoVo.getId())) {
                 continue;
             }
             if (sessionUserInfoVo != null && (group.equals(sessionUserInfoVo.getOfficeName()))) {
@@ -212,7 +216,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 userIds.add(sessionUserInfoVo.getId());
                 continue;
             }
-            if (sessionUserInfoVo != null && (divion.equals(sessionUserInfoVo.getOfficeName()) || divionOther.equals(sessionUserInfoVo.getOfficeName())) ) {
+            if (sessionUserInfoVo != null && (divion.equals(sessionUserInfoVo.getOfficeName()) || divionOther.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }
@@ -281,9 +285,11 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         } else if (status == 1) {
             //批准
             doTransfer(applyNumber);
-            IceBackApply iceBackApply = new IceBackApply();
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
             iceBackApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
-            iceBackApplyDao.update(iceBackApply, Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
+            iceBackApplyDao.updateById(iceBackApply);
+            CompletableFuture.runAsync(() ->
+                    feignCusLabelClient.manualExpired(9999, iceBackApply.getBackStoreNumber()), ExecutorServiceFactory.getInstance());
         } else if (status == 2) {
             // 驳回
             IceBackApply iceBackApply = new IceBackApply();
@@ -534,7 +540,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
 
         // 非免押，但是不退押金，直接跳过
-        if (BackType.BACK_WITHOUT_MONEY.getType()== iceBackApplyRelateBox.getBackType()) {
+        if (BackType.BACK_WITHOUT_MONEY.getType() == iceBackApplyRelateBox.getBackType()) {
             return;
         }
 

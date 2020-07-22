@@ -219,6 +219,18 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         //修改冰柜投放信息
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+        LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
+        wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
+        wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+        wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
+        wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
+        List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
+        if(CollectionUtil.isNotEmpty(relateModelList)){
+            PutStoreRelateModel relateModel = relateModelList.get(0);
+            relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+            relateModel.setUpdateTime(new Date());
+            putStoreRelateModelDao.updateById(relateModel);
+        }
         iceBoxDao.updateById(iceBox);
     }
 
@@ -309,9 +321,21 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             //修改冰柜信息的投放状态
             iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
             iceBoxDao.updateById(iceBox);
-            //修改冰柜投放信息
-            iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
-            iceBoxDao.updateById(iceBox);
+//            //修改冰柜投放信息
+//            iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+//            iceBoxDao.updateById(iceBox);
+            LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
+            wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
+            wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+            wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
+            wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
+            List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
+            if(CollectionUtil.isNotEmpty(relateModelList)){
+                PutStoreRelateModel relateModel = relateModelList.get(0);
+                relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+                relateModel.setUpdateTime(new Date());
+                putStoreRelateModelDao.updateById(relateModel);
+            }
         }
 
         return flag;

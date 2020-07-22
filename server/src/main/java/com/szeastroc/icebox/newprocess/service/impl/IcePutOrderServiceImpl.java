@@ -8,16 +8,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.icebox.enums.FreePayTypeEnum;
+import com.szeastroc.icebox.enums.OrderStatus;
+import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.oldprocess.entity.IceChestInfo;
-import com.szeastroc.icebox.oldprocess.entity.IceChestPutRecord;
-import com.szeastroc.icebox.oldprocess.entity.OrderInfo;
-import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
@@ -53,6 +52,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final IcePutOrderDao icePutOrderDao;
     private final IceBoxExtendDao iceBoxExtendDao;
     private final PutStoreRelateModelDao putStoreRelateModelDao;
+    private final IcePutPactRecordDao icePutPactRecordDao;
 
 
     @Override

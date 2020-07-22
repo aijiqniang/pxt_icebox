@@ -75,6 +75,8 @@ public interface IceBoxService extends IService<IceBox> {
     Map<String, List<IceBoxVo>> findPutingIceBoxListNew(IceBoxRequestVo requestVo);
 
     IceBoxVo getIceBoxByQrcodeNew(String qrcode, String pxtNumber);
+
+    void autoAddLabel();
 }
 
 

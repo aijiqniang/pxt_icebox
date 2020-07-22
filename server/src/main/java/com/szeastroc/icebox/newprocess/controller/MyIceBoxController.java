@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.controller;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
@@ -168,5 +169,12 @@ public class MyIceBoxController {
     public CommonResponse<List<IceBoxVo>> findPutIceBoxList(String pxtNumber){
         List<IceBoxVo> iceBoxVos = iceBoxService.findPutIceBoxList(pxtNumber);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVos);
+    }
+
+
+    @RequestMapping("/autoAddLabel")
+    public CommonResponse<String> autoAddLabel() {
+        CompletableFuture.runAsync(() -> iceBoxService.autoAddLabel(), ExecutorServiceFactory.getInstance());
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 }

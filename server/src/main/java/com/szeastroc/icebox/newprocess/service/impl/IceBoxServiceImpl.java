@@ -19,8 +19,10 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.Streams;
 import com.szeastroc.commondb.config.redis.JedisClient;
+import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
+import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
 import com.szeastroc.customer.common.vo.*;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
@@ -77,7 +79,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
     private final String FWCJL = "服务处经理";
+    private final String FWCFJL = "服务处副经理";
     private final String DQZJ = "大区总监";
+    private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
     private final IceBoxExtendDao iceBoxExtendDao;
@@ -102,6 +106,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final PutStoreRelateModelDao putStoreRelateModelDao;
     private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
     private final JedisClient jedis;
+    private final FeignCusLabelClient feignCusLabelClient;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -148,7 +153,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 return iceBoxVos;
             }
             Map<Integer, List<IceBox>> iceGroupMap = iceBoxes.stream().collect(Collectors.groupingBy(IceBox::getSupplierId));
-            for(Integer supplierId:iceGroupMap.keySet()){
+            for (Integer supplierId : iceGroupMap.keySet()) {
                 List<IceBoxVo> iceBoxVoList = new ArrayList<>();
                 List<IceBox> iceBoxList = iceGroupMap.get(supplierId);
                 Map<Integer, Integer> iceBoxCountMap = new HashMap<>();
@@ -325,7 +330,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceBoxRequestVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
-        List<Integer> userIds = new ArrayList<Integer>();
+        List<Integer> userIds = new ArrayList<>();
         //获取上级部门领导
         if (CollectionUtil.isEmpty(sessionUserInfoMap)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
@@ -1440,7 +1445,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (StringUtils.isBlank(assetId)) {
 //                message.add(boxVo.getSerialNumber() + "行:设备编号为空");
 //                continue;
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:设备编号为空");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备编号为空");
             }
 
             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).last(" limit 1"));
@@ -1448,7 +1453,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if ((iceBox == null && iceBoxExtend != null) || (iceBox != null && iceBoxExtend == null)) { // 两者要么同时存在,要不同时不存在
 //                message.add(boxVo.getSerialNumber() + "行:数据库存在脏数据");
 //                continue;
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:数据库存在脏数据");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:数据库存在脏数据");
             }
 
             String bluetoothId = boxVo.getBluetoothId();// 蓝牙设备ID
@@ -1461,7 +1466,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (iceModelMap == null || iceModelMap.get(modelStr) == null) {
 //                message.add(boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
 //                continue;
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
             }
             Integer modelId = iceModelMap.get(modelStr); // 设备型号
             String chestNorm = boxVo.getChestNorm();// 设备规格
@@ -1474,19 +1479,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (StringUtils.isBlank(supplierNumber)) {
 //                message.add(boxVo.getSerialNumber() + "行:经销商编号为空");
 //                continue;
-                throw new NormalOptionException(Constants.API_CODE_FAIL,"第"+ boxVo.getSerialNumber() + "行:经销商编号为空");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商编号为空");
             }
 
             SubordinateInfoVo subordinateInfoVo = supplierNumberMap.get(supplierNumber);
             if (subordinateInfoVo != null && subordinateInfoVo.getSupplierId() != null) {
-                supplierId =subordinateInfoVo.getSupplierId();
+                supplierId = subordinateInfoVo.getSupplierId();
             } else {
                 // 去数据库查询
                 SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
                 if (infoVo == null) {
 //                    message.add(boxVo.getSerialNumber() + "行:经销商编号不存在");
 //                    continue;
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:经销商编号不存在");
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商编号不存在");
                 }
                 supplierId = infoVo.getSupplierId();
                 supplierNumberMap.put(supplierNumber, infoVo);
@@ -1538,7 +1543,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     log.error("插入冰柜数据错误", e);
                     iceBoxDao.deleteById(iceBox.getId());
                     iceBoxExtendDao.deleteById(iceBox.getId());
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第"+boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             } else {
                 try {
@@ -1546,7 +1551,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExtendDao.updateById(iceBoxExtend);
                 } catch (Exception e) {
                     log.error("更新冰柜数据错误", e);
-                    throw new NormalOptionException(Constants.API_CODE_FAIL,"第"+ boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             }
         }
@@ -2048,5 +2053,58 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 Objects.requireNonNull(iceBoxExtend),
                 Objects.requireNonNull(iceModel),
                 Objects.isNull(applyRelatePutStoreModel) ? FreePayTypeEnum.UN_FREE : FreePayTypeEnum.convertVo(applyRelatePutStoreModel.getFreeType()));
+    }
+
+    @Override
+    public void autoAddLabel() {
+        // 查找所有已投放的冰柜
+
+        List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery()
+                .eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).ne(IceBox::getSupplierId,0));
+
+        if (CollectionUtil.isNotEmpty(iceBoxList)) {
+            iceBoxList.forEach(iceBox -> {
+                String putStoreNumber = iceBox.getPutStoreNumber();
+
+                if (StringUtils.isNotBlank(putStoreNumber)) {
+                    Integer iceBoxId = iceBox.getId();
+
+                    IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+
+                    String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
+
+                    IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
+                            .eq(IcePutPactRecord::getBoxId, iceBoxId)
+                            .eq(IcePutPactRecord::getApplyNumber, lastApplyNumber));
+                    if(icePutPactRecord != null) {
+                        Date putTime = icePutPactRecord.getPutTime();
+                        Date putExpireTime = icePutPactRecord.getPutExpireTime();
+                        String assetId = iceBoxExtend.getAssetId();
+                        //存在门店
+                        addLabel(assetId, putStoreNumber, putTime, putExpireTime);
+                    }
+                }
+            });
+        }
+    }
+
+
+    private void addLabel(String assetId, String putStoreNumber, Date putTime, Date putExpireTime) {
+        CustomerLabelDetailDto customerLabelDetailDto = new CustomerLabelDetailDto();
+        customerLabelDetailDto.setLabelId(9999);
+        customerLabelDetailDto.setCreateTime(putTime);
+        customerLabelDetailDto.setCustomerNumber(putStoreNumber);
+        customerLabelDetailDto.setCreateBy(0);
+        customerLabelDetailDto.setCreateByName("系统");
+        customerLabelDetailDto.setPutProject("冰柜");
+        customerLabelDetailDto.setCancelTime(putExpireTime);
+        customerLabelDetailDto.setRemarks(assetId);
+        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(putStoreNumber));
+        if (subordinateInfoVo != null && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+            customerLabelDetailDto.setCustomerType(1);
+        } else {
+            customerLabelDetailDto.setCustomerType(0);
+        }
+        feignCusLabelClient.createCustomerLabelDetail(customerLabelDetailDto);
     }
 }

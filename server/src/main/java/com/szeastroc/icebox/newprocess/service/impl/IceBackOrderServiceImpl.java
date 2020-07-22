@@ -10,7 +10,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
@@ -54,6 +56,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -81,10 +84,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final FeignSupplierClient feignSupplierClient;
     private final IceModelDao iceModelDao;
     private final IceTransferRecordDao iceTransferRecordDao;
+    private final FeignCusLabelClient feignCusLabelClient;
 
     private final String group = "销售组长";
     private final String service = "服务处经理";
+    private final String serviceOther = "服务处副经理";
     private final String divion = "大区总监";
+    private final String divionOther = "大区副总监";
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -188,7 +194,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(simpleIceBoxDetailVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
         //        获取上级部门领导
-        List<Integer> userIds = new ArrayList<Integer>();
+        List<Integer> userIds = new ArrayList<>();
 //        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
 //        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
 //        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(3);
@@ -199,15 +205,18 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (sessionUserInfoVo != null && group.equals(sessionUserInfoVo.getOfficeName())) {
+            if (userIds.contains(sessionUserInfoVo.getId())) {
+                continue;
+            }
+            if (sessionUserInfoVo != null && (group.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 continue;
             }
-            if (sessionUserInfoVo != null && service.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (service.equals(sessionUserInfoVo.getOfficeName()) || serviceOther.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 continue;
             }
-            if (sessionUserInfoVo != null && divion.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (divion.equals(sessionUserInfoVo.getOfficeName()) || divionOther.equals(sessionUserInfoVo.getOfficeName()))) {
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }
@@ -276,9 +285,11 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         } else if (status == 1) {
             //批准
             doTransfer(applyNumber);
-            IceBackApply iceBackApply = new IceBackApply();
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
             iceBackApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
-            iceBackApplyDao.update(iceBackApply, Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
+            iceBackApplyDao.updateById(iceBackApply);
+            CompletableFuture.runAsync(() ->
+                    feignCusLabelClient.manualExpired(9999, iceBackApply.getBackStoreNumber()), ExecutorServiceFactory.getInstance());
         } else if (status == 2) {
             // 驳回
             IceBackApply iceBackApply = new IceBackApply();
@@ -529,7 +540,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
 
         // 非免押，但是不退押金，直接跳过
-        if (BackType.BACK_WITHOUT_MONEY.getType()== iceBackApplyRelateBox.getBackType()) {
+        if (BackType.BACK_WITHOUT_MONEY.getType() == iceBackApplyRelateBox.getBackType()) {
             return;
         }
 

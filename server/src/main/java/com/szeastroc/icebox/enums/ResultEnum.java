@@ -21,7 +21,7 @@ public enum ResultEnum {
 
     CANNOT_FIND_ICE_BOX_APPLY(3002,"您使用的冰柜未找到投放记录"),
     CANNOT_FIND_ICE_PUT_PACT_RECORD(3002,"您使用的冰柜未找到电子协议"),
-    CANNOT_FIND_ICE_PUT_ORDER(3003,"您使用的冰柜未找到电子协议"),
+    CANNOT_FIND_ICE_PUT_ORDER(3003,"您使用的冰柜未找到支付订单"),
     CANNOT_FIND_ICE_BOX(3004,"未找到冰柜信息"),
 
     PUT_ORDER_IS_NOT_FINISH(3005,"投放的订单还未结束"),

@@ -26,14 +26,14 @@ import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
 import com.szeastroc.customer.common.vo.*;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
-import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
+import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
@@ -340,11 +340,23 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (sessionUserInfoVo != null && FWCJL.equals(sessionUserInfoVo.getOfficeName())) {
+            if (sessionUserInfoVo != null && (FWCJL.equals(sessionUserInfoVo.getOfficeName()) || FWCFJL.equals(sessionUserInfoVo.getOfficeName()))) {
+                if (userIds.contains(sessionUserInfoVo.getId())) {
+                    continue;
+                }
                 userIds.add(sessionUserInfoVo.getId());
+                break;
+            }
+        }
+        for (Integer key : sessionUserInfoMap.keySet()) {
+            SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
+            if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (regionLeaderCheck && sessionUserInfoVo != null && DQZJ.equals(sessionUserInfoVo.getOfficeName())) {
+            if (regionLeaderCheck && sessionUserInfoVo != null && (DQZJ.equals(sessionUserInfoVo.getOfficeName()) || DQFZJ.equals(sessionUserInfoVo.getOfficeName()))) {
+                if (userIds.contains(sessionUserInfoVo.getId())) {
+                    continue;
+                }
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }

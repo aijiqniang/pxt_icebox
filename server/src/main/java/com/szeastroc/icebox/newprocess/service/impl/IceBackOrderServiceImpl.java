@@ -85,6 +85,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final IceModelDao iceModelDao;
     private final IceTransferRecordDao iceTransferRecordDao;
     private final FeignCusLabelClient feignCusLabelClient;
+    private final PutStoreRelateModelDao putStoreRelateModelDao;
+    private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
 
     private final String group = "销售组长";
     private final String service = "服务处经理";
@@ -205,7 +207,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
                 continue;
             }
-            if (userIds.contains(sessionUserInfoVo.getId())) {
+            if (sessionUserInfoVo != null && userIds.contains(sessionUserInfoVo.getId())) {
                 continue;
             }
             if (sessionUserInfoVo != null && (group.equals(sessionUserInfoVo.getOfficeName()))) {
@@ -528,6 +530,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //        iceBoxExtend.setLastApplyNumber(applyNumber);
 //        iceBoxExtendDao.updateById(iceBoxExtend);
 
+        // 变更当前型号状态
+        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+        Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+        PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
+        putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
+        putStoreRelateModel.setUpdateTime(new Date());
+        putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
         iceBox.setPutStoreNumber("0");

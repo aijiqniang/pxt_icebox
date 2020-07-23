@@ -5,8 +5,6 @@ import com.alibaba.excel.annotation.write.style.ColumnWidth;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-
 /**
  * @Author xiao
  * @Date create in 2020/4/3 11:16
@@ -16,9 +14,20 @@ import java.math.BigDecimal;
 @Setter
 public class IceBoxExcelVo {
 
+    //    @ColumnWidth(50)
+//    @ExcelProperty(value = "营销区域")
+//    private String deptStr; // 营销区域
     @ColumnWidth(50)
-    @ExcelProperty(value = "营销区域")
-    private String deptStr; // 营销区域
+    @ExcelProperty(value = "事业部")
+    private String sybStr; // 事业部
+    @ColumnWidth(50)
+    @ExcelProperty(value = "大区")
+    private String dqStr; // 大区
+    @ColumnWidth(50)
+    @ExcelProperty(value = "服务处")
+    private String fwcStr; // 服务处
+
+
     @ColumnWidth(50)
     @ExcelProperty(value = "所属经销商编号")
     private String suppNumber; // 所属经销商编号

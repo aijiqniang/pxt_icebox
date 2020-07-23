@@ -14,6 +14,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -50,7 +51,9 @@ import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.client.FeignXcxBaseClient;
-import com.szeastroc.user.common.vo.*;
+import com.szeastroc.user.common.vo.AddressVo;
+import com.szeastroc.user.common.vo.SessionUserInfoVo;
+import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import com.szeastroc.visit.common.IceBoxPutModel;
@@ -873,7 +876,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Override
     public IPage findPage(IceBoxPage iceBoxPage) {
         // 获取当前登陆人可查看的部门
-         List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
+        List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
         iceBoxPage.setDeptIdList(deptIdList);
         if (dealIceBoxPage(iceBoxPage)) {
             return null;
@@ -962,6 +965,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     private boolean dealIceBoxPage(IceBoxPage iceBoxPage) {
+
+        // 当所在对象编号或者所在对象名称不为空时,所在对象字段为必填
+        if ((StringUtils.isNotBlank(iceBoxPage.getBelongObjNumber()) || StringUtils.isNotBlank(iceBoxPage.getBelongObjName()))
+                && iceBoxPage.getBelongObj() == null) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择所在对象类型");
+        }
         List<Integer> deptIdList = iceBoxPage.getDeptIdList();
         if (CollectionUtils.isEmpty(deptIdList)) {
             log.info("此人暂无查看数据的权限");
@@ -970,22 +979,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Set<Integer> deptIdSet = deptIdList.stream().collect(Collectors.toSet());
         Integer deptId = iceBoxPage.getDeptId(); // 营销区域id
         if (deptId != null) {
-            DeptNameRequest request = new DeptNameRequest();
-            request.setParentIds(deptId.toString());
             // 查询出当前部门下面的服务处
-            List<SessionDeptInfoVo> deptInfoVos = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoListByParentId(request));
-            if (CollectionUtils.isEmpty(deptInfoVos)) {
+            List<Integer> searchDeptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptIdsByParentIds(Ints.asList(deptId)));
+            if (CollectionUtils.isEmpty(searchDeptIdList)) {
                 return true;
             }
-            Set<Integer> searchDeptIdSet = deptInfoVos.stream().map(SessionDeptInfoVo::getId).collect(Collectors.toSet());
+            Set<Integer> searchDeptIdSet = searchDeptIdList.stream().collect(Collectors.toSet());
             deptIdSet = Sets.intersection(deptIdSet, searchDeptIdSet);
         }
+        iceBoxPage.setDeptIdList(null);
         iceBoxPage.setDeptIds(deptIdSet);
-        // 当所在对象编号或者所在对象名称不为空时,所在对象字段为必填
-        if ((StringUtils.isNotBlank(iceBoxPage.getBelongObjNumber()) || StringUtils.isNotBlank(iceBoxPage.getBelongObjName()))
-                && iceBoxPage.getBelongObj() == null) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择所在对象类型");
-        }
 
         Set<Integer> supplierIdList = new HashSet<>(); // 拥有者的经销商
         // 所在对象  (put_status  投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放; 当经销商时为 0-未投放;当门店时为非未投放状态;)
@@ -1539,7 +1542,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         param.put("assetId", iceBoxPage.getAssetId());
         param.put("status", iceBoxPage.getStatus());
         param.put("belongObj", iceBoxPage.getBelongObj());
-        param.put("deptIds", iceBoxPage.getDeptIds());
+
         List<IceBox> iceBoxList = iceBoxDao.exportExcel(param);
         if (CollectionUtils.isEmpty(iceBoxList)) {
             return;
@@ -1556,9 +1559,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         ExcelWriter excelWriter = EasyExcel.write(xlsxPath, IceBoxExcelVo.class).build();
         // 这里注意 如果同一个sheet只要创建一次
         WriteSheet writeSheet = EasyExcel.writerSheet("冰柜投放报表").build();
-        int ii=0;
+        int ii = 0;
         for (List<IceBox> iceBoxes : partitions) {
-            log.info("页码-->{}",ii++);
+            log.info("页码-->{}", ii++);
             List<Integer> deptIds = iceBoxes.stream().map(IceBox::getDeptId).collect(Collectors.toSet()).stream().collect(Collectors.toList());
             // 营销区域对应得部门  服务处->大区->事业部
             Map<Integer, String> deptMap = null;
@@ -1590,7 +1593,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 IceBoxExcelVo iceBoxExcelVo = new IceBoxExcelVo();
                 if (deptMap != null) {
                     String deptStr = deptMap.get(iceBox.getDeptId());
-                    iceBoxExcelVo.setDeptStr(deptStr); // 营销区域
+                    if (StringUtils.isNotBlank(deptStr)) {
+                        String[] split = deptStr.split("/");
+                        if (split.length >= 1) {
+                            iceBoxExcelVo.setSybStr(split[0]); // 事业部
+                        }
+                        if (split.length >= 2) {
+                            iceBoxExcelVo.setDqStr(split[1]); // 大区
+                        }
+                        if (split.length >= 3) {
+                            iceBoxExcelVo.setFwcStr(split[2]); // 服务处
+                        }
+                    }
+//                    iceBoxExcelVo.setDeptStr(deptStr); // 营销区域
                 }
                 if (iceBox.getPutStatus().equals(PutStatus.NO_PUT.getStatus())) { // 目前这个冰柜在 经销商 手上
                     if (suppMaps != null && suppMaps.get(iceBox.getSupplierId()) != null) {
@@ -1617,8 +1632,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号
                 iceBoxExcelVo.setDepositMoney(iceBox.getDepositMoney().toString()); // 押金收取金额
                 iceBoxExcelVo.setPutStatusStr(PutStatus.convertEnum(iceBox.getPutStatus()).getDesc()); // 冰柜状态
-                iceBoxExcelVo.setLastPutTimeStr(iceBoxExtend.getLastPutTime() == null ? null : new DateTime(iceBoxExtend.getLastPutTime()).toString("yyyy-MM-dd mm:HH:ss")); // 投放日期
-                iceBoxExcelVo.setLastExamineTimeStr(iceBoxExtend.getLastExamineTime() == null ? null : new DateTime(iceBoxExtend.getLastExamineTime()).toString("yyyy-MM-dd mm:HH:ss")); // 最后一次巡检时间
+                iceBoxExcelVo.setLastPutTimeStr(iceBoxExtend.getLastPutTime() == null ? null : new DateTime(iceBoxExtend.getLastPutTime()).toString("yyyy-MM-dd HH:mm:ss")); // 投放日期
+                iceBoxExcelVo.setLastExamineTimeStr(iceBoxExtend.getLastExamineTime() == null ? null : new DateTime(iceBoxExtend.getLastExamineTime()).toString("yyyy-MM-dd HH:mm:ss")); // 最后一次巡检时间
                 iceBoxExcelVo.setRemark(iceBox.getRemark()); // 冰柜备注
                 iceBoxExcelVoList.add(iceBoxExcelVo);
             }
@@ -1655,7 +1670,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         // 查找所有已投放的冰柜
 
         List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery()
-                .eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).ne(IceBox::getSupplierId,0));
+                .eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).ne(IceBox::getSupplierId, 0));
 
         if (CollectionUtil.isNotEmpty(iceBoxList)) {
             iceBoxList.forEach(iceBox -> {
@@ -1671,7 +1686,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
                             .eq(IcePutPactRecord::getBoxId, iceBoxId)
                             .eq(IcePutPactRecord::getApplyNumber, lastApplyNumber));
-                    if(icePutPactRecord != null) {
+                    if (icePutPactRecord != null) {
                         Date putTime = icePutPactRecord.getPutTime();
                         Date putExpireTime = icePutPactRecord.getPutExpireTime();
                         String assetId = iceBoxExtend.getAssetId();

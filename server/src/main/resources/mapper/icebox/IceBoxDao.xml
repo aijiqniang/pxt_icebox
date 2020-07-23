@@ -56,24 +56,24 @@
             <if test="status!=null">
                 and b.status=#{status}
             </if>
-            <if test="supplierIdList.size>0">
+            <if test="supplierIdList!=null and supplierIdList.size>0">
                 and b.put_status=0 and b.supplier_id in
                 <foreach item="item" index="index" collection="supplierIdList" open="("
                          separator="," close=")">
                     #{item}
                 </foreach>
             </if>
-            <if test="putStoreNumberList.size>0">
+            <if test="putStoreNumberList!=null and putStoreNumberList.size>0">
                 and b.put_status!=0 and b.put_store_number in
                 <foreach item="item" index="index" collection="putStoreNumberList" open="("
                          separator="," close=")">
                     #{item}
                 </foreach>
             </if>
-            <if test="supplierIdList.size==0 and belongObj!=null and belongObj==0">
+            <if test="belongObj!=null and belongObj==0">
                 and b.put_status=0
             </if>
-            <if test="putStoreNumberList.size==0 and belongObj!=null and belongObj!=0">
+            <if test="belongObj!=null and belongObj!=0">
                 and b.put_status!=0
             </if>
             <if test="deptIds!=null and deptIds.size>0">

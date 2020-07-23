@@ -1889,6 +1889,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
             }
         }
+        if(CollectionUtil.isNotEmpty(iceBoxVos)){
+            iceBoxVos = iceBoxVos.stream().filter(x -> x.getIceBoxCount() != null && x.getIceBoxCount() >0).collect(Collectors.toList());
+        }
         return iceBoxVos;
     }
 

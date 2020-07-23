@@ -531,7 +531,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //        iceBoxExtendDao.updateById(iceBoxExtend);
 
         // 变更当前型号状态
-        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
+                .eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
+                .last("limit 1"));
         Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
         PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
         putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());

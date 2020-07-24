@@ -8,7 +8,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.icebox.enums.*;
+import com.szeastroc.icebox.enums.ExamineStatusEnum;
+import com.szeastroc.icebox.enums.FreePayTypeEnum;
+import com.szeastroc.icebox.enums.OrderStatus;
+import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
@@ -29,6 +32,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.szeastroc.icebox.newprocess.enums.RecordStatus;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -171,7 +175,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     putStoreRelateModelDao.updateById(relateModel);
                     IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
                     if(transferRecord != null){
-                        transferRecord.setRecordStatus(RecordStatus.RECEIVE_FINISH.getStatus());
+                        transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());
                         transferRecord.setUpdateTime(new Date());
                         iceTransferRecordDao.updateById(transferRecord);
                     }
@@ -245,7 +249,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutApply.getApplyNumber()));
         if(transferRecord != null){
-            transferRecord.setRecordStatus(RecordStatus.RECEIVE_FINISH.getStatus());
+            transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());
             transferRecord.setUpdateTime(new Date());
             iceTransferRecordDao.updateById(transferRecord);
         }
@@ -354,7 +358,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             }
             IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutOrder.getApplyNumber()));
             if(transferRecord != null){
-                transferRecord.setRecordStatus(RecordStatus.RECEIVE_FINISH.getStatus());
+                transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());
                 transferRecord.setUpdateTime(new Date());
                 iceTransferRecordDao.updateById(transferRecord);
             }

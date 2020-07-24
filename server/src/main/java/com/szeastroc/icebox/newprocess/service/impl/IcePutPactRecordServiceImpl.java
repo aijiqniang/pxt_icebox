@@ -9,10 +9,10 @@ import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
-import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.enums.RecordStatus;
 import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import lombok.RequiredArgsConstructor;
@@ -48,22 +48,6 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(clientInfoRequest.getIceChestId());
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
-        // 创建协议
-        IcePutPactRecord icePutPactRecord = getOne(Wrappers.<IcePutPactRecord>lambdaQuery()
-                .eq(IcePutPactRecord::getApplyNumber, icePutApply.getApplyNumber())
-                .eq(IcePutPactRecord::getBoxId, iceBoxExtend.getId())
-                .eq(IcePutPactRecord::getStoreNumber, icePutApply.getPutStoreNumber()));
-
-        if(Objects.isNull(icePutPactRecord)){
-            saveIcePutRecord(iceBoxExtend, icePutApply);
-            return;
-        }
-        icePutPactRecord.setPutTime(icePutApply.getCreatedTime()); // TODO 投放时间是按照 签收时间 还是 申请时间
-        icePutPactRecord.setPutExpireTime(expireTimeRule(icePutPactRecord.getCreatedTime()));
-        icePutPactRecord.setUpdatedBy(0);
-        icePutPactRecord.setUpdatedTime(new Date());
-        updateById(icePutPactRecord);
-
         IceBox iceBox = iceBoxDao.selectById(clientInfoRequest.getIceChestId());
         IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutApply.getApplyNumber()));
         if(transferRecord == null){
@@ -86,6 +70,22 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
             iceTransferRecordDao.insert(iceTransferRecord);
             log.info("applyNumber-->【{}】创建往来记录成功",icePutApply.getApplyNumber());
         }
+
+        // 创建协议
+        IcePutPactRecord icePutPactRecord = getOne(Wrappers.<IcePutPactRecord>lambdaQuery()
+                .eq(IcePutPactRecord::getApplyNumber, icePutApply.getApplyNumber())
+                .eq(IcePutPactRecord::getBoxId, iceBoxExtend.getId())
+                .eq(IcePutPactRecord::getStoreNumber, icePutApply.getPutStoreNumber()));
+
+        if(Objects.isNull(icePutPactRecord)){
+            saveIcePutRecord(iceBoxExtend, icePutApply);
+            return;
+        }
+        icePutPactRecord.setPutTime(icePutApply.getCreatedTime()); // TODO 投放时间是按照 签收时间 还是 申请时间
+        icePutPactRecord.setPutExpireTime(expireTimeRule(icePutPactRecord.getCreatedTime()));
+        icePutPactRecord.setUpdatedBy(0);
+        icePutPactRecord.setUpdatedTime(new Date());
+        updateById(icePutPactRecord);
 
         // 添加标签
         CompletableFuture.runAsync(() -> {

@@ -27,8 +27,8 @@
         <user.common.version>1.2.6</user.common.version>
         <user.client.version>1.2.6</user.client.version>
         <!-- customer服务 -->
-        <customer.common.version>1.2.5</customer.common.version>
-        <customer.client.version>1.2.5</customer.client.version>
+        <customer.common.version>1.2.6</customer.common.version>
+        <customer.client.version>1.2.6</customer.client.version>
         <!-- visit -->
         <visit.common.version>1.2.5</visit.common.version>
         <visit.client.version>1.2.5</visit.client.version>

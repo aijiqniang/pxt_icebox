@@ -588,7 +588,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         // 创建通知
         DateTime date = new DateTime();
-        String prefix = date.toString("yyyyMMdd");
+        String prefix = date.toString("yyyyMMddHHmmss");
 //        String blockName = "冰柜退还确认单";
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
         IceBox iceBox = iceBoxDao.selectById(iceBoxId);

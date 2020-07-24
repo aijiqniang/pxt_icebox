@@ -16,6 +16,7 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor(onConstructor = @_(@Autowired))
 public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao, IcePutPactRecord> implements IcePutPactRecordService {
 
@@ -82,6 +84,7 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
                 iceTransferRecord.setTransferMoney(iceBox.getDepositMoney());
             }
             iceTransferRecordDao.insert(iceTransferRecord);
+            log.info("applyNumber-->【{}】创建往来记录成功",icePutApply.getApplyNumber());
         }
 
         // 添加标签

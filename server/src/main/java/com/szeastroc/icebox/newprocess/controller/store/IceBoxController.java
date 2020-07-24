@@ -235,10 +235,7 @@ public class IceBoxController {
     public CommonResponse<IPage> findPage(@RequestBody IceBoxPage iceBoxPage) {
 
         IPage iPage = iceBoxService.findPage(iceBoxPage);
-        if(iPage==null){
-            iPage=new Page();
-        }
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage == null ? new Page() : iPage);
     }
 
     /**

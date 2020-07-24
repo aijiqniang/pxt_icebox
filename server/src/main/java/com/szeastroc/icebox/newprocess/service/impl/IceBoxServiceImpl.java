@@ -875,9 +875,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     //@RoutingDataSource(value = Datasources.SLAVE_DB)
     @Override
     public IPage findPage(IceBoxPage iceBoxPage) {
+
         // 获取当前登陆人可查看的部门
         List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
         iceBoxPage.setDeptIdList(deptIdList);
+        // 处理请求数据
         if (dealIceBoxPage(iceBoxPage)) {
             return null;
         }
@@ -900,15 +902,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 modelMap.put(i.getId(), i);
             });
         });
-        // 经销商 集合
-        List<Integer> suppIds = iceBoxList.stream().filter(i -> i.getPutStatus().equals(PutStatus.NO_PUT.getStatus())).map(IceBox::getSupplierId).collect(Collectors.toList());
+        // 所属经销商 集合
+        List<Integer> suppIds = iceBoxList.stream().map(IceBox::getSupplierId).collect(Collectors.toList());
         Map<Integer, SubordinateInfoVo> suppMap = null;
         if (CollectionUtils.isNotEmpty(suppIds)) {
             suppMap = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(suppIds));
         }
-        // 门店 集合
+        // 门店/批发商/邮差/分销商 集合
         Map<String, SimpleStoreVo> storeMap = null;
-        List<String> storeNumbers = iceBoxList.stream().filter(i -> !i.getPutStatus().equals(PutStatus.NO_PUT.getStatus())).map(IceBox::getPutStoreNumber).collect(Collectors.toList());
+        List<String> storeNumbers = iceBoxList.stream().map(IceBox::getPutStoreNumber).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(storeNumbers)) {
             storeMap = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumberList(storeNumbers));
         }
@@ -939,7 +941,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         .eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber).last(" limit 1"));
             }
             map.put("freeTypeStr", icePutApplyRelateBox == null ? null : FreePayTypeEnum.getDesc(icePutApplyRelateBox.getFreeType())); // 押金收取
-            map.put("belongObjStr", iceBox.getPutStatus().equals(0) ? "经销商" : "门店"); // 所在客户类型
+
+
             String name = null;
             String number = null;
             if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && suppMap != null) { // 经销商
@@ -955,10 +958,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("number", number); // 客户编号
             map.put("name", name); // 客户名称
             map.put("id", iceBox.getId());
-//            map.put("putStatus",iceBox.getPutStatus());
-//            map.put("deptId",iceBox.getDeptId());
-//            map.put("remark","暂无备注"); // 备注
-
+            map.put("belongObjStr", iceBox.getPutStatus().equals(0) ? "经销商" : "门店"); // 所在客户类型
             list.add(map);
         }
         return new Page(iceBoxPage.getCurrent(), iceBoxPage.getSize(), iceBoxPage.getTotal()).setRecords(list);
@@ -1581,7 +1581,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 storeMaps = FeignResponseUtil.getFeignData(feignStoreClient.getSimpledataByNumber(storeNumbers));
             }
             // 有可能是非门店,所以去查下  t_cus_supplier_info  表
-            List<SubordinateInfoVo> supplierInfoList = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumbers(storeNumbers));
+            List<SubordinateInfoVo> supplierInfoList = FeignResponseUtil.getFeignData(feignSupplierClient.readByNumbers(storeNumbers));
             if (CollectionUtils.isNotEmpty(supplierInfoList)) {
 //                map.put("realName", realName);
 //                map.put("statusStr", statusStr);
@@ -1597,8 +1597,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
                 for (SubordinateInfoVo infoVo : supplierInfoList) {
                     Map<String, String> mm = Maps.newHashMap();
-                    mm.put("storeNumber", infoVo.getNumber());
+                    mm.put("realName", infoVo.getRealName());
+                    mm.put("address", infoVo.getAddress());
+                    mm.put("mobile", infoVo.getLinkmanMobile());
                     mm.put("storeName", infoVo.getName());
+                    mm.put("storeNumber", infoVo.getNumber());
+                    mm.put("storeLevel", infoVo.getLevel());
+                    mm.put("storeTypeName", infoVo.getSupplierTypeName());
                     storeMaps.put(infoVo.getNumber(), mm);
                 }
             }

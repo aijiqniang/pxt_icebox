@@ -8,10 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.icebox.enums.ExamineStatusEnum;
-import com.szeastroc.icebox.enums.FreePayTypeEnum;
-import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.enums.ResultEnum;
+import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
@@ -52,7 +49,9 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final IcePutOrderDao icePutOrderDao;
     private final IceBoxExtendDao iceBoxExtendDao;
     private final PutStoreRelateModelDao putStoreRelateModelDao;
+    private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
     private final IcePutPactRecordDao icePutPactRecordDao;
+    private final IceTransferRecordDao iceTransferRecordDao;
 
 
     @Override
@@ -164,10 +163,21 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
         List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
         if(CollectionUtil.isNotEmpty(relateModelList)){
-            PutStoreRelateModel relateModel = relateModelList.get(0);
-            relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
-            relateModel.setUpdateTime(new Date());
-            putStoreRelateModelDao.updateById(relateModel);
+            for(PutStoreRelateModel relateModel:relateModelList){
+                ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
+                if(applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())){
+                    relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+                    relateModel.setUpdateTime(new Date());
+                    putStoreRelateModelDao.updateById(relateModel);
+                    IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
+                    if(transferRecord != null){
+                        transferRecord.setRecordStatus(RecordStatus.RECEIVE_FINISH.getStatus());
+                        transferRecord.setUpdateTime(new Date());
+                        iceTransferRecordDao.updateById(transferRecord);
+                    }
+                    break;
+                }
+            }
         }
         OrderPayResponse orderPayResponse = new OrderPayResponse(FreePayTypeEnum.IS_FREE.getType());
         return orderPayResponse;
@@ -232,6 +242,14 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             putStoreRelateModelDao.updateById(relateModel);
         }
         iceBoxDao.updateById(iceBox);
+
+        IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutApply.getApplyNumber()));
+        if(transferRecord != null){
+            transferRecord.setRecordStatus(RecordStatus.RECEIVE_FINISH.getStatus());
+            transferRecord.setUpdateTime(new Date());
+            iceTransferRecordDao.updateById(transferRecord);
+        }
+
     }
 
     @Override
@@ -324,18 +342,34 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 //            //修改冰柜投放信息
 //            iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
 //            iceBoxDao.updateById(iceBox);
-            LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
-            wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
-            wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
-            wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
-            wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
-            List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
-            if(CollectionUtil.isNotEmpty(relateModelList)){
-                PutStoreRelateModel relateModel = relateModelList.get(0);
-                relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
-                relateModel.setUpdateTime(new Date());
-                putStoreRelateModelDao.updateById(relateModel);
+
+            ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, icePutOrder.getApplyNumber()));
+            if(applyRelatePutStoreModel != null){
+                PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(applyRelatePutStoreModel.getStoreRelateModelId());
+                if(relateModel != null){
+                    relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+                    relateModel.setUpdateTime(new Date());
+                    putStoreRelateModelDao.updateById(relateModel);
+                }
             }
+            IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutOrder.getApplyNumber()));
+            if(transferRecord != null){
+                transferRecord.setRecordStatus(RecordStatus.RECEIVE_FINISH.getStatus());
+                transferRecord.setUpdateTime(new Date());
+                iceTransferRecordDao.updateById(transferRecord);
+            }
+//            LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
+//            wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
+//            wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+//            wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
+//            wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
+//            List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
+//            if(CollectionUtil.isNotEmpty(relateModelList)){
+//                PutStoreRelateModel relateModel = relateModelList.get(0);
+//                relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+//                relateModel.setUpdateTime(new Date());
+//                putStoreRelateModelDao.updateById(relateModel);
+//            }
         }
 
         return flag;

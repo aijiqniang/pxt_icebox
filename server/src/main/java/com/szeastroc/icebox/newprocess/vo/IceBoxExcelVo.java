@@ -44,26 +44,26 @@ public class IceBoxExcelVo {
     @ExcelProperty(value = "押金收取金额")
     private String depositMoney; // 押金收取金额
     @ColumnWidth(50)
-    @ExcelProperty(value = "现投放门店类型")
-    private String storeTypeName; // 现投放门店类型
+    @ExcelProperty(value = "现投放客户类型")
+    private String storeTypeName; // 现投放客户类型
     @ColumnWidth(50)
-    @ExcelProperty(value = "现投放门店级别")
-    private String storeLevel; // 现投放门店级别
+    @ExcelProperty(value = "现投放客户级别")
+    private String storeLevel; // 现投放客户级别
     @ColumnWidth(50)
-    @ExcelProperty(value = "现投放门店编号")
-    private String storeNumber; // 现投放门店编号
+    @ExcelProperty(value = "现投放客户编号")
+    private String storeNumber; // 现投放客户编号
     @ColumnWidth(50)
-    @ExcelProperty(value = "现投放门店名称")
-    private String storeName; // 现投放门店名称
+    @ExcelProperty(value = "现投放客户名称")
+    private String storeName; // 现投放客户名称
     @ColumnWidth(50)
-    @ExcelProperty(value = "门店负责人手机号")
-    private String mobile; // 门店负责人手机号
+    @ExcelProperty(value = "客户负责人手机号")
+    private String mobile; // 客户负责人手机号
     @ColumnWidth(50)
-    @ExcelProperty(value = "现投放门店地址")
-    private String address; // 现投放门店地址
+    @ExcelProperty(value = "现投放客户地址")
+    private String address; // 现投放客户地址
     @ColumnWidth(50)
-    @ExcelProperty(value = "门店状态")
-    private String statusStr; // 门店状态
+    @ExcelProperty(value = "客户状态")
+    private String statusStr; // 客户状态
     @ColumnWidth(50)
     @ExcelProperty(value = "冰柜状态")
     private String putStatusStr; // 冰柜状态

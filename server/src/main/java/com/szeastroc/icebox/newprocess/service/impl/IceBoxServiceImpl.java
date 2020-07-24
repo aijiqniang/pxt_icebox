@@ -1569,17 +1569,40 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(deptIds));
             }
             // 经销商 集合
-            List<Integer> suppIds = iceBoxes.stream().filter(i -> i.getPutStatus().equals(PutStatus.NO_PUT.getStatus())).map(IceBox::getSupplierId).collect(Collectors.toList());
+            List<Integer> suppIds = iceBoxes.stream().map(IceBox::getSupplierId).collect(Collectors.toList());
             Map<Integer, Map<String, String>> suppMaps = null;
             if (CollectionUtils.isNotEmpty(suppIds)) {
                 suppMaps = FeignResponseUtil.getFeignData(feignSupplierClient.getSimpledataByIds(suppIds));
             }
-            // 门店集合
+            // 门店/批发商/邮差等 集合      非未投放状态时,有可能在 门店/批发商/邮差手上
             Map<String, Map<String, String>> storeMaps = null;
-            List<String> storeNumbers = iceBoxes.stream().filter(i -> !i.getPutStatus().equals(PutStatus.NO_PUT.getStatus())).map(IceBox::getPutStoreNumber).collect(Collectors.toList());
+            List<String> storeNumbers = iceBoxes.stream().map(IceBox::getPutStoreNumber).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(storeNumbers)) {
                 storeMaps = FeignResponseUtil.getFeignData(feignStoreClient.getSimpledataByNumber(storeNumbers));
             }
+            // 有可能是非门店,所以去查下  t_cus_supplier_info  表
+            List<SubordinateInfoVo> supplierInfoList = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumbers(storeNumbers));
+            if (CollectionUtils.isNotEmpty(supplierInfoList)) {
+//                map.put("realName", realName);
+//                map.put("statusStr", statusStr);
+//                map.put("address", address);
+//                map.put("mobile", mobile);
+//                map.put("storeName", storeName);
+//                map.put("storeNumber", storeNumber);
+//                map.put("storeLevel", storeLevel);
+//                map.put("storeTypeName", storeTypeName);
+//                maps.put(storeNumber, map);
+                if (storeMaps == null) {
+                    storeMaps = Maps.newHashMap();
+                }
+                for (SubordinateInfoVo infoVo : supplierInfoList) {
+                    Map<String, String> mm = Maps.newHashMap();
+                    mm.put("storeNumber", infoVo.getNumber());
+                    mm.put("storeName", infoVo.getName());
+                    storeMaps.put(infoVo.getNumber(), mm);
+                }
+            }
+
             List<Integer> idsList = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
             List<IceBoxExtend> boxExtendList = iceBoxExtendDao.selectBatchIds(idsList);
             Map<Integer, IceBoxExtend> boxExtendMap = boxExtendList.stream().collect(Collectors.toMap(IceBoxExtend::getId, i -> i));
@@ -1607,26 +1630,27 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
 //                    iceBoxExcelVo.setDeptStr(deptStr); // 营销区域
                 }
-                if (iceBox.getPutStatus().equals(PutStatus.NO_PUT.getStatus())) { // 目前这个冰柜在 经销商 手上
-                    if (suppMaps != null && suppMaps.get(iceBox.getSupplierId()) != null) {
-                        Map<String, String> suppMap = suppMaps.get(iceBox.getSupplierId());
-                        iceBoxExcelVo.setSuppNumber(suppMap.get("suppNumber")); // 所属经销商编号
-                        iceBoxExcelVo.setSuppName(suppMap.get("suppName")); // 所属经销商名称
-                        iceBoxExcelVo.setRealName(suppMap.get("realname")); // 负责业务员姓名
-                    }
-                } else { // 目前这个冰柜在 门店 手上
-                    if (storeMaps != null && storeMaps.get(iceBox.getPutStoreNumber()) != null) {
-                        Map<String, String> storeMap = storeMaps.get(iceBox.getPutStoreNumber());
-                        iceBoxExcelVo.setStoreTypeName(storeMap.get("storeTypeName")); // 现投放门店类型
-                        iceBoxExcelVo.setStoreLevel(storeMap.get("storeLevel")); // 现投放门店级别
-                        iceBoxExcelVo.setStoreNumber(storeMap.get("storeNumber")); // 现投放门店编号
-                        iceBoxExcelVo.setStoreName(storeMap.get("storeName")); // 现投放门店名称
-                        iceBoxExcelVo.setMobile(storeMap.get("mobile")); // 门店负责人手机号
-                        iceBoxExcelVo.setAddress(storeMap.get("address")); // 现投放门店地址
-                        iceBoxExcelVo.setStatusStr(storeMap.get("statusStr")); // 门店状态
-                        iceBoxExcelVo.setRealName(storeMap.get("realName")); // 负责业务员姓名
-                    }
+                // 目前这个冰柜在 经销商 手上
+                if (suppMaps != null && suppMaps.get(iceBox.getSupplierId()) != null) {
+                    Map<String, String> suppMap = suppMaps.get(iceBox.getSupplierId());
+                    iceBoxExcelVo.setSuppNumber(suppMap.get("suppNumber")); // 所属经销商编号
+                    iceBoxExcelVo.setSuppName(suppMap.get("suppName")); // 所属经销商名称
+                    iceBoxExcelVo.setRealName(suppMap.get("realname")); // 负责业务员姓名
                 }
+
+                // 目前这个冰柜在 门店 手上
+                if (storeMaps != null && storeMaps.get(iceBox.getPutStoreNumber()) != null) {
+                    Map<String, String> storeMap = storeMaps.get(iceBox.getPutStoreNumber());
+                    iceBoxExcelVo.setStoreTypeName(storeMap.get("storeTypeName")); // 现投放门店类型
+                    iceBoxExcelVo.setStoreLevel(storeMap.get("storeLevel")); // 现投放门店级别
+                    iceBoxExcelVo.setStoreNumber(storeMap.get("storeNumber")); // 现投放门店编号
+                    iceBoxExcelVo.setStoreName(storeMap.get("storeName")); // 现投放门店名称
+                    iceBoxExcelVo.setMobile(storeMap.get("mobile")); // 门店负责人手机号
+                    iceBoxExcelVo.setAddress(storeMap.get("address")); // 现投放门店地址
+                    iceBoxExcelVo.setStatusStr(storeMap.get("statusStr")); // 门店状态
+                    iceBoxExcelVo.setRealName(storeMap.get("realName")); // 负责业务员姓名
+                }
+
                 iceBoxExcelVo.setAssetId(iceBoxExtend.getAssetId()); // 设备编号-->东鹏资产id
                 IceModel iceModel = modelMap.get(iceBox.getModelId());
                 iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号

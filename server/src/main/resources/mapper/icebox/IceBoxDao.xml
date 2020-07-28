@@ -44,4 +44,47 @@
         order by b.id desc
     </select>
 
+
+    <!--  belongObj 所在对象 (put_status 投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放; 当经销商时为 0-未投放;当门店时为非未投放状态;)-->
+    <select id="exportExcel" resultType="com.szeastroc.icebox.newprocess.entity.IceBox">
+        SELECT b.* FROM `t_ice_box` b INNER JOIN `t_ice_box_extend` be
+        ON b.`id`=be.`id`
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test="assetId!=null and assetId!=''">
+                and be.asset_id=#{assetId}
+            </if>
+            <if test="status!=null">
+                and b.status=#{status}
+            </if>
+            <if test="supplierIdList!=null and supplierIdList.size>0">
+                and b.put_status=0 and b.supplier_id in
+                <foreach item="item" index="index" collection="supplierIdList" open="("
+                         separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="putStoreNumberList!=null and putStoreNumberList.size>0">
+                and b.put_status!=0 and b.put_store_number in
+                <foreach item="item" index="index" collection="putStoreNumberList" open="("
+                         separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="belongObj!=null and belongObj==0">
+                and b.put_status=0
+            </if>
+            <if test="belongObj!=null and belongObj!=0">
+                and b.put_status!=0
+            </if>
+            <if test="deptIds!=null and deptIds.size>0">
+                and b.dept_id in
+                <foreach item="item" index="index" collection="deptIds" open="("
+                         separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </trim>
+        order by b.id desc
+    </select>
+
 </mapper>

@@ -3,6 +3,8 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
 import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -13,10 +15,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.common.utils.Streams;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.customer.client.FeignCusLabelClient;
@@ -42,21 +47,27 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.client.FeignXcxBaseClient;
-import com.szeastroc.user.common.vo.*;
+import com.szeastroc.user.common.vo.AddressVo;
+import com.szeastroc.user.common.vo.SessionUserInfoVo;
+import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignExamineClient;
+import com.szeastroc.visit.client.FeignExportRecordsClient;
 import com.szeastroc.visit.common.IceBoxPutModel;
 import com.szeastroc.visit.common.RequestExamineVo;
 import com.szeastroc.visit.common.SessionExamineCreateVo;
 import com.szeastroc.visit.common.SessionExamineVo;
+import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
@@ -66,6 +77,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -107,6 +121,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
     private final JedisClient jedis;
     private final FeignCusLabelClient feignCusLabelClient;
+    private final ImageUploadUtil imageUploadUtil;
+    private final FeignExportRecordsClient feignExportRecordsClient;
+
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -1002,91 +1019,17 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     //@RoutingDataSource(value = Datasources.SLAVE_DB)
     @Override
     public IPage findPage(IceBoxPage iceBoxPage) {
-        Integer deptId = iceBoxPage.getDeptId(); // 营销区域id
-        if (deptId != null) {
-            DeptNameRequest request = new DeptNameRequest();
-            request.setParentIds(deptId.toString());
-            // 查询出当前部门下面的服务处
-            List<SessionDeptInfoVo> deptInfoVos = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoListByParentId(request));
-            Set<Integer> deptIds = new HashSet<>();
-            if (CollectionUtils.isNotEmpty(deptInfoVos)) {
-                deptInfoVos.forEach(i -> {
-                    deptIds.add(i.getId());
-                });
-            }
-            deptIds.add(deptId);
-            iceBoxPage.setDeptIds(deptIds);
-        }
-        // 当所在对象编号或者所在对象名称不为空时,所在对象字段为必填
-        if ((StringUtils.isNotBlank(iceBoxPage.getBelongObjNumber()) || StringUtils.isNotBlank(iceBoxPage.getBelongObjName()))
-                && iceBoxPage.getBelongObj() == null) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择所在对象类型");
-        }
 
-        Set<Integer> supplierIdList = new HashSet<>(); // 拥有者的经销商
-        // 所在对象  (put_status  投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放; 当经销商时为 0-未投放;当门店时为非未投放状态;)
-        String belongObjNumber = iceBoxPage.getBelongObjNumber();
-        String belongObjName = iceBoxPage.getBelongObjName();
-        String limit = " limit 30";
-        // 所在对象为 经销商
-        if (iceBoxPage.getBelongObj() != null && PutStatus.NO_PUT.getStatus().equals(iceBoxPage.getBelongObj())) {
-            // supplier_type 客户类型：1-经销商，2-分销商，3-邮差，4-批发商
-            // status 状态：0-禁用，1-启用
-            if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
-                List<SubordinateInfoVo> infoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.getByNameOrNumber(null, belongObjNumber, null, 1, limit));
-                Optional.ofNullable(infoVoList).ifPresent(list -> {
-                    list.forEach(i -> {
-                        supplierIdList.add(i.getId());
-                    });
-                });
-                if (CollectionUtils.isEmpty(supplierIdList)) {
-                    return new Page();
-                }
-            }
-            if (StringUtils.isNotBlank(belongObjName)) { // 用 name 去查
-                List<SubordinateInfoVo> infoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.getByNameOrNumber(belongObjName, null, null, 1, limit));
-                Optional.ofNullable(infoVoList).ifPresent(list -> {
-                    list.forEach(i -> {
-                        supplierIdList.add(i.getId());
-                    });
-                });
-                if (CollectionUtils.isEmpty(supplierIdList)) {
-                    return new Page();
-                }
-            }
+        // 获取当前登陆人可查看的部门
+        List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
+        iceBoxPage.setDeptIdList(deptIdList);
+        // 处理请求数据
+        if (dealIceBoxPage(iceBoxPage)) {
+            return null;
         }
-        Set<String> putStoreNumberList = new HashSet<>(); // 投放的门店number
-        // 所在对象为 门店
-        if (iceBoxPage.getBelongObj() != null && !PutStatus.NO_PUT.getStatus().equals(iceBoxPage.getBelongObj())) {
-            if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
-                List<SimpleStoreVo> storeVoList = FeignResponseUtil.getFeignData(feignStoreClient.getByNameOrNumber(belongObjNumber, null, null, null, limit));
-                Optional.ofNullable(storeVoList).ifPresent(list -> {
-                    list.forEach(i -> {
-                        putStoreNumberList.add(i.getStoreNumber());
-                    });
-                });
-                if (CollectionUtils.isEmpty(putStoreNumberList)) {
-                    return new Page();
-                }
-            }
-            if (StringUtils.isNotBlank(belongObjName)) { // 用 name 去查
-                List<SimpleStoreVo> storeVoList = FeignResponseUtil.getFeignData(feignStoreClient.getByNameOrNumber(null, belongObjName, null, null, limit));
-                Optional.ofNullable(storeVoList).ifPresent(list -> {
-                    list.forEach(i -> {
-                        putStoreNumberList.add(i.getStoreNumber());
-                    });
-                });
-                if (CollectionUtils.isEmpty(putStoreNumberList)) {
-                    return new Page();
-                }
-            }
-        }
-
-        iceBoxPage.setSupplierIdList(supplierIdList);
-        iceBoxPage.setPutStoreNumberList(putStoreNumberList);
         List<IceBox> iceBoxList = iceBoxDao.findPage(iceBoxPage);
         if (CollectionUtils.isEmpty(iceBoxList)) {
-            return new Page();
+            return null;
         }
         List<Integer> deptIds = iceBoxList.stream().map(IceBox::getDeptId).collect(Collectors.toList());
         // 营销区域对应得部门  服务处->大区->事业部
@@ -1103,18 +1046,21 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 modelMap.put(i.getId(), i);
             });
         });
+
         // 经销商 集合
-        List<Integer> suppIds = iceBoxList.stream().filter(i -> i.getPutStatus().equals(PutStatus.NO_PUT.getStatus())).map(IceBox::getSupplierId).collect(Collectors.toList());
-        Map<Integer, SubordinateInfoVo> suppMap = null;
+        List<Integer> suppIds = iceBoxList.stream().map(IceBox::getSupplierId).collect(Collectors.toList());
+        Map<Integer, Map<String, String>> suppMaps = null;
         if (CollectionUtils.isNotEmpty(suppIds)) {
-            suppMap = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(suppIds));
+            suppMaps = FeignResponseUtil.getFeignData(feignSupplierClient.getSimpledataByIdList(suppIds));
         }
-        // 门店 集合
-        Map<String, SimpleStoreVo> storeMap = null;
-        List<String> storeNumbers = iceBoxList.stream().filter(i -> !i.getPutStatus().equals(PutStatus.NO_PUT.getStatus())).map(IceBox::getPutStoreNumber).collect(Collectors.toList());
+        // 投放对象-- 门店/批发商/邮差等 集合      非未投放状态时,有可能在 门店/批发商/邮差手上
+        Map<String, Map<String, String>> storeMaps = null;
+        List<String> storeNumbers = iceBoxList.stream().map(IceBox::getPutStoreNumber).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(storeNumbers)) {
-            storeMap = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumberList(storeNumbers));
+            storeMaps = FeignResponseUtil.getFeignData(feignStoreClient.getSimpledataByNumber(storeNumbers));
         }
+        // 有可能是非门店,所以去查下  t_cus_supplier_info  表
+        storeMaps = getSuppMap(storeMaps, storeNumbers);
 
         List<Map<String, Object>> list = new ArrayList<>();
         for (IceBox iceBox : iceBoxList) {
@@ -1142,30 +1088,125 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         .eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber).last(" limit 1"));
             }
             map.put("freeTypeStr", icePutApplyRelateBox == null ? null : FreePayTypeEnum.getDesc(icePutApplyRelateBox.getFreeType())); // 押金收取
-            map.put("belongObjStr", iceBox.getPutStatus().equals(0) ? "经销商" : "门店"); // 所在客户类型
+
             String name = null;
             String number = null;
-            if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && suppMap != null) { // 经销商
-                SubordinateInfoVo infoVo = suppMap.get(iceBox.getSupplierId());
-                name = infoVo == null ? null : infoVo.getName();
-                number = infoVo == null ? null : infoVo.getNumber();
+            String belongObjStr = null;
+            String belongDealer = null;
+            if (suppMaps != null) {
+                Map<String, String> suppMap = suppMaps.get(iceBox.getSupplierId());
+                if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && suppMap != null) { // 经销商
+                    name = suppMap.get("suppName");
+                    number = suppMap.get("suppNumber");
+                    belongObjStr = suppMap.get("suppTypeName"); // 客户类型
+                }
+                belongDealer = suppMap == null ? null : suppMap.get("suppName"); // 所属经销商
             }
-            if (!PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && storeMap != null) { // 门店
-                SimpleStoreVo storeVo = storeMap.get(iceBox.getPutStoreNumber());
-                name = storeVo == null ? null : storeVo.getStoreName();
-                number = storeVo == null ? null : storeVo.getStoreNumber();
+            map.put("belongDealer", belongDealer); // 所属经销商
+
+            if (!PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && storeMaps != null) { // 门店/批发商/邮差/分销商
+                Map<String, String> storeMap = storeMaps.get(iceBox.getPutStoreNumber());
+                name = storeMap == null ? null : storeMap.get("storeName");
+                number = storeMap == null ? null : storeMap.get("storeNumber");
+                belongObjStr = storeMap == null ? null : storeMap.get("storeTypeName");
             }
             map.put("number", number); // 客户编号
             map.put("name", name); // 客户名称
+            map.put("belongObjStr", belongObjStr); // 客户类型
             map.put("id", iceBox.getId());
-//            map.put("putStatus",iceBox.getPutStatus());
-//            map.put("deptId",iceBox.getDeptId());
-//            map.put("remark","暂无备注"); // 备注
-
+//            map.put("belongObjStr", iceBox.getPutStatus().equals(0) ? "经销商" : "门店"); // 所在客户类型
             list.add(map);
         }
-
         return new Page(iceBoxPage.getCurrent(), iceBoxPage.getSize(), iceBoxPage.getTotal()).setRecords(list);
+    }
+
+    private boolean dealIceBoxPage(IceBoxPage iceBoxPage) {
+
+        // 当所在对象编号或者所在对象名称不为空时,所在对象字段为必填
+        if ((StringUtils.isNotBlank(iceBoxPage.getBelongObjNumber()) || StringUtils.isNotBlank(iceBoxPage.getBelongObjName()))
+                && iceBoxPage.getBelongObj() == null) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择所在对象类型");
+        }
+        List<Integer> deptIdList = iceBoxPage.getDeptIdList();
+        if (CollectionUtils.isEmpty(deptIdList)) {
+            log.info("此人暂无查看数据的权限");
+            return true;
+        }
+        Set<Integer> deptIdSet = deptIdList.stream().collect(Collectors.toSet());
+        Integer deptId = iceBoxPage.getDeptId(); // 营销区域id
+        if (deptId != null) {
+            // 查询出当前部门下面的服务处
+            List<Integer> searchDeptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptIdsByParentIds(Ints.asList(deptId)));
+            if (CollectionUtils.isEmpty(searchDeptIdList)) {
+                return true;
+            }
+            Set<Integer> searchDeptIdSet = searchDeptIdList.stream().collect(Collectors.toSet());
+            deptIdSet = Sets.intersection(deptIdSet, searchDeptIdSet);
+        }
+        iceBoxPage.setDeptIdList(null);
+        iceBoxPage.setDeptIds(deptIdSet);
+
+        Set<Integer> supplierIdList = new HashSet<>(); // 拥有者的经销商
+        // 所在对象  (put_status  投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放; 当经销商时为 0-未投放;当门店时为非未投放状态;)
+        String belongObjNumber = iceBoxPage.getBelongObjNumber();
+        String belongObjName = iceBoxPage.getBelongObjName();
+        String limit = " limit 30";
+        // 所在对象为 经销商
+        if (iceBoxPage.getBelongObj() != null && PutStatus.NO_PUT.getStatus().equals(iceBoxPage.getBelongObj())) {
+            // supplier_type 客户类型：1-经销商，2-分销商，3-邮差，4-批发商
+            // status 状态：0-禁用，1-启用
+            if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
+                List<SubordinateInfoVo> infoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.getByNameOrNumber(null, belongObjNumber, null, 1, limit));
+                Optional.ofNullable(infoVoList).ifPresent(list -> {
+                    list.forEach(i -> {
+                        supplierIdList.add(i.getId());
+                    });
+                });
+                if (CollectionUtils.isEmpty(supplierIdList)) {
+                    return true;
+                }
+            }
+            if (StringUtils.isNotBlank(belongObjName)) { // 用 name 去查
+                List<SubordinateInfoVo> infoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.getByNameOrNumber(belongObjName, null, null, 1, limit));
+                Optional.ofNullable(infoVoList).ifPresent(list -> {
+                    list.forEach(i -> {
+                        supplierIdList.add(i.getId());
+                    });
+                });
+                if (CollectionUtils.isEmpty(supplierIdList)) {
+                    return true;
+                }
+            }
+        }
+        Set<String> putStoreNumberList = new HashSet<>(); // 投放的门店number
+        // 所在对象为 门店
+        if (iceBoxPage.getBelongObj() != null && !PutStatus.NO_PUT.getStatus().equals(iceBoxPage.getBelongObj())) {
+            if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
+                List<SimpleStoreVo> storeVoList = FeignResponseUtil.getFeignData(feignStoreClient.getByNameOrNumber(belongObjNumber, null, null, null, limit));
+                Optional.ofNullable(storeVoList).ifPresent(list -> {
+                    list.forEach(i -> {
+                        putStoreNumberList.add(i.getStoreNumber());
+                    });
+                });
+                if (CollectionUtils.isEmpty(putStoreNumberList)) {
+                    return true;
+                }
+            }
+            if (StringUtils.isNotBlank(belongObjName)) { // 用 name 去查
+                List<SimpleStoreVo> storeVoList = FeignResponseUtil.getFeignData(feignStoreClient.getByNameOrNumber(null, belongObjName, null, null, limit));
+                Optional.ofNullable(storeVoList).ifPresent(list -> {
+                    list.forEach(i -> {
+                        putStoreNumberList.add(i.getStoreNumber());
+                    });
+                });
+                if (CollectionUtils.isEmpty(putStoreNumberList)) {
+                    return true;
+                }
+            }
+        }
+        iceBoxPage.setSupplierIdList(supplierIdList);
+        iceBoxPage.setPutStoreNumberList(putStoreNumberList);
+        return false;
     }
 
     @Override
@@ -1199,18 +1240,22 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         String khStatusStr = null;
         String khContactPerson = null;
         String khContactNumber = null;
+        SubordinateInfoVo suppInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readId(iceBox.getSupplierId()));
         if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus())) { // 经销商
-            SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readId(iceBox.getSupplierId()));
-            if (infoVo != null) {
-                khName = infoVo.getName();
-                khAddress = infoVo.getAddress();
-                khGrade = infoVo.getLevel();
+            if (suppInfoVo != null) {
+                khName = suppInfoVo.getName();
+                khAddress = suppInfoVo.getAddress();
+                khGrade = suppInfoVo.getLevel();
                 // 状态：0-禁用，1-启用
-                khStatusStr = (infoVo.getStatus() != null && infoVo.getStatus().equals(1)) ? "启用" : "禁用";
-                khContactPerson = infoVo.getLinkman();
-                khContactNumber = infoVo.getLinkmanMobile();
+                khStatusStr = (suppInfoVo.getStatus() != null && suppInfoVo.getStatus().equals(1)) ? "启用" : "禁用";
+                khContactPerson = suppInfoVo.getLinkman();
+                khContactNumber = suppInfoVo.getLinkmanMobile();
             }
-        } else { // 门店
+        } else {
+            // 批发商/邮差/分销商
+//            Map<String, Map<String, String>> storeMaps=null;
+//            getSuppMap(storeMaps,Lists.newArrayList(iceBox.getPutStoreNumber()));
+            // 门店
             StoreInfoDtoVo dtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
             Map<String, SessionStoreInfoVo> storeInfoVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Lists.newArrayList(iceBox.getPutStoreNumber())));
             if (dtoVo != null) {
@@ -1232,6 +1277,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("khStatusStr", khStatusStr); // 客户状态
         map.put("khContactPerson", khContactPerson); // 联系人
         map.put("khContactNumber", khContactNumber); // 联系电话
+        String belongDealer = null;
+        if (suppInfoVo != null && suppInfoVo.getName() != null) {
+            belongDealer = suppInfoVo.getName();
+        }
+        map.put("belongDealer", belongDealer); // 所属经销商
 
         return map;
     }
@@ -2071,6 +2121,176 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 Objects.requireNonNull(iceBoxExtend),
                 Objects.requireNonNull(iceModel),
                 Objects.isNull(applyRelatePutStoreModel) ? FreePayTypeEnum.UN_FREE : FreePayTypeEnum.convertVo(applyRelatePutStoreModel.getFreeType()));
+    }
+
+    @Override
+    public void exportExcel(IceBoxPage iceBoxPage) throws Exception {
+
+        if (dealIceBoxPage(iceBoxPage)) {
+            return;
+        }
+        Map<String, Object> param = new HashMap<>();
+        param.put("deptIds", iceBoxPage.getDeptIds());
+        param.put("supplierIdList", iceBoxPage.getSupplierIdList());
+        param.put("putStoreNumberList", iceBoxPage.getPutStoreNumberList());
+        param.put("assetId", iceBoxPage.getAssetId());
+        param.put("status", iceBoxPage.getStatus());
+        param.put("belongObj", iceBoxPage.getBelongObj());
+
+        List<IceBox> iceBoxList = iceBoxDao.exportExcel(param);
+        if (CollectionUtils.isEmpty(iceBoxList)) {
+            return;
+        }
+        int limit = 96;
+        List<List<IceBox>> partitions = Lists.partition(iceBoxList, limit);
+        // 设备型号不多,可以一次性查出来
+        List<IceModel> iceModels = iceModelDao.selectList(null);
+        Map<Integer, IceModel> modelMap = iceModels.stream().collect(Collectors.toMap(IceModel::getId, i -> i));
+
+        // 方法1 如果写到同一个sheet
+        String xlsxPath = CreatePathUtil.creatDocPath();
+        // 这里 需要指定写用哪个class去写
+        ExcelWriter excelWriter = EasyExcel.write(xlsxPath, IceBoxExcelVo.class).build();
+        // 这里注意 如果同一个sheet只要创建一次
+        WriteSheet writeSheet = EasyExcel.writerSheet("冰柜投放报表").build();
+        int ii = 0;
+        for (List<IceBox> iceBoxes : partitions) {
+            log.info("页码-->{}", ii++);
+            List<Integer> deptIds = iceBoxes.stream().map(IceBox::getDeptId).collect(Collectors.toSet()).stream().collect(Collectors.toList());
+            // 营销区域对应得部门  服务处->大区->事业部
+            Map<Integer, String> deptMap = null;
+            if (CollectionUtils.isNotEmpty(deptIds)) {
+                deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(deptIds));
+            }
+            // 经销商 集合
+            List<Integer> suppIds = iceBoxes.stream().map(IceBox::getSupplierId).collect(Collectors.toList());
+            Map<Integer, Map<String, String>> suppMaps = null;
+            if (CollectionUtils.isNotEmpty(suppIds)) {
+                suppMaps = FeignResponseUtil.getFeignData(feignSupplierClient.getSimpledataByIds(suppIds));
+            }
+            // 门店/批发商/邮差等 集合      非未投放状态时,有可能在 门店/批发商/邮差手上
+            Map<String, Map<String, String>> storeMaps = null;
+            List<String> storeNumbers = iceBoxes.stream().map(IceBox::getPutStoreNumber).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(storeNumbers)) {
+                storeMaps = FeignResponseUtil.getFeignData(feignStoreClient.getSimpledataByNumber(storeNumbers));
+            }
+            storeMaps = getSuppMap(storeMaps, storeNumbers);
+
+            List<Integer> idsList = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
+            List<IceBoxExtend> boxExtendList = iceBoxExtendDao.selectBatchIds(idsList);
+            Map<Integer, IceBoxExtend> boxExtendMap = boxExtendList.stream().collect(Collectors.toMap(IceBoxExtend::getId, i -> i));
+            // 对结果塞入到excel中
+            List<IceBoxExcelVo> iceBoxExcelVoList = new ArrayList<>(iceBoxes.size());
+            // 组装集合
+            for (IceBox iceBox : iceBoxes) {
+                Integer iceBoxId = iceBox.getId();
+//                IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+                IceBoxExtend iceBoxExtend = boxExtendMap.get(iceBoxId);
+                IceBoxExcelVo iceBoxExcelVo = new IceBoxExcelVo();
+                if (deptMap != null) {
+                    String deptStr = deptMap.get(iceBox.getDeptId());
+                    if (StringUtils.isNotBlank(deptStr)) {
+                        String[] split = deptStr.split("/");
+                        if (split.length >= 1) {
+                            iceBoxExcelVo.setSybStr(split[0]); // 事业部
+                        }
+                        if (split.length >= 2) {
+                            iceBoxExcelVo.setDqStr(split[1]); // 大区
+                        }
+                        if (split.length >= 3) {
+                            iceBoxExcelVo.setFwcStr(split[2]); // 服务处
+                        }
+                    }
+//                    iceBoxExcelVo.setDeptStr(deptStr); // 营销区域
+                }
+                // 目前这个冰柜在 经销商 手上
+                if (suppMaps != null && suppMaps.get(iceBox.getSupplierId()) != null) {
+                    Map<String, String> suppMap = suppMaps.get(iceBox.getSupplierId());
+                    iceBoxExcelVo.setSuppNumber(suppMap.get("suppNumber")); // 所属经销商编号
+                    iceBoxExcelVo.setSuppName(suppMap.get("suppName")); // 所属经销商名称
+                    iceBoxExcelVo.setRealName(suppMap.get("realname")); // 负责业务员姓名
+                }
+
+                // 目前这个冰柜在 门店 手上
+                if (storeMaps != null && storeMaps.get(iceBox.getPutStoreNumber()) != null) {
+                    Map<String, String> storeMap = storeMaps.get(iceBox.getPutStoreNumber());
+                    iceBoxExcelVo.setStoreTypeName(storeMap.get("storeTypeName")); // 现投放门店类型
+                    iceBoxExcelVo.setStoreLevel(storeMap.get("storeLevel")); // 现投放门店级别
+                    iceBoxExcelVo.setStoreNumber(storeMap.get("storeNumber")); // 现投放门店编号
+                    iceBoxExcelVo.setStoreName(storeMap.get("storeName")); // 现投放门店名称
+                    iceBoxExcelVo.setMobile(storeMap.get("mobile")); // 门店负责人手机号
+                    iceBoxExcelVo.setAddress(storeMap.get("address")); // 现投放门店地址
+                    iceBoxExcelVo.setStatusStr(storeMap.get("statusStr")); // 门店状态
+                    iceBoxExcelVo.setRealName(storeMap.get("realName")); // 负责业务员姓名
+                }
+
+                iceBoxExcelVo.setAssetId(iceBoxExtend.getAssetId()); // 设备编号-->东鹏资产id
+                IceModel iceModel = modelMap.get(iceBox.getModelId());
+                iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号
+                iceBoxExcelVo.setDepositMoney(iceBox.getDepositMoney().toString()); // 押金收取金额
+                iceBoxExcelVo.setPutStatusStr(PutStatus.convertEnum(iceBox.getPutStatus()).getDesc()); // 冰柜状态
+                iceBoxExcelVo.setLastPutTimeStr(iceBoxExtend.getLastPutTime() == null ? null : new DateTime(iceBoxExtend.getLastPutTime()).toString("yyyy-MM-dd HH:mm:ss")); // 投放日期
+                iceBoxExcelVo.setLastExamineTimeStr(iceBoxExtend.getLastExamineTime() == null ? null : new DateTime(iceBoxExtend.getLastExamineTime()).toString("yyyy-MM-dd HH:mm:ss")); // 最后一次巡检时间
+                iceBoxExcelVo.setRemark(iceBox.getRemark()); // 冰柜备注
+                iceBoxExcelVoList.add(iceBoxExcelVo);
+            }
+            // 写入excel
+            excelWriter.write(iceBoxExcelVoList, writeSheet);
+            iceBoxExcelVoList = null;
+            deptMap = null;
+            suppMaps = null;
+            storeMaps = null;
+        }
+        // 千万别忘记finish 会帮忙关闭流
+        excelWriter.finish();
+
+        File xlsxFile = new File(xlsxPath);
+        @Cleanup InputStream in = new FileInputStream(xlsxFile);
+        try {
+            String frontName = new DateTime().toString("yyyy-MM-dd-HH-mm-ss");
+            // todo 上传临时文件到网络
+            String imgUrl = imageUploadUtil.wechatUpload(in, IceBoxConstant.ICE_BOX, "BGDC" + frontName, "xlsx");
+            // 更新下载列表中的数据
+            feignExportRecordsClient.updateExportRecord(imgUrl, 1, iceBoxPage.getExportRecordId());
+        } catch (Exception e) {
+            log.error("付费陈列导出excel错误", e);
+        } finally {
+            // 删除临时目录
+            if (StringUtils.isNotBlank(xlsxPath)) {
+                FileUtils.deleteQuietly(xlsxFile);
+            }
+        }
+    }
+
+    private Map<String, Map<String, String>> getSuppMap(Map<String, Map<String, String>> storeMaps, List<String> storeNumbers) {
+        // 有可能是非门店,所以去查下  t_cus_supplier_info  表
+        List<SubordinateInfoVo> supplierInfoList = FeignResponseUtil.getFeignData(feignSupplierClient.readByNumbers(storeNumbers));
+        if (CollectionUtils.isNotEmpty(supplierInfoList)) {
+//                map.put("realName", realName);
+//                map.put("statusStr", statusStr);
+//                map.put("address", address);
+//                map.put("mobile", mobile);
+//                map.put("storeName", storeName);
+//                map.put("storeNumber", storeNumber);
+//                map.put("storeLevel", storeLevel);
+//                map.put("storeTypeName", storeTypeName);
+//                maps.put(storeNumber, map);
+            if (storeMaps == null) {
+                storeMaps = Maps.newHashMap();
+            }
+            for (SubordinateInfoVo infoVo : supplierInfoList) {
+                Map<String, String> mm = Maps.newHashMap();
+                mm.put("realName", infoVo.getRealName());
+                mm.put("address", infoVo.getAddress());
+                mm.put("mobile", infoVo.getLinkmanMobile());
+                mm.put("storeName", infoVo.getName());
+                mm.put("storeNumber", infoVo.getNumber());
+                mm.put("storeLevel", infoVo.getLevel());
+                mm.put("storeTypeName", infoVo.getSupplierTypeName());
+                storeMaps.put(infoVo.getNumber(), mm);
+            }
+        }
+        return storeMaps;
     }
 
     @Override

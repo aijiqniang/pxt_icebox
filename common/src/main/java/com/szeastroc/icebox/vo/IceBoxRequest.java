@@ -15,5 +15,6 @@ public class IceBoxRequest {
 
     private String applyNumber;
     private Integer status;
+    private Integer examineStatus;
     private Integer updateBy;
 }

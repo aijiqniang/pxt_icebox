@@ -26,6 +26,7 @@ public class ClientInfoRequest {
     private String iceChestId;
     private String ip;
     private String openid;
+    private String qrcode;
 
     public boolean validate(){
 //        if(StringUtils.isBlank(clientName) || StringUtils.isBlank(clientNumber) || StringUtils.isBlank(marketAreaId)

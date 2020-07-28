@@ -8,25 +8,27 @@ import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutPactRecordDao;
-import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
-import com.szeastroc.icebox.newprocess.entity.IcePutApply;
-import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
+import com.szeastroc.icebox.enums.FreePayTypeEnum;
+import com.szeastroc.icebox.enums.ServiceType;
+import com.szeastroc.icebox.newprocess.dao.*;
+import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.enums.RecordStatus;
 import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor(onConstructor = @_(@Autowired))
 public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao, IcePutPactRecord> implements IcePutPactRecordService {
 
@@ -34,12 +36,40 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
     private final IcePutApplyDao icePutApplyDao;
     private final FeignSupplierClient feignSupplierClient;
     private final FeignCusLabelClient feignCusLabelClient;
+    private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
+    private final IceBoxDao iceBoxDao;
+    private final PutStoreRelateModelDao putStoreRelateModelDao;
+    private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
+    private final IceTransferRecordDao iceTransferRecordDao;
 
     @Override
     public void createPactRecord(ClientInfoRequest clientInfoRequest) {
         // 通过冰柜找到申请投放的门店
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(clientInfoRequest.getIceChestId());
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+
+        IceBox iceBox = iceBoxDao.selectById(clientInfoRequest.getIceChestId());
+        IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutApply.getApplyNumber()));
+        if(transferRecord == null){
+            IceTransferRecord iceTransferRecord = IceTransferRecord.builder()
+                    .applyNumber(icePutApply.getApplyNumber())
+                    .applyTime(new Date())
+                    .applyUserId(icePutApply.getUserId())
+                    .boxId(iceBox.getId())
+                    .createTime(new Date())
+                    .recordStatus(RecordStatus.APPLY_ING.getStatus())
+                    .serviceType(ServiceType.IS_PUT.getType())
+                    .storeNumber(iceBox.getPutStoreNumber())
+                    .supplierId(iceBox.getSupplierId())
+                    .build();
+            iceTransferRecord.setTransferMoney(new BigDecimal(0));
+            IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()).eq(IcePutApplyRelateBox::getApplyNumber, icePutApply.getApplyNumber()));
+            if (relateBox != null && FreePayTypeEnum.UN_FREE.getType().equals(relateBox.getFreeType())) {
+                iceTransferRecord.setTransferMoney(iceBox.getDepositMoney());
+            }
+            iceTransferRecordDao.insert(iceTransferRecord);
+            log.info("applyNumber-->【{}】创建往来记录成功",icePutApply.getApplyNumber());
+        }
 
         // 创建协议
         IcePutPactRecord icePutPactRecord = getOne(Wrappers.<IcePutPactRecord>lambdaQuery()
@@ -56,6 +86,7 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
         icePutPactRecord.setUpdatedBy(0);
         icePutPactRecord.setUpdatedTime(new Date());
         updateById(icePutPactRecord);
+
         // 添加标签
         CompletableFuture.runAsync(() -> {
             addLabel(icePutPactRecord,iceBoxExtend.getAssetId());

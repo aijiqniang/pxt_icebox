@@ -18,6 +18,9 @@ public interface FeignIceBoxClient {
     @PostMapping("/iceBox/checkIceBox")
     void checkIceBox(@RequestBody IceBoxRequest iceBoxRequest);
 
+    @PostMapping("/iceBox/checkIceBoxNew")
+    void checkIceBoxNew(@RequestBody IceBoxRequest iceBoxRequest);
+
 
     @RequestMapping("/refund/updateExamineStatus")
     CommonResponse updateExamineStatus(@RequestBody IceBoxRequest iceBoxRequest);

@@ -44,6 +44,11 @@ public class IceBoxRequestVo {
      * 拥有者的经销商id
      */
     private Integer supplierId;
+
+    /**
+     * 拥有者的经销商名称
+     */
+    private String supplierName;
     /**
      * 申请数量
      */

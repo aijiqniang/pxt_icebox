@@ -175,7 +175,7 @@ public class IceOtherSync {
 
     private String getBackApplyNumberByOldPutId(Integer chestPutRecordId) {
         IceBackApply iceBackApply = iceBackApplyService.getOne(Wrappers.<IceBackApply>lambdaQuery()
-                .eq(IceBackApply::getOldPutId, chestPutRecordId));
+                .eq(IceBackApply::getOldPutId, chestPutRecordId).ne(IceBackApply::getExamineStatus,3));
         return iceBackApply.getApplyNumber();
     }
 

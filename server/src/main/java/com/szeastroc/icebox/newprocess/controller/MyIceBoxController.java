@@ -6,6 +6,7 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
@@ -41,6 +42,16 @@ public class MyIceBoxController {
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVos);
     }
     /**
+     * 查询冰柜列表：0-已投放，1-可供申请
+     * @param requestVo
+     * @return
+     */
+    @RequestMapping("findIceBoxListNew")
+    public CommonResponse<List<IceBoxVo>> findIceBoxListNew(@RequestBody IceBoxRequestVo requestVo){
+        List<IceBoxVo> iceBoxVos = iceBoxService.findIceBoxListNew(requestVo);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVos);
+    }
+    /**
      * 查询冰柜列表：2-处理中
      * @param requestVo
      * @return
@@ -48,6 +59,17 @@ public class MyIceBoxController {
     @RequestMapping("findPutingIceBoxList")
     public CommonResponse<Map<String,List<IceBoxVo>>> findPutingIceBoxList(@RequestBody IceBoxRequestVo requestVo){
         Map<String,List<IceBoxVo>> map = iceBoxService.findPutingIceBoxList(requestVo);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+    }
+
+    /**
+     * 查询冰柜列表：2-处理中
+     * @param requestVo
+     * @return
+     */
+    @RequestMapping("findPutingIceBoxListNew")
+    public CommonResponse<Map<String,List<IceBoxVo>>> findPutingIceBoxListNew(@RequestBody IceBoxRequestVo requestVo){
+        Map<String,List<IceBoxVo>> map = iceBoxService.findPutingIceBoxListNew(requestVo);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 
@@ -63,9 +85,27 @@ public class MyIceBoxController {
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxVo);
     }
 
+    /**
+     * 申请冰柜
+     * @param iceBoxRequestVos
+     * @return
+     * @throws InterruptedException
+     */
     @RequestMapping("submitApply")
     public CommonResponse<Map<String,Object>> submitApply(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
         Map<String,Object> map = iceBoxService.submitApply(iceBoxRequestVos);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+    }
+
+    /**
+     * 申请冰柜(新)
+     * @param iceBoxRequestVos
+     * @return
+     * @throws InterruptedException
+     */
+    @RequestMapping("submitApplyNew")
+    public CommonResponse<Map<String,Object>> submitApplyNew(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos) throws InterruptedException {
+        Map<String,Object> map = iceBoxService.submitApplyNew(iceBoxRequestVos);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 
@@ -77,6 +117,17 @@ public class MyIceBoxController {
     @PostMapping("/checkIceBox")
     public void checkIceBox(@RequestBody IceBoxRequest iceBoxRequest){
         iceBoxService.checkIceBox(iceBoxRequest);
+//        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
+    /**
+     * 审批冰柜
+     * @param iceBoxRequest
+     * @return
+     */
+    @PostMapping("/checkIceBoxNew")
+    public void checkIceBoxNew(@RequestBody IceBoxRequest iceBoxRequest){
+        iceBoxService.checkIceBoxNew(iceBoxRequest);
 //        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
     /**
@@ -93,6 +144,22 @@ public class MyIceBoxController {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxList(pxtNumber));
+    }
+
+    /**
+     * 根据门店编号获取所属冰柜信息(新)
+     *
+     * @param pxtNumber
+     * @return
+     * @throws NormalOptionException
+     * @throws ImproperOptionException
+     */
+    @RequestMapping("/getIceBoxListNew")
+    public CommonResponse<List<PutStoreRelateModel>> getIceBoxListNew(String pxtNumber) {
+        if (StringUtils.isBlank(pxtNumber)) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxListNew(pxtNumber));
     }
     /**
      * 根据门店编号已签收的冰柜信息

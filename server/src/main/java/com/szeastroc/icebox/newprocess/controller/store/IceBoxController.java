@@ -8,7 +8,9 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
@@ -53,6 +55,7 @@ public class IceBoxController {
     private final IcePutOrderService icePutOrderService;
     private final IceBackOrderService iceBackOrderService;
     private final FeignStoreClient feignStoreClient;
+    private final FeignSupplierClient feignSupplierClient;
 
     /**
      * 根据门店编号获取所属冰柜信息
@@ -134,7 +137,7 @@ public class IceBoxController {
     }
 
     /**
-     * 门店老板签署电子协议
+     * 门店老板签署电子协议(otoc)
      *
      * @param clientInfoRequest
      * @return
@@ -157,6 +160,31 @@ public class IceBoxController {
     }
 
     /**
+     * 门店老板签署电子协议(DMS)
+     *
+     * @param clientInfoRequest
+     * @return
+     * @throws ImproperOptionException
+     */
+    @PostMapping("/createPactRecordDMS")
+    public CommonResponse<Void> createPactRecordDMS(ClientInfoRequest clientInfoRequest) {
+        if (!clientInfoRequest.validate()) {
+            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+
+        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(clientInfoRequest.getClientNumber()));
+        if (subordinateInfoVo == null || subordinateInfoVo.getMarketAreaId() == null) {
+            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");
+
+        icePutPactRecordService.createPactRecord(clientInfoRequest);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+    /**
      * 检查协议是否完成
      *
      * @param iceBoxId
@@ -171,7 +199,7 @@ public class IceBoxController {
     }
 
     /**
-     * 获取微信支付信息
+     * 获取微信支付信息(otoc)
      *
      * @param clientInfoRequest
      * @return
@@ -182,12 +210,37 @@ public class IceBoxController {
             log.error("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
+
         StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
         if (storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null) {
             log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea() + "");
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
+    }
+
+    /**
+     * 获取微信支付信息(dms)
+     *
+     * @param clientInfoRequest
+     * @return
+     */
+    @PostMapping("/applyPayIceBoxDMS")
+    public CommonResponse<OrderPayResponse> applyPayIceBoxDMS(ClientInfoRequest clientInfoRequest) throws Exception {
+        if (!clientInfoRequest.validate()) {
+            log.error("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+
+        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(clientInfoRequest.getClientNumber()));
+        if (subordinateInfoVo == null || subordinateInfoVo.getMarketAreaId() == null) {
+            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");
+
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
     }
 

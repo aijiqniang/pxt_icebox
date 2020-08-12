@@ -702,8 +702,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(storeNumber));
 
-        if (storeInfoDtoVo == null) {
-            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        String storeAddress = "";
+
+        if (null != storeInfoDtoVo && storeInfoDtoVo.getId() != null) {
+            storeAddress = storeInfoDtoVo.getAddress();
+        } else {
+            SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(storeNumber));
+            if (null != subordinateInfoVo && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+                storeAddress = subordinateInfoVo.getAddress();
+            }
         }
 
         // 门店编号和冰柜的id 以及最后的投放编号确定一个唯一的记录
@@ -729,7 +736,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .openTotal(iceBoxExtend.getOpenTotal())
                 .putStoreNumber(storeNumber)
                 .repairBeginTime(iceBoxExtend.getRepairBeginTime())
-                .storeAddress(storeInfoDtoVo.getAddress())
+                .storeAddress(storeAddress)
                 .releaseTime(iceBoxExtend.getReleaseTime())
                 .build();
 

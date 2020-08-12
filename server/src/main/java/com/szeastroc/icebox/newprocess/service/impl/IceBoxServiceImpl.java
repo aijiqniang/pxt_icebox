@@ -808,7 +808,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
-            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApplyRelateBox.getId()).ne(IceBackApply::getExamineStatus,3));
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApplyRelateBox.getId()).ne(IceBackApply::getExamineStatus, 3));
 
             IceBoxStoreVo iceBoxStoreVo = IceBoxConverter.convertToStoreVo(iceBox, iceBoxExtend, iceModel, icePutApplyRelateBox, iceEventRecord, iceBackApply);
             iceBoxStoreVos.add(iceBoxStoreVo);
@@ -1718,7 +1718,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     if (lock.lock()) {
 //                        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, requestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
                         List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, requestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()));
-                        List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getSupplierId, requestVo.getSupplierId()).eq(PutStoreRelateModel::getModelId, requestVo.getModelId()));
+                        List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery()
+                                .eq(PutStoreRelateModel::getSupplierId, requestVo.getSupplierId())
+                                .eq(PutStoreRelateModel::getModelId, requestVo.getModelId())
+                                .ne(PutStoreRelateModel::getPutStatus, PutStatus.NO_PUT.getStatus()));
                         int allCount = 0;
                         int putCount = 0;
 

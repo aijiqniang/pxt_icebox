@@ -77,6 +77,9 @@ public interface IceBoxService extends IService<IceBox> {
     IceBoxVo getIceBoxByQrcodeNew(String qrcode, String pxtNumber);
 
     void autoAddLabel();
+
+
+    void exportExcel(IceBoxPage iceBoxPage)throws Exception;
 }
 
 

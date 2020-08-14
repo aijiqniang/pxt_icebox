@@ -15,7 +15,6 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.enums.*;
@@ -117,7 +116,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         Integer putApplyRelateBoxId = icePutApplyRelateBox.getId();
 
 
-        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, putApplyRelateBoxId).ne(IceBackApply::getExamineStatus,3));
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, putApplyRelateBoxId).ne(IceBackApply::getExamineStatus, 3));
 
 
 //        selectIceBackOrder
@@ -594,11 +593,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         IceBox iceBox = iceBoxDao.selectById(iceBoxId);
         String putStoreNumber = iceBox.getPutStoreNumber();
 
-        Map<String, SessionStoreInfoVo> map = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Collections.singletonList(putStoreNumber)));
+        // 查询门店的主业务员
+        Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(putStoreNumber));
 
-        SessionStoreInfoVo sessionStoreInfoVo = map.get(putStoreNumber);
 
-        Integer userId = sessionStoreInfoVo.getUserId();
+        if (null == userId) {
+            // 查询配送上的主业务员
+            userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(putStoreNumber));
+        }
+
 
         String assetId = iceBoxExtend.getAssetId();
         String relateCode = prefix + "_" + assetId;

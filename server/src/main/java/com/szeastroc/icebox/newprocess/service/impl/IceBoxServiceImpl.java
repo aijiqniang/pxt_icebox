@@ -704,12 +704,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         String storeAddress = "";
 
-        if (null != storeInfoDtoVo && storeInfoDtoVo.getId() != null) {
+        String storeName = "";
+
+        if (null != storeInfoDtoVo && StringUtils.isNotBlank(storeInfoDtoVo.getStoreNumber())) {
             storeAddress = storeInfoDtoVo.getAddress();
+            storeName = storeInfoDtoVo.getStoreName();
         } else {
             SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(storeNumber));
             if (null != subordinateInfoVo && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
                 storeAddress = subordinateInfoVo.getAddress();
+                storeName = subordinateInfoVo.getName();
             }
         }
 
@@ -753,8 +757,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
             Map<Integer, SessionUserInfoVo> map = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(list));
 
-            IceExamineVo firstExamineVo = firstExamine.convert(firstExamine, map.get(firstExamineCreateBy).getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
-            IceExamineVo lastExamineVo = firstExamine.convert(lastExamine, map.get(lastExamineCreateBy).getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
+            IceExamineVo firstExamineVo = firstExamine.convert(firstExamine, map.get(firstExamineCreateBy).getRealname(), storeName, storeNumber);
+            IceExamineVo lastExamineVo = firstExamine.convert(lastExamine, map.get(lastExamineCreateBy).getRealname(), storeName, storeNumber);
             iceBoxDetailVo.setFirstExamine(firstExamineVo);
             iceBoxDetailVo.setLastExamine(lastExamineVo);
         }

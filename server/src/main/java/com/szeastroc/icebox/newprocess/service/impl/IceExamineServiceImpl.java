@@ -11,7 +11,9 @@ import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
@@ -50,6 +52,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     private IceBoxExtendDao iceBoxExtendDao;
     @Autowired
     private IceEventRecordDao iceEventRecordDao;
+    @Autowired
+    private FeignSupplierClient feignSupplierClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -136,11 +140,22 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
             StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(storeNumber));
 
+            String storeName = "";
+            if (null != storeInfoDtoVo && StringUtils.isNotBlank(storeInfoDtoVo.getStoreNumber())) {
+                storeName = storeInfoDtoVo.getStoreName();
+            } else {
+                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(storeNumber));
+                if (null != subordinateInfoVo && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+                    storeName = subordinateInfoVo.getName();
+                }
+            }
+
+            String finalStoreName = storeName;
             page = iPage.convert(iceExamine -> {
 
                 SessionUserInfoVo sessionUserInfoVo = map.get(createBy);
 
-                return iceExamine.convert(iceExamine, sessionUserInfoVo.getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
+                return iceExamine.convert(iceExamine, sessionUserInfoVo.getRealname(), finalStoreName, storeNumber);
 
 //                return IceExamineVo.builder()
 //                        .id(iceExamine.getId())
@@ -199,8 +214,16 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             Map<Integer, SessionUserInfoVo> map = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(list));
             SessionUserInfoVo sessionUserInfoVo = map.get(createBy);
             StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(storeNumber));
-
-            iceExamineVo = iceExamine.convert(iceExamine, sessionUserInfoVo.getRealname(), storeInfoDtoVo.getStoreName(), storeNumber);
+            String storeName = "";
+            if (null != storeInfoDtoVo && StringUtils.isNotBlank(storeInfoDtoVo.getStoreNumber())) {
+                storeName = storeInfoDtoVo.getStoreName();
+            } else {
+                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(storeNumber));
+                if (null != subordinateInfoVo && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+                    storeName = subordinateInfoVo.getName();
+                }
+            }
+            iceExamineVo = iceExamine.convert(iceExamine, sessionUserInfoVo.getRealname(), storeName, storeNumber);
 
 //            iceExamineVo = IceExamineVo.builder()
 //                    .id(iceExamine.getId())

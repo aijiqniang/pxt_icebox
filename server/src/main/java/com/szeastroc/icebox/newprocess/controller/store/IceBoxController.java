@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -322,7 +323,7 @@ public class IceBoxController {
     public CommonResponse<IPage> findPage(@RequestBody IceBoxPage iceBoxPage) {
 
         IPage iPage = iceBoxService.findPage(iceBoxPage);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage == null ? new Page() : iPage);
     }
 
     /**

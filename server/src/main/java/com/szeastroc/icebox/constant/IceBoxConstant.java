@@ -13,4 +13,6 @@ public class IceBoxConstant {
 
     public final static String IS_APPLYING = "申请中";
 
+    public final static String ICE_BOX="iceBox"; // 上传到腾讯云桶中的文件前缀
+
 }

@@ -1971,6 +1971,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public IceBoxStatusVo checkIceBoxByQrcodeNew(String qrcode, String pxtNumber) {
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
+        log.info("扫描的二维码--》【{}】,pxtNumber--》【{}】",qrcode,pxtNumber);
         if (Objects.isNull(iceBoxExtend)) {
             // 冰柜不存在(二维码未找到)
             iceBoxStatusVo.setSignFlag(false);

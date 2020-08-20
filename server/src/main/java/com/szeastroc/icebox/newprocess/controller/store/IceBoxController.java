@@ -17,6 +17,7 @@ import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
+import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
@@ -223,7 +224,7 @@ public class IceBoxController {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea() + "");
-
+        clientInfoRequest.setOrderSource(OrderSourceEnums.OTOC.getType());
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
     }
 
@@ -246,7 +247,7 @@ public class IceBoxController {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");
-
+        clientInfoRequest.setOrderSource(OrderSourceEnums.DMS.getType());
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
     }
 

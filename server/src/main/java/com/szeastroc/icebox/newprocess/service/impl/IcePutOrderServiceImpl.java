@@ -114,7 +114,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
          */
         String orderNum = CommonUtil.generateOrderNumber();
         //调用统一下单接口
-        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest.getIp(), iceBox.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
+        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest, iceBox.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
         //创建订单
         IcePutOrder icePutOrder = new IcePutOrder();
         icePutOrder.setChestId(iceBox.getId());
@@ -125,6 +125,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         icePutOrder.setPayMoney(iceBox.getDepositMoney());
         icePutOrder.setPrayId(prepayId);
         icePutOrder.setStatus(OrderStatus.IS_PAY_ING.getStatus());
+        icePutOrder.setOrderSource(clientInfoRequest.getOrderSource());
         icePutOrder.setCreatedBy(0);
         icePutOrder.setCreatedTime(new Date());
         icePutOrder.setUpdatedBy(0);

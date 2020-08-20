@@ -19,6 +19,7 @@ import com.szeastroc.icebox.enums.PutStatus;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.oldprocess.service.OrderInfoService;
+import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.util.wechatpay.WXPayUtil;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
@@ -73,7 +74,9 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoDao, OrderInfo> i
 
         String orderNum = CommonUtil.generateOrderNumber();
         //调用统一下单接口
-        String prepayId = weiXinService.createWeiXinPay(ip, iceChestInfo.getDepositMoney(), orderNum, openid);
+        ClientInfoRequest clientInfoRequest = new ClientInfoRequest();
+        clientInfoRequest.setIp(ip);
+        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest, iceChestInfo.getDepositMoney(), orderNum, openid);
         //创建订单
         OrderInfo orderInfo = new OrderInfo(iceChestInfo.getId(), chestPutRecordId, orderNum, openid, iceChestInfo.getDepositMoney(), prepayId);
         orderInfoDao.insert(orderInfo);

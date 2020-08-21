@@ -2115,8 +2115,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             iceBoxExtend.setLastApplyNumber(icePutApply.getApplyNumber());
             iceBoxExtend.setLastPutTime(icePutApply.getCreatedTime());
             iceBoxExtend.setLastPutId(icePutApply.getId());
-            iceBoxExtend.setLastExamineId(icePutApply.getExamineId());
-            iceBoxExtend.setLastExamineTime(icePutApply.getUpdateTime());
             iceBoxExtendDao.updateById(iceBoxExtend);
         }
 

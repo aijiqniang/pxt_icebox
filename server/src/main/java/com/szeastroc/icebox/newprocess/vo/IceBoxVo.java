@@ -106,4 +106,14 @@ public class IceBoxVo {
     private String applyTimeStr;
     private String detailAddress;
     private Integer applyCount;
+
+    /**
+     * 操作的业务员名称
+     */
+    private Integer userId;
+
+    /**
+     * 操作的业务员名称
+     */
+    private String userName;
 }

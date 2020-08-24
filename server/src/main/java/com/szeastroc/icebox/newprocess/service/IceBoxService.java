@@ -80,6 +80,8 @@ public interface IceBoxService extends IService<IceBox> {
 
 
     void exportExcel(IceBoxPage iceBoxPage)throws Exception;
+
+    void cancelApplyByNumber(IceBoxVo iceBoxVo);
 }
 
 

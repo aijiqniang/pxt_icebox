@@ -21,12 +21,14 @@ import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.BackType;
+import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
+import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.transfer.client.FeignTransferClient;
 import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
@@ -86,6 +88,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final FeignCusLabelClient feignCusLabelClient;
     private final PutStoreRelateModelDao putStoreRelateModelDao;
     private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
+    private final WeiXinConfig weiXinConfig;
 
     private final String group = "销售组长";
     private final String service = "服务处经理";
@@ -566,13 +569,21 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         TransferRequest transferRequest = TransferRequest.builder()
                 .resourceType(ResourceTypeEnum.FROM_ICEBOX.getType())
                 .resourceKey(String.valueOf(icePutOrder.getId()))
-                .wxappid(xcxConfig.getAppid())
+//                .wxappid(xcxConfig.getAppid())
                 .openid(icePutOrder.getOpenid())
 //                .paymentAmount(orderInfo.getPayMoney().multiply(new BigDecimal(100)))
                 .paymentAmount(icePutOrder.getPayMoney())
                 .wechatPayType(WechatPayTypeEnum.FOR_TRANSFER.getType())
-                .mchType(xcxConfig.getMchType())
+//                .mchType(xcxConfig.getMchType())
                 .build();
+
+        if(icePutOrder.getOrderSource().equals(OrderSourceEnums.OTOC.getType())) {
+            transferRequest.setWxappid(xcxConfig.getAppid());
+            transferRequest.setMchType(xcxConfig.getMchType());
+        } else if (icePutOrder.getOrderSource().equals(OrderSourceEnums.DMS.getType())) {
+            transferRequest.setWxappid(xcxConfig.getDmsAppId());
+            transferRequest.setMchType(xcxConfig.getDmsMchType());
+        }
 
         TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
 

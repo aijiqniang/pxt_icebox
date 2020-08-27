@@ -584,7 +584,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             transferRequest.setWxappid(xcxConfig.getDmsAppId());
             transferRequest.setMchType(xcxConfig.getDmsMchType());
         }
-
+        
+        log.info("转帐服务请求数据-->[{}]", JSON.toJSONString(transferRequest, true));
         TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
 
         log.info("转账服务返回的数据-->[{}]", JSON.toJSONString(transferReponse, true));

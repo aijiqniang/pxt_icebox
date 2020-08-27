@@ -117,7 +117,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         Integer putApplyRelateBoxId = icePutApplyRelateBox.getId();
 
 
-        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, putApplyRelateBoxId).ne(IceBackApply::getExamineStatus,3));
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, putApplyRelateBoxId).ne(IceBackApply::getExamineStatus, 3));
 
 
 //        selectIceBackOrder
@@ -535,11 +535,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                 .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
                 .last("limit 1"));
-        Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
-        PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
-        putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
-        putStoreRelateModel.setUpdateTime(new Date());
-        putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+        if (null != applyRelatePutStoreModel) {
+            Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+            PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
+            putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
+            putStoreRelateModel.setUpdateTime(new Date());
+            putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+        }
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
         iceBox.setPutStoreNumber("0");

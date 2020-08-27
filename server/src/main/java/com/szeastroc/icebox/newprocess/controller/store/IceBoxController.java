@@ -1,7 +1,9 @@
 package com.szeastroc.icebox.newprocess.controller.store;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
@@ -10,6 +12,9 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.icebox.enums.OrderStatus;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
@@ -420,4 +425,15 @@ public class IceBoxController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, flag);
     }
 
+
+    @RequestMapping("dealIceBoxOrder")
+    public CommonResponse<IceBox> dealIceBoxOrder() throws Exception {
+        List<IcePutOrder> icePutOrders = icePutOrderService.list(Wrappers.<IcePutOrder>lambdaQuery().eq(IcePutOrder::getStatus, OrderStatus.IS_PAY_ING.getStatus()));
+        if(CollectionUtil.isNotEmpty(icePutOrders)){
+            for(IcePutOrder order:icePutOrders){
+                this.loopPutOrderPayStatus(order.getOrderNum());
+            }
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
 }

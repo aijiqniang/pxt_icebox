@@ -18,7 +18,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -61,7 +60,10 @@ import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
-import com.szeastroc.visit.common.*;
+import com.szeastroc.visit.common.IceBoxPutModel;
+import com.szeastroc.visit.common.RequestExamineVo;
+import com.szeastroc.visit.common.SessionExamineCreateVo;
+import com.szeastroc.visit.common.SessionExamineVo;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -2289,26 +2291,26 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             throw new ImproperOptionException("不存在冰柜申请信息！");
         }
         relateModel.setPutStatus(PutStatus.NO_PUT.getStatus());
-        relateModel.setStatus(CommonStatus.INVALID.getStatus());
-        relateModel.setUpdateBy(iceBoxVo.getUserId());
-        relateModel.setUpdateByName(iceBoxVo.getUserName());
+//        relateModel.setStatus(CommonStatus.INVALID.getStatus());
+//        relateModel.setUpdateBy(iceBoxVo.getUserId());
+//        relateModel.setUpdateByName(iceBoxVo.getUserName());
         relateModel.setUpdateTime(new Date());
         putStoreRelateModelDao.updateById(relateModel);
         List<ExamineNodeVo> examineNodeVoList = iceBoxVo.getExamineNodeVoList();
-        for(ExamineNodeVo nodeVo:examineNodeVoList){
-            if(ExamineNodeStatusEnum.IS_PASS.getStatus().equals(nodeVo.getExamineStatus())){
-                SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
-                backlog.setBacklogName(iceBoxVo.getUserName()+"作废冰柜申请通知信息");
-                backlog.setCode(iceBoxVo.getApplyNumber());
-                backlog.setExamineId(nodeVo.getExamineId());
-                backlog.setExamineStatus(nodeVo.getExamineStatus());
-                backlog.setExamineType(11);
-                backlog.setSendType(1);
-                backlog.setSendUserId(nodeVo.getUserId());
-                backlog.setCreateBy(iceBoxVo.getUserId());
-                feignBacklogClient.createBacklog(backlog);
-            }
-        }
+//        for(ExamineNodeVo nodeVo:examineNodeVoList){
+//            if(ExamineNodeStatusEnum.IS_PASS.getStatus().equals(nodeVo.getExamineStatus())){
+//                SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
+//                backlog.setBacklogName(iceBoxVo.getUserName()+"作废冰柜申请通知信息");
+//                backlog.setCode(iceBoxVo.getApplyNumber());
+//                backlog.setExamineId(nodeVo.getExamineId());
+//                backlog.setExamineStatus(nodeVo.getExamineStatus());
+//                backlog.setExamineType(11);
+//                backlog.setSendType(1);
+//                backlog.setSendUserId(nodeVo.getUserId());
+//                backlog.setCreateBy(iceBoxVo.getUserId());
+//                feignBacklogClient.createBacklog(backlog);
+//            }
+//        }
 
     }
 

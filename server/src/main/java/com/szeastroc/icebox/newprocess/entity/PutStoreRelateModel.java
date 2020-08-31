@@ -67,11 +67,27 @@ public class PutStoreRelateModel {
     @TableField(value = "create_time")
     private Date createTime;
 
+//    /**
+//     * 更新人id
+//     */
+//    @TableField(value = "update_by")
+//    private Integer updateBy;
+//    /**
+//     * 更新人名称
+//     */
+//    @TableField(value = "update_by_name")
+//    private String updateByName;
     /**
      * 更新时间
      */
     @TableField(value = "update_time")
     private Date updateTime;
+
+//    /**
+//     * 申请状态：0-无效；1-有效
+//     */
+//    @TableField(value = "status")
+//    private Integer status;
 
 
 

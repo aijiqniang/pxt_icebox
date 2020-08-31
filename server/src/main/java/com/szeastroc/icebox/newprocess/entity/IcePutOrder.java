@@ -120,4 +120,10 @@ PAYERROR--支付失败(其他原因，如银行返回失败)
      */
     @TableField(value = "updated_time")
     private Date updatedTime;
+
+    /**
+     * 更新时间
+     */
+    @TableField(value = "order_source")
+    private Integer orderSource;
 }

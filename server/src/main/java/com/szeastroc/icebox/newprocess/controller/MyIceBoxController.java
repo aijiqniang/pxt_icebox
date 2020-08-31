@@ -178,4 +178,15 @@ public class MyIceBoxController {
         CompletableFuture.runAsync(() -> iceBoxService.autoAddLabel(), ExecutorServiceFactory.getInstance());
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
+
+    /**
+     * 根据申请编号作废申请信息
+     * @param iceBoxVo
+     * @return
+     */
+    @RequestMapping("cancelApplyByNumber")
+    public CommonResponse<IceBoxVo> cancelApplyByNumber(@RequestBody IceBoxVo iceBoxVo){
+        iceBoxService.cancelApplyByNumber(iceBoxVo);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
 }

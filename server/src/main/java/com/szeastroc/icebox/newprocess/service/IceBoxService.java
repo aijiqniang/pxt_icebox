@@ -5,10 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
-import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
@@ -82,6 +79,10 @@ public interface IceBoxService extends IService<IceBox> {
     void exportExcel(IceBoxPage iceBoxPage)throws Exception;
 
     void cancelApplyByNumber(IceBoxVo iceBoxVo);
+
+    List<IceBox> findIceBoxsBySupplierId(Integer supplierId);
+
+    Map<String, Object> transferIceBoxs(IceBoxTransferHistoryVo historyVo);
 }
 
 

@@ -8,6 +8,7 @@ import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.vo.IceBoxRequest;
@@ -188,5 +189,22 @@ public class MyIceBoxController {
     public CommonResponse<IceBoxVo> cancelApplyByNumber(@RequestBody IceBoxVo iceBoxVo){
         iceBoxService.cancelApplyByNumber(iceBoxVo);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
+    /**
+     * 根据申请编号作废申请信息
+     * @param historyVo
+     * @return
+     */
+    @RequestMapping("transferIceBoxs")
+    public CommonResponse<Map<String,Object>> transferIceBoxs(@RequestBody IceBoxTransferHistoryVo historyVo){
+        if (historyVo.getOldMarketAreaId() == null) {
+            throw new ImproperOptionException("冰柜所属经销商的营销区域为空！");
+        }
+        if (historyVo.getNewMarketAreaId() == null) {
+            throw new ImproperOptionException("冰柜转移经销商的营销区域为空！");
+        }
+        Map<String,Object> map = iceBoxService.transferIceBoxs(historyVo);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
     }
 }

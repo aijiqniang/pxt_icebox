@@ -54,16 +54,11 @@ import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.client.FeignXcxBaseClient;
-import com.szeastroc.user.common.vo.AddressVo;
-import com.szeastroc.user.common.vo.SessionUserInfoVo;
-import com.szeastroc.user.common.vo.SimpleUserInfoVo;
+import com.szeastroc.user.common.vo.*;
 import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
-import com.szeastroc.visit.common.IceBoxPutModel;
-import com.szeastroc.visit.common.RequestExamineVo;
-import com.szeastroc.visit.common.SessionExamineCreateVo;
-import com.szeastroc.visit.common.SessionExamineVo;
+import com.szeastroc.visit.common.*;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -2312,6 +2307,328 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 //            }
 //        }
 
+    }
+
+    @Override
+    public List<IceBox> findIceBoxsBySupplierId(Integer supplierId) {
+        List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, supplierId));
+        return iceBoxList;
+    }
+
+    @Override
+    public Map<String, Object> transferIceBoxs(IceBoxTransferHistoryVo historyVo) {
+
+        return null;
+    }
+
+    //创建冰柜转移申请审批流
+    private List<SessionExamineVo.VisitExamineNodeVo> createDBCheckProcess(IceBoxTransferHistoryVo historyVo) throws ImproperOptionException, NormalOptionException {
+
+        Date now = new Date();
+        log.info("订单所属人marketAreaId--》【{}】，供货商marketAreaId--》【{}】", historyVo.getOldMarketAreaId(), historyVo.getNewMarketAreaId());
+        SessionDeptInfoVo sameDept = FeignResponseUtil.getFeignData(feignDeptClient.getSameDeptInfoById(historyVo.getOldMarketAreaId(), historyVo.getNewMarketAreaId()));
+        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(historyVo.getCreateBy()));
+        Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(historyVo.getOldMarketAreaId()));
+        List<Integer> ids = new ArrayList<Integer>();
+        //获取上级部门领导
+        SessionUserInfoVo serviceUser = new SessionUserInfoVo();
+        SessionUserInfoVo regionUser = new SessionUserInfoVo();
+        SessionUserInfoVo businessUser = new SessionUserInfoVo();
+        SessionUserInfoVo yxbbUser = new SessionUserInfoVo();
+        Set<Integer> keySet = sessionUserInfoMap.keySet();
+        for (Integer key : keySet) {
+            SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(key);
+            if(userInfoVo == null){
+                continue;
+            }
+            if(DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())){
+                serviceUser = userInfoVo;
+                if(userInfoVo.getId() == null){
+                    serviceUser = null;
+                }
+                continue;
+            }
+            if(DeptTypeEnum.LARGE_AREA.getType().equals(userInfoVo.getDeptType())){
+                regionUser = userInfoVo;
+                if(userInfoVo.getId() == null){
+                    regionUser = null;
+                }
+                continue;
+            }
+            if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(userInfoVo.getDeptType())){
+                businessUser = userInfoVo;
+                if(userInfoVo.getId() == null){
+                    businessUser = null;
+                }
+                continue;
+            }
+            if(DeptTypeEnum.THIS_PART.getType().equals(userInfoVo.getDeptType())){
+                yxbbUser = userInfoVo;
+                if(userInfoVo.getId() == null){
+                    yxbbUser = null;
+                }
+                continue;
+            }
+        }
+
+        //调拨双方在同一服务处，只需服务处经理审核
+//        if (sameDept.getName().endsWith(FWC)) {
+        if (DeptTypeEnum.SERVICE.getType().equals(sameDept.getDeptType())) {
+
+            if(serviceUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+            }
+            //下单人是服务处经理，直接置为审核状态
+            if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))
+                    || DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())
+                    || DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())
+                    || DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
+                return updateIceBoxTransferIsCheck(historyVo);
+            }
+
+            //设置服务处经理
+            if (serviceUser.getId() != null && !serviceUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(serviceUser.getId())
+                    && (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType()) || DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType()))) {
+                ids.add(serviceUser.getId());
+            }
+            //如果没有审核人，判断当前下单人的第一个领导是否超出服务处范围，如果超出直接审核通过
+            if (CollectionUtil.isEmpty(ids)) {
+                List<SessionDeptInfoVo> deptInfoVos = getDeptInfoByUserId(sessionUserInfoMap, keySet);
+                if (CollectionUtil.isNotEmpty(deptInfoVos)) {
+                    for (SessionDeptInfoVo deptInfoVo : deptInfoVos) {
+                        if (DeptTypeEnum.LARGE_AREA.getType().equals(deptInfoVo.getDeptType())
+                                || DeptTypeEnum.BUSINESS_UNIT.getType().equals(deptInfoVo.getDeptType()) || DeptTypeEnum.THIS_PART.getType().equals(deptInfoVo.getDeptType())) {
+                            return updateIceBoxTransferIsCheck(historyVo);
+                        }
+                    }
+                }
+            }
+        }
+        //调拨双方在同一大区
+//        if (sameDept.getName().endsWith(DQ)) {
+        if (DeptTypeEnum.LARGE_AREA.getType().equals(sameDept.getDeptType())) {
+
+            if(regionUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
+            }
+            //下单人是大区总监，直接置为审核状态
+            if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))
+                    || (DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())
+                    || DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType()))) {
+                return updateIceBoxTransferIsCheck(historyVo);
+            }
+
+            if(serviceUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+            }
+            //设置服务处经理
+            if (serviceUser.getId() != null && !serviceUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(serviceUser.getId())
+                    && (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType()) || DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType()))) {
+                ids.add(serviceUser.getId());
+            }
+
+            //设置大区总监
+            if (regionUser.getId() != null && !regionUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(regionUser.getId())
+                    && !DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType()) && !DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType()) ) {
+                ids.add(regionUser.getId());
+            }
+            //如果没有审核人，判断当前下单人的第一个领导是否超出大区范围，如果超出直接审核通过
+            if (CollectionUtil.isEmpty(ids)) {
+                List<SessionDeptInfoVo> deptInfoVos = getDeptInfoByUserId(sessionUserInfoMap, keySet);
+                if (CollectionUtil.isNotEmpty(deptInfoVos)) {
+                    for (SessionDeptInfoVo deptInfoVo : deptInfoVos) {
+                        if (DeptTypeEnum.BUSINESS_UNIT.getType().equals(deptInfoVo.getDeptType()) || DeptTypeEnum.THIS_PART.getType().equals(deptInfoVo.getDeptType())) {
+                            return updateIceBoxTransferIsCheck(historyVo);
+                        }
+                    }
+                }
+            }
+        }
+
+        //调拨双方在同一事业部
+        if (DeptTypeEnum.BUSINESS_UNIT.getType().equals(sameDept.getDeptType())) {
+            if(businessUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部总经理！");
+            }
+            //下单人是事业部总经理，直接置为审核状态
+            if ((businessUser.getId() != null && businessUser.getId().equals(simpleUserInfoVo.getId()))
+                    || DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
+                return updateIceBoxTransferIsCheck(historyVo);
+            }
+
+            if(serviceUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+            }
+            //设置服务处经理
+            if (serviceUser.getId() != null && !serviceUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(serviceUser.getId())
+                    && (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType()) || DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType()))) {
+                ids.add(serviceUser.getId());
+            }
+            if(regionUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
+            }
+            //设置大区总监
+            if (regionUser.getId() != null && !regionUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(regionUser.getId())
+                    && !DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType()) && !DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
+                ids.add(regionUser.getId());
+            }
+
+            //设置事业部经理
+            if (businessUser.getId() != null && !businessUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(businessUser.getId())
+                    && !DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
+                ids.add(businessUser.getId());
+            }
+        }
+        //调拨双方在同一营销本部
+        if(DeptTypeEnum.THIS_PART.getType().equals(sameDept.getDeptType())){
+            if (yxbbUser == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，收货方营销本部找不到找不到上级审批人！");
+            }
+
+            //获取服务处经理
+            if(serviceUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+            }
+            if (serviceUser.getId() != null && !serviceUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(serviceUser.getId())
+                    && (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType()) || DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType()))) {
+                ids.add(serviceUser.getId());
+            }
+
+            //获取大区总监
+            if(regionUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
+            }
+            if (regionUser.getId() != null && !regionUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(regionUser.getId())
+                    && !DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType()) && !DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
+                ids.add(regionUser.getId());
+            }
+
+            //获取事业部总经理
+            if(businessUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部总经理！");
+            }
+            if (businessUser.getId() != null && !businessUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(businessUser.getId())
+                    && !DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
+                ids.add(businessUser.getId());
+            }
+
+            //获取收货方营销本部领导
+            if(!ids.contains(yxbbUser.getId())){
+                ids.add(yxbbUser.getId());
+            }
+
+        }
+
+        //调拨双方不在同一营销本部
+        if(sameDept != null && sameDept.getId().equals(1)){
+            if (yxbbUser == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，收货方营销本部找不到找不到上级审批人！");
+            }
+
+            //获取服务处经理
+            if(serviceUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+            }
+            if (serviceUser.getId() != null && !serviceUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(serviceUser.getId())
+                    && (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType()) || DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType()))) {
+                ids.add(serviceUser.getId());
+            }
+
+            //获取大区总监
+            if(regionUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
+            }
+            if (regionUser.getId() != null && !regionUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(regionUser.getId())
+                    && !DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType()) && !DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
+                ids.add(regionUser.getId());
+            }
+
+            //获取事业部总经理
+            if(businessUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部总经理！");
+            }
+            if (businessUser.getId() != null && !businessUser.getId().equals(historyVo.getCreateBy()) && !ids.contains(businessUser.getId())
+                    && !DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
+                ids.add(businessUser.getId());
+            }
+
+            //获取收货方营销本部领导
+//            Integer ownerBusinessId = FeignResponseUtil.getFeignData(feignDeptClient.getBusinessLeaderByDeptId(billInfo.getOwnerMarketAreaId()));
+            if(!ids.contains(yxbbUser.getId())){
+                ids.add(yxbbUser.getId());
+            }
+
+            //获取发货方营销本部领导
+            Integer supplierBusinessId = FeignResponseUtil.getFeignData(feignDeptClient.getBusinessLeaderByDeptId(historyVo.getNewMarketAreaId()));
+            if (supplierBusinessId == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，发货方营销本部找不到上级审批人！");
+            }
+            if(!ids.contains(supplierBusinessId)){
+                ids.add(supplierBusinessId);
+            }
+
+        }
+        if (CollectionUtil.isEmpty(ids)) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+        }
+
+        IceBoxTransferModel transferModel = new IceBoxTransferModel();
+
+        String transferNumber = UUID.randomUUID().toString().replace("-", "");
+        transferModel.setTransferNumber(transferNumber);
+
+        transferModel.setOldSupplierName(historyVo.getOldSupplierName());
+        transferModel.setNewSupplierName(historyVo.getNewSupplierName());
+        transferModel.setTransferCount(historyVo.getIceBoxIds().size());
+        transferModel.setCreateByName(historyVo.getCreateByName());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        transferModel.setCreateTimeStr(dateFormat.format(now));
+        List<Integer> iceBoxIds = historyVo.getIceBoxIds();
+        List<IceBox> iceBoxList = iceBoxDao.selectBatchIds(iceBoxIds);
+
+        if (CollectionUtil.isNotEmpty(iceBoxList)) {
+            for (IceBox iceBox : iceBoxList) {
+                transferModel.addIceModelList(iceBox.getAssetId(), iceBox.getModelName(), iceBox.getChestName(),iceBox.getDepositMoney());
+            }
+        }
+        SessionExamineVo sessionExamineVo = new SessionExamineVo();
+        SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
+                .code(transferNumber)
+                .relateCode(transferNumber)
+                .createBy(historyVo.getCreateBy())
+                .userIds(ids)
+                .build();
+        sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);
+        sessionExamineVo.setIceBoxTransferModel(transferModel);
+        SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxPut(sessionExamineVo));
+        List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
+        return visitExamineNodes;
+    }
+
+    private List<SessionDeptInfoVo> getDeptInfoByUserId(Map<Integer, SessionUserInfoVo> sessionUserInfoMap, Set<Integer> keySet) throws ImproperOptionException, NormalOptionException {
+        List<SessionDeptInfoVo> deptInfoVos;
+        List<Integer> userIds = new ArrayList<>();
+        for (Integer key : keySet) {
+            SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(key);
+            if (userInfoVo != null) {
+                userIds.add(userInfoVo.getId());
+                break;
+            }
+        }
+        CommonIdsVo commonIdsVo = new CommonIdsVo();
+        commonIdsVo.setIds(userIds);
+        Map<Integer, List<SessionDeptInfoVo>> userMap = FeignResponseUtil.getFeignData(feignUserClient.findDeptVoByUserids(commonIdsVo));
+
+        if (CollectionUtil.isNotEmpty(userIds)) {
+            deptInfoVos = userMap.get(userIds.get(0));
+            return deptInfoVos;
+        }
+        return null;
+    }
+
+    private List<SessionExamineVo.VisitExamineNodeVo> updateIceBoxTransferIsCheck(IceBoxTransferHistoryVo historyVo) {
+
+        return null;
     }
 
     private Map<String, Map<String, String>> getSuppMap(Map<String, Map<String, String>> storeMaps, List<String> storeNumbers) {

@@ -3,6 +3,7 @@ package com.szeastroc.icebox.client;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.client.constant.RegisterConstant;
 import com.szeastroc.icebox.vo.IceBoxRequest;
+import com.szeastroc.icebox.vo.IceBoxTransferHistoryVo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,4 +25,7 @@ public interface FeignIceBoxClient {
 
     @RequestMapping("/refund/updateExamineStatus")
     CommonResponse updateExamineStatus(@RequestBody IceBoxRequest iceBoxRequest);
+
+    @RequestMapping("/iceBox/dealTransferCheck")
+    CommonResponse<IceBoxTransferHistoryVo> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo);
 }

@@ -50,12 +50,12 @@ import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.icebox.vo.IceBoxRequest;
+import com.szeastroc.icebox.vo.IceBoxTransferHistoryVo;
 import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.client.FeignXcxBaseClient;
 import com.szeastroc.user.common.vo.*;
-import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import com.szeastroc.visit.common.*;
@@ -119,7 +119,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final FeignCusLabelClient feignCusLabelClient;
     private final ImageUploadUtil imageUploadUtil;
     private final FeignExportRecordsClient feignExportRecordsClient;
-    private final FeignBacklogClient feignBacklogClient;
+    private final IceBoxTransferHistoryDao iceBoxTransferHistoryDao;
 
 
     @Override
@@ -2316,14 +2316,61 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public Map<String, Object> transferIceBoxs(IceBoxTransferHistoryVo historyVo) {
+        List<Integer> iceBoxIds = historyVo.getIceBoxIds();
+        if(CollectionUtil.isEmpty(iceBoxIds)){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择要转移的冰柜！");
+        }
+        Map<String, Object> map = createIceBoxTransferCheckProcess(historyVo);
+        for(Integer iceBoxId:iceBoxIds){
+            IceBoxTransferHistory history = new IceBoxTransferHistory();
+            BeanUtils.copyProperties(historyVo,history);
+            history.setIceBoxId(iceBoxId);
+            history.setTransferNumber(map.get("transferNumber").toString());
+            history.setCreateTime(new Date());
+            iceBoxTransferHistoryDao.insert(history);
+        }
+        return map;
+    }
 
-        return null;
+    @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
+    public void dealTransferCheck(IceBoxTransferHistoryVo historyVo) {
+        List<IceBoxTransferHistory> iceBoxTransferHistoryList = iceBoxTransferHistoryDao.selectList(Wrappers.<IceBoxTransferHistory>lambdaQuery().eq(IceBoxTransferHistory::getTransferNumber, historyVo.getTransferNumber()));
+        if(CollectionUtil.isEmpty(iceBoxTransferHistoryList)){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "查询不到冰柜转移的申请！");
+        }
+        for(IceBoxTransferHistory history:iceBoxTransferHistoryList){
+            history.setExamineStatus(historyVo.getExamineStatus());
+            history.setUpdateTime(new Date());
+            iceBoxTransferHistoryDao.updateById(history);
+        }
+
+        if(ExamineStatus.PASS_EXAMINE.getStatus().equals(historyVo.getExamineStatus())){
+            List<Integer> iceBoxIds = iceBoxTransferHistoryList.stream().map(x -> x.getIceBoxId()).collect(Collectors.toList());
+            List<IceBox> iceBoxList = iceBoxDao.selectBatchIds(iceBoxIds);
+            if(CollectionUtil.isEmpty(iceBoxList)){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "不存在可转移的冰柜！");
+            }
+            Map<Integer, IceBox> iceBoxMap = iceBoxList.stream().collect(Collectors.toMap(IceBox::getId, x -> x));
+            for(IceBoxTransferHistory history:iceBoxTransferHistoryList){
+                IceBox iceBox = iceBoxMap.get(history.getIceBoxId());
+                if(iceBox == null){
+                    continue;
+                }
+                iceBox.setSupplierId(history.getNewSupplierId());
+                iceBox.setDeptId(history.getNewMarketAreaId());
+                iceBox.setUpdatedBy(history.getCreateBy());
+                iceBox.setUpdatedTime(new Date());
+                iceBoxDao.updateById(iceBox);
+            }
+        }
     }
 
     //创建冰柜转移申请审批流
-    private List<SessionExamineVo.VisitExamineNodeVo> createDBCheckProcess(IceBoxTransferHistoryVo historyVo) throws ImproperOptionException, NormalOptionException {
-
+    private Map<String, Object> createIceBoxTransferCheckProcess(IceBoxTransferHistoryVo historyVo) throws ImproperOptionException, NormalOptionException {
+        Map<String, Object> map = new HashMap<>();
         Date now = new Date();
         log.info("订单所属人marketAreaId--》【{}】，供货商marketAreaId--》【{}】", historyVo.getOldMarketAreaId(), historyVo.getNewMarketAreaId());
         SessionDeptInfoVo sameDept = FeignResponseUtil.getFeignData(feignDeptClient.getSameDeptInfoById(historyVo.getOldMarketAreaId(), historyVo.getNewMarketAreaId()));
@@ -2383,7 +2430,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     || DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())
                     || DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())
                     || DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
-                return updateIceBoxTransferIsCheck(historyVo);
+                return updateIceBoxTransferIsCheck(historyVo,map);
             }
 
             //设置服务处经理
@@ -2398,7 +2445,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     for (SessionDeptInfoVo deptInfoVo : deptInfoVos) {
                         if (DeptTypeEnum.LARGE_AREA.getType().equals(deptInfoVo.getDeptType())
                                 || DeptTypeEnum.BUSINESS_UNIT.getType().equals(deptInfoVo.getDeptType()) || DeptTypeEnum.THIS_PART.getType().equals(deptInfoVo.getDeptType())) {
-                            return updateIceBoxTransferIsCheck(historyVo);
+                            return updateIceBoxTransferIsCheck(historyVo,map);
                         }
                     }
                 }
@@ -2415,7 +2462,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))
                     || (DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())
                     || DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType()))) {
-                return updateIceBoxTransferIsCheck(historyVo);
+                return updateIceBoxTransferIsCheck(historyVo,map);
             }
 
             if(serviceUser == null ){
@@ -2438,7 +2485,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if (CollectionUtil.isNotEmpty(deptInfoVos)) {
                     for (SessionDeptInfoVo deptInfoVo : deptInfoVos) {
                         if (DeptTypeEnum.BUSINESS_UNIT.getType().equals(deptInfoVo.getDeptType()) || DeptTypeEnum.THIS_PART.getType().equals(deptInfoVo.getDeptType())) {
-                            return updateIceBoxTransferIsCheck(historyVo);
+                            return updateIceBoxTransferIsCheck(historyVo,map);
                         }
                     }
                 }
@@ -2453,7 +2500,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             //下单人是事业部总经理，直接置为审核状态
             if ((businessUser.getId() != null && businessUser.getId().equals(simpleUserInfoVo.getId()))
                     || DeptTypeEnum.THIS_PART.getType().equals(simpleUserInfoVo.getDeptType())) {
-                return updateIceBoxTransferIsCheck(historyVo);
+                return updateIceBoxTransferIsCheck(historyVo,map);
             }
 
             if(serviceUser == null ){
@@ -2588,7 +2635,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         if (CollectionUtil.isNotEmpty(iceBoxList)) {
             for (IceBox iceBox : iceBoxList) {
-                transferModel.addIceModelList(iceBox.getAssetId(), iceBox.getModelName(), iceBox.getChestName(),iceBox.getDepositMoney());
+                transferModel.addIceModelList(iceBox.getId(), iceBox.getAssetId(), iceBox.getModelName(), iceBox.getChestName(),iceBox.getChestMoney());
             }
         }
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
@@ -2600,9 +2647,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .build();
         sessionExamineVo.setSessionExamineCreateVo(sessionExamineCreateVo);
         sessionExamineVo.setIceBoxTransferModel(transferModel);
-        SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxPut(sessionExamineVo));
+        SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxTransfer(sessionExamineVo));
         List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
-        return visitExamineNodes;
+        map.put("iceBoxTransferNodes",visitExamineNodes);
+        map.put("transferNumber",transferNumber);
+        return map;
     }
 
     private List<SessionDeptInfoVo> getDeptInfoByUserId(Map<Integer, SessionUserInfoVo> sessionUserInfoMap, Set<Integer> keySet) throws ImproperOptionException, NormalOptionException {
@@ -2626,9 +2675,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         return null;
     }
 
-    private List<SessionExamineVo.VisitExamineNodeVo> updateIceBoxTransferIsCheck(IceBoxTransferHistoryVo historyVo) {
-
-        return null;
+    private Map<String, Object> updateIceBoxTransferIsCheck(IceBoxTransferHistoryVo historyVo, Map<String, Object> map) {
+        List<IceBox> iceBoxList = iceBoxDao.selectBatchIds(historyVo.getIceBoxIds());
+        if(CollectionUtil.isEmpty(iceBoxList)){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "不存在可转移的冰柜！");
+        }
+        for(IceBox iceBox:iceBoxList){
+            iceBox.setSupplierId(historyVo.getNewSupplierId());
+            iceBox.setDeptId(historyVo.getNewMarketAreaId());
+            iceBox.setUpdatedBy(historyVo.getCreateBy());
+            iceBox.setUpdatedTime(new Date());
+            iceBoxDao.updateById(iceBox);
+        }
+        map.put("isCheck", CommonIsCheckEnum.IS_CHECK.getStatus());
+        return map;
     }
 
     private Map<String, Map<String, String>> getSuppMap(Map<String, Map<String, String>> storeMaps, List<String> storeNumbers) {

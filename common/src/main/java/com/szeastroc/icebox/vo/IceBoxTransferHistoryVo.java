@@ -1,13 +1,11 @@
-package com.szeastroc.icebox.newprocess.vo;
+package com.szeastroc.icebox.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -15,6 +13,11 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class IceBoxTransferHistoryVo {
+
+    /**
+     *转移批号
+     */
+    private String transferNumber;
     /**
      *转移前经销商id
      */
@@ -44,6 +47,10 @@ public class IceBoxTransferHistoryVo {
      */
     private List<Integer> iceBoxIds;
     /**
+     *审批状态：0-未审核，1-审核中，2-通过，3-驳回
+     */
+    private Integer examineStatus;
+    /**
      *申请人
      */
     private Integer createBy;
@@ -51,4 +58,8 @@ public class IceBoxTransferHistoryVo {
      *申请人姓名
      */
     private String createByName;
+    /**
+     *申请时间
+     */
+    private Date createTime;
 }

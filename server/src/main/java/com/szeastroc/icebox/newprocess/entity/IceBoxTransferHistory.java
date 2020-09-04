@@ -31,6 +31,10 @@ public class IceBoxTransferHistory {
      */
     private String oldSupplierName;
     /**
+     *转移前经销商营销区域
+     */
+    private Integer oldMarketAreaId;
+    /**
      *转移后经销商id
      */
     private Integer newSupplierId;
@@ -39,9 +43,17 @@ public class IceBoxTransferHistory {
      */
     private String newSupplierName;
     /**
+     *转移后经销商营销区域
+     */
+    private Integer newMarketAreaId;
+    /**
      *冰柜id
      */
     private Integer iceBoxId;
+    /**
+     *审批状态：0-未审核，1-审核中，2-通过，3-驳回
+     */
+    private Integer examineStatus;
     /**
      *申请人
      */
@@ -54,4 +66,8 @@ public class IceBoxTransferHistory {
      *申请时间
      */
     private Date createTime;
+    /**
+     *更新时间
+     */
+    private Date updateTime;
 }

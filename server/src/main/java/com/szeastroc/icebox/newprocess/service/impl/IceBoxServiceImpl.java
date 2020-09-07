@@ -1518,16 +1518,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             String assetId = boxVo.getAssetId();// 设备编号
             // 根据 设备编号--东鹏资产id 校验此冰柜是否插入数据库
             if (StringUtils.isBlank(assetId)) {
-//                message.add(boxVo.getSerialNumber() + "行:设备编号为空");
-//                continue;
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备编号为空");
             }
 
             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).last(" limit 1"));
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getAssetId, assetId).last(" limit 1"));
             if ((iceBox == null && iceBoxExtend != null) || (iceBox != null && iceBoxExtend == null)) { // 两者要么同时存在,要不同时不存在
-//                message.add(boxVo.getSerialNumber() + "行:数据库存在脏数据");
-//                continue;
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:数据库存在脏数据");
             }
 
@@ -1539,8 +1535,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             String brandName = boxVo.getBrandName();// 生产厂家
             String modelStr = boxVo.getModelStr();// 设备型号
             if (iceModelMap == null || iceModelMap.get(modelStr) == null) {
-//                message.add(boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
-//                continue;
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
             }
             Integer modelId = iceModelMap.get(modelStr); // 设备型号
@@ -1552,8 +1546,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Integer supplierId = null;
             String supplierNumber = boxVo.getSupplierNumber();
             if (StringUtils.isBlank(supplierNumber)) {
-//                message.add(boxVo.getSerialNumber() + "行:经销商编号为空");
-//                continue;
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商编号为空");
             }
 
@@ -1564,8 +1556,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 // 去数据库查询
                 SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
                 if (infoVo == null) {
-//                    message.add(boxVo.getSerialNumber() + "行:经销商编号不存在");
-//                    continue;
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商编号不存在");
                 }
                 supplierId = infoVo.getSupplierId();
@@ -1581,25 +1571,25 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBox.setPutStatus(PutStatus.NO_PUT.getStatus()); // 未投放
                 iceBoxExtend = new IceBoxExtend();
             }
-            iceBox.setChestName(chestName);
-            iceBox.setAssetId(assetId);
-            iceBox.setModelId(modelId);
-            iceBox.setModelName(modelStr);
-            iceBox.setBrandName(brandName);
-            iceBox.setChestNorm(chestNorm);
-            iceBox.setChestMoney(new BigDecimal(chestMoney));
-            iceBox.setDepositMoney(new BigDecimal(depositMoney));
-            iceBox.setSupplierId(supplierId);
-            iceBox.setDeptId(deptId);
+            iceBox.setChestName(chestName)
+                    .setAssetId(assetId)
+                    .setModelId(modelId)
+                    .setModelName(modelStr)
+                    .setBrandName(brandName)
+                    .setChestNorm(chestNorm)
+                    .setChestMoney(new BigDecimal(chestMoney))
+                    .setDepositMoney(new BigDecimal(depositMoney))
+                    .setSupplierId(supplierId)
+                    .setDeptId(deptId);
 
-            iceBoxExtend.setExternalId(externalId);
-            iceBoxExtend.setAssetId(assetId);
-            iceBoxExtend.setBluetoothId(bluetoothId);
-            iceBoxExtend.setBluetoothMac(bluetoothMac);
-            iceBoxExtend.setQrCode(qrCode);
-            iceBoxExtend.setGpsMac(gpsMac);
-            iceBoxExtend.setReleaseTime(releaseTime);
-            iceBoxExtend.setRepairBeginTime(repairBeginTime);
+            iceBoxExtend.setExternalId(externalId)
+                    .setAssetId(assetId)
+                    .setBluetoothId(bluetoothId)
+                    .setBluetoothMac(bluetoothMac)
+                    .setQrCode(qrCode)
+                    .setGpsMac(gpsMac)
+                    .setReleaseTime(releaseTime)
+                    .setRepairBeginTime(repairBeginTime);
 
             /**
              * @Date: 2020/5/20 11:07 xiao
@@ -1607,8 +1597,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
              *  冰柜控制器ID  蓝牙设备ID     蓝牙设备地址     冰箱二维码链接 如果有值,必须是唯一的,不允许重复导入
              *  external_id   bluetooth_id  bluetooth_mac    qr_code
              */
-//            iceBoxExtendDao.selectCount(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getExternalId,externalId));
-
             if (iceBox.getId() == null) {
                 try {
                     iceBoxDao.insert(iceBox);
@@ -1734,7 +1722,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 .eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()));
                         List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getSupplierId, requestVo.getSupplierId())
                                 .eq(PutStoreRelateModel::getModelId, requestVo.getModelId())
-                                .ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus()));
+                                .ne(PutStoreRelateModel::getPutStatus, PutStatus.NO_PUT.getStatus()));
                         int allCount = 0;
                         int putCount = 0;
 
@@ -1976,7 +1964,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public IceBoxStatusVo checkIceBoxByQrcodeNew(String qrcode, String pxtNumber) {
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
-        log.info("扫描的二维码--》【{}】,pxtNumber--》【{}】",qrcode,pxtNumber);
+        log.info("扫描的二维码--》【{}】,pxtNumber--》【{}】", qrcode, pxtNumber);
         if (Objects.isNull(iceBoxExtend)) {
             // 冰柜不存在(二维码未找到)
             iceBoxStatusVo.setSignFlag(false);
@@ -2283,11 +2271,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Transactional
     public void cancelApplyByNumber(IceBoxVo iceBoxVo) {
         ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxVo.getApplyNumber()));
-        if(applyRelatePutStoreModel == null){
+        if (applyRelatePutStoreModel == null) {
             throw new ImproperOptionException("不存在冰柜申请信息！");
         }
         PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(applyRelatePutStoreModel.getStoreRelateModelId());
-        if(relateModel == null){
+        if (relateModel == null) {
             throw new ImproperOptionException("不存在冰柜申请信息！");
         }
         relateModel.setPutStatus(PutStatus.NO_PUT.getStatus());

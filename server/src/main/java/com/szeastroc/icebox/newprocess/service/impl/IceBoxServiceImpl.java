@@ -1514,6 +1514,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         //List<String> message = Lists.newArrayList();
         for (ImportIceBoxVo boxVo : importDataList) {
 
+            Integer serialNumber = boxVo.getSerialNumber(); // 序号
+            if(serialNumber==null){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "序号 不能为空");
+            }
             String externalId = boxVo.getExternalId();  // 冰箱控制器ID
             String assetId = boxVo.getAssetId();// 设备编号
             // 根据 设备编号--东鹏资产id 校验此冰柜是否插入数据库

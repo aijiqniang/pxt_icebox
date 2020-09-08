@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
@@ -16,7 +17,9 @@ import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
+import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -36,6 +39,7 @@ import com.szeastroc.transfer.common.request.TransferRequest;
 import com.szeastroc.transfer.common.response.TransferReponse;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
+import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignOutBacklogClient;
@@ -117,7 +121,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         Integer putApplyRelateBoxId = icePutApplyRelateBox.getId();
 
 
-        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, putApplyRelateBoxId).ne(IceBackApply::getExamineStatus,3));
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, putApplyRelateBoxId).ne(IceBackApply::getExamineStatus, 3));
 
 
 //        selectIceBackOrder
@@ -336,18 +340,24 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     @Override
     public IPage<IceDepositResponse> findRefundTransferByPage(IceDepositPage iceDepositPage) {
 
+        IPage<IceDepositResponse> page = new Page<>();
+
         // 主表条件
         String payEndTime = iceDepositPage.getPayEndTime();
         String payStartTime = iceDepositPage.getPayStartTime();
 
-        LambdaQueryWrapper<IceBackOrder> wrapper = Wrappers.<IceBackOrder>lambdaQuery();
+
+        LambdaQueryWrapper<IceBackApply> wrapper = Wrappers.<IceBackApply>lambdaQuery();
+
+        wrapper.eq(IceBackApply::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
+
 
         if (StringUtils.isNotBlank(payStartTime)) {
-            wrapper.ge(IceBackOrder::getUpdatedTime, payStartTime);
+            wrapper.ge(IceBackApply::getUpdatedTime, payStartTime);
         }
 
         if (StringUtils.isNotBlank(payEndTime)) {
-            wrapper.le(IceBackOrder::getUpdatedTime, payEndTime);
+            wrapper.le(IceBackApply::getUpdatedTime, payEndTime);
         }
 
         // 副表条件
@@ -358,70 +368,98 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         String contactMobile = iceDepositPage.getContactMobile();
         Integer marketAreaId = iceDepositPage.getMarketAreaId();
 
-        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
-        LambdaQueryWrapper<IceBoxExtend> iceBoxExtendWrapper = Wrappers.<IceBoxExtend>lambdaQuery();
-        LambdaQueryWrapper<IceBackApply> iceBackApplyWrapper = Wrappers.<IceBackApply>lambdaQuery();
-
-
         if (StringUtils.isNotBlank(clientNumber)) {
-            iceBackApplyWrapper.eq(IceBackApply::getBackStoreNumber, clientNumber);
+            wrapper.eq(IceBackApply::getBackStoreNumber, clientNumber);
         }
-
+        List<String> storeNumberList = new ArrayList<>();
         if (StringUtils.isNotBlank(clientName)) {
             List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByName(clientName));
+            if (CollectionUtil.isNotEmpty(storeInfoDtoVos)) {
+                storeNumberList.addAll(storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList()));
+            }
+            List<SimpleSupplierInfoVo> simpleSupplierInfoVos = FeignResponseUtil.getFeignData(feignSupplierClient.readLikeName(clientName));
 
-            List<String> storeNumberList = storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList());
-            iceBackApplyWrapper.in(IceBackApply::getBackStoreNumber, storeNumberList);
+            if (CollectionUtil.isNotEmpty(simpleSupplierInfoVos)) {
+                storeNumberList.addAll(simpleSupplierInfoVos.stream().map(SimpleSupplierInfoVo::getNumber).collect(Collectors.toList()));
+            }
         }
 
         if (StringUtils.isNotBlank(contactMobile)) {
             List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByMobile(contactMobile));
-            List<String> storeNumberList = storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList());
-            iceBackApplyWrapper.in(IceBackApply::getBackStoreNumber, storeNumberList);
+            if (CollectionUtil.isNotEmpty(storeInfoDtoVos)) {
+                storeNumberList.addAll(storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList()));
+            }
         }
-        if (StringUtils.isNotBlank(chestModel)) {
 
-            List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestName, chestModel));
-            List<Integer> iceModelIds = iceModels.stream().map(IceModel::getId).collect(Collectors.toList());
-
-            iceBoxWrapper.in(IceBox::getModelId, iceModelIds);
+        if (CollectionUtil.isNotEmpty(storeNumberList)) {
+            wrapper.in(IceBackApply::getBackStoreNumber, storeNumberList);
         }
+
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
 
         if (StringUtils.isNotBlank(assetId)) {
-            iceBoxExtendWrapper.like(IceBoxExtend::getAssetId, assetId);
+            iceBoxWrapper.eq(IceBox::getAssetId, assetId);
         }
+
+        if (StringUtils.isNotBlank(chestModel)) {
+            iceBoxWrapper.eq(IceBox::getModelName, chestModel);
+        }
+
 
         if (marketAreaId != null) {
             iceBoxWrapper.eq(IceBox::getDeptId, marketAreaId);
         }
 
-
-        // 取 iceBoxId 的交集
-
-        List<IceBox> iceBoxes = iceBoxDao.selectList(iceBoxWrapper);
-        List<IceBoxExtend> iceBoxExtends = iceBoxExtendDao.selectList(iceBoxExtendWrapper);
-        List<IceBackApply> iceBackApplies = iceBackApplyDao.selectList(iceBackApplyWrapper);
-
-        List<Integer> list = new ArrayList<>();
-
+        List<IceBox> iceBoxes = new ArrayList<>();
+        // 查询副表
+        if (StringUtils.isNotBlank(assetId) || StringUtils.isNotBlank(chestModel) || marketAreaId != null) {
+            iceBoxes = iceBoxDao.selectList(iceBoxWrapper);
+        }
         if (CollectionUtil.isNotEmpty(iceBoxes)) {
-
-
+            List<Integer> collect = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
+            List<IceBackOrder> iceBackOrders = iceBackOrderDao.selectList(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getBoxId, collect));
+            if (CollectionUtil.isNotEmpty(iceBackOrders)) {
+                List<String> backNumberList = iceBackOrders.stream().map(IceBackOrder::getApplyNumber).collect(Collectors.toList());
+                wrapper.in(IceBackApply::getApplyNumber, backNumberList);
+            }
         }
-        if (CollectionUtil.isNotEmpty(iceBoxExtends)) {
-
-
-        }
-        if (CollectionUtil.isNotEmpty(iceBackApplies)) {
-
-
-        }
-
-
-        IPage<IceBackOrder> iPage = iceBackOrderDao.selectPage(iceDepositPage, wrapper);
-
-
-        return null;
+        IPage<IceBackApply> iPage = iceBackApplyDao.selectPage(iceDepositPage, wrapper);
+        page = iPage.convert(iceBackApply -> {
+            IceDepositResponse iceDepositResponse = new IceDepositResponse();
+            String backStoreNumber = iceBackApply.getBackStoreNumber();
+            String applyNumber = iceBackApply.getApplyNumber();
+            IceBackOrder iceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getApplyNumber, applyNumber));
+            Integer boxId = iceBackOrder.getBoxId();
+            IceBox iceBox = iceBoxDao.selectById(boxId);
+            Map<String, SessionStoreInfoVo> storeInfoVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo((Collections.singletonList(backStoreNumber))));
+            SessionStoreInfoVo sessionStoreInfoVo = storeInfoVoMap.get(backStoreNumber);
+            if (null != sessionStoreInfoVo && StringUtils.isNotBlank(sessionStoreInfoVo.getStoreNumber())) {
+                iceDepositResponse.setClientNumber(backStoreNumber);
+                iceDepositResponse.setClientName(sessionStoreInfoVo.getStoreName());
+                iceDepositResponse.setContactName(sessionStoreInfoVo.getMemberName());
+                iceDepositResponse.setContactMobile(sessionStoreInfoVo.getMemberMobile());
+                iceDepositResponse.setClientPlace(sessionStoreInfoVo.getParserAddress());
+            } else {
+                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(backStoreNumber));
+                if (null != subordinateInfoVo && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+                    iceDepositResponse.setClientNumber(backStoreNumber);
+                    iceDepositResponse.setClientName(subordinateInfoVo.getName());
+                    iceDepositResponse.setContactName(subordinateInfoVo.getLinkman());
+                    iceDepositResponse.setContactMobile(subordinateInfoVo.getLinkmanMobile());
+                    iceDepositResponse.setClientPlace(subordinateInfoVo.getAddress());
+                }
+            }
+            SessionDeptInfoVo sessionDeptInfoVo = FeignResponseUtil.getFeignData(feignDeptClient.findSessionDeptById(iceBox.getDeptId()));
+            iceDepositResponse.setMarketAreaName(sessionDeptInfoVo.getName());
+            iceDepositResponse.setChestModel(iceBox.getModelName());
+            iceDepositResponse.setChestName(iceBox.getChestName());
+            iceDepositResponse.setAssetId(iceBox.getAssetId());
+            iceDepositResponse.setPayMoney(iceBackOrder.getAmount().toString());
+            iceDepositResponse.setPayTime(iceBackApply.getUpdatedTime().getTime());
+            iceDepositResponse.setChestMoney(iceBox.getChestMoney().toString());
+            return iceDepositResponse;
+        });
+        return page;
     }
 
     /**

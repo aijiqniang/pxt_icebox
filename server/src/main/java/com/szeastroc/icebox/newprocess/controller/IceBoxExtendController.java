@@ -100,7 +100,7 @@ public class IceBoxExtendController {
         HashSet<String> sets = Sets.newHashSet();
         String string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";//保存数字0-9 和 大小写字母
         int length = string.length();
-        for (int k = 1; k < num; k++) {
+        for (int k = 1; k <= num; k++) {
             StringBuilder sb = new StringBuilder(); //声明一个 StringBuilder 对象sb 保存 验证码
             sb.append("http://bx.szeastroc.com/");
             for (int i = 0; i < 13; i++) {
@@ -132,7 +132,7 @@ public class IceBoxExtendController {
         response.setContentType("application/vnd.ms-excel");
         response.setCharacterEncoding("utf-8");
         // 这里URLEncoder.encode可以防止中文乱码 当然和easyexcel没有关系
-        String fileName = URLEncoder.encode("二维码", "UTF-8");
+        String fileName = URLEncoder.encode("冰柜二维码", "UTF-8");
         // String fileName = "测试demo";
         response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
         EasyExcel.write(response.getOutputStream(), CodeVo.class).sheet("模板").doWrite(list);

@@ -1553,6 +1553,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (StringUtils.isBlank(supplierNumber)) {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商鹏讯通编号 为空");
             }
+            String supplierName = boxVo.getSupplierName(); // 经销商名称
+            if (StringUtils.isBlank(supplierName)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商名称 为空");
+            }
+            String deptName = boxVo.getDeptName(); // 所属服务处
+            if (StringUtils.isBlank(deptName)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:所属服务处 为空");
+            }
             Date releaseTime = boxVo.getReleaseTime();// 生产日期
             if (releaseTime == null) {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:生产日期 为空");

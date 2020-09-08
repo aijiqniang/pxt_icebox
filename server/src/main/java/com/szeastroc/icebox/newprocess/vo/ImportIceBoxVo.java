@@ -43,6 +43,10 @@ public class ImportIceBoxVo {
     private Long depositMoney;
     @ExcelProperty("经销商鹏讯通编号")
     private String supplierNumber;
+    @ExcelProperty("经销商名称")
+    private String supplierName;
+    @ExcelProperty("所属服务处")
+    private String deptName;
     @ExcelProperty("生产日期")
     private Date releaseTime;
     @ExcelProperty("保修起算日期")

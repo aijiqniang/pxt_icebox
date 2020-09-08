@@ -11,14 +11,17 @@ import lombok.Getter;
 public class IceBoxEnums {
 
     /**
-     * 冰柜状态 1:正常 0:异常
+     * 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
      */
     @Getter
     @AllArgsConstructor
     public enum StatusEnum {
 
+        ABNORMAL(0, "异常"),
         NORMAL(1, "正常"),
-        ABNORMAL(0, "异常");
+        SCRAP(2, "报废"),
+        LOSE(3, "遗失"),
+        REPAIR(4, "报修");
 
         private Integer type;
         private String desc;

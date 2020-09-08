@@ -97,6 +97,18 @@ public class IceExamine {
     @TableField(value = "gps_address")
     private String gpsAddress;
 
+    /**
+     * 冰柜状态
+     */
+    @TableField(value = "ice_status")
+    private Integer iceStatus;
+
+    /**
+     * 巡检备注
+     */
+    @TableField(value = "examin_msg")
+    private String examinMsg;
+
 
     public boolean validate() {
         return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)

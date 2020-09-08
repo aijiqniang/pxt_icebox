@@ -18,9 +18,11 @@ import com.szeastroc.common.utils.Streams;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignStoreRelateMemberClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.MemberInfoVo;
 import com.szeastroc.customer.common.vo.SimpleStoreVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
@@ -90,6 +92,8 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
     private IcePutOrderDao icePutOrderDao;
     @Autowired
     private FeignStoreClient feignStoreClient;
+    @Autowired
+    private FeignSupplierClient feignSupplierClient;
     @Autowired
     private FeignCacheClient feignCacheClient;
     @Autowired
@@ -264,6 +268,21 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         if(CollectionUtils.isNotEmpty(relateBoxIPage.getRecords())){
             //投放的门店信息
             List<SimpleStoreVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumbers(new ArrayList<>(storeNumbers)));
+            if(CollectionUtil.isEmpty(storeInfoDtoVos)){
+                storeInfoDtoVos = new ArrayList<>();
+            }
+
+            //投放的配送商信息
+            List<SubordinateInfoVo> subordinateInfoVos = FeignResponseUtil.getFeignData(feignSupplierClient.readByNumbers(new ArrayList<>(storeNumbers)));
+            if(CollectionUtil.isNotEmpty(subordinateInfoVos)){
+                for(SubordinateInfoVo infoVo:subordinateInfoVos){
+                    SimpleStoreVo simpleStoreVo = new SimpleStoreVo();
+                    simpleStoreVo.setStoreNumber(infoVo.getNumber());
+                    simpleStoreVo.setStoreName(infoVo.getName());
+                    simpleStoreVo.setAddress(infoVo.getAddress());
+                    storeInfoDtoVos.add(simpleStoreVo);
+                }
+            }
             //冰柜信息
             List<IceBox> iceBoxes = new ArrayList<>();
             List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));

@@ -14,6 +14,7 @@ import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
@@ -98,7 +99,12 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         //属于自己, 返回订单信息, 重新调起旧订单
         Map<String, String> datas = new HashMap<>();
-        datas.put("appId", weiXinConfig.getAppId());
+        if(OrderSourceEnums.OTOC.getType().equals(clientInfoRequest.getOrderSource())){
+            datas.put("appId", weiXinConfig.getAppId());
+        }else {
+            datas.put("appId", weiXinConfig.getDmsappId());
+        }
+//        datas.put("appId", weiXinConfig.getAppId());
         datas.put("timeStamp", String.valueOf(System.currentTimeMillis()));
         datas.put("nonceStr", WXPayUtil.generateNonceStr());
         datas.put("package", "prepay_id=" + icePutOrder.getPrayId());
@@ -114,7 +120,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
          */
         String orderNum = CommonUtil.generateOrderNumber();
         //调用统一下单接口
-        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest.getIp(), iceBox.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
+        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest, iceBox.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
         //创建订单
         IcePutOrder icePutOrder = new IcePutOrder();
         icePutOrder.setChestId(iceBox.getId());
@@ -125,6 +131,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         icePutOrder.setPayMoney(iceBox.getDepositMoney());
         icePutOrder.setPrayId(prepayId);
         icePutOrder.setStatus(OrderStatus.IS_PAY_ING.getStatus());
+        icePutOrder.setOrderSource(clientInfoRequest.getOrderSource());
         icePutOrder.setCreatedBy(0);
         icePutOrder.setCreatedTime(new Date());
         icePutOrder.setUpdatedBy(0);

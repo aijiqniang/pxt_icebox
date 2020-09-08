@@ -27,6 +27,10 @@ public class WeiXinConfig {
 
 	private Order order;
 
+	private String dmsappId;
+
+	private String dmsappSecret;
+
 	@Data
 	public static class Order{
 

@@ -3,6 +3,8 @@ package com.szeastroc.icebox.util.wechatpay;
 import com.alibaba.fastjson.JSON;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.utils.HttpUtils;
+import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
+import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -43,16 +45,21 @@ public class WeiXinService {
 		return JSON.parseObject(result).getString("openid");
 	}
 
-	public String createWeiXinPay(String ip, BigDecimal money, String orderNumber, String openid) {
+	public String createWeiXinPay(ClientInfoRequest clientInfoRequest, BigDecimal money, String orderNumber, String openid) {
 		try {
 			Map<String, String> data = new HashMap<String, String>();
-			data.put("appid", weiXinConfig.getAppId());
+			if(OrderSourceEnums.OTOC.getType().equals(clientInfoRequest.getOrderSource())){
+				data.put("appid", weiXinConfig.getAppId());
+			}else {
+				data.put("appid", weiXinConfig.getDmsappId());
+			}
+
 			data.put("mch_id", weiXinConfig.getMchId());
 			data.put("nonce_str", WXPayUtil.generateNonceStr());
 			data.put("body", "E人E店");
 			data.put("out_trade_no", orderNumber);
 			data.put("total_fee", String.valueOf(money.multiply(new BigDecimal(100)).intValue()));
-			data.put("spbill_create_ip", ip);
+			data.put("spbill_create_ip", clientInfoRequest.getIp());
 			data.put("notify_url", weiXinConfig.getNotifyUrl());
 			data.put("trade_type", "JSAPI");
 			data.put("openid", openid);

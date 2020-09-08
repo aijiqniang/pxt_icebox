@@ -27,6 +27,7 @@ public class ClientInfoRequest {
     private String ip;
     private String openid;
     private String qrcode;
+    private Integer orderSource;//1-otoc,2-dms
 
     public boolean validate(){
 //        if(StringUtils.isBlank(clientName) || StringUtils.isBlank(clientNumber) || StringUtils.isBlank(marketAreaId)

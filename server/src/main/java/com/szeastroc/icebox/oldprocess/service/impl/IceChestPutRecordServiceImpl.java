@@ -552,7 +552,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
          */
         String orderNum = CommonUtil.generateOrderNumber();
         //调用统一下单接口
-        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest.getIp(), iceChestInfo.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
+        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest, iceChestInfo.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
         //创建订单
         OrderInfo orderInfo = new OrderInfo(iceChestInfo.getId(), iceChestPutRecord.getId(), orderNum, clientInfoRequest.getOpenid(), iceChestInfo.getDepositMoney(), prepayId);
         orderInfoDao.insert(orderInfo);
@@ -610,7 +610,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
          */
         String orderNum = CommonUtil.generateOrderNumber();
         //调用统一下单接口
-        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest.getIp(), iceChestInfo.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
+        String prepayId = weiXinService.createWeiXinPay(clientInfoRequest, iceChestInfo.getDepositMoney(), orderNum, clientInfoRequest.getOpenid());
         //创建订单
         OrderInfo newOrderInfo = new OrderInfo(iceChestInfo.getId(), orderNum, clientInfoRequest.getOpenid(), iceChestInfo.getDepositMoney(), prepayId);
         if (iceChestPutRecord.getReceiveClientId().equals(clientInfo.getId())) {

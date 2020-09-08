@@ -25,12 +25,14 @@ import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.BackType;
+import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
+import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.transfer.client.FeignTransferClient;
 import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
@@ -91,6 +93,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final FeignCusLabelClient feignCusLabelClient;
     private final PutStoreRelateModelDao putStoreRelateModelDao;
     private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
+    private final WeiXinConfig weiXinConfig;
 
     private final String group = "销售组长";
     private final String service = "服务处经理";
@@ -573,11 +576,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                 .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
                 .last("limit 1"));
-        Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
-        PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
-        putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
-        putStoreRelateModel.setUpdateTime(new Date());
-        putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+        if (null != applyRelatePutStoreModel) {
+            Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+            PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
+            putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
+            putStoreRelateModel.setUpdateTime(new Date());
+            putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+        }
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
         iceBox.setPutStoreNumber("0");
@@ -605,14 +610,23 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         TransferRequest transferRequest = TransferRequest.builder()
                 .resourceType(ResourceTypeEnum.FROM_ICEBOX.getType())
                 .resourceKey(String.valueOf(icePutOrder.getId()))
-                .wxappid(xcxConfig.getAppid())
+//                .wxappid(xcxConfig.getAppid())
                 .openid(icePutOrder.getOpenid())
 //                .paymentAmount(orderInfo.getPayMoney().multiply(new BigDecimal(100)))
                 .paymentAmount(icePutOrder.getPayMoney())
                 .wechatPayType(WechatPayTypeEnum.FOR_TRANSFER.getType())
-                .mchType(xcxConfig.getMchType())
+//                .mchType(xcxConfig.getMchType())
                 .build();
 
+        if(icePutOrder.getOrderSource().equals(OrderSourceEnums.OTOC.getType())) {
+            transferRequest.setWxappid(xcxConfig.getAppid());
+            transferRequest.setMchType(xcxConfig.getMchType());
+        } else if (icePutOrder.getOrderSource().equals(OrderSourceEnums.DMS.getType())) {
+            transferRequest.setWxappid(xcxConfig.getDmsAppId());
+            transferRequest.setMchType(xcxConfig.getDmsMchType());
+        }
+        
+        log.info("转帐服务请求数据-->[{}]", JSON.toJSONString(transferRequest, true));
         TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
 
         log.info("转账服务返回的数据-->[{}]", JSON.toJSONString(transferReponse, true));
@@ -632,11 +646,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         IceBox iceBox = iceBoxDao.selectById(iceBoxId);
         String putStoreNumber = iceBox.getPutStoreNumber();
 
-        Map<String, SessionStoreInfoVo> map = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Collections.singletonList(putStoreNumber)));
+        // 查询门店的主业务员
+        Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(putStoreNumber));
 
-        SessionStoreInfoVo sessionStoreInfoVo = map.get(putStoreNumber);
 
-        Integer userId = sessionStoreInfoVo.getUserId();
+        if (null == userId) {
+            // 查询配送上的主业务员
+            userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(putStoreNumber));
+        }
+
 
         String assetId = iceBoxExtend.getAssetId();
         String relateCode = prefix + "_" + assetId;

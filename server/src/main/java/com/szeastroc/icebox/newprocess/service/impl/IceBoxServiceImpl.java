@@ -1518,8 +1518,50 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             String assetId = boxVo.getAssetId();// 设备编号
             // 根据 设备编号--东鹏资产id 校验此冰柜是否插入数据库
             if (StringUtils.isBlank(assetId)) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备编号为空");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备编号 为空");
             }
+            String qrCode = boxVo.getQrCode();// 冰箱二维码
+            if (StringUtils.isBlank(qrCode)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰箱二维码链接 为空");
+            }
+
+            String chestName = boxVo.getChestName();// 设备名称
+            if (StringUtils.isBlank(chestName)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备名称 为空");
+            }
+            String brandName = boxVo.getBrandName();// 生产厂家
+            if (StringUtils.isBlank(brandName)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:生产厂家 为空");
+            }
+            String modelStr = boxVo.getModelStr();// 设备型号
+            if (StringUtils.isBlank(modelStr)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备型号 为空");
+            }
+            String chestNorm = boxVo.getChestNorm();// 设备规格
+            if (StringUtils.isBlank(chestNorm)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备规格 为空");
+            }
+            Long chestMoney = boxVo.getChestMoney();// 冰柜价值
+            if (chestMoney == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜价值 为空");
+            }
+            Long depositMoney = boxVo.getDepositMoney();// 冰柜押金
+            if (depositMoney == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜押金 为空");
+            }
+            String supplierNumber = boxVo.getSupplierNumber();
+            if (StringUtils.isBlank(supplierNumber)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商鹏讯通编号 为空");
+            }
+            Date releaseTime = boxVo.getReleaseTime();// 生产日期
+            if (releaseTime == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:生产日期 为空");
+            }
+            Date repairBeginTime = boxVo.getRepairBeginTime();// 保修起算日期
+            if (repairBeginTime == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:保修起算日期 为空");
+            }
+
 
             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).last(" limit 1"));
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getAssetId, assetId).last(" limit 1"));
@@ -1529,26 +1571,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
             String bluetoothId = boxVo.getBluetoothId();// 蓝牙设备ID
             String bluetoothMac = boxVo.getBluetoothMac();// 蓝牙设备地址
-            String qrCode = boxVo.getQrCode();// 冰箱二维码
             String gpsMac = boxVo.getGpsMac();// gps模块MAC
-            String chestName = boxVo.getChestName();// 设备名称
-            String brandName = boxVo.getBrandName();// 生产厂家
-            String modelStr = boxVo.getModelStr();// 设备型号
+
             if (iceModelMap == null || iceModelMap.get(modelStr) == null) {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:设备型号不存在于数据库");
             }
             Integer modelId = iceModelMap.get(modelStr); // 设备型号
-            String chestNorm = boxVo.getChestNorm();// 设备规格
-            Long chestMoney = boxVo.getChestMoney();// 冰柜价值
-            Long depositMoney = boxVo.getDepositMoney();// 冰柜押金
+
 
             // 经销商id
             Integer supplierId = null;
-            String supplierNumber = boxVo.getSupplierNumber();
-            if (StringUtils.isBlank(supplierNumber)) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商编号为空");
-            }
-
             SubordinateInfoVo subordinateInfoVo = supplierNumberMap.get(supplierNumber);
             if (subordinateInfoVo != null && subordinateInfoVo.getSupplierId() != null) {
                 supplierId = subordinateInfoVo.getSupplierId();
@@ -1563,9 +1595,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             // 鉴于服务处就是对应经销商的服务处,所以直接用经销商的
             Integer deptId = supplierNumberMap.get(supplierNumber).getMarketAreaId(); // 所属服务处
-            Date releaseTime = boxVo.getReleaseTime();// 生产日期
-            Date repairBeginTime = boxVo.getRepairBeginTime();// 保修起算日期
-
             if (iceBox == null) {
                 iceBox = new IceBox();
                 iceBox.setPutStatus(PutStatus.NO_PUT.getStatus()); // 未投放

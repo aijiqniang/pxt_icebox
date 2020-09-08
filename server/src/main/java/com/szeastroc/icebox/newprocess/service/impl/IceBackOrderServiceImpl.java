@@ -537,11 +537,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                 .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
                 .last("limit 1"));
-        Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
-        PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
-        putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
-        putStoreRelateModel.setUpdateTime(new Date());
-        putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+        if (null != applyRelatePutStoreModel) {
+            Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+            PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
+            putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
+            putStoreRelateModel.setUpdateTime(new Date());
+            putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+        }
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
         iceBox.setPutStoreNumber("0");
@@ -584,7 +586,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             transferRequest.setWxappid(xcxConfig.getDmsAppId());
             transferRequest.setMchType(xcxConfig.getDmsMchType());
         }
-
+        
+        log.info("转帐服务请求数据-->[{}]", JSON.toJSONString(transferRequest, true));
         TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
 
         log.info("转账服务返回的数据-->[{}]", JSON.toJSONString(transferReponse, true));

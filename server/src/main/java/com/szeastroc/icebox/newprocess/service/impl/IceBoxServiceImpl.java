@@ -21,9 +21,7 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.common.utils.ImageUploadUtil;
-import com.szeastroc.common.utils.Streams;
+import com.szeastroc.common.utils.*;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
@@ -82,6 +80,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -2286,21 +2285,26 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Override
     @Transactional
     public void cancelApplyByNumber(IceBoxVo iceBoxVo) {
-        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxVo.getApplyNumber()));
-        if(applyRelatePutStoreModel == null){
+        List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxVo.getApplyNumber()));
+        if(CollectionUtil.isEmpty(applyRelatePutStoreModels)){
             throw new ImproperOptionException("不存在冰柜申请信息！");
         }
-        PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(applyRelatePutStoreModel.getStoreRelateModelId());
-        if(relateModel == null){
-            throw new ImproperOptionException("不存在冰柜申请信息！");
+        for(ApplyRelatePutStoreModel applyRelatePutStoreModel : applyRelatePutStoreModels){
+            PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(applyRelatePutStoreModel.getStoreRelateModelId());
+            if(relateModel == null){
+                throw new ImproperOptionException("不存在冰柜申请信息！");
+            }
+            relateModel.setCancelMsg(iceBoxVo.getCancelMsg());
+            relateModel.setPutStatus(PutStatus.NO_PUT.getStatus());
+            relateModel.setStatus(CommonStatus.INVALID.getStatus());
+            relateModel.setUpdateBy(iceBoxVo.getUserId());
+            relateModel.setUpdateByName(iceBoxVo.getUserName());
+            relateModel.setUpdateTime(new Date());
+            putStoreRelateModelDao.updateById(relateModel);
         }
-        relateModel.setCancelMsg(iceBoxVo.getCancelMsg());
-        relateModel.setPutStatus(PutStatus.NO_PUT.getStatus());
-        relateModel.setStatus(CommonStatus.INVALID.getStatus());
-        relateModel.setUpdateBy(iceBoxVo.getUserId());
-        relateModel.setUpdateByName(iceBoxVo.getUserName());
-        relateModel.setUpdateTime(new Date());
-        putStoreRelateModelDao.updateById(relateModel);
+        this.deleteBacklogByCode(iceBoxVo);
+
+
         List<ExamineNodeVo> examineNodeVoList = iceBoxVo.getExamineNodeVoList();
         for(ExamineNodeVo nodeVo:examineNodeVoList){
             if(ExamineNodeStatusEnum.IS_PASS.getStatus().equals(nodeVo.getExamineStatus())){
@@ -2317,6 +2321,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
 
+    }
+
+    private void deleteBacklogByCode(IceBoxVo iceBoxVo) {
+        SessionVisitExamineBacklog log = new SessionVisitExamineBacklog();
+        log.setCode(iceBoxVo.getApplyNumber());
+        feignBacklogClient.deleteBacklogByCode(log);
     }
 
     @Override

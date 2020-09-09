@@ -250,7 +250,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
         }
         Set<String> applyNumbers = icePutApplys.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
-        IPage<IcePutApplyRelateBox> relateBoxIPage = icePutApplyRelateBoxDao.selectPage(iceDepositPage, Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
+        IPage<IcePutApplyRelateBox> relateBoxIPage = icePutApplyRelateBoxDao.selectPage(iceDepositPage, Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers).eq(IcePutApplyRelateBox::getFreeType,FreePayTypeEnum.UN_FREE.getType()));
 
         Map<String, IcePutApply> putApplyMap = icePutApplys.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
         Set<String> storeNumbers = new HashSet<>();

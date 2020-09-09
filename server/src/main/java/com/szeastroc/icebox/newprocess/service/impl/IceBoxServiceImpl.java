@@ -2309,7 +2309,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 backlog.setCode(iceBoxVo.getApplyNumber());
                 backlog.setExamineId(nodeVo.getExamineId());
                 backlog.setExamineStatus(nodeVo.getExamineStatus());
-                backlog.setExamineType(111);
+                backlog.setExamineType(11);
                 backlog.setSendType(1);
                 backlog.setSendUserId(nodeVo.getUserId());
                 backlog.setCreateBy(iceBoxVo.getUserId());

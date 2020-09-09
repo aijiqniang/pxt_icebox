@@ -433,7 +433,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         }
         if (CollectionUtil.isNotEmpty(iceBoxes)) {
             List<Integer> collect = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
-            List<IceBackOrder> iceBackOrders = iceBackOrderDao.selectList(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getBoxId, collect));
+            List<IceBackOrder> iceBackOrders = iceBackOrderDao.selectList(Wrappers.<IceBackOrder>lambdaQuery().in(IceBackOrder::getBoxId, collect));
             if (CollectionUtil.isNotEmpty(iceBackOrders)) {
                 List<String> backNumberList = iceBackOrders.stream().map(IceBackOrder::getApplyNumber).collect(Collectors.toList());
                 wrapper.in(IceBackApply::getApplyNumber, backNumberList);
@@ -580,7 +580,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             }
             if (CollectionUtil.isNotEmpty(iceBoxes)) {
                 List<Integer> collect = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
-                List<IceBackOrder> iceBackOrders = iceBackOrderDao.selectList(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getBoxId, collect));
+                List<IceBackOrder> iceBackOrders = iceBackOrderDao.selectList(Wrappers.<IceBackOrder>lambdaQuery().in(IceBackOrder::getBoxId, collect));
                 if (CollectionUtil.isNotEmpty(iceBackOrders)) {
                     List<String> backNumberList = iceBackOrders.stream().map(IceBackOrder::getApplyNumber).collect(Collectors.toList());
                     wrapper.in(IceBackApply::getApplyNumber, backNumberList);

@@ -13,6 +13,7 @@ import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
@@ -20,6 +21,7 @@ import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
+import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -32,6 +34,10 @@ import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
+import com.szeastroc.icebox.rabbitMQ.DataPack;
+import com.szeastroc.icebox.rabbitMQ.DirectProducer;
+import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
+import com.szeastroc.icebox.util.NewExcelUtil;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.transfer.client.FeignTransferClient;
@@ -41,9 +47,11 @@ import com.szeastroc.transfer.common.request.TransferRequest;
 import com.szeastroc.transfer.common.response.TransferReponse;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
+import com.szeastroc.user.common.session.UserManageVo;
 import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
+import com.szeastroc.visit.client.FeignExportRecordsClient;
 import com.szeastroc.visit.client.FeignOutBacklogClient;
 import com.szeastroc.visit.client.FeignOutExamineClient;
 import com.szeastroc.visit.common.NoticeBacklogRequestVo;
@@ -61,6 +69,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -100,6 +109,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final String serviceOther = "服务处副经理";
     private final String divion = "大区总监";
     private final String divionOther = "大区副总监";
+    private final FeignExportRecordsClient feignExportRecordsClient;
+    private final JedisClient jedisClient;
+
+    private final DirectProducer directProducer;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -457,12 +470,170 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             iceDepositResponse.setChestModel(iceBox.getModelName());
             iceDepositResponse.setChestName(iceBox.getChestName());
             iceDepositResponse.setAssetId(iceBox.getAssetId());
-            iceDepositResponse.setPayMoney(iceBackOrder.getAmount().toString());
+            iceDepositResponse.setPayMoney("-" + iceBackOrder.getAmount().toString());
             iceDepositResponse.setPayTime(iceBackApply.getUpdatedTime().getTime());
             iceDepositResponse.setChestMoney(iceBox.getChestMoney().toString());
             return iceDepositResponse;
         });
         return page;
+    }
+
+    @Override
+    public void exportRefundTransferByMq(IceDepositPage iceDepositPage) {
+
+        // 从session 中获取用户信息
+        UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
+        Integer userId = userManageVo.getSessionUserInfoVo().getId();
+        String userName = userManageVo.getSessionUserInfoVo().getRealname();
+        // 控制导出的请求频率
+        String key = "ice_refund_export_excel_" + userId;
+        String value = jedisClient.get(key);
+//        if (StringUtils.isNotBlank(value)) {
+//            throw new NormalOptionException(Constants.API_CODE_FAIL, "请到“首页-下载任务”中查看导出结果，请勿频繁操作(间隔3分钟)...");
+//        }
+        jedisClient.setnx(key, userId.toString(), 180);
+        // 塞入数据到下载列表中  exportRecordId
+        Integer exportRecordId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userId, userName, JSON.toJSONString(iceDepositPage), "冰柜记录导出"));
+        iceDepositPage.setExportRecordId(exportRecordId);
+        // 塞入部门集合
+        DataPack dataPack = new DataPack(); // 数据包
+        dataPack.setMethodName(MethodNameOfMQ.EXPORT_ICE_REFUND);
+        dataPack.setObj(iceDepositPage);
+        directProducer.sendMsg(MqConstant.directRoutingKey, dataPack);
+    }
+
+    @Override
+    public void exportRefundTransfer(IceDepositPage iceDepositPage) {
+        try {
+            // 主表条件
+            String payEndTime = iceDepositPage.getPayEndTime();
+            String payStartTime = iceDepositPage.getPayStartTime();
+
+
+            LambdaQueryWrapper<IceBackApply> wrapper = Wrappers.<IceBackApply>lambdaQuery();
+
+            wrapper.eq(IceBackApply::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
+
+
+            if (StringUtils.isNotBlank(payStartTime)) {
+                wrapper.ge(IceBackApply::getUpdatedTime, payStartTime);
+            }
+
+            if (StringUtils.isNotBlank(payEndTime)) {
+                wrapper.le(IceBackApply::getUpdatedTime, payEndTime);
+            }
+
+            // 副表条件
+            String assetId = iceDepositPage.getAssetId();
+            String chestModel = iceDepositPage.getChestModel();
+            String clientName = iceDepositPage.getClientName();
+            String clientNumber = iceDepositPage.getClientNumber();
+            String contactMobile = iceDepositPage.getContactMobile();
+            Integer marketAreaId = iceDepositPage.getMarketAreaId();
+
+            if (StringUtils.isNotBlank(clientNumber)) {
+                wrapper.eq(IceBackApply::getBackStoreNumber, clientNumber);
+            }
+            List<String> storeNumberList = new ArrayList<>();
+            if (StringUtils.isNotBlank(clientName)) {
+                List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByName(clientName));
+                if (CollectionUtil.isNotEmpty(storeInfoDtoVos)) {
+                    storeNumberList.addAll(storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList()));
+                }
+                List<SimpleSupplierInfoVo> simpleSupplierInfoVos = FeignResponseUtil.getFeignData(feignSupplierClient.readLikeName(clientName));
+
+                if (CollectionUtil.isNotEmpty(simpleSupplierInfoVos)) {
+                    storeNumberList.addAll(simpleSupplierInfoVos.stream().map(SimpleSupplierInfoVo::getNumber).collect(Collectors.toList()));
+                }
+            }
+
+            if (StringUtils.isNotBlank(contactMobile)) {
+                List<StoreInfoDtoVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getByMobile(contactMobile));
+                if (CollectionUtil.isNotEmpty(storeInfoDtoVos)) {
+                    storeNumberList.addAll(storeInfoDtoVos.stream().map(StoreInfoDtoVo::getStoreNumber).collect(Collectors.toList()));
+                }
+            }
+
+            if (CollectionUtil.isNotEmpty(storeNumberList)) {
+                wrapper.in(IceBackApply::getBackStoreNumber, storeNumberList);
+            }
+
+            LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+
+            if (StringUtils.isNotBlank(assetId)) {
+                iceBoxWrapper.eq(IceBox::getAssetId, assetId);
+            }
+
+            if (StringUtils.isNotBlank(chestModel)) {
+                iceBoxWrapper.eq(IceBox::getModelName, chestModel);
+            }
+
+
+            if (marketAreaId != null) {
+                iceBoxWrapper.eq(IceBox::getDeptId, marketAreaId);
+            }
+
+            List<IceBox> iceBoxes = new ArrayList<>();
+            // 查询副表
+            if (StringUtils.isNotBlank(assetId) || StringUtils.isNotBlank(chestModel) || marketAreaId != null) {
+                iceBoxes = iceBoxDao.selectList(iceBoxWrapper);
+            }
+            if (CollectionUtil.isNotEmpty(iceBoxes)) {
+                List<Integer> collect = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
+                List<IceBackOrder> iceBackOrders = iceBackOrderDao.selectList(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getBoxId, collect));
+                if (CollectionUtil.isNotEmpty(iceBackOrders)) {
+                    List<String> backNumberList = iceBackOrders.stream().map(IceBackOrder::getApplyNumber).collect(Collectors.toList());
+                    wrapper.in(IceBackApply::getApplyNumber, backNumberList);
+                }
+            }
+            List<IceBackApply> iceBackApplyList = iceBackApplyDao.selectList(wrapper);
+            if (CollectionUtil.isNotEmpty(iceBackApplyList)) {
+                String fileName = "冰柜押金退还明细表";
+                String titleName = "冰柜押金退还明细表";
+                String[] columnName = {"客户编号", "客户名称", "联系人", "联系电话", "门店地址", "服务处", "设备型号", "设备名称", "资产编号", "支付金额", "支付时间", "交易号", "设备价值"};
+                List<IceDepositResponse> iceDepositResponseList = new ArrayList<>();
+                iceBackApplyList.forEach(iceBackApply -> {
+                    IceDepositResponse iceDepositResponse = new IceDepositResponse();
+                    String backStoreNumber = iceBackApply.getBackStoreNumber();
+                    String applyNumber = iceBackApply.getApplyNumber();
+                    IceBackOrder iceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getApplyNumber, applyNumber));
+                    Integer boxId = iceBackOrder.getBoxId();
+                    IceBox iceBox = iceBoxDao.selectById(boxId);
+                    Map<String, SessionStoreInfoVo> storeInfoVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo((Collections.singletonList(backStoreNumber))));
+                    SessionStoreInfoVo sessionStoreInfoVo = storeInfoVoMap.get(backStoreNumber);
+                    if (null != sessionStoreInfoVo && StringUtils.isNotBlank(sessionStoreInfoVo.getStoreNumber())) {
+                        iceDepositResponse.setClientNumber(backStoreNumber);
+                        iceDepositResponse.setClientName(sessionStoreInfoVo.getStoreName());
+                        iceDepositResponse.setContactName(sessionStoreInfoVo.getMemberName());
+                        iceDepositResponse.setContactMobile(sessionStoreInfoVo.getMemberMobile());
+                        iceDepositResponse.setClientPlace(sessionStoreInfoVo.getParserAddress());
+                    } else {
+                        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(backStoreNumber));
+                        if (null != subordinateInfoVo && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+                            iceDepositResponse.setClientNumber(backStoreNumber);
+                            iceDepositResponse.setClientName(subordinateInfoVo.getName());
+                            iceDepositResponse.setContactName(subordinateInfoVo.getLinkman());
+                            iceDepositResponse.setContactMobile(subordinateInfoVo.getLinkmanMobile());
+                            iceDepositResponse.setClientPlace(subordinateInfoVo.getAddress());
+                        }
+                    }
+                    SessionDeptInfoVo sessionDeptInfoVo = FeignResponseUtil.getFeignData(feignDeptClient.findSessionDeptById(iceBox.getDeptId()));
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    iceDepositResponse.setMarketAreaName(sessionDeptInfoVo.getName());
+                    iceDepositResponse.setChestModel(iceBox.getModelName());
+                    iceDepositResponse.setChestName(iceBox.getChestName());
+                    iceDepositResponse.setAssetId(iceBox.getAssetId());
+                    iceDepositResponse.setPayMoney("-" + iceBackOrder.getAmount().toString());
+                    iceDepositResponse.setPayTimeStr(formatter.format(iceBackApply.getUpdatedTime()));
+                    iceDepositResponse.setChestMoney(iceBox.getChestMoney().toString());
+                    iceDepositResponseList.add(iceDepositResponse);
+                });
+                NewExcelUtil<IceDepositResponse> newExcelUtil = new NewExcelUtil<>();
+                newExcelUtil.asyncExportExcelOther(fileName, titleName, iceDepositResponseList, iceDepositPage.getExportRecordId());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -618,14 +789,14 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //                .mchType(xcxConfig.getMchType())
                 .build();
 
-        if(icePutOrder.getOrderSource().equals(OrderSourceEnums.OTOC.getType())) {
+        if (icePutOrder.getOrderSource().equals(OrderSourceEnums.OTOC.getType())) {
             transferRequest.setWxappid(xcxConfig.getAppid());
             transferRequest.setMchType(xcxConfig.getMchType());
         } else if (icePutOrder.getOrderSource().equals(OrderSourceEnums.DMS.getType())) {
             transferRequest.setWxappid(xcxConfig.getDmsAppId());
             transferRequest.setMchType(xcxConfig.getDmsMchType());
         }
-        
+
         log.info("转帐服务请求数据-->[{}]", JSON.toJSONString(transferRequest, true));
         TransferReponse transferReponse = FeignResponseUtil.getFeignData(feignTransferClient.transfer(transferRequest));
 

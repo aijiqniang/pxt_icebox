@@ -164,4 +164,12 @@ public class RefundController {
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iPage);
     }
+
+    @RequestMapping("/exportRefundTransfer")
+    public CommonResponse<IPage<IceDepositResponse>> exportRefundTransfer(@RequestBody IceDepositPage iceDepositPage){
+
+        iceBackOrderService.exportRefundTransferByMq(iceDepositPage);
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
+    }
 }

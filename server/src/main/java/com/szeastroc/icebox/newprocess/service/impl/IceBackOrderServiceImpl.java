@@ -360,12 +360,12 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         IPage<IceDepositResponse> page = new Page<>();
 
+        LambdaQueryWrapper<IceBackApply> wrapper = Wrappers.<IceBackApply>lambdaQuery();
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        LambdaQueryWrapper<IceBackOrder> iceBackOrderWrapper = Wrappers.<IceBackOrder>lambdaQuery();
         // 主表条件
         String payEndTime = iceDepositPage.getPayEndTime();
         String payStartTime = iceDepositPage.getPayStartTime();
-
-
-        LambdaQueryWrapper<IceBackApply> wrapper = Wrappers.<IceBackApply>lambdaQuery();
 
         wrapper.eq(IceBackApply::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
 
@@ -413,7 +413,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             wrapper.in(IceBackApply::getBackStoreNumber, storeNumberList);
         }
 
-        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
 
         if (StringUtils.isNotBlank(assetId)) {
             iceBoxWrapper.eq(IceBox::getAssetId, assetId);
@@ -435,18 +434,22 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         }
         if (CollectionUtil.isNotEmpty(iceBoxes)) {
             List<Integer> collect = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
-            List<IceBackOrder> iceBackOrders = iceBackOrderDao.selectList(Wrappers.<IceBackOrder>lambdaQuery().in(IceBackOrder::getBoxId, collect));
-            if (CollectionUtil.isNotEmpty(iceBackOrders)) {
-                List<String> backNumberList = iceBackOrders.stream().map(IceBackOrder::getApplyNumber).collect(Collectors.toList());
-                wrapper.in(IceBackApply::getApplyNumber, backNumberList);
-            }
+            iceBackOrderWrapper.in(IceBackOrder::getBoxId, collect);
         }
-        IPage<IceBackApply> iPage = iceBackApplyDao.selectPage(iceDepositPage, wrapper);
-        page = iPage.convert(iceBackApply -> {
+
+        List<IceBackApply> iceBackApplyList = iceBackApplyDao.selectList(wrapper);
+
+        if (CollectionUtil.isNotEmpty(iceBackApplyList)) {
+            List<String> collect = iceBackApplyList.stream().map(IceBackApply::getApplyNumber).collect(Collectors.toList());
+            iceBackOrderWrapper.in(IceBackOrder::getApplyNumber, collect);
+        }
+
+        IPage<IceBackOrder> iPage = iceBackOrderDao.selectPage(iceDepositPage, iceBackOrderWrapper);
+        page = iPage.convert(iceBackOrder -> {
             IceDepositResponse iceDepositResponse = new IceDepositResponse();
+            String applyNumber = iceBackOrder.getApplyNumber();
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
             String backStoreNumber = iceBackApply.getBackStoreNumber();
-            String applyNumber = iceBackApply.getApplyNumber();
-            IceBackOrder iceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getApplyNumber, applyNumber));
             Integer boxId = iceBackOrder.getBoxId();
             IceBox iceBox = iceBoxDao.selectById(boxId);
             Map<String, SessionStoreInfoVo> storeInfoVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo((Collections.singletonList(backStoreNumber))));
@@ -888,7 +891,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             }
         }
     }
-
 
 
     private Map<String, String> separateMarketAreaName(String marketAreaName) {

@@ -6,8 +6,10 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
+import com.szeastroc.icebox.newprocess.service.IcePutApplyRelateBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.vo.IceBoxRequest;
@@ -30,6 +32,8 @@ public class MyIceBoxController {
 
     @Resource
     private IceBoxService iceBoxService;
+    @Resource
+    private IcePutApplyRelateBoxService icePutApplyRelateBoxService;
 
     /**
      * 查询冰柜列表：0-已投放，1-可供申请
@@ -188,5 +192,19 @@ public class MyIceBoxController {
     public CommonResponse<IceBoxVo> cancelApplyByNumber(@RequestBody IceBoxVo iceBoxVo){
         iceBoxService.cancelApplyByNumber(iceBoxVo);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
+    /**
+     * 根据申请编号查询申请信息
+     * @param applyNumber
+     * @return
+     */
+    @RequestMapping("getApplyInfoByNumber")
+    public CommonResponse<PutStoreRelateModel> getApplyInfoByNumber(String applyNumber){
+        if(StringUtils.isBlank(applyNumber)){
+            throw new ImproperOptionException("请求信息缺失申请编号！");
+        }
+        PutStoreRelateModel relateModel = iceBoxService.getApplyInfoByNumber(applyNumber);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,relateModel);
     }
 }

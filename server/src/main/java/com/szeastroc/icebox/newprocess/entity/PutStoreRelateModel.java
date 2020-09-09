@@ -89,6 +89,12 @@ public class PutStoreRelateModel {
     @TableField(value = "status")
     private Integer status;
 
+    /**
+     * 作废原因
+     */
+    @TableField(value = "cancel_msg")
+    private String cancelMsg;
+
 
 
     public static PutStoreRelateModel.PutStoreRelateModelBuilder builder() {

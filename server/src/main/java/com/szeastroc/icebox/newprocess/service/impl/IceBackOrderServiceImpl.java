@@ -45,6 +45,7 @@ import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
 import com.szeastroc.transfer.common.enums.WechatPayTypeEnum;
 import com.szeastroc.transfer.common.request.TransferRequest;
 import com.szeastroc.transfer.common.response.TransferReponse;
+import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.session.UserManageVo;
@@ -113,6 +114,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final JedisClient jedisClient;
 
     private final DirectProducer directProducer;
+    private final FeignCacheClient feignCacheClient;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -465,8 +467,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                     iceDepositResponse.setClientPlace(subordinateInfoVo.getAddress());
                 }
             }
-            SessionDeptInfoVo sessionDeptInfoVo = FeignResponseUtil.getFeignData(feignDeptClient.findSessionDeptById(iceBox.getDeptId()));
-            iceDepositResponse.setMarketAreaName(sessionDeptInfoVo.getName());
+            String marketAreaName = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(iceBox.getDeptId()));
+            iceDepositResponse.setMarketAreaName(marketAreaName);
             iceDepositResponse.setChestModel(iceBox.getModelName());
             iceDepositResponse.setChestName(iceBox.getChestName());
             iceDepositResponse.setAssetId(iceBox.getAssetId());
@@ -590,7 +592,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             if (CollectionUtil.isNotEmpty(iceBackApplyList)) {
                 String fileName = "冰柜押金退还明细表";
                 String titleName = "冰柜押金退还明细表";
-                String[] columnName = {"客户编号", "客户名称", "联系人", "联系电话", "门店地址", "服务处", "设备型号", "设备名称", "资产编号", "支付金额", "支付时间", "交易号", "设备价值"};
                 List<IceDepositResponse> iceDepositResponseList = new ArrayList<>();
                 iceBackApplyList.forEach(iceBackApply -> {
                     IceDepositResponse iceDepositResponse = new IceDepositResponse();
@@ -618,6 +619,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                         }
                     }
                     SessionDeptInfoVo sessionDeptInfoVo = FeignResponseUtil.getFeignData(feignDeptClient.findSessionDeptById(iceBox.getDeptId()));
+                    String marketAreaName = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(iceBox.getDeptId()));
+                    Map<String, String> map = separateMarketAreaName(marketAreaName);
+
+                    iceDepositResponse.setDivision(map.get("division"));
+                    iceDepositResponse.setRegion(map.get("region"));
+                    iceDepositResponse.setService(map.get("service"));
+
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     iceDepositResponse.setMarketAreaName(sessionDeptInfoVo.getName());
                     iceDepositResponse.setChestModel(iceBox.getModelName());
@@ -879,6 +887,72 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 iceBackOrderDao.insert(iceBackOrder);
             }
         }
+    }
+
+
+
+    private Map<String, String> separateMarketAreaName(String marketAreaName) {
+        String newMarketAreaName = "";
+        String[] splits = marketAreaName.split("/");
+        List<String> stringList = Arrays.asList(splits);
+        int index = 0;
+        if (stringList.contains("北方大区")) {
+            index = stringList.indexOf("北方大区");
+        } else if (stringList.contains("广东事业部")) {
+            index = stringList.indexOf("广东事业部");
+        } else if (stringList.contains("广西事业部")) {
+            index = stringList.indexOf("广西事业部");
+        } else if (stringList.contains("华北事业部")) {
+            index = stringList.indexOf("华北事业部");
+        } else if (stringList.contains("华中事业部")) {
+            index = stringList.indexOf("华中事业部");
+        } else if (stringList.contains("西南事业部")) {
+            index = stringList.indexOf("西南事业部");
+        } else if (stringList.contains("全国直营本部")) {
+            index = stringList.indexOf("全国直营本部");
+        } else if (stringList.contains("测试事业部")) {
+            index = stringList.indexOf("测试事业部");
+        }
+
+        for (int i = index; i < stringList.size(); i++) {
+            if (i == (stringList.size() - 1)) {
+                newMarketAreaName = newMarketAreaName + stringList.get(i);
+            } else {
+                newMarketAreaName = newMarketAreaName + stringList.get(i) + "/";
+            }
+        }
+
+        String division = "";
+        String region = "";
+        String service = "";
+
+        String[] strings = newMarketAreaName.split("/");
+        List<String> newStringList = Arrays.asList(strings);
+        if (newStringList.contains("北方大区")) {
+            int newIndex = newStringList.indexOf("北方大区");
+            division = strings[newIndex];
+
+            if ((newIndex + 1) <= strings.length - 1) {
+                service = strings[newIndex + 1];
+            }
+        } else {
+            if (0 <= strings.length - 1) {
+                division = strings[0];
+            }
+            if (1 <= strings.length - 1) {
+                region = strings[1];
+            }
+            if (2 <= strings.length - 1) {
+                service = strings[2];
+            }
+        }
+        Map<String, String> map = new HashMap<>();
+
+        map.put("division", division);
+        map.put("region", region);
+        map.put("service", service);
+
+        return map;
     }
 
 }

@@ -295,7 +295,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
                 iceBoxes = iceBoxDao.selectBatchIds(iceBoxIds);
             }
             //支付信息
-            List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getApplyNumber, applyNumbers));
+            List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getApplyNumber, applyNumbers).eq(IcePutOrder::getStatus,OrderStatus.IS_FINISH.getStatus()));
             return getNewIceDepositResponseIPage(relateBoxIPage, storeInfoDtoVos, iceBoxes, icePutOrders,putApplyMap);
 
         }
@@ -369,7 +369,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
                 List<IceBox> iceBoxs = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getDeptId, marketAreaIds));
                 if(CollectionUtil.isNotEmpty(iceBoxs)){
                     List<Integer> iceBoxIds = iceBoxs.stream().map(x -> x.getId()).collect(Collectors.toList());
-                    List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getChestId, iceBoxIds));
+                    List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getChestId, iceBoxIds).eq(IcePutOrder::getStatus,OrderStatus.IS_FINISH.getStatus()));
                     if(CollectionUtil.isNotEmpty(icePutOrders)){
                         List<String> applyNumbers = icePutOrders.stream().map(x -> x.getApplyNumber()).collect(Collectors.toList());
                         wrapper.in(IcePutApply::getApplyNumber, applyNumbers);

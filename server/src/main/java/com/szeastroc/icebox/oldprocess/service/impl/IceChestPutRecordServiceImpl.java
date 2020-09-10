@@ -364,20 +364,21 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             List<SessionDeptInfoVo> deptInfoVos = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoListByParentId(deptNameRequest));
             if(CollectionUtil.isEmpty(deptInfoVos)){
                 wrapper.eq(IcePutApply::getApplyNumber, "");
-            }
-            List<Integer> marketAreaIds = deptInfoVos.stream().map(x -> x.getId()).collect(Collectors.toList());
-            List<IceBox> iceBoxs = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getDeptId, marketAreaIds));
-            if(CollectionUtil.isNotEmpty(iceBoxs)){
-                List<Integer> iceBoxIds = iceBoxs.stream().map(x -> x.getId()).collect(Collectors.toList());
-                List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getChestId, iceBoxIds));
-                if(CollectionUtil.isNotEmpty(icePutOrders)){
-                    List<String> applyNumbers = icePutOrders.stream().map(x -> x.getApplyNumber()).collect(Collectors.toList());
-                    wrapper.in(IcePutApply::getApplyNumber, applyNumbers);
+            }else {
+                List<Integer> marketAreaIds = deptInfoVos.stream().map(x -> x.getId()).collect(Collectors.toList());
+                List<IceBox> iceBoxs = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getDeptId, marketAreaIds));
+                if(CollectionUtil.isNotEmpty(iceBoxs)){
+                    List<Integer> iceBoxIds = iceBoxs.stream().map(x -> x.getId()).collect(Collectors.toList());
+                    List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getChestId, iceBoxIds));
+                    if(CollectionUtil.isNotEmpty(icePutOrders)){
+                        List<String> applyNumbers = icePutOrders.stream().map(x -> x.getApplyNumber()).collect(Collectors.toList());
+                        wrapper.in(IcePutApply::getApplyNumber, applyNumbers);
+                    }else {
+                        wrapper.eq(IcePutApply::getApplyNumber, "");
+                    }
                 }else {
                     wrapper.eq(IcePutApply::getApplyNumber, "");
                 }
-            }else {
-                wrapper.eq(IcePutApply::getApplyNumber, "");
             }
         }
         return wrapper;

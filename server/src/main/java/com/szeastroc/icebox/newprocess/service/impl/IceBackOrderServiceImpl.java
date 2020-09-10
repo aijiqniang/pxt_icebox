@@ -434,17 +434,24 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         // 查询副表
         if (StringUtils.isNotBlank(assetId) || StringUtils.isNotBlank(chestModel) || marketAreaId != null) {
             iceBoxes = iceBoxDao.selectList(iceBoxWrapper);
+            if (CollectionUtil.isNotEmpty(iceBoxes)) {
+                List<Integer> collect = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
+                iceBackOrderWrapper.in(IceBackOrder::getBoxId, collect);
+            } else {
+                return page;
+            }
         }
-        if (CollectionUtil.isNotEmpty(iceBoxes)) {
-            List<Integer> collect = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
-            iceBackOrderWrapper.in(IceBackOrder::getBoxId, collect);
-        }
+
 
         List<IceBackApply> iceBackApplyList = iceBackApplyDao.selectList(wrapper);
 
         if (CollectionUtil.isNotEmpty(iceBackApplyList)) {
             List<String> collect = iceBackApplyList.stream().map(IceBackApply::getApplyNumber).collect(Collectors.toList());
             iceBackOrderWrapper.in(IceBackOrder::getApplyNumber, collect);
+        } else {
+            if (StringUtils.isNotBlank(payStartTime) || StringUtils.isNotBlank(payEndTime) || StringUtils.isNotBlank(clientNumber) || CollectionUtil.isNotEmpty(storeNumberList)) {
+                return page;
+            }
         }
 
         IPage<IceBackOrder> iPage = iceBackOrderDao.selectPage(iceDepositPage, iceBackOrderWrapper);

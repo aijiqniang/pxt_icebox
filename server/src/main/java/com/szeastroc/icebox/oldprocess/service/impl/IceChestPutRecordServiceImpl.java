@@ -41,6 +41,8 @@ import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
 import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
+import com.szeastroc.user.common.vo.DeptNameRequest;
+import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -98,6 +100,8 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
     private FeignCacheClient feignCacheClient;
     @Autowired
     private FeignStoreRelateMemberClient feignStoreRelateMemberClient;
+    @Autowired
+    private FeignDeptClient feignDeptClient;
 
     @Transactional(value = "transactionManager")
     @Override
@@ -355,12 +359,26 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             }
         }
         if(iceDepositPage.getMarketAreaId() != null){
-            List<IceBox> iceBoxs = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getDeptId, iceDepositPage.getMarketAreaId()));
-            if(CollectionUtil.isNotEmpty(iceBoxs)){
-                List<String> storeNumbers = iceBoxs.stream().map(x -> x.getPutStoreNumber()).collect(Collectors.toList());
-                wrapper.in(IcePutApply::getPutStoreNumber, storeNumbers);
+            DeptNameRequest deptNameRequest = new DeptNameRequest();
+            deptNameRequest.setParentIds(iceDepositPage.getMarketAreaId()+"");
+            List<SessionDeptInfoVo> deptInfoVos = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoListByParentId(deptNameRequest));
+            if(CollectionUtil.isEmpty(deptInfoVos)){
+                wrapper.eq(IcePutApply::getApplyNumber, "");
             }else {
-                wrapper.eq(IcePutApply::getPutStoreNumber, "");
+                List<Integer> marketAreaIds = deptInfoVos.stream().map(x -> x.getId()).collect(Collectors.toList());
+                List<IceBox> iceBoxs = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getDeptId, marketAreaIds));
+                if(CollectionUtil.isNotEmpty(iceBoxs)){
+                    List<Integer> iceBoxIds = iceBoxs.stream().map(x -> x.getId()).collect(Collectors.toList());
+                    List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getChestId, iceBoxIds));
+                    if(CollectionUtil.isNotEmpty(icePutOrders)){
+                        List<String> applyNumbers = icePutOrders.stream().map(x -> x.getApplyNumber()).collect(Collectors.toList());
+                        wrapper.in(IcePutApply::getApplyNumber, applyNumbers);
+                    }else {
+                        wrapper.eq(IcePutApply::getApplyNumber, "");
+                    }
+                }else {
+                    wrapper.eq(IcePutApply::getApplyNumber, "");
+                }
             }
         }
         return wrapper;

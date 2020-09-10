@@ -23,6 +23,7 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.ExamineEnums;
+import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
@@ -35,10 +36,7 @@ import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignExamineClient;
-import com.szeastroc.visit.common.IceBoxExamineModel;
-import com.szeastroc.visit.common.IceBoxTransferModel;
-import com.szeastroc.visit.common.SessionExamineCreateVo;
-import com.szeastroc.visit.common.SessionExamineVo;
+import com.szeastroc.visit.common.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -277,39 +275,79 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         //冰柜状态是报废，巡检是正常，需要走与报废相同的审批
         if(IceBoxEnums.StatusEnum.SCRAP.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.equals(iceExamineVo.getIceExamineStatus())){
 
-            map = createScrapCheckProcess(iceExamineVo,map);
+            map = createExamineCheckProcess(iceExamineVo,map);
         }
         //冰柜状态是遗失，巡检是正常，需要走与遗失相同的审批
         if(IceBoxEnums.StatusEnum.LOSE.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.equals(iceExamineVo.getIceExamineStatus())){
 
-            doExamine(iceExamine);
+            map = createExamineCheckProcess(iceExamineVo,map);
         }
         //冰柜状态是报修，巡检是正常，需要走与报修相同的审批
         if(IceBoxEnums.StatusEnum.REPAIR.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.equals(iceExamineVo.getIceExamineStatus())){
 
-            doExamine(iceExamine);
+            map = createExamineCheckProcess(iceExamineVo,map);
         }
         //冰柜状态不是报废，巡检是报废，需要走报废审批
         if(!IceBoxEnums.StatusEnum.SCRAP.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.SCRAP.equals(iceExamineVo.getIceExamineStatus())){
 
-            doExamine(iceExamine);
+            map = createExamineCheckProcess(iceExamineVo,map);
         }
 
         //冰柜状态不是遗失，巡检是遗失，需要走遗失审批
         if(!IceBoxEnums.StatusEnum.LOSE.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.LOSE.equals(iceExamineVo.getIceExamineStatus())){
 
-            doExamine(iceExamine);
+            map = createExamineCheckProcess(iceExamineVo,map);
         }
 
-        //冰柜状态不是报修，巡检是报修，需要走报修审批
+        //冰柜状态不是报修，巡检是报修，需要走报修通知上级
         if(!IceBoxEnums.StatusEnum.REPAIR.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.REPAIR.equals(iceExamineVo.getIceExamineStatus())){
 
-            doExamine(iceExamine);
+            SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceExamineVo.getCreateBy()));
+            Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(iceExamineVo.getMarketAreaId()));
+            List<Integer> ids = new ArrayList<Integer>();
+            //获取上级部门领导
+            SessionUserInfoVo groupUser = new SessionUserInfoVo();
+            SessionUserInfoVo serviceUser = new SessionUserInfoVo();
+            Set<Integer> keySet = sessionUserInfoMap.keySet();
+            for (Integer key : keySet) {
+                SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(key);
+                if(userInfoVo == null){
+                    continue;
+                }
+                if(DeptTypeEnum.GROUP.getType().equals(userInfoVo.getDeptType())){
+                    groupUser = userInfoVo;
+                    continue;
+                }
+                if(DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())){
+                    serviceUser = userInfoVo;
+                    continue;
+                }
+
+            }
+            if(simpleUserInfoVo.getId().equals(groupUser.getId()) && serviceUser.getId() != null){
+                ids.add(serviceUser.getId());
+            }
+
+            if(simpleUserInfoVo.getId().equals(serviceUser.getId())){
+                doExamine(iceExamine);
+            }
+
+            SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
+            backlog.setBacklogName(iceExamineVo.getCreateName()+"作废冰柜申请通知信息");
+            backlog.setCode(iceBoxVo.getApplyNumber());
+            backlog.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
+            backlog.setExamineType(111);
+            backlog.setSendType(1);
+            backlog.setSendUserId(iceExamineVo.getUserId());
+            backlog.setCreateBy(iceBoxVo.getUserId());
+            feignBacklogClient.createBacklog(backlog);
+
+
         }
-        return null;
+        return map;
     }
 
-    private Map<String, Object> createScrapCheckProcess(IceExamineVo iceExamineVo, Map<String, Object> map) {
+    private Map<String, Object> createExamineCheckProcess(IceExamineVo iceExamineVo, Map<String, Object> map) {
         IceBox isExist = iceBoxDao.selectById(iceExamineVo.getIceBoxId());
         if(isExist == null ){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜信息！");

@@ -284,6 +284,8 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
                     simpleStoreVo.setStoreNumber(infoVo.getNumber());
                     simpleStoreVo.setStoreName(infoVo.getName());
                     simpleStoreVo.setAddress(infoVo.getAddress());
+                    simpleStoreVo.setLinkman(infoVo.getLinkman());
+                    simpleStoreVo.setLinkmanMobile(infoVo.getLinkmanMobile());
                     storeInfoDtoVos.add(simpleStoreVo);
                 }
             }
@@ -479,6 +481,9 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             if(memberInfoVo != null){
                 iceDepositResponse.setContactName(memberInfoVo.getName());
                 iceDepositResponse.setContactMobile(memberInfoVo.getMobile());
+            }else {
+                iceDepositResponse.setContactName(simpleStoreVo.getLinkman());
+                iceDepositResponse.setContactMobile(simpleStoreVo.getLinkmanMobile());
             }
 
             iceDepositResponse.setClientPlace(simpleStoreVo.getAddress());

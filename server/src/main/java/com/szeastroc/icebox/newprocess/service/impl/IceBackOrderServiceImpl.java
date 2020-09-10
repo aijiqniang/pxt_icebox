@@ -501,7 +501,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //        }
         jedisClient.setnx(key, userId.toString(), 180);
         // 塞入数据到下载列表中  exportRecordId
-        Integer exportRecordId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userId, userName, JSON.toJSONString(iceDepositPage), "冰柜记录导出"));
+        Integer exportRecordId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userId, userName, JSON.toJSONString(iceDepositPage), "冰柜押金退还明细导出"));
         iceDepositPage.setExportRecordId(exportRecordId);
         // 塞入部门集合
         DataPack dataPack = new DataPack(); // 数据包

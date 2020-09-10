@@ -1,8 +1,10 @@
 package com.szeastroc.icebox.rabbitMQ;
 
 import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
+import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Component;
 public class DirectListener {
 
     private final IceBoxService iceBoxService;
+    private final IceBackOrderService iceBackOrderService;
 
     //    @RabbitHandler
     @RabbitListener(queues = MqConstant.directQueue)
@@ -34,8 +37,10 @@ public class DirectListener {
         if (methodName.equals(MethodNameOfMQ.EXPORT_EXCEL_METHOD)) { // 冰柜导出
             IceBoxPage iceBoxPage = (IceBoxPage) dataPack.getObj(); // 数据
             iceBoxService.exportExcel(iceBoxPage);
-        } else {
-            // log.info("暂无对应的方法可以调用...");
+        } else if (methodName.equals(MethodNameOfMQ.EXPORT_ICE_REFUND)){
+            IceDepositPage iceDepositPage = (IceDepositPage) dataPack.getObj();
+
+            iceBackOrderService.exportRefundTransfer(iceDepositPage);
 
         }
     }

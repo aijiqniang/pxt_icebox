@@ -28,4 +28,6 @@ public class IceDepositPage extends Page {
     // 查询: 支付结束时间
     private String payEndTime;
 
+    private Integer exportRecordId;
+
 }

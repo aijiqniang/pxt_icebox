@@ -513,12 +513,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     @Override
     public void exportRefundTransfer(IceDepositPage iceDepositPage) {
         try {
+            LambdaQueryWrapper<IceBackApply> wrapper = Wrappers.<IceBackApply>lambdaQuery();
+            LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+            LambdaQueryWrapper<IceBackOrder> iceBackOrderWrapper = Wrappers.<IceBackOrder>lambdaQuery();
+            // 筛选退化数量为0的
+            iceBackOrderWrapper.ne(IceBackOrder::getAmount, 0);
+
             // 主表条件
             String payEndTime = iceDepositPage.getPayEndTime();
             String payStartTime = iceDepositPage.getPayStartTime();
-
-
-            LambdaQueryWrapper<IceBackApply> wrapper = Wrappers.<IceBackApply>lambdaQuery();
 
             wrapper.eq(IceBackApply::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
 
@@ -566,7 +569,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 wrapper.in(IceBackApply::getBackStoreNumber, storeNumberList);
             }
 
-            LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
 
             if (StringUtils.isNotBlank(assetId)) {
                 iceBoxWrapper.eq(IceBox::getAssetId, assetId);
@@ -588,22 +590,25 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             }
             if (CollectionUtil.isNotEmpty(iceBoxes)) {
                 List<Integer> collect = iceBoxes.stream().map(IceBox::getId).collect(Collectors.toList());
-                List<IceBackOrder> iceBackOrders = iceBackOrderDao.selectList(Wrappers.<IceBackOrder>lambdaQuery().in(IceBackOrder::getBoxId, collect));
-                if (CollectionUtil.isNotEmpty(iceBackOrders)) {
-                    List<String> backNumberList = iceBackOrders.stream().map(IceBackOrder::getApplyNumber).collect(Collectors.toList());
-                    wrapper.in(IceBackApply::getApplyNumber, backNumberList);
-                }
+                iceBackOrderWrapper.in(IceBackOrder::getBoxId, collect);
             }
+
             List<IceBackApply> iceBackApplyList = iceBackApplyDao.selectList(wrapper);
+
             if (CollectionUtil.isNotEmpty(iceBackApplyList)) {
+                List<String> collect = iceBackApplyList.stream().map(IceBackApply::getApplyNumber).collect(Collectors.toList());
+                iceBackOrderWrapper.in(IceBackOrder::getApplyNumber, collect);
+            }
+            List<IceBackOrder> iceBackOrderList = iceBackOrderDao.selectList(iceBackOrderWrapper);
+            if (CollectionUtil.isNotEmpty(iceBackOrderList)) {
                 String fileName = "冰柜押金退还明细表";
                 String titleName = "冰柜押金退还明细表";
                 List<IceDepositResponse> iceDepositResponseList = new ArrayList<>();
-                iceBackApplyList.forEach(iceBackApply -> {
+                iceBackOrderList.forEach(iceBackOrder -> {
                     IceDepositResponse iceDepositResponse = new IceDepositResponse();
+                    String applyNumber = iceBackOrder.getApplyNumber();
+                    IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
                     String backStoreNumber = iceBackApply.getBackStoreNumber();
-                    String applyNumber = iceBackApply.getApplyNumber();
-                    IceBackOrder iceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getApplyNumber, applyNumber));
                     Integer boxId = iceBackOrder.getBoxId();
                     IceBox iceBox = iceBoxDao.selectById(boxId);
                     Map<String, SessionStoreInfoVo> storeInfoVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo((Collections.singletonList(backStoreNumber))));

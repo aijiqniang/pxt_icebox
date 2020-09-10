@@ -363,6 +363,9 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         LambdaQueryWrapper<IceBackApply> wrapper = Wrappers.<IceBackApply>lambdaQuery();
         LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
         LambdaQueryWrapper<IceBackOrder> iceBackOrderWrapper = Wrappers.<IceBackOrder>lambdaQuery();
+        // 筛选退化数量为0的
+        iceBackOrderWrapper.ne(IceBackOrder::getAmount, 0);
+
         // 主表条件
         String payEndTime = iceDepositPage.getPayEndTime();
         String payStartTime = iceDepositPage.getPayStartTime();

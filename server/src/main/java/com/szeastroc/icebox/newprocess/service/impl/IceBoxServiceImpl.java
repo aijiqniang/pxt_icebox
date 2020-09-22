@@ -21,7 +21,9 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.common.utils.*;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.common.utils.ImageUploadUtil;
+import com.szeastroc.common.utils.Streams;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
@@ -55,6 +57,7 @@ import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.client.FeignXcxBaseClient;
 import com.szeastroc.user.common.vo.*;
+import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import com.szeastroc.visit.common.*;
@@ -78,7 +81,6 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -119,6 +121,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final FeignCusLabelClient feignCusLabelClient;
     private final ImageUploadUtil imageUploadUtil;
     private final FeignExportRecordsClient feignExportRecordsClient;
+    private final FeignBacklogClient feignBacklogClient;
     private final IceBoxTransferHistoryDao iceBoxTransferHistoryDao;
 
 

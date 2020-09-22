@@ -18,9 +18,11 @@ import com.szeastroc.common.utils.Streams;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignStoreRelateMemberClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.MemberInfoVo;
 import com.szeastroc.customer.common.vo.SimpleStoreVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
@@ -39,6 +41,8 @@ import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
 import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
+import com.szeastroc.user.common.vo.DeptNameRequest;
+import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -91,9 +95,13 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
     @Autowired
     private FeignStoreClient feignStoreClient;
     @Autowired
+    private FeignSupplierClient feignSupplierClient;
+    @Autowired
     private FeignCacheClient feignCacheClient;
     @Autowired
     private FeignStoreRelateMemberClient feignStoreRelateMemberClient;
+    @Autowired
+    private FeignDeptClient feignDeptClient;
 
     @Transactional(value = "transactionManager")
     @Override
@@ -246,7 +254,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             return new Page<>(iceDepositPage.getCurrent(), iceDepositPage.getSize(), iceDepositPage.getTotal());
         }
         Set<String> applyNumbers = icePutApplys.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
-        IPage<IcePutApplyRelateBox> relateBoxIPage = icePutApplyRelateBoxDao.selectPage(iceDepositPage, Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
+        IPage<IcePutApplyRelateBox> relateBoxIPage = icePutApplyRelateBoxDao.selectPage(iceDepositPage, Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers).eq(IcePutApplyRelateBox::getFreeType,FreePayTypeEnum.UN_FREE.getType()));
 
         Map<String, IcePutApply> putApplyMap = icePutApplys.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
         Set<String> storeNumbers = new HashSet<>();
@@ -264,6 +272,23 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         if(CollectionUtils.isNotEmpty(relateBoxIPage.getRecords())){
             //投放的门店信息
             List<SimpleStoreVo> storeInfoDtoVos = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumbers(new ArrayList<>(storeNumbers)));
+            if(CollectionUtil.isEmpty(storeInfoDtoVos)){
+                storeInfoDtoVos = new ArrayList<>();
+            }
+
+            //投放的配送商信息
+            List<SubordinateInfoVo> subordinateInfoVos = FeignResponseUtil.getFeignData(feignSupplierClient.readByNumbers(new ArrayList<>(storeNumbers)));
+            if(CollectionUtil.isNotEmpty(subordinateInfoVos)){
+                for(SubordinateInfoVo infoVo:subordinateInfoVos){
+                    SimpleStoreVo simpleStoreVo = new SimpleStoreVo();
+                    simpleStoreVo.setStoreNumber(infoVo.getNumber());
+                    simpleStoreVo.setStoreName(infoVo.getName());
+                    simpleStoreVo.setAddress(infoVo.getAddress());
+                    simpleStoreVo.setLinkman(infoVo.getLinkman());
+                    simpleStoreVo.setLinkmanMobile(infoVo.getLinkmanMobile());
+                    storeInfoDtoVos.add(simpleStoreVo);
+                }
+            }
             //冰柜信息
             List<IceBox> iceBoxes = new ArrayList<>();
             List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
@@ -272,7 +297,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
                 iceBoxes = iceBoxDao.selectBatchIds(iceBoxIds);
             }
             //支付信息
-            List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getApplyNumber, applyNumbers));
+            List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getApplyNumber, applyNumbers).eq(IcePutOrder::getStatus,OrderStatus.IS_FINISH.getStatus()));
             return getNewIceDepositResponseIPage(relateBoxIPage, storeInfoDtoVos, iceBoxes, icePutOrders,putApplyMap);
 
         }
@@ -336,12 +361,26 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             }
         }
         if(iceDepositPage.getMarketAreaId() != null){
-            List<IceBox> iceBoxs = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getDeptId, iceDepositPage.getMarketAreaId()));
-            if(CollectionUtil.isNotEmpty(iceBoxs)){
-                List<String> storeNumbers = iceBoxs.stream().map(x -> x.getPutStoreNumber()).collect(Collectors.toList());
-                wrapper.in(IcePutApply::getPutStoreNumber, storeNumbers);
+            DeptNameRequest deptNameRequest = new DeptNameRequest();
+            deptNameRequest.setParentIds(iceDepositPage.getMarketAreaId()+"");
+            List<SessionDeptInfoVo> deptInfoVos = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoListByParentId(deptNameRequest));
+            if(CollectionUtil.isEmpty(deptInfoVos)){
+                wrapper.eq(IcePutApply::getApplyNumber, "");
             }else {
-                wrapper.eq(IcePutApply::getPutStoreNumber, "");
+                List<Integer> marketAreaIds = deptInfoVos.stream().map(x -> x.getId()).collect(Collectors.toList());
+                List<IceBox> iceBoxs = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getDeptId, marketAreaIds));
+                if(CollectionUtil.isNotEmpty(iceBoxs)){
+                    List<Integer> iceBoxIds = iceBoxs.stream().map(x -> x.getId()).collect(Collectors.toList());
+                    List<IcePutOrder> icePutOrders = icePutOrderDao.selectList(Wrappers.<IcePutOrder>lambdaQuery().in(IcePutOrder::getChestId, iceBoxIds).eq(IcePutOrder::getStatus,OrderStatus.IS_FINISH.getStatus()));
+                    if(CollectionUtil.isNotEmpty(icePutOrders)){
+                        List<String> applyNumbers = icePutOrders.stream().map(x -> x.getApplyNumber()).collect(Collectors.toList());
+                        wrapper.in(IcePutApply::getApplyNumber, applyNumbers);
+                    }else {
+                        wrapper.eq(IcePutApply::getApplyNumber, "");
+                    }
+                }else {
+                    wrapper.eq(IcePutApply::getApplyNumber, "");
+                }
             }
         }
         return wrapper;
@@ -442,6 +481,9 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
             if(memberInfoVo != null){
                 iceDepositResponse.setContactName(memberInfoVo.getName());
                 iceDepositResponse.setContactMobile(memberInfoVo.getMobile());
+            }else {
+                iceDepositResponse.setContactName(simpleStoreVo.getLinkman());
+                iceDepositResponse.setContactMobile(simpleStoreVo.getLinkmanMobile());
             }
 
             iceDepositResponse.setClientPlace(simpleStoreVo.getAddress());

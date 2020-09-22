@@ -30,22 +30,22 @@ public class ReportController {
     private IceChestPutRecordService iceChestPutRecordService;
 
     /**
-     * 查询押金明细
+     * 查询押金明细（旧）
      * @param iceDepositPage
      * @return
      */
-    @PostMapping("/queryIceDeposits")
+    @PostMapping("/queryIceDepositsOld")
     public CommonResponse<IPage<IceDepositResponse>> queryIceDeposits(@RequestBody IceDepositPage iceDepositPage){
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,
                 iceChestPutRecordService.queryIceDeposits(iceDepositPage));
     }
 
     /**
-     * 查询押金支付明细
+     * 查询押金支付明细(新)
      * @param iceDepositPage
      * @return
      */
-    @PostMapping("/queryIceDepositsForPut")
+    @PostMapping("/queryIceDeposits")
     public CommonResponse<IPage<IceDepositResponse>> queryIceDepositsForPut(@RequestBody IceDepositPage iceDepositPage){
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,
                 iceChestPutRecordService.queryIceDepositsForPut(iceDepositPage));
@@ -87,12 +87,21 @@ public class ReportController {
 
         iceDepositPage.setCurrent(1);
         iceDepositPage.setSize(Integer.MAX_VALUE);
-        List<IceDepositReport> iceDepositReports = getIceDepositReports(iceDepositPage);
+        List<IceDepositReport> iceDepositReports = getIceDepositReportsNew(iceDepositPage);
         excelUtil.exportExcel(fileName, titleName, columnName, iceDepositReports, response);
     }
 
     private List<IceDepositReport> getIceDepositReports(IceDepositPage iceDepositPage) {
         return iceChestPutRecordService.queryIceDeposits(iceDepositPage).getRecords().stream().map(x -> {
+            IceDepositReport iceDepositReport = new IceDepositReport();
+            BeanUtils.copyProperties(x, iceDepositReport);
+            iceDepositReport.setPayTimeStr(new DateTime(x.getPayTime()).toString("YYYY-MM-dd HH:mm"));
+            return iceDepositReport;
+        }).collect(Collectors.toList());
+    }
+
+    private List<IceDepositReport> getIceDepositReportsNew(IceDepositPage iceDepositPage) {
+        return iceChestPutRecordService.queryIceDepositsForPut(iceDepositPage).getRecords().stream().map(x -> {
             IceDepositReport iceDepositReport = new IceDepositReport();
             BeanUtils.copyProperties(x, iceDepositReport);
             iceDepositReport.setPayTimeStr(new DateTime(x.getPayTime()).toString("YYYY-MM-dd HH:mm"));

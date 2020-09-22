@@ -84,6 +84,8 @@ public interface IceBoxService extends IService<IceBox> {
 
     void cancelApplyByNumber(IceBoxVo iceBoxVo);
 
+    PutStoreRelateModel getApplyInfoByNumber(String applyNumber);
+
     List<IceBox> findIceBoxsBySupplierId(Integer supplierId);
 
     Map<String, Object> transferIceBoxs(IceBoxTransferHistoryVo historyVo);

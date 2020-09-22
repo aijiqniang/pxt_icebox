@@ -19,5 +19,9 @@ public interface IceBackOrderService extends IService<IceBackOrder> {
     String checkBackIceBox(Integer iceBoxId);
 
     IPage<IceDepositResponse> findRefundTransferByPage(IceDepositPage iceDepositPage);
+
+    void exportRefundTransferByMq(IceDepositPage iceDepositPage);
+
+    void exportRefundTransfer(IceDepositPage iceDepositPage);
 }
 

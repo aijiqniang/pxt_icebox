@@ -9,4 +9,6 @@ public interface MethodNameOfMQ {
 
     String EXPORT_EXCEL_METHOD = "exportExcel";
 
+    String EXPORT_ICE_REFUND = "exportIceRefund";
+
 }

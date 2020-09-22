@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.vo;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -116,4 +117,10 @@ public class IceBoxVo {
      * 操作的业务员名称
      */
     private String userName;
+
+    /**
+     * 作废原因
+     */
+    private String cancelMsg;
+
 }

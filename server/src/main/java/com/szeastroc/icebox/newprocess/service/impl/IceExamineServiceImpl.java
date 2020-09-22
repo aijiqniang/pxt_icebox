@@ -21,10 +21,7 @@ import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
-import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.ExamineEnums;
-import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
-import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
@@ -35,6 +32,7 @@ import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
+import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.common.*;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +68,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     private FeignDeptClient feignDeptClient;
     @Autowired
     private FeignExamineClient feignExamineClient;
+    @Autowired
+    private FeignBacklogClient feignBacklogClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -324,25 +324,27 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                 }
 
             }
-            if(simpleUserInfoVo.getId().equals(groupUser.getId()) && serviceUser.getId() != null){
-                ids.add(serviceUser.getId());
+            if(groupUser.getId() != null){
+                ids.add(groupUser.getId());
             }
 
-            if(simpleUserInfoVo.getId().equals(serviceUser.getId())){
-                doExamine(iceExamine);
+            if(serviceUser.getId() != null && !ids.contains(serviceUser.getId())){
+                ids.add(groupUser.getId());
             }
 
-            SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
-            backlog.setBacklogName(iceExamineVo.getCreateName()+"作废冰柜申请通知信息");
-            backlog.setCode(iceBoxVo.getApplyNumber());
-            backlog.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
-            backlog.setExamineType(111);
-            backlog.setSendType(1);
-            backlog.setSendUserId(iceExamineVo.getUserId());
-            backlog.setCreateBy(iceBoxVo.getUserId());
-            feignBacklogClient.createBacklog(backlog);
-
-
+            if(CollectionUtil.isNotEmpty(ids)){
+                for(Integer id:ids){
+                    SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
+                    backlog.setBacklogName(iceExamineVo.getCreateName()+"冰柜报修通知信息");
+                    backlog.setCode(iceExamineVo.getAssetId());
+                    backlog.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
+                    backlog.setExamineType(ExamineTypeEnum.ICEBOX_LOSE.getType());
+                    backlog.setSendType(1);
+                    backlog.setSendUserId(id);
+                    backlog.setCreateBy(iceExamineVo.getCreateBy());
+                    feignBacklogClient.createBacklog(backlog);
+                }
+            }
         }
         return map;
     }
@@ -405,8 +407,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         IceBoxExamineModel examineModel = new IceBoxExamineModel();
-        String transferNumber = UUID.randomUUID().toString().replace("-", "");
-        examineModel.setExamineNumber(transferNumber);
+        examineModel.setExamineNumber(iceExamineVo.getAssetId());
         examineModel.setAssetId(isExist.getAssetId());
         examineModel.setDepositMoney(isExist.getDepositMoney());
         examineModel.setDisplayImage(iceExamineVo.getDisplayImage());
@@ -428,8 +429,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
-                .code(transferNumber)
-                .relateCode(transferNumber)
+                .code(iceExamineVo.getAssetId())
+                .relateCode(iceExamineVo.getAssetId())
                 .createBy(iceExamineVo.getCreateBy())
                 .userIds(ids)
                 .build();
@@ -438,7 +439,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxExamine(sessionExamineVo));
         List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
         map.put("iceBoxTransferNodes",visitExamineNodes);
-        map.put("transferNumber",transferNumber);
+        map.put("transferNumber",iceExamineVo.getAssetId());
         return map;
     }
 

@@ -23,6 +23,11 @@ public class IceExamineVo {
     private Integer iceBoxId;
 
     /**
+     * 冰柜的资产编号
+     */
+    private String assetId;
+
+    /**
      * 门店编号
      */
     private String storeNumber;

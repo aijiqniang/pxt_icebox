@@ -1,12 +1,16 @@
 package com.szeastroc.icebox.newprocess.controller;
 
+import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.newprocess.vo.CodeVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
@@ -20,12 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 
 /**
  * @Author xiao
@@ -80,4 +86,56 @@ public class IceBoxExtendController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+    /**
+     * @Date: 2020/9/7 17:36 xiao
+     * 二维码生成器
+     */
+    @GetMapping("/codeGenerator")
+    public void codeGenerator(Integer num, HttpServletResponse response) throws IOException {
+
+        if (num == null || num < 1 || num > 100000) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "请填写 1-100000 的整数");
+        }
+        // List<String> list = Lists.newArrayList();
+        HashSet<String> sets = Sets.newHashSet();
+        String string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";//保存数字0-9 和 大小写字母
+        int length = string.length();
+        for (int k = 1; k <= num; k++) {
+            StringBuilder sb = new StringBuilder(); //声明一个 StringBuilder 对象sb 保存 验证码
+            sb.append("http://bx.szeastroc.com/");
+            for (int i = 0; i < 13; i++) {
+                Random random = new Random();//创建一个新的随机数生成器
+                int index = random.nextInt(length);//返回[0,string.length)范围的int值    作用：保存下标
+                char ch = string.charAt(index);//charAt() : 返回指定索引处的 char 值   ==》赋值给char字符对象ch
+                sb.append(ch);// append(char c) :将 char 参数的字符串表示形式追加到此序列  ==》即将每次获取的ch值作拼接
+            }
+            String sbStr = sb.toString();
+            if (sets.contains(sbStr)) {
+                k--;
+                continue;
+            }
+            sets.add(sbStr);
+//            if (list.contains(sbStr)) {
+//                k--;
+//                continue;
+//            }
+//            list.add(sbStr);
+            // System.out.println(sb.toString());
+        }
+
+        List<CodeVo> list = Lists.newArrayListWithCapacity(sets.size());
+        for (String codeLink : sets) {
+            CodeVo codeVo = CodeVo.builder().codeLink(codeLink).build();
+            list.add(codeVo);
+        }
+        // 这里注意 有同学反应使用swagger 会导致各种问题，请直接用浏览器或者用postman
+        response.setContentType("application/vnd.ms-excel");
+        response.setCharacterEncoding("utf-8");
+        // 这里URLEncoder.encode可以防止中文乱码 当然和easyexcel没有关系
+        String fileName = URLEncoder.encode("冰柜二维码", "UTF-8");
+        // String fileName = "测试demo";
+        response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+        EasyExcel.write(response.getOutputStream(), CodeVo.class).sheet("模板").doWrite(list);
+
+    }
 }

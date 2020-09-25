@@ -363,6 +363,11 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     putStoreRelateModelDao.updateById(relateModel);
                 }
             }
+
+            icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+            icePutApply.setUpdateTime(new Date());
+            icePutApplyDao.updateById(icePutApply);
+
             IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutOrder.getApplyNumber()));
             if(transferRecord != null){
                 transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());

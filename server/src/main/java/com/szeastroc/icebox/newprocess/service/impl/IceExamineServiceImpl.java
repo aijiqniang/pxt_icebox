@@ -269,41 +269,41 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         BeanUtils.copyProperties(iceExamineVo,iceExamine);
         Map<String, Object> map = new HashMap<>();
         //冰柜状态是正常，巡检也是正常，不需要审批
-        if(IceBoxEnums.StatusEnum.NORMAL.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.equals(iceExamineVo.getIceExamineStatus())){
+        if(IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
 
             doExamine(iceExamine);
         }
         //冰柜状态是报废，巡检是正常，需要走与报废相同的审批
-        if(IceBoxEnums.StatusEnum.SCRAP.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.equals(iceExamineVo.getIceExamineStatus())){
+        if(IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
 
             map = createExamineCheckProcess(iceExamineVo,map);
         }
         //冰柜状态是遗失，巡检是正常，需要走与遗失相同的审批
-        if(IceBoxEnums.StatusEnum.LOSE.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.equals(iceExamineVo.getIceExamineStatus())){
+        if(IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
 
             map = createExamineCheckProcess(iceExamineVo,map);
         }
         //冰柜状态是报修，巡检是正常，需要走与报修相同的审批
-        if(IceBoxEnums.StatusEnum.REPAIR.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.equals(iceExamineVo.getIceExamineStatus())){
+        if(IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
 
             map = createExamineCheckProcess(iceExamineVo,map);
         }
         //冰柜状态不是报废，巡检是报废，需要走报废审批
-        if(!IceBoxEnums.StatusEnum.SCRAP.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.SCRAP.equals(iceExamineVo.getIceExamineStatus())){
+        if(!IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceExamineStatus())){
 
             map = createExamineCheckProcess(iceExamineVo,map);
         }
 
         //冰柜状态不是遗失，巡检是遗失，需要走遗失审批
-        if(!IceBoxEnums.StatusEnum.LOSE.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.LOSE.equals(iceExamineVo.getIceExamineStatus())){
+        if(!IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceExamineStatus())){
 
             map = createExamineCheckProcess(iceExamineVo,map);
         }
 
         //冰柜状态不是报修，巡检是报修，需要走报修通知上级
-        if(!IceBoxEnums.StatusEnum.REPAIR.equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.REPAIR.equals(iceExamineVo.getIceExamineStatus())){
+        if(!IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceExamineStatus())){
 
-            SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceExamineVo.getCreateBy()));
+//            SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceExamineVo.getCreateBy()));
             Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(iceExamineVo.getMarketAreaId()));
             List<Integer> ids = new ArrayList<Integer>();
             //获取上级部门领导
@@ -339,7 +339,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     backlog.setBacklogName(iceExamineVo.getCreateName()+"冰柜报修通知信息");
                     backlog.setCode(iceExamineVo.getAssetId());
                     backlog.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
-                    backlog.setExamineType(ExamineTypeEnum.ICEBOX_LOSE.getType());
+                    backlog.setExamineType(ExamineTypeEnum.ICEBOX_REPAIR.getType());
                     backlog.setSendType(1);
                     backlog.setSendUserId(id);
                     backlog.setCreateBy(iceExamineVo.getCreateBy());
@@ -387,14 +387,14 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }
 
         }
-        if(serviceUser == null ){
+        if(serviceUser == null || serviceUser.getId() == null){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
         }
         //申请人是服务处经理，直接置为审核状态
         if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
             return checkExamine(iceExamineVo,map);
         }
-        if(groupUser == null ){
+        if(groupUser == null || groupUser.getId() == null){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
         }
         ids.add(groupUser.getId());
@@ -445,7 +445,17 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     }
 
     private Map<String, Object> checkExamine(IceExamineVo iceExamineVo, Map<String, Object> map) {
+        IceBox iceBox = iceBoxDao.selectById(iceExamineVo.getIceBoxId());
+        if(iceBox == null){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "巡检的冰柜不存在！");
+        }
 
+        iceBox.setStatus(iceExamineVo.getIceStatus());
+        iceBox.setUpdatedBy(iceExamineVo.getCreateBy());
+        iceBox.setUpdatedTime(new Date());
+        iceBoxDao.updateById(iceBox);
+
+        map.put("isCheck", CommonIsCheckEnum.IS_CHECK.getStatus());
         return map;
     }
 

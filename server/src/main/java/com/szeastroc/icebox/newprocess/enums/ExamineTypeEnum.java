@@ -30,7 +30,8 @@ public enum ExamineTypeEnum {
     ICEBOX_TRANSFER(17,"冰柜转移"),
     ICEBOX_NORMAL(18,"冰柜正常"),
     ICEBOX_SCRAP(19,"冰柜报废"),
-    ICEBOX_LOSE(20,"冰柜遗失");
+    ICEBOX_LOSE(20,"冰柜遗失"),
+    ICEBOX_REPAIR(21,"冰柜报修");
 
     private int type;
     private String desc;

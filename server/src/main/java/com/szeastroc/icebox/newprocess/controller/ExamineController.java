@@ -77,4 +77,16 @@ public class ExamineController {
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,map);
     }
+
+    @RequestMapping("/dealIceExamineCheck")
+    @MonitorAnnotation
+    public CommonResponse<IceExamine> dealIceExamineCheck(String redisKey, Integer status) {
+        if (redisKey == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+
+        iceExamineService.dealIceExamineCheck(redisKey,status);
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
 }

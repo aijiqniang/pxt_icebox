@@ -109,6 +109,12 @@ public class IceExamine {
     @TableField(value = "examin_msg")
     private String examinMsg;
 
+    /**
+     * 审批状态：0-驳回，1-审核通过
+     */
+    @TableField(value = "examin_status")
+    private Integer examinStatus;
+
 
     public boolean validate() {
         return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)

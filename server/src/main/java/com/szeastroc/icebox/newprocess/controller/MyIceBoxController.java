@@ -207,4 +207,5 @@ public class MyIceBoxController {
         PutStoreRelateModel relateModel = iceBoxService.getApplyInfoByNumber(applyNumber);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,relateModel);
     }
+
 }

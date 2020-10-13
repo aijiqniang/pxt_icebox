@@ -4,9 +4,7 @@ import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.client.constant.RegisterConstant;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Created by hbl
@@ -24,4 +22,7 @@ public interface FeignIceBoxClient {
 
     @RequestMapping("/refund/updateExamineStatus")
     CommonResponse updateExamineStatus(@RequestBody IceBoxRequest iceBoxRequest);
+
+    @GetMapping("/store/judge/customer/bindIceBox")
+    CommonResponse<Boolean> judgeCustomerBindIceBox(@RequestParam("number") String  number);
 }

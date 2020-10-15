@@ -35,4 +35,27 @@ public class IceBoxEnums {
             return "";
         }
     }
+
+    /**
+     * 冰柜类型 0:旧冰柜，1:新冰柜
+     */
+    @Getter
+    @AllArgsConstructor
+    public enum TypeEnum {
+
+        OLD_ICE_BOX(0, "旧冰柜"),
+        NEW_ICE_BOX(1, "新冰柜");
+
+        private Integer type;
+        private String desc;
+
+        public static String getDesc(Integer type) {
+            for (StatusEnum enu : StatusEnum.values()) {
+                if (enu.getType().equals(type)) {
+                    return enu.getDesc();
+                }
+            }
+            return "";
+        }
+    }
 }

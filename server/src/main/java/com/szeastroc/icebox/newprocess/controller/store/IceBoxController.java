@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.controller.store;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -15,16 +16,12 @@ import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
+import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
-import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
-import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
-import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.service.*;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
@@ -39,16 +36,14 @@ import com.szeastroc.icebox.util.ExcelUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Created by Tulane
@@ -61,6 +56,7 @@ import java.util.Objects;
 public class IceBoxController {
 
     private final IceBoxService iceBoxService;
+    private final IceBoxExtendService iceBoxExtendService;
     private final IcePutPactRecordService icePutPactRecordService;
     private final IcePutOrderService icePutOrderService;
     private final IceBackOrderService iceBackOrderService;
@@ -134,6 +130,7 @@ public class IceBoxController {
      * 根据冰柜二维码查找冰柜信息
      *
      * @param qrcode
+     * @param pxtNumber
      * @return
      * @throws ImproperOptionException
      * @throws NormalOptionException
@@ -147,6 +144,25 @@ public class IceBoxController {
     }
 
     /**
+     * 根据冰柜id查找冰柜信息
+     *
+     * @param id
+     * @param pxtNumber
+     * @return
+     * @throws ImproperOptionException
+     * @throws NormalOptionException
+     */
+    @PostMapping("/getIceBoxById")
+    public CommonResponse<IceBoxVo> getIceBoxById(Integer id, String pxtNumber) {
+        if (id == null || StringUtils.isBlank(pxtNumber)) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxById(id,pxtNumber));
+    }
+
+
+
+    /**
      * 门店老板签署电子协议(otoc)
      *
      * @param clientInfoRequest
@@ -154,7 +170,7 @@ public class IceBoxController {
      * @throws ImproperOptionException
      */
     @PostMapping("/createPactRecord")
-    public CommonResponse<Void> createPactRecord(ClientInfoRequest clientInfoRequest) {
+    public CommonResponse<Void> createPactRecord(@RequestBody ClientInfoRequest clientInfoRequest) {
         if (!clientInfoRequest.validate()) {
             log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -215,7 +231,7 @@ public class IceBoxController {
      * @return
      */
     @PostMapping("/applyPayIceBox")
-    public CommonResponse<OrderPayResponse> applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
+    public CommonResponse<OrderPayResponse> applyPayIceBox(@RequestBody ClientInfoRequest clientInfoRequest) throws Exception {
         if (!clientInfoRequest.validate()) {
             log.error("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -228,6 +244,7 @@ public class IceBoxController {
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea() + "");
         clientInfoRequest.setOrderSource(OrderSourceEnums.OTOC.getType());
+        clientInfoRequest.setType(1);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
     }
 
@@ -251,6 +268,7 @@ public class IceBoxController {
         }
         clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");
         clientInfoRequest.setOrderSource(OrderSourceEnums.DMS.getType());
+        clientInfoRequest.setType(1);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
     }
 

@@ -96,6 +96,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
+    @Autowired
+    private IceBoxService iceBoxService;
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IceModelDao iceModelDao;
     private final FeignDeptClient feignDeptClient;
@@ -123,6 +125,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final FeignExportRecordsClient feignExportRecordsClient;
     private final FeignBacklogClient feignBacklogClient;
     private final IceBoxTransferHistoryDao iceBoxTransferHistoryDao;
+    private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
 
 
     @Override
@@ -1016,12 +1019,22 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Set<Integer> iceBoxIds = Streams.toStream(icePutApplyRelateBoxes).map(x -> x.getBoxId()).collect(Collectors.toSet());
             if (CollectionUtil.isNotEmpty(iceBoxIds)) {
                 for (Integer iceBoxId : iceBoxIds) {
-                    IceBox iceBox = new IceBox();
-                    iceBox.setId(iceBoxId);
+                    IceBox iceBox = iceBoxDao.selectById(iceBoxId);
+                    if(iceBox == null){
+                        continue;
+                    }
                     iceBox.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBox.setCreatedBy(0);
                     iceBoxDao.updateById(iceBox);
+                    if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                        OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+                        oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
+                        oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
+                        oldIceBoxSignNotice.setPutStoreNumber(iceBox.getPutStoreNumber());
+                        oldIceBoxSignNotice.setCreateTime(new Date());
+                        oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
+                    }
                 }
             }
         }
@@ -1826,6 +1839,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void checkIceBoxNew(IceBoxRequest iceBoxRequest) {
         //审批中
         if (iceBoxRequest.getStatus() == null) {
@@ -1890,13 +1904,29 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Set<Integer> storeRelateModelIds = Streams.toStream(applyRelatePutStoreModels).map(x -> x.getStoreRelateModelId()).collect(Collectors.toSet());
             if (CollectionUtil.isNotEmpty(storeRelateModelIds)) {
                 for (Integer storeRelateModelId : storeRelateModelIds) {
-                    PutStoreRelateModel putStoreRelateModel = PutStoreRelateModel.builder()
-                            .id(storeRelateModelId)
-                            .putStatus(IceBoxStatus.IS_PUTING.getStatus())
-                            .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
-                            .updateTime(new Date())
-                            .build();
+                    PutStoreRelateModel putStoreRelateModel =putStoreRelateModelDao.selectById(storeRelateModelId);
+                    if(putStoreRelateModel == null){
+                        continue;
+                    }
+                    putStoreRelateModel.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
+                    putStoreRelateModel.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
+                    putStoreRelateModel.setUpdateTime(new Date());
                     putStoreRelateModelDao.updateById(putStoreRelateModel);
+                    //旧冰柜发送签收通知
+                    IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, putStoreRelateModel.getModelId()).eq(IceBox::getSupplierId, putStoreRelateModel.getSupplierId()).last("limit 1"));
+                    if(iceBox != null && IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+
+                        iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
+                        iceBox.setUpdatedTime(new Date());
+                        iceBoxDao.updateById(iceBox);
+
+                        OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+                        oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
+                        oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
+                        oldIceBoxSignNotice.setPutStoreNumber(putStoreRelateModel.getPutStoreNumber());
+                        oldIceBoxSignNotice.setCreateTime(new Date());
+                        oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
+                    }
                 }
             }
         }
@@ -2125,6 +2155,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public IceBoxVo getIceBoxByQrcodeNew(String qrcode, String pxtNumber) {
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
         IceBox iceBox = iceBoxDao.selectById(Objects.requireNonNull(iceBoxExtend).getId());
+        return iceBoxService.getIceBoxVo(pxtNumber, iceBoxExtend, iceBox);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
+    public IceBoxVo getIceBoxVo(String pxtNumber, IceBoxExtend iceBoxExtend, IceBox iceBox) {
         IceModel iceModel = iceModelDao.selectById(Objects.requireNonNull(iceBox).getModelId());
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, pxtNumber);
@@ -2313,7 +2349,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void cancelApplyByNumber(IceBoxVo iceBoxVo) {
         List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxVo.getApplyNumber()));
         if(CollectionUtil.isEmpty(applyRelatePutStoreModels)){
@@ -2833,5 +2869,39 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             customerLabelDetailDto.setCustomerType(0);
         }
         feignCusLabelClient.createCustomerLabelDetail(customerLabelDetailDto);
+    }
+
+    @Override
+    public void dealOldIceBoxNotice() {
+        List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).eq(IceBox::getIceBoxType, IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType()));
+        if(CollectionUtil.isEmpty(iceBoxList)){
+            return;
+        }
+        List<IceBox> noNoticeIceBoxList = new ArrayList<>();
+        for(IceBox iceBox:iceBoxList){
+            OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId()).eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber()));
+            if(oldIceBoxSignNotice == null){
+                noNoticeIceBoxList.add(iceBox);
+            }
+        }
+        if(CollectionUtil.isEmpty(noNoticeIceBoxList)){
+            return;
+        }
+        for(IceBox iceBox:noNoticeIceBoxList){
+            OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+            oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
+            oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
+            oldIceBoxSignNotice.setPutStoreNumber(iceBox.getPutStoreNumber());
+            oldIceBoxSignNotice.setCreateTime(new Date());
+            oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
+        }
+    }
+
+    @Override
+    public IceBoxVo getIceBoxById(Integer id, String pxtNumber) {
+        IceBox iceBox = iceBoxDao.selectById(id);
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
+        IceBoxVo iceBoxVo = iceBoxService.getIceBoxVo(pxtNumber, iceBoxExtend, iceBox);
+        return iceBoxVo;
     }
 }

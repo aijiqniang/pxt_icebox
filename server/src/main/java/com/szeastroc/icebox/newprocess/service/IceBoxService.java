@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
@@ -91,6 +92,12 @@ public interface IceBoxService extends IService<IceBox> {
     Map<String, Object> transferIceBoxs(IceBoxTransferHistoryVo historyVo);
 
     void dealTransferCheck(IceBoxTransferHistoryVo historyVo);
+
+    void dealOldIceBoxNotice();
+
+    IceBoxVo getIceBoxById(Integer id, String pxtNumber);
+
+    IceBoxVo getIceBoxVo(String pxtNumber, IceBoxExtend iceBoxExtend, IceBox iceBox);
 }
 
 

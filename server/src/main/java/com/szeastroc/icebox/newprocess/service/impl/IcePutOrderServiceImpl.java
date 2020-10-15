@@ -14,9 +14,7 @@ import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
-import com.szeastroc.icebox.newprocess.enums.PutStatus;
-import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
@@ -27,13 +25,13 @@ import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.util.wechatpay.WeiXinService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.szeastroc.icebox.newprocess.enums.RecordStatus;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -57,6 +55,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
     private final IcePutPactRecordDao icePutPactRecordDao;
     private final IceTransferRecordDao iceTransferRecordDao;
+    private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
 
 
     @Override
@@ -78,6 +77,15 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 //            throw new ImproperOptionException("不免押流程的申请存在免押冰柜");
             icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
             icePutApplyDao.updateById(icePutApply);
+            //旧冰柜更新通知状态
+            if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId()).eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber()));
+                if(oldIceBoxSignNotice != null){
+                    oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                    oldIceBoxSignNotice.setUpdateTime(new Date());
+                    oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+                }
+            }
             return createByFree(clientInfoRequest, iceBox);
         }
 
@@ -137,6 +145,16 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         icePutOrder.setUpdatedBy(0);
         icePutOrder.setUpdatedTime(icePutOrder.getCreatedTime());
         icePutOrderDao.insert(icePutOrder);
+
+        //旧冰柜更新通知状态
+        if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+            OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId()).eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber()));
+            if(oldIceBoxSignNotice != null){
+                oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                oldIceBoxSignNotice.setUpdateTime(new Date());
+                oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+            }
+        }
         return icePutOrder;
     }
 

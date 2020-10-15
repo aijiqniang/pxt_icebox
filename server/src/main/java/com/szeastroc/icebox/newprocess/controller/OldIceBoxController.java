@@ -20,11 +20,15 @@ import com.szeastroc.icebox.newprocess.dao.IceModelDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,6 +51,8 @@ public class OldIceBoxController {
     private IceBoxExtendDao iceBoxExtendDao;
     @Autowired
     private IceModelDao iceModelDao;
+    @Autowired
+    private IceBoxService iceBoxService;
     @Autowired
     private FeignSupplierClient feignSupplierClient;
 
@@ -168,6 +174,16 @@ public class OldIceBoxController {
         log.info("处理数据结束");
         log.info("同时存在的数据-->[{}]", JSON.toJSONString(list, true));
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+
+    /**
+     * 查询已投放未重新签收的旧冰柜发送签收通知
+     */
+    @RequestMapping("dealOldIceBoxNotice")
+    public CommonResponse<List<IceBox>> dealOldIceBoxNotice(){
+        iceBoxService.dealOldIceBoxNotice();
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 
 }

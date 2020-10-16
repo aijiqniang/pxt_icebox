@@ -1035,11 +1035,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPage.setDeptIdList(deptIdList);
         // 处理请求数据
         if (dealIceBoxPage(iceBoxPage)) {
-            return null;
+            return new Page();
         }
         List<IceBox> iceBoxList = iceBoxDao.findPage(iceBoxPage);
         if (CollectionUtils.isEmpty(iceBoxList)) {
-            return null;
+            return new Page();
         }
         List<Integer> deptIds = iceBoxList.stream().map(IceBox::getDeptId).collect(Collectors.toList());
         // 营销区域对应得部门  服务处->大区->事业部
@@ -1224,7 +1224,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         IceBox iceBox = iceBoxDao.selectById(id);
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
-        Map<String, Object> map = new HashMap<>(32);
+        Map<String, Object> map =Maps.newHashMap();
         map.put("assetId", iceBoxExtend.getAssetId()); // 设备编号 --东鹏资产id
         map.put("chestName", iceBox.getChestName()); // 名称
         IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getId, iceBox.getModelId()).last(" limit 1"));

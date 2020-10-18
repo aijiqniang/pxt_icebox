@@ -4,14 +4,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.util.Date;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
@@ -35,6 +31,12 @@ public class IceModel {
      */
     @TableField(value = "chest_name")
     private String chestName;
+
+    /**
+     * 冰柜规格
+     */
+    @TableField(value = "chest_norm")
+    private String chestNorm;
 
     /**
      * 冰柜押金

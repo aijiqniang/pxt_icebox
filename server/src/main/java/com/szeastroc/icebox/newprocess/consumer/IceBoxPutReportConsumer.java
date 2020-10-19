@@ -25,6 +25,7 @@ import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportExcelVo;
 import com.szeastroc.user.common.session.UserManageVo;
+import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
@@ -49,7 +50,8 @@ public class IceBoxPutReportConsumer {
     @Autowired
     private ImageUploadUtil imageUploadUtil;
     @Autowired
-    private ExportRecordsDao exportRecordsDao;
+    private FeignExportRecordsClient feignExportRecordsClient;
+
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
     public void task(IceBoxPutReportMsg reportMsg) throws Exception {
@@ -68,15 +70,15 @@ public class IceBoxPutReportConsumer {
         LambdaQueryWrapper<IceBoxPutReport> wrapper = fillWrapper(reportMsg);
         log.info("fxbill task... [{}]", JSON.toJSONString(reportMsg));
         long start = System.currentTimeMillis();
-        Integer count = exportRecordsDao.selectByExportCount(wrapper); // 得到当前条件下的总量
+        Integer count = iceBoxPutReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
         log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
-        String[] columnName = {"事业部","大区","服务处", "订单编号", "客户编号", "客户名称", "客户类型","客户等级", "供货商类型", "供货商编号","供货商名称", "业务人员","业务人员部门","录入日期", "订单日期", "订单类型", "产品编号",
-                "产品名称", "单价", "订单数量（箱）", "营收标箱（箱）", "赠送数量（箱）", "发货日期", "发货数量（箱）", "发货营收标箱（箱）", "搭赠数量发货（箱）","收货日期", "状态", "单据来源", "备注"};
+        String[] columnName = {"事业部","大区","服务处", "流程编号", "所属经销商编号", "所属经销商名称", "提交人","提交日期", "投放客户编号", "投放客户名称","投放客户类型", "冰柜型号","冰柜编号","申请台数", "是否免押", "押金金额", "审核人员",
+                "审核日期", "投放状态"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
-        PoiUtil.exportReportExcelToLocalPath(count, columnName, tmpPath, imageUploadUtil, exportRecordsDao, reportMsg.getSerialNum(),
+        PoiUtil.exportReportExcelToLocalPath(count, columnName, tmpPath, imageUploadUtil, feignExportRecordsClient, reportMsg.getRecordsId(),
                 (wb,eachSheet, startRowCount, endRowCount, currentPage, pageSize) -> {
                     List<IceBoxPutReportExcelVo> excelVoList = new ArrayList<>();
                     Page<IceBoxPutReport> page = new Page<>();
@@ -122,26 +124,24 @@ public class IceBoxPutReportConsumer {
                                 SXSSFRow eachDataRow = eachSheet.createRow(i);
                                 if ((i - startRowCount) < excelVoList.size()) {
                                     IceBoxPutReportExcelVo excelVo = excelVoList.get(i - startRowCount);
-                                    eachDataRow.createCell(0).setCellValue(excelVo.getHeadquartersDeptName());
-                                    eachDataRow.createCell(1).setCellValue(excelVo.getBusinessDeptName());
-                                    eachDataRow.createCell(2).setCellValue(excelVo.getRegionDeptName());
-                                    eachDataRow.createCell(3).setCellValue(excelVo.getServiceDeptName());
-                                    eachDataRow.createCell(4).setCellValue(excelVo.getGroupDeptName());
-                                    eachDataRow.createCell(5).setCellValue(excelVo.getApplyNumber());
-                                    eachDataRow.createCell(6).setCellValue(excelVo.getSupplierNumber());
-                                    eachDataRow.createCell(7).setCellValue(excelVo.getSupplierName());
-                                    eachDataRow.createCell(8).setCellValue(excelVo.getSubmitterName());
-                                    eachDataRow.createCell(9).setCellValue(excelVo.getSubmitTime());
-                                    eachDataRow.createCell(10).setCellValue(excelVo.getPutCustomerNumber());
-                                    eachDataRow.createCell(11).setCellValue(excelVo.getPutCustomerName());
-                                    eachDataRow.createCell(12).setCellValue(excelVo.getPutCustomerType());
-                                    eachDataRow.createCell(13).setCellValue(excelVo.getIceBoxModelName());
-                                    eachDataRow.createCell(14).setCellValue(excelVo.getIceBoxAssetId());
-                                    eachDataRow.createCell(15).setCellValue(excelVo.getApplyCount());
-                                    eachDataRow.createCell(16).setCellValue(excelVo.getDepositMoney()+"");
-                                    eachDataRow.createCell(17).setCellValue(excelVo.getExamineUserName());
-                                    eachDataRow.createCell(18).setCellValue(excelVo.getExamineTime());
-                                    eachDataRow.createCell(19).setCellValue(excelVo.getPutStatus());
+                                    eachDataRow.createCell(0).setCellValue(excelVo.getBusinessDeptName());
+                                    eachDataRow.createCell(1).setCellValue(excelVo.getRegionDeptName());
+                                    eachDataRow.createCell(2).setCellValue(excelVo.getServiceDeptName());
+                                    eachDataRow.createCell(3).setCellValue(excelVo.getApplyNumber());
+                                    eachDataRow.createCell(4).setCellValue(excelVo.getSupplierNumber());
+                                    eachDataRow.createCell(5).setCellValue(excelVo.getSupplierName());
+                                    eachDataRow.createCell(6).setCellValue(excelVo.getSubmitterName());
+                                    eachDataRow.createCell(7).setCellValue(excelVo.getSubmitTime());
+                                    eachDataRow.createCell(8).setCellValue(excelVo.getPutCustomerNumber());
+                                    eachDataRow.createCell(9).setCellValue(excelVo.getPutCustomerName());
+                                    eachDataRow.createCell(10).setCellValue(excelVo.getPutCustomerType());
+                                    eachDataRow.createCell(11).setCellValue(excelVo.getIceBoxModelName());
+                                    eachDataRow.createCell(12).setCellValue(excelVo.getIceBoxAssetId());
+                                    eachDataRow.createCell(13).setCellValue(excelVo.getFreeType());
+                                    eachDataRow.createCell(14).setCellValue(excelVo.getDepositMoney()+"");
+                                    eachDataRow.createCell(15).setCellValue(excelVo.getExamineUserName());
+                                    eachDataRow.createCell(16).setCellValue(excelVo.getExamineTime());
+                                    eachDataRow.createCell(17).setCellValue(excelVo.getPutStatus());
                                 }
                             }
                         }

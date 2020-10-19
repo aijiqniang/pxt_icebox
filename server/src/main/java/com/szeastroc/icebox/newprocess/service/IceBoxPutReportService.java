@@ -13,6 +13,8 @@ public interface IceBoxPutReportService extends IService<IceBoxPutReport> {
     IPage<IceBoxPutReport> findByPage(IceBoxPutReportMsg reportMsg);
 
     CommonResponse<IceBoxPutReport> sendExportMsg(IceBoxPutReportMsg reportMsg);
+
+    Integer selectByExportCount(LambdaQueryWrapper<IceBoxPutReport> wrapper);
 }
 
 

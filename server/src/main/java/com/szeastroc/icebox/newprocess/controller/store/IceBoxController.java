@@ -110,6 +110,21 @@ public class IceBoxController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.checkIceBoxByQrcodeNew(qrcode, pxtNumber));
     }
 
+    /**
+     * 检查当前冰柜状态(新)
+     *
+     * @param id
+     * @param pxtNumber
+     * @return
+     */
+    @RequestMapping("/checkIceBoxById")
+    public CommonResponse<IceBoxStatusVo> checkIceBoxById(Integer id, String pxtNumber) {
+        if (id == null || StringUtils.isBlank(pxtNumber)) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.checkIceBoxById(id, pxtNumber));
+    }
+
 
     /**
      * 根据冰柜二维码查找冰柜信息

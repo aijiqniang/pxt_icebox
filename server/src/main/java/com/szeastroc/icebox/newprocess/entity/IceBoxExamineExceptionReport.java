@@ -1,4 +1,4 @@
-package com.szeastroc.icebox.newprocess.vo;
+package com.szeastroc.icebox.newprocess.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -15,31 +15,54 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class IceBoxPutReportExcelVo {
+@TableName(value = "t_ice_box_examine_exception_report")
+public class IceBoxExamineExceptionReport {
+    @TableId(value = "id", type = IdType.AUTO)
+    private Integer id;
+    /**
+     *本部id
+     */
+    private Integer headquartersDeptId;
     /**
      *本部名称
      */
     private String headquartersDeptName;
     /**
+     *事业部id
+     */
+    private Integer businessDeptId;
+    /**
      *事业部名称
      */
     private String businessDeptName;
+    /**
+     *大区id
+     */
+    private Integer regionDeptId;
     /**
      *大区名称
      */
     private String regionDeptName;
     /**
+     *服务处id
+     */
+    private Integer serviceDeptId;
+    /**
      *服务处名称
      */
     private String serviceDeptName;
+    /**
+     *组id
+     */
+    private Integer groupDeptId;
     /**
      *组名称
      */
     private String groupDeptName;
     /**
-     *申请编号
+     *所属经销商id
      */
-    private String applyNumber;
+    private Integer supplierId;
     /**
      *所属经销商编号
      */
@@ -49,13 +72,17 @@ public class IceBoxPutReportExcelVo {
      */
     private String supplierName;
     /**
+     *提交人id
+     */
+    private Integer submitterId;
+    /**
      *提交人名称
      */
     private String submitterName;
     /**
      *提交日期
      */
-    private String submitTime;
+    private Date submitTime;
     /**
      *投放客户编号
      */
@@ -67,7 +94,11 @@ public class IceBoxPutReportExcelVo {
     /**
      *投放客户类型
      */
-    private String putCustomerType;
+    private Integer putCustomerType;
+    /**
+     *冰柜类型id
+     */
+    private Integer iceBoxModelId;
     /**
      *冰柜型号名称
      */
@@ -77,13 +108,13 @@ public class IceBoxPutReportExcelVo {
      */
     private String iceBoxAssetId;
     /**
-     *免押类型：1-不免押，2-免押
-     */
-    private String freeType;
-    /**
      *押金
      */
     private BigDecimal depositMoney;
+    /**
+     *审核人id
+     */
+    private Integer examineUserId;
     /**
      *审核人名称
      */
@@ -91,10 +122,21 @@ public class IceBoxPutReportExcelVo {
     /**
      *审核时间
      */
-    private String examineTime;
+    private Date examineTime;
     /**
-     *投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放
+     *状态 0:报备中 1:可提报  2:已提报 3:已报备 4：已驳回
      */
-    private String putStatus;
-
+    private Integer status;
+    /**
+     *提报类型：2-报废，3-遗失
+     */
+    private Integer toOaType;
+    /**
+     *提报时间
+     */
+    private Date toOaTime;
+    /**
+     *提报单号
+     */
+    private String toOaNumber;
 }

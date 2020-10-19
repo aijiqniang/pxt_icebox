@@ -98,6 +98,8 @@ public interface IceBoxService extends IService<IceBox> {
     IceBoxVo getIceBoxById(Integer id, String pxtNumber);
 
     IceBoxVo getIceBoxVo(String pxtNumber, IceBoxExtend iceBoxExtend, IceBox iceBox);
+
+    IceBoxStatusVo checkIceBoxById(Integer id, String pxtNumber);
 }
 
 

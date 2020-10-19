@@ -23,9 +23,9 @@ public class IceBoxPutReportMsg  extends Page implements Serializable {
 
     private Integer id;
     /**
-     * 生成下载任务编号
+     * 下载任务id
      */
-    private String serialNum;
+    private Integer recordsId;
     /**
      *本部id
      */
@@ -122,10 +122,6 @@ public class IceBoxPutReportMsg  extends Page implements Serializable {
      *冰柜资产编号
      */
     private String iceBoxAssetId;
-    /**
-     *申请数量
-     */
-    private Integer applyCount;
     /**
      *免押类型：1-不免押，2-免押
      */

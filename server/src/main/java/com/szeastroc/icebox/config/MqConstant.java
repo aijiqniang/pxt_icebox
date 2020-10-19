@@ -10,6 +10,12 @@ public interface MqConstant {
     String directExchange = "pxt_mq_exchange";
     String directQueue = "icebox_export_excel_queue";
     String directRoutingKey = "icebox_export_excel_routing_key";
+
+    /**
+     * 冰柜投放报表
+     */
+    String iceboxReportQueue = "ice_box_report_queue";
+    String iceboxReportKey = "ice_box_report_routing_key";
     /*****************************  直连模式的参数   *************************************/
 
 

@@ -8,10 +8,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
+import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
+import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
+import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.*;
@@ -29,6 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +42,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -56,6 +62,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final IcePutPactRecordDao icePutPactRecordDao;
     private final IceTransferRecordDao iceTransferRecordDao;
     private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
+    private final RabbitTemplate rabbitTemplate;
 
 
     @Override
@@ -155,6 +162,15 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
             }
         }
+        //发送mq消息,同步申请数据到报表
+        CompletableFuture.runAsync(() -> {
+            IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+            report.setIceBoxAssetId(iceBox.getAssetId());
+            report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+            report.setApplyNumber(applyNumber);
+            report.setOperateType(OperateTypeEnum.UPDATE.getType());
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+        }, ExecutorServiceFactory.getInstance());
         return icePutOrder;
     }
 
@@ -204,6 +220,15 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                         transferRecord.setUpdateTime(new Date());
                         iceTransferRecordDao.updateById(transferRecord);
                     }
+                    //发送mq消息,同步申请数据到报表
+                    CompletableFuture.runAsync(() -> {
+                        IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                        report.setIceBoxAssetId(iceBox.getAssetId());
+                        report.setApplyNumber(applyRelatePutStoreModel.getApplyNumber());
+                        report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                        report.setOperateType(OperateTypeEnum.UPDATE.getType());
+                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+                    }, ExecutorServiceFactory.getInstance());
                     break;
                 }
             }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.ExportRecordsDao">
+
+    <select id="selectByExportList" resultType="com.szeastroc.icebox.newprocess.entity.IceBoxPutReport">
+        select * from t_ice_box_put_report
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test='ew.sqlSegment!=null'>
+                and ${ew.sqlSegment}
+            </if>
+        </trim>
+        order by id asc limit #{start},#{end}
+    </select>
+
+    <insert id="insertExportRecords">
+        INSERT INTO `t_export_records` (`serial_num`, `job_name`, `user_id`, `user_name`, `type`, `request_time`)
+        VALUES(#{serialNum},#{jobName},#{userId},#{userName},#{type},#{requestTime})
+    </insert>
+    <update id="updateExportRecords">
+        UPDATE `t_export_records` SET `type`=1, `net_path` = #{netPath}, `end_request_time` = #{endRequestTime} WHERE `serial_num` = #{serialNum};
+    </update>
+</mapper>

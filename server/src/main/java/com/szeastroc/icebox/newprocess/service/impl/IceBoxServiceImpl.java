@@ -1292,6 +1292,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("khContactNumber", khContactNumber); // 联系电话
         String belongDealer = null;
         if (suppInfoVo != null && suppInfoVo.getName() != null) {
+            map.put("supplierNumber",suppInfoVo.getNumber());
             belongDealer = suppInfoVo.getName();
         }
         map.put("belongDealer", belongDealer); // 所属经销商
@@ -2388,7 +2389,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     // 退仓
                     updateWrapper.set(IceBox::getPutStoreNumber, null).set(IceBox::getPutStatus, 0);
                 } else {
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "客户和经销商必须一致");
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "如更改客户为经销商则该经销商必须是冰柜所属经销商");
                 }
             } else {
                 iceBox.setPutStoreNumber(customerNumber);

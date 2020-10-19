@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Created by hbl
@@ -32,4 +33,7 @@ public interface FeignIceBoxClient {
 
     @RequestMapping("/examine/dealIceExamineCheck")
     CommonResponse dealIceExamineCheck(@RequestParam("redisKey") String redisKey, @RequestParam("status") Integer status);
+
+    @GetMapping("/store/judge/customer/bindIceBox")
+    CommonResponse<Boolean> judgeCustomerBindIceBox(@RequestParam("number") String  number);
 }

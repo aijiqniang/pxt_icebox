@@ -61,6 +61,7 @@ import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.client.FeignXcxBaseClient;
+import com.szeastroc.user.common.session.UserManageVo;
 import com.szeastroc.user.common.vo.*;
 import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
@@ -753,6 +754,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .repairBeginTime(iceBoxExtend.getRepairBeginTime())
                 .storeAddress(storeAddress)
                 .releaseTime(iceBoxExtend.getReleaseTime())
+                .iceBoxType(iceBox.getIceBoxType())
                 .build();
 
 
@@ -2918,12 +2920,31 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void changeIcebox(IceBoxManagerVo iceBoxManagerVo) {
         judgeChange(iceBoxManagerVo);
 
         IceBox iceBox = iceBoxManagerVo.convertToIceBox();
         Integer iceBoxId = iceBoxManagerVo.getIceBoxId();
         Integer modifyCustomerType = iceBoxManagerVo.getModifyCustomerType();
+        String assetId = iceBox.getAssetId();
+        IceBox oldIceBox = iceBoxDao.selectById(iceBoxId);
+        IceBoxTransferHistory iceBoxTransferHistory = new IceBoxTransferHistory();
+
+        // 资产编号变更
+        IceBox selectIceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
+        if (null != selectIceBox) {
+            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().likeRight(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
+            // 第二种
+            int integer = iceBoxes.stream().map(iceBox1 -> {
+                String assetId1 = iceBox1.getAssetId();
+                if (!assetId1.contains("-")) {
+                    return 0;
+                }
+                return Integer.parseInt(assetId1.substring(assetId1.indexOf("-") + 1));
+            }).reduce(Integer::max).orElse(0) + 1;
+            iceBox.setAssetId(assetId + "-" + integer);
+        }
         LambdaUpdateWrapper<IceBox> updateWrapper = Wrappers.<IceBox>lambdaUpdate().eq(IceBox::getId, iceBoxId);
         if (null != modifyCustomerType) {
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
@@ -2937,11 +2958,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "如更改客户为经销商则该经销商必须是冰柜所属经销商");
                 }
             } else {
+                iceBoxTransferHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(3);
             }
         }
         iceBoxDao.update(iceBox, updateWrapper);
+        convertToIceBoxTransferHistory(oldIceBox, iceBox, iceBoxTransferHistory);
     }
 
     @Override
@@ -2961,10 +2984,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
+        String newAssetId = "";
         if (null != iceBox) {
             if (reconfirm) {
                 List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().likeRight(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
-                String newAssetId = "";
                 // 第一种
                 /*if (iceBoxes.size() == 1) {
                     newAssetId = assetId + "-1";
@@ -2990,11 +3013,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     return Integer.parseInt(assetId1.substring(assetId1.indexOf("-") + 1));
                 }).reduce(Integer::max).orElse(0) + 1;
                 newAssetId = assetId + "-" + integer;
-                iceBoxDao.update(null, Wrappers.<IceBox>lambdaUpdate().eq(IceBox::getId, iceBoxId).set(IceBox::getAssetId, newAssetId));
             } else {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "该资产编号与现有资产编号重复");
+                throw new NormalOptionException(4101, "该资产编号与现有资产编号重复");
             }
+        } else {
+            newAssetId = assetId;
         }
+        iceBoxDao.update(null, Wrappers.<IceBox>lambdaUpdate().eq(IceBox::getId, iceBoxId).set(IceBox::getAssetId, newAssetId));
+        iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, newAssetId));
     }
 
     private Map<String, Map<String, String>> getSuppMap(Map<String, Map<String, String>> storeMaps, List<String> storeNumbers) {
@@ -3126,5 +3152,44 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (!result) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "参数不完整");
         }
+    }
+
+    private void convertToIceBoxTransferHistory(IceBox oldIceBox, IceBox newIcebox, IceBoxTransferHistory iceBoxTransferHistory) {
+        iceBoxTransferHistory.setOldAssetId(oldIceBox.getAssetId());
+        iceBoxTransferHistory.setOldBrandName(oldIceBox.getBrandName());
+        iceBoxTransferHistory.setOldChestDepositMoney(oldIceBox.getDepositMoney());
+        iceBoxTransferHistory.setOldChestMoney(oldIceBox.getChestMoney());
+        iceBoxTransferHistory.setOldChestDepositMoney(oldIceBox.getDepositMoney());
+        iceBoxTransferHistory.setOldMarketAreaId(oldIceBox.getDeptId());
+        iceBoxTransferHistory.setOldModelId(oldIceBox.getModelId());
+        iceBoxTransferHistory.setOldModelName(oldIceBox.getModelName());
+        iceBoxTransferHistory.setOldSupplierId(oldIceBox.getId());
+        iceBoxTransferHistory.setOldChestNorm(oldIceBox.getChestNorm());
+        iceBoxTransferHistory.setOldPutStoreNumber(oldIceBox.getPutStoreNumber());
+
+
+        iceBoxTransferHistory.setNewAssetId(newIcebox.getAssetId());
+        iceBoxTransferHistory.setNewBrandName(newIcebox.getBrandName());
+        iceBoxTransferHistory.setNewChestDepositMoney(newIcebox.getDepositMoney());
+        iceBoxTransferHistory.setNewChestMoney(newIcebox.getChestMoney());
+        iceBoxTransferHistory.setNewChestDepositMoney(newIcebox.getDepositMoney());
+        iceBoxTransferHistory.setNewMarketAreaId(newIcebox.getDeptId());
+        iceBoxTransferHistory.setNewModelId(newIcebox.getModelId());
+        iceBoxTransferHistory.setNewModelName(newIcebox.getModelName());
+        iceBoxTransferHistory.setNewSupplierId(newIcebox.getId());
+        iceBoxTransferHistory.setNewChestNorm(newIcebox.getChestNorm());
+        iceBoxTransferHistory.setNewPutStoreNumber(newIcebox.getPutStoreNumber());
+
+
+        UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
+        iceBoxTransferHistory.setCreateBy(userManageVo.getSessionUserInfoVo().getId());
+        iceBoxTransferHistory.setCreateByName(userManageVo.getSessionUserInfoVo().getRealname());
+
+
+        iceBoxTransferHistory.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
+        iceBoxTransferHistory.setIceBoxId(oldIceBox.getId());
+
+
+        iceBoxTransferHistoryDao.insert(iceBoxTransferHistory);
     }
 }

@@ -55,9 +55,15 @@ public class IceBoxManagerController {
     @GetMapping("/test")
     public CommonResponse<Void> test() {
         // 0518201905002
-        iceBoxService.changeAssetId(479,"0518201905068",true);
+        iceBoxService.changeAssetId(479, "0000000001", true);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+
+    @GetMapping("/changeAssetId")
+    public CommonResponse<Void> changeAssetId(@RequestParam("iceBoxId") Integer iceBoxId, @RequestParam("assetId") String assetId, @RequestParam("reconfirm") boolean reconfirm) {
+        iceBoxService.changeAssetId(iceBoxId, assetId, reconfirm);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
 
 }

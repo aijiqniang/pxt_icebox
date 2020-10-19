@@ -20,6 +20,10 @@ public class OldIceBoxSignNotice {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
     /**
+     * 冰柜申请编号
+     */
+    private String applyNumber;
+    /**
      * 冰柜id
      */
     private Integer iceBoxId;

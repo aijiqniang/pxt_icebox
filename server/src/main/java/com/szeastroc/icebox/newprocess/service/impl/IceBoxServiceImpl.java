@@ -1039,6 +1039,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxDao.updateById(iceBox);
                     if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
                         OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+                        oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
                         oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
                         oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
                         oldIceBoxSignNotice.setPutStoreNumber(iceBox.getPutStoreNumber());
@@ -1819,7 +1820,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 .freeType(requestVo.getFreeType())
                                 .build();
                         applyRelatePutStoreModelDao.insert(applyRelatePutStoreModel);
-
+                        //发送mq消息,同步申请数据到报表
+                        CompletableFuture.runAsync(() -> {
+                            buildReportAndSendMq(requestVo,applyNumber,now);
+                        }, ExecutorServiceFactory.getInstance());
                     }
                 } catch (Exception e) {
                     throw e;
@@ -1836,10 +1840,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             IceBoxPutModel.IceBoxModel iceBoxModel = new IceBoxPutModel.IceBoxModel(requestVo.getChestModel(), requestVo.getChestName(), requestVo.getDepositMoney(), requestVo.getApplyCount(),
                     requestVo.getFreeType(), requestVo.getSupplierName(), supplier.getAddress(), supplier.getLinkman(), supplier.getLinkmanMobile());
             iceBoxModels.add(iceBoxModel);
-            //发送mq消息,同步申请数据到报表
-            CompletableFuture.runAsync(() -> {
-                buildReportAndSendMq(requestVo, applyNumber, now);
-            }, ExecutorServiceFactory.getInstance());
         }
         boolean regionLeaderCheck = false;
         List<Integer> freeTypes = requestNewVos.stream().map(x -> x.getFreeType()).collect(Collectors.toList());
@@ -1890,7 +1890,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
 
         report.setApplyNumber(applyNumber);
-        report.setApplyCount(iceBoxRequestVo.getApplyCount());
         report.setDepositMoney(iceBoxRequestVo.getDepositMoney());
         report.setFreeType(iceBoxRequestVo.getFreeType());
         report.setIceBoxModelId(iceBoxRequestVo.getModelId());
@@ -2028,6 +2027,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         iceBoxDao.updateById(iceBox);
 
                         OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+                        oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
                         oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
                         oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
                         oldIceBoxSignNotice.setPutStoreNumber(putStoreRelateModel.getPutStoreNumber());
@@ -2158,6 +2158,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
         log.info("扫描的二维码--》【{}】,pxtNumber--》【{}】", qrcode, pxtNumber);
+        return getIceBoxStatusVo(pxtNumber, iceBoxStatusVo, iceBoxExtend);
+    }
+
+    private IceBoxStatusVo getIceBoxStatusVo(String pxtNumber, IceBoxStatusVo iceBoxStatusVo, IceBoxExtend iceBoxExtend) {
         if (Objects.isNull(iceBoxExtend)) {
             // 冰柜不存在(二维码未找到)
             iceBoxStatusVo.setSignFlag(false);
@@ -3125,6 +3129,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         for (IceBox iceBox : noNoticeIceBoxList) {
             OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+            //TODO
+//            oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
             oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
             oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
             oldIceBoxSignNotice.setPutStoreNumber(iceBox.getPutStoreNumber());
@@ -3132,7 +3138,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
         }
     }
-
+    @Override
+    public IceBoxStatusVo checkIceBoxById(Integer id, String pxtNumber) {
+        IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
+        log.info("签收的旧冰柜id--》【{}】,pxtNumber--》【{}】", id, pxtNumber);
+        return getIceBoxStatusVo(pxtNumber, iceBoxStatusVo, iceBoxExtend);
+    }
     @Override
     public IceBoxVo getIceBoxById(Integer id, String pxtNumber) {
         IceBox iceBox = iceBoxDao.selectById(id);

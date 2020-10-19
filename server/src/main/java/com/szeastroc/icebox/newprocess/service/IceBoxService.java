@@ -103,6 +103,8 @@ public interface IceBoxService extends IService<IceBox> {
 
     void changeAssetId(Integer iceBoxId,String assetId,boolean reconfirm );
 
+
+    IceBoxStatusVo checkIceBoxById(Integer id, String pxtNumber);
 }
 
 

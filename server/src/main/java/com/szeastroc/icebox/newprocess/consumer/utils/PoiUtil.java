@@ -5,6 +5,8 @@ import com.szeastroc.customer.client.constant.RegisterConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.ExcelConstant;
 import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
+import com.szeastroc.icebox.newprocess.enums.ExportRecordTypeEnum;
+import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -166,7 +168,7 @@ public class PoiUtil {
      * @throws Exception
      */
     public static void exportReportExcelToLocalPath(Integer totalRowCount, String[] titles, String exportPath, ImageUploadUtil imageUploadUtil,
-                                                    ExportRecordsDao exportRecordsDao, String serialNum, WriteExcelDataDelegated writeExcelDataDelegated) throws Exception {
+                                                    FeignExportRecordsClient feignExportRecordsClient, Integer recordsId, WriteExcelDataDelegated writeExcelDataDelegated) throws Exception {
         // 初始化EXCEL
         SXSSFWorkbook wb = PoiUtil.initExcel(totalRowCount, titles);
         // 调用委托类分批写数据
@@ -203,7 +205,7 @@ public class PoiUtil {
         // 删除临时文件
         CompletableFuture.runAsync(() -> {
             // 更新导出记录
-            exportRecordsDao.updateExportRecords(serialNum, uploadPath, new Date());
+            feignExportRecordsClient.updateExportRecord(uploadPath, ExportRecordTypeEnum.COMPLETED.getType(),recordsId);
             if(allFile.delete()) log.info("xlsx文件已删除 [{}]", xlsxPath);
         });
     }

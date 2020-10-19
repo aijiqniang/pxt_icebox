@@ -17,8 +17,6 @@ import java.util.Date;
 @Repository
 public interface ExportRecordsDao extends BaseMapper<ExportRecords> {
 
-    Integer selectByExportCount(@Param(Constants.WRAPPER) LambdaQueryWrapper<IceBoxPutReport> wrapper);
-
     /**
      * 导出记录
      */

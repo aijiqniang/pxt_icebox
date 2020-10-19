@@ -1,9 +1,11 @@
 package com.szeastroc.icebox.newprocess.controller;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.WorkbookUtil;
+import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.constant.Constants;
@@ -20,9 +22,14 @@ import com.szeastroc.icebox.newprocess.dao.IceModelDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
+<<<<<<< HEAD
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
+=======
+import com.szeastroc.icebox.newprocess.service.OldIceBoxOpt;
+import com.szeastroc.icebox.newprocess.vo.OldIceBoxImportVo;
+>>>>>>> master
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -34,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -55,6 +63,8 @@ public class OldIceBoxController {
     private IceBoxService iceBoxService;
     @Autowired
     private FeignSupplierClient feignSupplierClient;
+    @Resource
+    private OldIceBoxOpt oldIceBoxOpt;
 
     @RequestMapping("/import")
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -186,4 +196,22 @@ public class OldIceBoxController {
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 
+
+    /**
+     * 针对旧冰柜需要更新旧冰柜信息需求
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     * @throws ImproperOptionException
+     */
+    @RequestMapping("/importOrUpdate")
+    public CommonResponse<Void> importOrUpdate(@RequestParam("excelFile") MultipartFile file) throws IOException, ImproperOptionException {
+        log.info("开始读取数据");
+        List<OldIceBoxImportVo> oldIceBoxImportVoList = EasyExcel.read(file.getInputStream()).head(OldIceBoxImportVo.class).sheet().doReadSync();
+        if (CollectionUtil.isNotEmpty(oldIceBoxImportVoList)) {
+            oldIceBoxOpt.opt(oldIceBoxImportVoList);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
 }

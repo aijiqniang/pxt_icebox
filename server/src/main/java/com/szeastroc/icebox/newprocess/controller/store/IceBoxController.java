@@ -15,6 +15,7 @@ import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
+import com.szeastroc.icebox.enums.IceBoxStatus;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
@@ -508,5 +509,17 @@ public class IceBoxController {
             }
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+
+    @GetMapping("/judge/customer/bindIceBox")
+    CommonResponse<Boolean> judgeCustomerBindIceBox(@RequestParam("number") String  number){
+
+        int count = iceBoxService.count(new LambdaQueryWrapper<IceBox>().eq(IceBox::getPutStoreNumber, number).eq(IceBox::getPutStatus, IceBoxStatus.IS_PUTED.getStatus()));
+       if( count>0){
+           return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null,Boolean.TRUE);
+       }else{
+           return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null,Boolean.FALSE);
+       }
     }
 }

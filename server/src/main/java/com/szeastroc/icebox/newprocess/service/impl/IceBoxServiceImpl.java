@@ -1822,7 +1822,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         applyRelatePutStoreModelDao.insert(applyRelatePutStoreModel);
                         //发送mq消息,同步申请数据到报表
                         CompletableFuture.runAsync(() -> {
-                            buildReportAndSendMq(requestVo,applyNumber,now);
+                            buildReportAndSendMq(requestVo, applyNumber, now);
                         }, ExecutorServiceFactory.getInstance());
                     }
                 } catch (Exception e) {
@@ -2968,6 +2968,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
         iceBoxDao.update(iceBox, updateWrapper);
+        iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, iceBox.getAssetId()));
         convertToIceBoxTransferHistory(oldIceBox, iceBox, iceBoxTransferHistory);
     }
 
@@ -3138,6 +3139,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
         }
     }
+
     @Override
     public IceBoxStatusVo checkIceBoxById(Integer id, String pxtNumber) {
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
@@ -3145,6 +3147,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         log.info("签收的旧冰柜id--》【{}】,pxtNumber--》【{}】", id, pxtNumber);
         return getIceBoxStatusVo(pxtNumber, iceBoxStatusVo, iceBoxExtend);
     }
+
     @Override
     public IceBoxVo getIceBoxById(Integer id, String pxtNumber) {
         IceBox iceBox = iceBoxDao.selectById(id);

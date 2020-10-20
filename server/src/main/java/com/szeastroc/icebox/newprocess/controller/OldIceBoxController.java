@@ -25,6 +25,7 @@ import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
 import com.szeastroc.icebox.newprocess.service.OldIceBoxOpt;
+import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.OldIceBoxImportVo;
 import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
@@ -194,7 +195,7 @@ public class OldIceBoxController {
         log.info("开始读取数据");
         List<OldIceBoxImportVo> oldIceBoxImportVoList = EasyExcel.read(file.getInputStream()).head(OldIceBoxImportVo.class).sheet().doReadSync();
         if (CollectionUtil.isNotEmpty(oldIceBoxImportVoList)) {
-            List<Map<String, Object>> lists = oldIceBoxOpt.opt(oldIceBoxImportVoList);
+            List<IceBoxAssetReportVo> lists = oldIceBoxOpt.opt(oldIceBoxImportVoList);
 
             /**
              * @Date: 2020/10/19 14:50 xiao

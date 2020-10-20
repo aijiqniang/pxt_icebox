@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -150,7 +151,7 @@ public class IceBoxController {
         if (StringUtils.isBlank(qrcode) || StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxByQrcodeNew(qrcode,pxtNumber));
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxByQrcodeNew(qrcode, pxtNumber));
     }
 
     /**
@@ -395,16 +396,38 @@ public class IceBoxController {
     public CommonResponse<String> importExcel(@RequestParam("excelFile") MultipartFile mfile) throws Exception {
 
         List<IceBoxAssetReportVo> lists = iceBoxService.importByEasyExcel(mfile);
+//        IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
+//                .assetId("XNYC0120160529177")
+//                .modelId(1)
+//                .modelName("立式冷藏单门展示柜")
+//                .suppName("浙江台州君秀")
+//                .suppNumber("097850")
+//                .oldPutStatus(null) // 投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放
+//                .oldStatus(null) // 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
+//                .newPutStatus(0)
+//                .newStatus(2)
+//                .suppDeptId(6901).build();
+//        IceBoxAssetReportVo assetReportVo1 = IceBoxAssetReportVo.builder()
+//                .assetId("0518201905070")
+//                .modelId(1)
+//                .modelName("立式冷藏单门展示柜")
+//                .suppName("青海西宁蓝飞")
+//                .suppNumber("098249")
+//                .oldPutStatus(null) // 投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放
+//                .oldStatus(null) // 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
+//                .newPutStatus(0)
+//                .newStatus(2)
+//                .suppDeptId(6902).build();
+//        List<IceBoxAssetReportVo> lists= Lists.newArrayList(assetReportVo,assetReportVo1);
         /**
          * @Date: 2020/10/19 14:50 xiao
          *  将报表中导入数据库中的数据异步更新到报表中
          */
-//        List<String> assetIds = Lists.newArrayList("测试报表");
-        if(CollectionUtils.isNotEmpty(lists)){
+        if (CollectionUtils.isNotEmpty(lists)) {
             DataPack dataPack = new DataPack(); // 数据包
             dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
             dataPack.setObj(lists);
-            ExecutorServiceFactory.getInstance().execute(()->{
+            ExecutorServiceFactory.getInstance().execute(() -> {
                 // 发送mq消息
                 directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
             });
@@ -503,11 +526,12 @@ public class IceBoxController {
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, flag);
     }
+
     @RequestMapping("dealIceBoxOrder")
     public CommonResponse<IceBox> dealIceBoxOrder() throws Exception {
         List<IcePutOrder> icePutOrders = icePutOrderService.list(Wrappers.<IcePutOrder>lambdaQuery().eq(IcePutOrder::getStatus, OrderStatus.IS_PAY_ING.getStatus()));
-        if(CollectionUtil.isNotEmpty(icePutOrders)){
-            for(IcePutOrder order:icePutOrders){
+        if (CollectionUtil.isNotEmpty(icePutOrders)) {
+            for (IcePutOrder order : icePutOrders) {
                 this.loopPutOrderPayStatus(order.getOrderNum());
             }
         }
@@ -516,13 +540,13 @@ public class IceBoxController {
 
 
     @GetMapping("/judge/customer/bindIceBox")
-    CommonResponse<Boolean> judgeCustomerBindIceBox(@RequestParam("number") String  number){
+    CommonResponse<Boolean> judgeCustomerBindIceBox(@RequestParam("number") String number) {
 
         int count = iceBoxService.count(new LambdaQueryWrapper<IceBox>().eq(IceBox::getPutStoreNumber, number).eq(IceBox::getPutStatus, IceBoxStatus.IS_PUTED.getStatus()));
-       if( count>0){
-           return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null,Boolean.TRUE);
-       }else{
-           return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null,Boolean.FALSE);
-       }
+        if (count > 0) {
+            return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null, Boolean.TRUE);
+        } else {
+            return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null, Boolean.FALSE);
+        }
     }
 }

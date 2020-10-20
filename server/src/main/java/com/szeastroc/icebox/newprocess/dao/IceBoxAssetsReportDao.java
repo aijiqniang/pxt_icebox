@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Select;
  */
 public interface IceBoxAssetsReportDao extends BaseMapper<IceBoxAssetsReport> {
 
-    @Select("SELECT * FROM `t_ice_box_assets_report` WHERE supp_number=#{suppNumber};")
-    IceBoxAssetsReport readBySuppNumber(@Param("suppNumber") String suppNumber);
+    @Select("SELECT * FROM `t_ice_box_assets_report` WHERE supp_number=#{suppNumber} and xing_hao_id=#{modelId};")
+    IceBoxAssetsReport readBySuppNumberAndModelId(@Param("suppNumber") String suppNumber,@Param("modelId") Integer modelId);
 
 }

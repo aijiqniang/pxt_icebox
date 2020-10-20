@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 /**
  * @Author xiao
  * @Date create in 2020/10/20 9:50
@@ -12,10 +14,11 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class IceBoxAssetReportVo {
+public class IceBoxAssetReportVo implements Serializable {
 
     private String suppName; // 经销商名称
     private String suppNumber; // 经销商编号
+    private Integer suppDeptId; // 经销商对应的服务处id
     private String modelName; // 型号名称
     private Integer modelId; // 型号id
     private Integer oldPutStatus; // 旧的冰柜投放状态

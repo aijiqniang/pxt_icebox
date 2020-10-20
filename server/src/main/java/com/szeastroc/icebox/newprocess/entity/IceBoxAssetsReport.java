@@ -27,5 +27,15 @@ public class IceBoxAssetsReport {
     private Integer zaiCang; // 在仓
     private Integer yiShi; // 遗失
     private Integer baoFei; // 报废
+    private Integer headquartersDeptId; // 本部
+    private String headquartersDeptName; // 本都
+    private Integer businessDeptId; // 事业部
+    private String businessDeptName; // 事业部
+    private Integer regionDeptId; // 大区
+    private String regionDeptName; // 大区
+    private Integer serviceDeptId; // 服务处
+    private String serviceDeptName; // 服务处
+    private Integer groupDeptId; // 组
+    private String groupDeptName; // 组
 
 }

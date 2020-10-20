@@ -1678,7 +1678,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .oldPutStatus(oldPutStatus)
                     .oldStatus(oldStatus)
                     .newPutStatus(newPutStatus)
-                    .newStatus(newStatus).build();
+                    .newStatus(newStatus)
+                    .suppDeptId(deptId).build();
 
             lists.add(assetReportVo);
         }

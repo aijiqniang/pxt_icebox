@@ -154,27 +154,6 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         icePutOrder.setUpdatedBy(0);
         icePutOrder.setUpdatedTime(icePutOrder.getCreatedTime());
         icePutOrderDao.insert(icePutOrder);
-
-        //旧冰柜更新通知状态
-        if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
-            OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
-                    .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
-                    .eq(OldIceBoxSignNotice::getApplyNumber, applyNumber));
-            if(oldIceBoxSignNotice != null){
-                oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
-                oldIceBoxSignNotice.setUpdateTime(new Date());
-                oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
-            }
-        }
-        //发送mq消息,同步申请数据到报表
-        CompletableFuture.runAsync(() -> {
-            IceBoxPutReportMsg report = new IceBoxPutReportMsg();
-            report.setIceBoxAssetId(iceBox.getAssetId());
-            report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
-            report.setApplyNumber(applyNumber);
-            report.setOperateType(OperateTypeEnum.UPDATE.getType());
-            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
-        }, ExecutorServiceFactory.getInstance());
         return icePutOrder;
     }
 
@@ -223,6 +202,17 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                         transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());
                         transferRecord.setUpdateTime(new Date());
                         iceTransferRecordDao.updateById(transferRecord);
+                    }
+                    //旧冰柜更新通知状态
+                    if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                        OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
+                                .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
+                                .eq(OldIceBoxSignNotice::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
+                        if(oldIceBoxSignNotice != null){
+                            oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                            oldIceBoxSignNotice.setUpdateTime(new Date());
+                            oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+                        }
                     }
                     //发送mq消息,同步申请数据到报表
                     CompletableFuture.runAsync(() -> {
@@ -300,6 +290,27 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             putStoreRelateModelDao.updateById(relateModel);
         }
         iceBoxDao.updateById(iceBox);
+
+        //旧冰柜更新通知状态
+        if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+            OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
+                    .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
+                    .eq(OldIceBoxSignNotice::getApplyNumber, icePutOrder.getApplyNumber()));
+            if(oldIceBoxSignNotice != null){
+                oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                oldIceBoxSignNotice.setUpdateTime(new Date());
+                oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+            }
+        }
+        //发送mq消息,同步申请数据到报表
+        CompletableFuture.runAsync(() -> {
+            IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+            report.setIceBoxAssetId(iceBox.getAssetId());
+            report.setApplyNumber(icePutOrder.getApplyNumber());
+            report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+            report.setOperateType(OperateTypeEnum.UPDATE.getType());
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+        }, ExecutorServiceFactory.getInstance());
 
         IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutApply.getApplyNumber()));
         if(transferRecord != null){
@@ -421,6 +432,28 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 transferRecord.setUpdateTime(new Date());
                 iceTransferRecordDao.updateById(transferRecord);
             }
+
+            //旧冰柜更新通知状态
+            if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
+                        .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
+                        .eq(OldIceBoxSignNotice::getApplyNumber, icePutOrder.getApplyNumber()));
+                if(oldIceBoxSignNotice != null){
+                    oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                    oldIceBoxSignNotice.setUpdateTime(new Date());
+                    oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+                }
+            }
+            //发送mq消息,同步申请数据到报表
+            CompletableFuture.runAsync(() -> {
+                IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                report.setIceBoxAssetId(iceBox.getAssetId());
+                report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                report.setApplyNumber(icePutOrder.getApplyNumber());
+                report.setOperateType(OperateTypeEnum.UPDATE.getType());
+                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+            }, ExecutorServiceFactory.getInstance());
+
 //            LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
 //            wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
 //            wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());

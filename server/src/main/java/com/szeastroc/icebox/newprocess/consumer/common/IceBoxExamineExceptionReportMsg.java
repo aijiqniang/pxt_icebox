@@ -17,7 +17,7 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class IceBoxPutReportMsg extends Page implements Serializable {
+public class IceBoxExamineExceptionReportMsg extends Page implements Serializable {
 
     private static final long serialVersionUID = -4750978713271531956L;
 
@@ -66,10 +66,6 @@ public class IceBoxPutReportMsg extends Page implements Serializable {
      *组名称
      */
     private String groupDeptName;
-    /**
-     *申请编号
-     */
-    private String applyNumber;
     /**
      *所属经销商id
      */
@@ -123,10 +119,6 @@ public class IceBoxPutReportMsg extends Page implements Serializable {
      */
     private String iceBoxAssetId;
     /**
-     *免押类型：1-不免押，2-免押
-     */
-    private Integer freeType;
-    /**
      *押金
      */
     private BigDecimal depositMoney;
@@ -143,10 +135,21 @@ public class IceBoxPutReportMsg extends Page implements Serializable {
      */
     private Date examineTime;
     /**
-     *投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放
+     *状态 0:报备中 1:可提报  2:已提报 3:已报备 4：已驳回
      */
-    private Integer putStatus;
-
+    private Integer status;
+    /**
+     *提报类型：2-报废，3-遗失
+     */
+    private Integer toOaType;
+    /**
+     *提报时间
+     */
+    private Date toOaTime;
+    /**
+     *提报单号
+     */
+    private String toOaNumber;
     /**
      *操作类型：1-新增，2-更新，3-查询
      */

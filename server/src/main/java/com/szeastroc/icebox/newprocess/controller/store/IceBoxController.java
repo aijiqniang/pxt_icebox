@@ -186,7 +186,7 @@ public class IceBoxController {
      * @throws ImproperOptionException
      */
     @PostMapping("/createPactRecord")
-    public CommonResponse<Void> createPactRecord(@RequestBody ClientInfoRequest clientInfoRequest) {
+    public CommonResponse<Void> createPactRecord(ClientInfoRequest clientInfoRequest) {
         if (!clientInfoRequest.validate()) {
             log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -247,7 +247,7 @@ public class IceBoxController {
      * @return
      */
     @PostMapping("/applyPayIceBox")
-    public CommonResponse<OrderPayResponse> applyPayIceBox(@RequestBody ClientInfoRequest clientInfoRequest) throws Exception {
+    public CommonResponse<OrderPayResponse> applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
         if (!clientInfoRequest.validate()) {
             log.error("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);

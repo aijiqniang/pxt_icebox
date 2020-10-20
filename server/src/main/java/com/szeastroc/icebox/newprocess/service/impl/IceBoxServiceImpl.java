@@ -2988,6 +2988,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (null == iceBoxId || StringUtils.isBlank(assetId)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
+        IceBox currentIceBox = iceBoxDao.selectById(iceBoxId);
+        if (currentIceBox.getAssetId().contains(assetId + "-")) {
+            return;
+        }
         IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
         String newAssetId = "";
         if (null != iceBox) {

@@ -26,6 +26,7 @@ import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
@@ -393,7 +394,7 @@ public class IceBoxController {
     @PostMapping("/importExcel")
     public CommonResponse<String> importExcel(@RequestParam("excelFile") MultipartFile mfile) throws Exception {
 
-        List<Map<String, Object>> lists = iceBoxService.importByEasyExcel(mfile);
+        List<IceBoxAssetReportVo> lists = iceBoxService.importByEasyExcel(mfile);
         /**
          * @Date: 2020/10/19 14:50 xiao
          *  将报表中导入数据库中的数据异步更新到报表中

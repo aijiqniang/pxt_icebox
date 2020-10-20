@@ -1225,7 +1225,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         IceBox iceBox = iceBoxDao.selectById(id);
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
-        Map<String, Object> map =Maps.newHashMap();
+        Map<String, Object> map = Maps.newHashMap();
         map.put("assetId", iceBoxExtend.getAssetId()); // 设备编号 --东鹏资产id
         map.put("chestName", iceBox.getChestName()); // 名称
         IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getId, iceBox.getModelId()).last(" limit 1"));
@@ -1486,7 +1486,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     @Override
-    public List<Map<String,Object>> importByEasyExcel(MultipartFile mfile) throws Exception {
+    public List<IceBoxAssetReportVo> importByEasyExcel(MultipartFile mfile) throws Exception {
 
         /**
          * @Date: 2020/5/20 9:19 xiao
@@ -1509,12 +1509,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<String, SubordinateInfoVo> supplierNumberMap = Maps.newHashMap(); // 存储经销商编号和id
 
         int importSize = importDataList.size();
-        List<Map<String,Object>> lists =Lists.newArrayList();
+        List<IceBoxAssetReportVo> lists = Lists.newArrayList();
 
         for (ImportIceBoxVo boxVo : importDataList) {
 
             Integer serialNumber = boxVo.getSerialNumber(); // 序号
-            if(serialNumber==null){
+            if (serialNumber == null) {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "序号 不能为空");
             }
             String externalId = boxVo.getExternalId();  // 冰箱控制器ID
@@ -1591,11 +1591,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
             Integer supplierId = null;  // 经销商id
-            String suppName=null; // 经销商名称
+            String suppName = null; // 经销商名称
             SubordinateInfoVo subordinateInfoVo = supplierNumberMap.get(supplierNumber);
             if (subordinateInfoVo != null && subordinateInfoVo.getSupplierId() != null) {
                 supplierId = subordinateInfoVo.getSupplierId();
-                 suppName = subordinateInfoVo.getName();
+                suppName = subordinateInfoVo.getName();
             } else {
                 // 去数据库查询
                 SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
@@ -1606,6 +1606,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 supplierId = infoVo.getSupplierId();
                 supplierNumberMap.put(supplierNumber, infoVo);
             }
+
+            // 旧的 冰柜状态/投放状态
+            Integer oldPutStatus = iceBox == null ? null : iceBox.getPutStatus();
+            Integer oldStatus = iceBox == null ? null : iceBox.getStatus();
+
             // 鉴于服务处就是对应经销商的服务处,所以直接用经销商的
             Integer deptId = supplierNumberMap.get(supplierNumber).getMarketAreaId(); // 所属服务处
             if (iceBox == null) {
@@ -1632,6 +1637,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .setGpsMac(gpsMac)
                     .setReleaseTime(releaseTime)
                     .setRepairBeginTime(repairBeginTime);
+
+            // 新的 冰柜状态/投放状态
+            Integer newPutStatus = iceBox.getStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
+            Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.NORMAL.getType() : iceBox.getStatus();
 
             /**
              * @Date: 2020/5/20 11:07 xiao
@@ -1660,12 +1669,18 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
             }
 
-            Map<String ,Object>map=Maps.newHashMap();
-            map.put("suppName",suppName);
-            map.put("suppNumber",supplierNumber);
-            map.put("modelName",modelStr);
-            map.put("modelId",modelId);
-            lists.add(map);
+            IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
+                    .assetId(assetId)
+                    .modelId(modelId)
+                    .modelName(modelStr)
+                    .suppName(suppName)
+                    .suppNumber(supplierNumber)
+                    .oldPutStatus(oldPutStatus)
+                    .oldStatus(oldStatus)
+                    .newPutStatus(newPutStatus)
+                    .newStatus(newStatus).build();
+
+            lists.add(assetReportVo);
         }
         log.info("importExcel 处理数据结束-->{}", importSize);
 
@@ -1774,7 +1789,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getSupplierId, requestVo.getSupplierId())
                                 .eq(PutStoreRelateModel::getModelId, requestVo.getModelId())
                                 .eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus())
-                                .ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus()));
+                                .ne(PutStoreRelateModel::getPutStatus, PutStatus.NO_PUT.getStatus()));
                         int allCount = 0;
                         int putCount = 0;
 
@@ -2328,12 +2343,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Transactional
     public void cancelApplyByNumber(IceBoxVo iceBoxVo) {
         List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxVo.getApplyNumber()));
-        if(CollectionUtil.isEmpty(applyRelatePutStoreModels)){
+        if (CollectionUtil.isEmpty(applyRelatePutStoreModels)) {
             throw new ImproperOptionException("不存在冰柜申请信息！");
         }
-        for(ApplyRelatePutStoreModel applyRelatePutStoreModel : applyRelatePutStoreModels){
+        for (ApplyRelatePutStoreModel applyRelatePutStoreModel : applyRelatePutStoreModels) {
             PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(applyRelatePutStoreModel.getStoreRelateModelId());
-            if(relateModel == null){
+            if (relateModel == null) {
                 throw new ImproperOptionException("不存在冰柜申请信息！");
             }
             relateModel.setCancelMsg(iceBoxVo.getCancelMsg());
@@ -2348,10 +2363,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
         List<ExamineNodeVo> examineNodeVoList = iceBoxVo.getExamineNodeVoList();
-        for(ExamineNodeVo nodeVo:examineNodeVoList){
-            if(ExamineNodeStatusEnum.IS_PASS.getStatus().equals(nodeVo.getExamineStatus())){
+        for (ExamineNodeVo nodeVo : examineNodeVoList) {
+            if (ExamineNodeStatusEnum.IS_PASS.getStatus().equals(nodeVo.getExamineStatus())) {
                 SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
-                backlog.setBacklogName(iceBoxVo.getUserName()+"作废冰柜申请通知信息");
+                backlog.setBacklogName(iceBoxVo.getUserName() + "作废冰柜申请通知信息");
                 backlog.setCode(iceBoxVo.getApplyNumber());
                 backlog.setExamineId(nodeVo.getExamineId());
                 backlog.setExamineStatus(nodeVo.getExamineStatus());
@@ -2374,7 +2389,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Override
     public PutStoreRelateModel getApplyInfoByNumber(String applyNumber) {
         ApplyRelatePutStoreModel storeModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, applyNumber).last("limit 1"));
-        if(storeModel == null){
+        if (storeModel == null) {
             return null;
         }
         PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(storeModel.getStoreRelateModelId());

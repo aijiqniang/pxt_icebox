@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -8,7 +9,9 @@ import com.szeastroc.icebox.newprocess.dao.IceBoxAssetsReportDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxAssetsReport;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.service.IceBoxAssetsReportService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -18,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @Author xiao
@@ -37,14 +39,14 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
 
 
     @Override
-    public void createIceBoxAssetsReport(List<Map<String, Object>> lists) {
+    public void createIceBoxAssetsReport(List<IceBoxAssetReportVo> lists) {
 
         if (CollectionUtils.isEmpty(lists)) {
             return;
         }
-        for (Map<String, Object> map : lists) {
+        for (IceBoxAssetReportVo assetReportVo : lists) {
             try {
-                createOne(map);
+                createOne(assetReportVo);
             } catch (Exception e) {
                 log.info("更新数据失败", e);
             }
@@ -53,27 +55,48 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
 
     @Transactional
     @Override
-    public void createOne(Map<String, Object> map) {
+    public void createOne(IceBoxAssetReportVo assetReportVo) {
 
-        String suppName = (String) map.get("suppName"); // 经销商名称
-        String suppNumber = (String) map.get("suppNumber"); // 经销商编号
-        String modelName = (String) map.get("modelName"); // 型号名称
-        Integer modelId = (Integer) map.get("modelId"); // 型号id
-        log.info("冰柜资产报表导入数据:suppName {},suppNumber {},modelName {},modelId {}", suppName, suppNumber, modelName, modelId);
-        if (StringUtils.isBlank(suppName)
-                || StringUtils.isBlank(suppNumber)
-                || StringUtils.isBlank(modelName)
-                || modelId == null
+        if (assetReportVo == null) {
+            return;
+        }
+        log.info("冰柜资产报表导入数据:{}", JSON.toJSONString(assetReportVo));
+        if (StringUtils.isBlank(assetReportVo.getSuppNumber())
+                || assetReportVo.getModelId() == null
+                || assetReportVo.getNewPutStatus() == null
+                || assetReportVo.getNewStatus() == null
         ) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-
-        IceBoxAssetsReport iceBoxAssetsReport = iceBoxAssetsReportDao.readBySuppNumber(suppNumber);
+        IceBoxAssetsReport iceBoxAssetsReport = iceBoxAssetsReportDao.readBySuppNumber(assetReportVo.getSuppNumber());
+        if (iceBoxAssetsReport == null) {
+            iceBoxAssetsReport = new IceBoxAssetsReport();
+        }
         iceBoxAssetsReport
-                .setSuppNumber(suppNumber)
-                .setSuppName(suppName)
-                .setXingHao(modelName)
-                .setXingHaoId(modelId);
+                .setSuppNumber(assetReportVo.getSuppNumber())
+                .setSuppName(assetReportVo.getSuppName())
+                .setXingHao(assetReportVo.getModelName())
+                .setXingHaoId(assetReportVo.getModelId());
+
+        Integer oldStatus = assetReportVo.getOldStatus();
+        Integer newStatus = assetReportVo.getNewStatus();
+        Integer newPutStatus = assetReportVo.getNewPutStatus();
+        if (oldStatus == null) { // 此次数据属于新增
+            /**
+             * @Date: 2020/10/20 10:51 xiao
+             *  报表中只需要关心以下状态
+             */
+//            if(IceBoxEnums.StatusEnum.ABNORMAL.getType()){ // 异常,
+//
+//            }
+        }
+        if (IceBoxEnums.StatusEnum.ABNORMAL.getType().equals(oldStatus)) { // 此次数据属于将 异常状态的数据更新成其他状态
+
+        }
+        if (IceBoxEnums.StatusEnum.NORMAL.getType().equals(oldStatus)) { // 此次数据属于将 正常状态的数据更新成其他状态
+
+        }
+
         Integer id = iceBoxAssetsReport.getId();
 
         if (id == null) {

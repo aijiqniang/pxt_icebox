@@ -10,12 +10,14 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceModelDao;
@@ -24,7 +26,12 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
 import com.szeastroc.icebox.newprocess.service.OldIceBoxOpt;
 import com.szeastroc.icebox.newprocess.vo.OldIceBoxImportVo;
+import com.szeastroc.icebox.rabbitMQ.DataPack;
+import com.szeastroc.icebox.rabbitMQ.DirectProducer;
+import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,28 +41,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("oldIceBox")
+@RequestMapping("/oldIceBox")
+@RequiredArgsConstructor(onConstructor = @_(@Autowired))
 public class OldIceBoxController {
-    @Autowired
-    private FeignStoreClient feignStoreClient;
-    @Autowired
-    private IceBoxDao iceBoxDao;
-    @Autowired
-    private IceBoxExtendDao iceBoxExtendDao;
-    @Autowired
-    private IceModelDao iceModelDao;
-    @Autowired
-    private FeignSupplierClient feignSupplierClient;
-    @Resource
-    private OldIceBoxOpt oldIceBoxOpt;
+    private final FeignStoreClient feignStoreClient;
+    private final IceBoxDao iceBoxDao;
+    private final IceBoxExtendDao iceBoxExtendDao;
+    private final IceModelDao iceModelDao;
+    private final FeignSupplierClient feignSupplierClient;
+    private final  OldIceBoxOpt oldIceBoxOpt;
+    private final DirectProducer directProducer;
 
     @RequestMapping("/import")
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -187,10 +190,25 @@ public class OldIceBoxController {
      */
     @RequestMapping("/importOrUpdate")
     public CommonResponse<Void> importOrUpdate(@RequestParam("excelFile") MultipartFile file) throws IOException, ImproperOptionException {
+
         log.info("开始读取数据");
         List<OldIceBoxImportVo> oldIceBoxImportVoList = EasyExcel.read(file.getInputStream()).head(OldIceBoxImportVo.class).sheet().doReadSync();
         if (CollectionUtil.isNotEmpty(oldIceBoxImportVoList)) {
-            oldIceBoxOpt.opt(oldIceBoxImportVoList);
+            List<Map<String, Object>> lists = oldIceBoxOpt.opt(oldIceBoxImportVoList);
+
+            /**
+             * @Date: 2020/10/19 14:50 xiao
+             *  将报表中导入数据库中的数据异步更新到报表中
+             */
+            if(CollectionUtils.isNotEmpty(lists)){
+                DataPack dataPack = new DataPack(); // 数据包
+                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                dataPack.setObj(lists);
+                ExecutorServiceFactory.getInstance().execute(()->{
+                    // 发送mq消息
+                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                });
+            }
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }

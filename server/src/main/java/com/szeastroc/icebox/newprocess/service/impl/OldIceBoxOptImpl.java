@@ -1,6 +1,8 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -26,7 +28,7 @@ import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @Component
 public class OldIceBoxOptImpl implements OldIceBoxOpt {
@@ -47,8 +49,9 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
     @Override
     @Transactional
-    public void opt(List<OldIceBoxImportVo> oldIceBoxImportVoList) {
+    public List<Map<String, Object>> opt(List<OldIceBoxImportVo> oldIceBoxImportVoList) {
 
+        List<Map<String, Object>> lists = Lists.newArrayList();
         for (int i = 0; i < oldIceBoxImportVoList.size(); i++) {
             OldIceBoxImportVo oldIceBoxImportVo = oldIceBoxImportVoList.get(i);
             String type = oldIceBoxImportVo.getType();
@@ -56,8 +59,16 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             int index = i + 2;
             // 校验主要数据
             validateMain(index, oldIceBoxImportVo);
-            Optional.ofNullable(OldIceBoxOptType.item(type)).ifPresent(event -> event.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao));
+            // Optional.ofNullable(OldIceBoxOptType.item(type)).ifPresent(event -> event.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao));
+
+            OldIceBoxOptType item = OldIceBoxOptType.item(type);
+            if (item == null) {
+                continue;
+            }
+            Map<String, Object> map = item.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao);
+            lists.add(map);
         }
+        return lists;
     }
 
 
@@ -65,7 +76,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
     private enum OldIceBoxOptType {
         CREATE("新增", "旧冰柜入库") {
             @Override
-            public void operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao) {
+            public Map<String, Object> operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao) {
                 // 导入冰柜参数限制较多，需要多重校验
                 IceBox iceBox = new IceBox();
                 IceBoxExtend iceBoxExtend = new IceBoxExtend();
@@ -91,6 +102,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 服务处信息查询有误，请核对服务处名称");
                 }
                 iceBox.setDeptId(integer);
+
+                String suppName=null;// 经销商名称
                 // 经销商编号
                 String supplierNumber = oldIceBoxImportVo.getSupplierNumber();
 
@@ -100,6 +113,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
                     }
                     iceBox.setSupplierId(subordinateInfoVo.getSupplierId());
+                    suppName= subordinateInfoVo.getName();
                 }
 
                 IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
@@ -135,16 +149,23 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
+                Map<String, Object> map = Maps.newHashMap();
+                map.put("suppName",suppName);
+                map.put("suppNumber",supplierNumber);
+                map.put("assetId",assetId);
+                map.put("modelName",modelName);
+                map.put("modelId",iceModel.getId());
+
+                return map;
             }
         },
         GO_BACK("退仓", "旧冰柜退回经销商") {
             @Override
-            public void operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao) {
+            public Map<String, Object> operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao) {
 
                 // 退仓需要指定经销商
                 // 资产编号
                 String assetId = oldIceBoxImportVo.getAssetId();
-
 
                 String supplierNumber = oldIceBoxImportVo.getSupplierNumber();
 
@@ -210,11 +231,12 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
+                return null;
             }
         },
         SCRAP("报废", "旧冰柜报废") {
             @Override
-            public void operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao) {
+            public Map<String, Object> operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao) {
 
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
 
@@ -291,6 +313,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
+                return null;
             }
         };
 
@@ -310,8 +333,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             return null;
         }
 
-        abstract public void operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao,
-                                       IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao);
+        abstract public Map<String, Object> operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao,
+                                                      IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao);
 
     }
 

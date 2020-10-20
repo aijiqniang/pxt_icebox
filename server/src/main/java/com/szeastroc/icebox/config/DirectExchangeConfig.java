@@ -33,4 +33,24 @@ public class DirectExchangeConfig {
         Binding binding = BindingBuilder.bind(directQueue()).to(directExchange()).with(MqConstant.directRoutingKey);
         return binding;
     }
+
+    /**
+     * @Date: 2020/10/19 14:13 xiao
+     *  报表使用的消息队列
+     */
+    // 定义交队列
+    @Bean
+    public Queue directQueueReport() {
+        Queue queue = new Queue(MqConstant.directQueueReport);
+        return queue;
+    }
+
+    // 定义队列跟交换机的绑定关系
+    @Bean
+    public Binding bindingExchangeReport() {
+        Binding binding = BindingBuilder.bind(directQueueReport()).to(directExchange()).with(MqConstant.directRoutingKeyReport);
+        return binding;
+    }
+
+
 }

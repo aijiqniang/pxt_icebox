@@ -21,7 +21,9 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.common.utils.*;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.common.utils.ImageUploadUtil;
+import com.szeastroc.common.utils.Streams;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
@@ -80,7 +82,6 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1485,7 +1486,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     @Override
-    public void importByEasyExcel(MultipartFile mfile) throws Exception {
+    public List<Map<String,Object>> importByEasyExcel(MultipartFile mfile) throws Exception {
 
         /**
          * @Date: 2020/5/20 9:19 xiao
@@ -1508,7 +1509,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<String, SubordinateInfoVo> supplierNumberMap = Maps.newHashMap(); // 存储经销商编号和id
 
         int importSize = importDataList.size();
-        //List<String> message = Lists.newArrayList();
+        List<Map<String,Object>> lists =Lists.newArrayList();
+
         for (ImportIceBoxVo boxVo : importDataList) {
 
             Integer serialNumber = boxVo.getSerialNumber(); // 序号
@@ -1588,17 +1590,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Integer modelId = iceModelMap.get(modelStr); // 设备型号
 
 
-            // 经销商id
-            Integer supplierId = null;
+            Integer supplierId = null;  // 经销商id
+            String suppName=null; // 经销商名称
             SubordinateInfoVo subordinateInfoVo = supplierNumberMap.get(supplierNumber);
             if (subordinateInfoVo != null && subordinateInfoVo.getSupplierId() != null) {
                 supplierId = subordinateInfoVo.getSupplierId();
+                 suppName = subordinateInfoVo.getName();
             } else {
                 // 去数据库查询
                 SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
                 if (infoVo == null) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商编号不存在");
                 }
+                suppName = infoVo.getName();
                 supplierId = infoVo.getSupplierId();
                 supplierNumberMap.put(supplierNumber, infoVo);
             }
@@ -1641,9 +1645,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
                 } catch (Exception e) {
-                    log.error("插入冰柜数据错误", e);
-                    iceBoxDao.deleteById(iceBox.getId());
-                    iceBoxExtendDao.deleteById(iceBox.getId());
+                    log.info("插入冰柜数据错误", e);
+//                    iceBoxDao.deleteById(iceBox.getId());
+//                    iceBoxExtendDao.deleteById(iceBox.getId());
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             } else {
@@ -1651,12 +1655,22 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxDao.updateById(iceBox);
                     iceBoxExtendDao.updateById(iceBoxExtend);
                 } catch (Exception e) {
-                    log.error("更新冰柜数据错误", e);
+                    log.info("更新冰柜数据错误", e);
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             }
+
+            Map<String ,Object>map=Maps.newHashMap();
+            map.put("suppName",suppName);
+            map.put("suppNumber",supplierNumber);
+            map.put("assetId",assetId);
+            map.put("modelName",modelStr);
+            map.put("modelId",modelId);
+            lists.add(map);
         }
         log.info("importExcel 处理数据结束-->{}", importSize);
+
+        return lists;
     }
 
     @Override

@@ -9,20 +9,19 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
+import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.IceBoxStatus;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
-import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
@@ -36,10 +35,14 @@ import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
+import com.szeastroc.icebox.rabbitMQ.DataPack;
+import com.szeastroc.icebox.rabbitMQ.DirectProducer;
+import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.util.ExcelUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -68,6 +71,7 @@ public class IceBoxController {
     private final IceBackOrderService iceBackOrderService;
     private final FeignStoreClient feignStoreClient;
     private final FeignSupplierClient feignSupplierClient;
+    private final DirectProducer directProducer;
 
     /**
      * 根据门店编号获取所属冰柜信息
@@ -388,8 +392,23 @@ public class IceBoxController {
      */
     @PostMapping("/importExcel")
     public CommonResponse<String> importExcel(@RequestParam("excelFile") MultipartFile mfile) throws Exception {
-//        iceBoxService.importExcel(mfile);
-        iceBoxService.importByEasyExcel(mfile);
+
+        List<Map<String, Object>> lists = iceBoxService.importByEasyExcel(mfile);
+        /**
+         * @Date: 2020/10/19 14:50 xiao
+         *  将报表中导入数据库中的数据异步更新到报表中
+         */
+//        List<String> assetIds = Lists.newArrayList("测试报表");
+        if(CollectionUtils.isNotEmpty(lists)){
+            DataPack dataPack = new DataPack(); // 数据包
+            dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+            dataPack.setObj(lists);
+            ExecutorServiceFactory.getInstance().execute(()->{
+                // 发送mq消息
+                directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+            });
+        }
+
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 

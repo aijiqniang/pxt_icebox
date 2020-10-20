@@ -1266,6 +1266,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (iceBox.getDeptId() != null) {
             deptStr = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(iceBox.getDeptId()));
         }
+        map.put("iceBoxType", iceBox.getIceBoxType());
         map.put("deptId", iceBox.getDeptId());
         map.put("deptStr", deptStr); // 责任部门
         map.put("putStatusStr", PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) ? "经销商" : "门店"); // 客户类型
@@ -2936,18 +2937,22 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IceBoxTransferHistory iceBoxTransferHistory = new IceBoxTransferHistory();
 
         // 资产编号变更
-        IceBox selectIceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
-        if (null != selectIceBox) {
-            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().likeRight(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
-            // 第二种
-            int integer = iceBoxes.stream().map(iceBox1 -> {
-                String assetId1 = iceBox1.getAssetId();
-                if (!assetId1.contains("-")) {
-                    return 0;
-                }
-                return Integer.parseInt(assetId1.substring(assetId1.indexOf("-") + 1));
-            }).reduce(Integer::max).orElse(0) + 1;
-            iceBox.setAssetId(assetId + "-" + integer);
+
+        IceBox currentIceBox = iceBoxDao.selectById(iceBoxId);
+        if (!currentIceBox.getAssetId().contains(assetId + "-")) {
+            IceBox selectIceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
+            if (null != selectIceBox) {
+                List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().likeRight(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
+                // 第二种
+                int integer = iceBoxes.stream().map(iceBox1 -> {
+                    String assetId1 = iceBox1.getAssetId();
+                    if (!assetId1.contains("-")) {
+                        return 0;
+                    }
+                    return Integer.parseInt(assetId1.substring(assetId1.indexOf("-") + 1));
+                }).reduce(Integer::max).orElse(0) + 1;
+                iceBox.setAssetId(assetId + "-" + integer);
+            }
         }
         LambdaUpdateWrapper<IceBox> updateWrapper = Wrappers.<IceBox>lambdaUpdate().eq(IceBox::getId, iceBoxId);
         if (null != modifyCustomerType) {
@@ -3182,7 +3187,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxTransferHistory.setOldMarketAreaId(oldIceBox.getDeptId());
         iceBoxTransferHistory.setOldModelId(oldIceBox.getModelId());
         iceBoxTransferHistory.setOldModelName(oldIceBox.getModelName());
-        iceBoxTransferHistory.setOldSupplierId(oldIceBox.getId());
+        iceBoxTransferHistory.setOldSupplierId(oldIceBox.getSupplierId());
         iceBoxTransferHistory.setOldChestNorm(oldIceBox.getChestNorm());
         iceBoxTransferHistory.setOldPutStoreNumber(oldIceBox.getPutStoreNumber());
 
@@ -3195,7 +3200,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxTransferHistory.setNewMarketAreaId(newIcebox.getDeptId());
         iceBoxTransferHistory.setNewModelId(newIcebox.getModelId());
         iceBoxTransferHistory.setNewModelName(newIcebox.getModelName());
-        iceBoxTransferHistory.setNewSupplierId(newIcebox.getId());
+        iceBoxTransferHistory.setNewSupplierId(newIcebox.getSupplierId());
         iceBoxTransferHistory.setNewChestNorm(newIcebox.getChestNorm());
         iceBoxTransferHistory.setNewPutStoreNumber(newIcebox.getPutStoreNumber());
 

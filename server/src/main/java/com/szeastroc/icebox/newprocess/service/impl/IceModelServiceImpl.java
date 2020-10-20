@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.icebox.newprocess.dao.IceModelDao;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
@@ -16,8 +17,8 @@ public class IceModelServiceImpl extends ServiceImpl<IceModelDao, IceModel> impl
     private IceModelDao iceModelDao;
 
     @Override
-    public List<IceModel> getAllModel() {
-        return iceModelDao.selectList(null);
+    public List<IceModel> getAllModel(Integer type) {
+        return iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getType,type));
     }
 }
 

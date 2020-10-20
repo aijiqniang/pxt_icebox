@@ -68,6 +68,12 @@ public class IceModel {
     @TableField(value = "updated_time")
     private Date updatedTime;
 
+    /**
+     * 新旧冰柜型号类型
+     */
+    @TableField(value = "type")
+    private Integer type;
+
     public static IceModelBuilder builder() {
         return new IceModelBuilder();
     }

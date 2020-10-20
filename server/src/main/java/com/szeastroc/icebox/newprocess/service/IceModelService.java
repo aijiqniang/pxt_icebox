@@ -8,7 +8,7 @@ import java.util.List;
 public interface IceModelService extends IService<IceModel> {
 
 
-    List<IceModel> getAllModel();
+    List<IceModel> getAllModel(Integer type);
 
 }
 

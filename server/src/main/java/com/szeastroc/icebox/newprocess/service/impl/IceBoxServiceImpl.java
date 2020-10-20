@@ -1663,7 +1663,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Map<String ,Object>map=Maps.newHashMap();
             map.put("suppName",suppName);
             map.put("suppNumber",supplierNumber);
-            map.put("assetId",assetId);
             map.put("modelName",modelStr);
             map.put("modelId",modelId);
             lists.add(map);

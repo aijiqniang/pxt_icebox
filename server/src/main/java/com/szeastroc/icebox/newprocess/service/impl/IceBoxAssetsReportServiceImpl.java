@@ -37,45 +37,43 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
 
 
     @Override
-    public void createIceBoxAssetsReport(List<Map<String ,Object>> lists) {
+    public void createIceBoxAssetsReport(List<Map<String, Object>> lists) {
 
-        if(CollectionUtils.isEmpty(lists)){
+        if (CollectionUtils.isEmpty(lists)) {
             return;
         }
-        for (Map<String ,Object> map:lists){
+        for (Map<String, Object> map : lists) {
             try {
                 createOne(map);
             } catch (Exception e) {
-                log.info("更新数据失败",e);
+                log.info("更新数据失败", e);
             }
         }
     }
 
     @Transactional
     @Override
-    public void createOne(Map<String ,Object>map) {
+    public void createOne(Map<String, Object> map) {
 
-        String  suppName = (String) map.get("suppName"); // 经销商名称
-        String  suppNumber = (String) map.get("suppNumber"); // 经销商编号
-        String  assetId = (String) map.get("assetId"); // 资产id
-        String  modelName = (String) map.get("modelName"); // 型号名称
-        Integer  modelId = (Integer) map.get("modelId"); // 型号id
-        log.info("冰柜资产报表导入数据:suppName {},suppNumber {},assetId {},modelName {},modelId {}",suppName,suppNumber,assetId,modelName,modelId);
-        if(StringUtils.isBlank(suppName)
-                ||StringUtils.isBlank(suppNumber)
-                ||StringUtils.isBlank(assetId)
-                ||StringUtils.isBlank(modelName)
-                ||modelId==null
-        ){
-            throw new NormalOptionException(Constants.API_CODE_FAIL,Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        String suppName = (String) map.get("suppName"); // 经销商名称
+        String suppNumber = (String) map.get("suppNumber"); // 经销商编号
+        String modelName = (String) map.get("modelName"); // 型号名称
+        Integer modelId = (Integer) map.get("modelId"); // 型号id
+        log.info("冰柜资产报表导入数据:suppName {},suppNumber {},modelName {},modelId {}", suppName, suppNumber, modelName, modelId);
+        if (StringUtils.isBlank(suppName)
+                || StringUtils.isBlank(suppNumber)
+                || StringUtils.isBlank(modelName)
+                || modelId == null
+        ) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
-        IceBoxAssetsReport iceBoxAssetsReport = iceBoxAssetsReportDao.readByAssetId(assetId);
-        iceBoxAssetsReport.setAssetId(assetId)
-              .setSuppNumber(suppNumber)
-              .setSuppName(suppName)
-              .setXingHao(modelName)
-              .setXingHaoId(modelId);
+        IceBoxAssetsReport iceBoxAssetsReport = iceBoxAssetsReportDao.readBySuppNumber(suppNumber);
+        iceBoxAssetsReport
+                .setSuppNumber(suppNumber)
+                .setSuppName(suppName)
+                .setXingHao(modelName)
+                .setXingHaoId(modelId);
         Integer id = iceBoxAssetsReport.getId();
 
         if (id == null) {

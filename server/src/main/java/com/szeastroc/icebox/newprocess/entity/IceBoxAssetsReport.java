@@ -27,6 +27,5 @@ public class IceBoxAssetsReport {
     private Integer zaiCang; // 在仓
     private Integer yiShi; // 遗失
     private Integer baoFei; // 报废
-    private String assetId; // 东鹏资产编号
 
 }

@@ -61,7 +61,7 @@ public class DirectListener {
         if (StringUtils.isBlank(methodName)) {
             return;
         }
-        log.info("methodName-->{}", methodName);
+        log.info("报表的methodName-->{}", methodName);
         if (methodName.equals(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT)) { // 创建或更新冰柜资产报表
             List<Map<String ,Object>> lists= (List<Map<String, Object>>) dataPack.getObj();
             iceBoxAssetsReportService.createIceBoxAssetsReport(lists);

@@ -3190,6 +3190,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxTransferHistory.setOldSupplierId(oldIceBox.getSupplierId());
         iceBoxTransferHistory.setOldChestNorm(oldIceBox.getChestNorm());
         iceBoxTransferHistory.setOldPutStoreNumber(oldIceBox.getPutStoreNumber());
+        iceBoxTransferHistory.setOldChestName(oldIceBox.getChestName());
 
 
         iceBoxTransferHistory.setNewAssetId(newIcebox.getAssetId());
@@ -3203,6 +3204,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxTransferHistory.setNewSupplierId(newIcebox.getSupplierId());
         iceBoxTransferHistory.setNewChestNorm(newIcebox.getChestNorm());
         iceBoxTransferHistory.setNewPutStoreNumber(newIcebox.getPutStoreNumber());
+        iceBoxTransferHistory.setNewChestName(newIcebox.getChestName());
 
 
         UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());

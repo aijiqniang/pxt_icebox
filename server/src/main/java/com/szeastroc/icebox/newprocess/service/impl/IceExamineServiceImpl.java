@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.customer.client.FeignStoreClient;
@@ -52,6 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -117,6 +119,11 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         iceBoxExtend.setLastExamineTime(new Date());
 
         iceBoxExtendDao.update(iceBoxExtend, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId));
+
+        //发送mq消息,同步申请数据到报表
+//        CompletableFuture.runAsync(() -> {
+//            buildReportAndSendMq(requestVo,now);
+//        }, ExecutorServiceFactory.getInstance());
     }
 
     @Override
@@ -304,6 +311,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(!IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(5);
             map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
+
+
         }
 
         //冰柜状态不是遗失，巡检是遗失，需要走遗失审批

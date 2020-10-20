@@ -205,7 +205,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         iceBox.setDepositMoney(depositMoney);
                     }
                     iceBox.setPutStoreNumber("0");
-                    iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
@@ -285,7 +285,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         iceBox.setDepositMoney(depositMoney);
                     }
                     iceBox.setPutStoreNumber("0");
-                    iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
                     iceBox.setStatus(IceBoxEnums.StatusEnum.ABNORMAL.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());

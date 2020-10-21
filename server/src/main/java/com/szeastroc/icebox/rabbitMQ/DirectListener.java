@@ -65,7 +65,6 @@ public class DirectListener {
         if (methodName.equals(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT)) { // 创建或更新冰柜资产报表
             List<IceBoxAssetReportVo> lists = (List<IceBoxAssetReportVo>) dataPack.getObj();
             iceBoxAssetsReportService.createIceBoxAssetsReport(lists);
-
         }
     }
 }

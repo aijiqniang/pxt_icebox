@@ -16,8 +16,6 @@ import java.util.Date;
 public class IceBoxAssetsReport {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
-    private Date createdTime;
-    private Date updatedTime;
     private String suppName;
     private String suppNumber;
     private Integer xingHaoId;
@@ -27,6 +25,8 @@ public class IceBoxAssetsReport {
     private Integer zaiCang; // 在仓
     private Integer yiShi; // 遗失
     private Integer baoFei; // 报废
+    private Date createdTime;
+    private Date updatedTime;
     private Integer headquartersDeptId; // 本部
     private String headquartersDeptName; // 本都
     private Integer businessDeptId; // 事业部

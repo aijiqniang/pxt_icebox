@@ -4,13 +4,16 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignSupplierClient;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.IceBoxAssetsReportDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxAssetsReport;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
@@ -55,7 +58,6 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
 
     @Override
     public void createIceBoxAssetsReport(List<IceBoxAssetReportVo> lists) {
-
         if (CollectionUtils.isEmpty(lists)) {
             return;
         }
@@ -172,5 +174,45 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
         IPage page = iceBoxAssetsReportDao.selectPage(reportPage,
                 Wrappers.<IceBoxAssetsReport>lambdaQuery().orderByDesc(IceBoxAssetsReport::getId));
         return page;
+    }
+
+    @Override
+    public void syncOldDatas() {
+
+        Integer count = iceBoxDao.selectCount(null);
+        log.info("查询出了那么多条数据:{}", count);
+        List<String> failAssetIds = Lists.newArrayList();
+        /**
+         *  分页查找数据
+         */
+        int pageNum = 10; // 每页数量
+        int totalPage = (count - 1) / pageNum + 1; // 总页数
+        for (int i = 0; i < totalPage; i++) {
+            Integer pageCode = i * pageNum;
+            log.info("费用执行导出总页数->{}当前页码:{}", totalPage, i + 1);
+            List<IceBox> iceBoxList = iceBoxDao.readLimitData(pageCode, pageNum);
+            for (IceBox iceBox : iceBoxList) {
+                try {
+                    SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readId(iceBox.getSupplierId()));
+                    IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
+                            .assetId(iceBox.getAssetId())
+                            .modelId(iceBox.getModelId())
+                            .modelName(iceBox.getModelName())
+                            .suppName(infoVo.getName())
+                            .suppNumber(infoVo.getNumber())
+                            .oldPutStatus(null) // 投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放
+                            .oldStatus(null) // 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
+                            .newPutStatus(iceBox.getPutStatus())
+                            .newStatus(iceBox.getStatus())
+                            .suppDeptId(iceBox.getDeptId()).build();
+                    iceBoxAssetsReportService.createOne(assetReportVo);
+                } catch (Exception e) {
+                    log.info("同步老数据失败", e);
+                }
+                // 存储同步失败的数据
+                failAssetIds.add(iceBox.getAssetId());
+            }
+        }
+        log.info("同步失败的冰柜老数据到报表中:{}", failAssetIds);
     }
 }

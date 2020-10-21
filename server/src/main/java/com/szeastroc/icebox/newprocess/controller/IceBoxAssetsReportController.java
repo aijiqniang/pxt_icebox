@@ -44,7 +44,13 @@ public class IceBoxAssetsReportController {
 
     /**
      * @Date: 2020/10/20 16:33 xiao
-     *  将老数据同步到
+     *  将老数据同步到报表中
      */
+    @PostMapping("/syncOldDatas")
+    public CommonResponse<Void> syncOldDatas() {
+
+        iceBoxAssetsReportService.syncOldDatas();
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
 
 }

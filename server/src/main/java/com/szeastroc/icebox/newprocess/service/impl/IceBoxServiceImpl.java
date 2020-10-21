@@ -3195,6 +3195,18 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             iceBoxExtend.setId(iceBox.getId());
             iceBoxExtend.setLastApplyNumber(applyNumber);
             iceBoxExtendDao.updateById(iceBoxExtend);
+
+            IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+                    .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                    .eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+            if(icePutApplyRelateBox == null){
+                IcePutApplyRelateBox relateBox = new IcePutApplyRelateBox();
+                relateBox.setApplyNumber(iceBoxExtend.getLastApplyNumber());
+                relateBox.setFreeType(FreePayTypeEnum.IS_FREE.getType());
+                relateBox.setBoxId(iceBox.getId());
+                relateBox.setModelId(iceBox.getModelId());
+                icePutApplyRelateBoxDao.insert(relateBox);
+            }
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
                 IceBoxRequestVo requestVo = new IceBoxRequestVo();

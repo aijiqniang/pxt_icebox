@@ -2181,11 +2181,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxStatusVo.setMessage("冰柜已投放到当前门店");
 
                 //旧冰柜更新通知状态
-                if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
                     OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
                             .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
                             .eq(OldIceBoxSignNotice::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
-                    if(oldIceBoxSignNotice != null){
+                    if (oldIceBoxSignNotice != null) {
                         oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
                         oldIceBoxSignNotice.setUpdateTime(new Date());
                         oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
@@ -3049,7 +3049,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }).reduce(Integer::max).orElse(0) + 1;
                 newAssetId = assetId + "-" + integer;
             } else {
-                throw new NormalOptionException(4101, "该资产编号与现有资产编号重复");
+                throw new NormalOptionException(4101, "该资产编号与现有资产编号重复,是否继续提交？");
             }
         } else {
             newAssetId = assetId;
@@ -3217,20 +3217,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 requestVo.setFreeType(FreePayTypeEnum.IS_FREE.getType());
                 requestVo.setStoreNumber(iceBox.getPutStoreNumber());
                 requestVo.setStoreType(SupplierTypeEnum.IS_STORE.getType());
-                if(iceBox.getPutStoreNumber().contains("C7") || iceBox.getPutStoreNumber().contains("C8")){
+                if (iceBox.getPutStoreNumber().contains("C7") || iceBox.getPutStoreNumber().contains("C8")) {
                     SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
-                    if(supplier != null){
+                    if (supplier != null) {
                         requestVo.setStoreName(supplier.getName());
                         requestVo.setStoreType(supplier.getSupplierType());
                     }
-                }else {
+                } else {
                     StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
-                    if(store != null){
+                    if (store != null) {
                         requestVo.setStoreName(store.getStoreName());
                     }
                 }
                 requestVo.setSupplierId(iceBox.getSupplierId());
-                buildReportAndSendMq(requestVo,applyNumber,now);
+                buildReportAndSendMq(requestVo, applyNumber, now);
             }, ExecutorServiceFactory.getInstance());
 
             OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();

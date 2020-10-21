@@ -163,4 +163,10 @@ public class IceBoxTransferHistory {
      * 变更后投放编号
      */
     private String newPutStoreNumber;
+
+
+    /**
+     * 数据来源  0 SFA  1 后台管理
+     */
+    private Integer sourceType;
 }

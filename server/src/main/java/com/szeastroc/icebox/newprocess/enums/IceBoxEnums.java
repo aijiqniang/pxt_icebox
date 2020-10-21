@@ -58,4 +58,24 @@ public class IceBoxEnums {
             return "";
         }
     }
+
+    /**
+     * 冰柜类型 0:旧冰柜，1:新冰柜
+     */
+    @Getter
+    @AllArgsConstructor
+    public enum ChangeSourceTypeEnum {
+        SFA(0, "SFA"),
+        BACKSTAGE_MANAGEMENT(1, "后台管理");
+        private Integer type;
+        private String desc;
+        public static String getDesc(Integer type) {
+            for (ChangeSourceTypeEnum enu : ChangeSourceTypeEnum.values()) {
+                if (enu.getType().equals(type)) {
+                    return enu.getDesc();
+                }
+            }
+            return "";
+        }
+    }
 }

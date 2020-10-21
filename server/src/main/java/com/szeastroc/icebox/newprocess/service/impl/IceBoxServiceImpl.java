@@ -3011,8 +3011,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Override
     public void changeAssetId(Integer iceBoxId, String assetId, boolean reconfirm) {
-        if (null == iceBoxId || StringUtils.isBlank(assetId)) {
+        if (null == iceBoxId) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        if (StringUtils.isBlank(assetId)) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"资产编号不能为空");
         }
         IceBox currentIceBox = iceBoxDao.selectById(iceBoxId);
         if (currentIceBox.getAssetId().contains(assetId + "-")) {
@@ -3269,7 +3272,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxTransferHistory.setOldMarketAreaId(oldIceBox.getDeptId());
         iceBoxTransferHistory.setOldModelId(oldIceBox.getModelId());
         iceBoxTransferHistory.setOldModelName(oldIceBox.getModelName());
-        iceBoxTransferHistory.setOldSupplierId(oldIceBox.getSupplierId());
+        Integer oldSupplierId = oldIceBox.getSupplierId();
+        iceBoxTransferHistory.setOldSupplierId(oldSupplierId);
         iceBoxTransferHistory.setOldChestNorm(oldIceBox.getChestNorm());
         iceBoxTransferHistory.setOldPutStoreNumber(oldIceBox.getPutStoreNumber());
         iceBoxTransferHistory.setOldChestName(oldIceBox.getChestName());
@@ -3283,7 +3287,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxTransferHistory.setNewMarketAreaId(newIcebox.getDeptId());
         iceBoxTransferHistory.setNewModelId(newIcebox.getModelId());
         iceBoxTransferHistory.setNewModelName(newIcebox.getModelName());
-        iceBoxTransferHistory.setNewSupplierId(newIcebox.getSupplierId());
+        Integer newSupplierId = newIcebox.getSupplierId();
+        iceBoxTransferHistory.setNewSupplierId(newSupplierId);
         iceBoxTransferHistory.setNewChestNorm(newIcebox.getChestNorm());
         iceBoxTransferHistory.setNewPutStoreNumber(newIcebox.getPutStoreNumber());
         iceBoxTransferHistory.setNewChestName(newIcebox.getChestName());
@@ -3297,6 +3302,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxTransferHistory.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
         iceBoxTransferHistory.setIceBoxId(oldIceBox.getId());
 
+        List<Integer> list = new ArrayList<>();
+        list.add(oldSupplierId);
+        list.add(newSupplierId);
+
+        Map<Integer, SubordinateInfoVo> map = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(list));
+
+        iceBoxTransferHistory.setOldSupplierName(map.get(oldSupplierId).getName());
+        iceBoxTransferHistory.setNewSupplierName(map.get(newSupplierId).getName());
+        iceBoxTransferHistory.setCreateTime(new Date());
+        iceBoxTransferHistory.setSourceType(IceBoxEnums.ChangeSourceTypeEnum.BACKSTAGE_MANAGEMENT.getType());
 
         iceBoxTransferHistoryDao.insert(iceBoxTransferHistory);
     }

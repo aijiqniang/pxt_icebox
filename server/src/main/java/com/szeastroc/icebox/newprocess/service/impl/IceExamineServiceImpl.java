@@ -1121,4 +1121,49 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //        }
 //        return null;
 //    }
+
+    @Override
+    public IceExamineVo findExamineByNumber(String examineNumber) {
+        IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getExamineNumber,examineNumber));
+
+        IceExamineVo iceExamineVo;
+
+        if (iceExamine != null) {
+
+            ArrayList<Integer> list = new ArrayList<>();
+            list.add(iceExamine.getCreateBy());
+            Map<Integer, SessionUserInfoVo> map = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(list));
+            SessionUserInfoVo sessionUserInfoVo = map.get(iceExamine.getCreateBy());
+            StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceExamine.getStoreNumber()));
+            String storeName = "";
+            if (null != storeInfoDtoVo && StringUtils.isNotBlank(storeInfoDtoVo.getStoreNumber())) {
+                storeName = storeInfoDtoVo.getStoreName();
+            } else {
+                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceExamine.getStoreNumber()));
+                if (null != subordinateInfoVo && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+                    storeName = subordinateInfoVo.getName();
+                }
+            }
+            iceExamineVo = iceExamine.convert(iceExamine, sessionUserInfoVo.getRealname(), storeName, iceExamine.getStoreNumber());
+
+//            iceExamineVo = IceExamineVo.builder()
+//                    .id(iceExamine.getId())
+//                    .createBy(iceExamine.getCreateBy())
+//                    .createName(sessionUserInfoVo.getRealname())
+//                    .displayImage(iceExamine.getDisplayImage())
+//                    .exteriorImage(iceExamine.getExteriorImage())
+//                    .createTime(iceExamine.getCreateTime())
+//                    .storeName(storeInfoDtoVo.getStoreName())
+//                    .storeNumber(storeNumber)
+//                    .iceBoxId(iceExamine.getIceBoxId())
+//                    .latitude(iceExamine.getLatitude())
+//                    .longitude(iceExamine.getLongitude())
+//                    .temperature(iceExamine.getTemperature())
+//                    .openCloseCount(iceExamine.getOpenCloseCount())
+//                    .build();
+        } else {
+            iceExamineVo = null;
+        }
+        return iceExamineVo;
+    }
 }

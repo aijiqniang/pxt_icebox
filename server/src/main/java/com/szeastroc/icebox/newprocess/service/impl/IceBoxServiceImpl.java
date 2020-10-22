@@ -2615,7 +2615,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
+//    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void dealTransferCheck(IceBoxTransferHistoryVo historyVo) {
         List<IceBoxTransferHistory> iceBoxTransferHistoryList = iceBoxTransferHistoryDao.selectList(Wrappers.<IceBoxTransferHistory>lambdaQuery().eq(IceBoxTransferHistory::getTransferNumber, historyVo.getTransferNumber()));
         if (CollectionUtil.isEmpty(iceBoxTransferHistoryList)) {

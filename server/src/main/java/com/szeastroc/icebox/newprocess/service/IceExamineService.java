@@ -20,4 +20,6 @@ public interface IceExamineService extends IService<IceExamine>{
     Map<String, Object> doExamineNew(IceExamineVo iceExamineVo);
 
     void dealIceExamineCheck(String redisKey, Integer status);
+
+    IceExamineVo findExamineByNumber(String examineNumber);
 }

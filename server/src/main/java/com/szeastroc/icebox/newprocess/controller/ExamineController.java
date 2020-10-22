@@ -10,6 +10,7 @@ import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -88,5 +89,17 @@ public class ExamineController {
         iceExamineService.dealIceExamineCheck(redisKey,status);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+    @RequestMapping("/findExamineByNumber")
+    @MonitorAnnotation
+    public CommonResponse<IceExamineVo> findExamineByNumber(String examineNumber) {
+        if (StringUtils.isEmpty(examineNumber)) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+
+        IceExamineVo iceExamineVo = iceExamineService.findExamineByNumber(examineNumber);
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceExamineVo);
     }
 }

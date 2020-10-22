@@ -1,8 +1,5 @@
-package com.szeastroc.icebox.newprocess.entity;
+package com.szeastroc.icebox.newprocess.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,58 +12,27 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName(value = "t_ice_box_examine_exception_report")
-public class IceBoxExamineExceptionReport {
-    @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
-    /**
-     *本部id
-     */
-    private Integer headquartersDeptId;
+public class IceBoxExamineExceptionReportExcelVo {
     /**
      *本部名称
      */
     private String headquartersDeptName;
     /**
-     *事业部id
-     */
-    private Integer businessDeptId;
-    /**
      *事业部名称
      */
     private String businessDeptName;
-    /**
-     *大区id
-     */
-    private Integer regionDeptId;
     /**
      *大区名称
      */
     private String regionDeptName;
     /**
-     *服务处id
-     */
-    private Integer serviceDeptId;
-    /**
      *服务处名称
      */
     private String serviceDeptName;
     /**
-     *组id
-     */
-    private Integer groupDeptId;
-    /**
      *组名称
      */
     private String groupDeptName;
-    /**
-     * 巡检编号
-     */
-    private String examineNumber;
-    /**
-     *所属经销商id
-     */
-    private Integer supplierId;
     /**
      *所属经销商编号
      */
@@ -76,17 +42,13 @@ public class IceBoxExamineExceptionReport {
      */
     private String supplierName;
     /**
-     *提交人id
-     */
-    private Integer submitterId;
-    /**
      *提交人名称
      */
     private String submitterName;
     /**
      *提交日期
      */
-    private Date submitTime;
+    private String submitTime;
     /**
      *投放客户编号
      */
@@ -98,11 +60,7 @@ public class IceBoxExamineExceptionReport {
     /**
      *投放客户类型
      */
-    private Integer putCustomerType;
-    /**
-     *冰柜类型id
-     */
-    private Integer iceBoxModelId;
+    private String putCustomerType;
     /**
      *冰柜型号名称
      */
@@ -116,31 +74,28 @@ public class IceBoxExamineExceptionReport {
      */
     private BigDecimal depositMoney;
     /**
-     *审核人id
-     */
-    private Integer examineUserId;
-    /**
      *审核人名称
      */
     private String examineUserName;
     /**
      *审核时间
      */
-    private Date examineTime;
+    private String examineTime;
     /**
      *状态 0:报备中 1:可提报  2:已提报 3:已报备 4：已驳回
      */
-    private Integer status;
+    private String status;
     /**
      *提报类型：2-报废，3-遗失
      */
-    private Integer toOaType;
+    private String toOaType;
     /**
      *提报时间
      */
-    private Date toOaTime;
+    private String toOaTime;
     /**
      *提报单号
      */
     private String toOaNumber;
+
 }

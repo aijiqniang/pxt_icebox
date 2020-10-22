@@ -27,6 +27,10 @@ public class IceBoxExamineExceptionReportMsg extends Page implements Serializabl
      */
     private Integer recordsId;
     /**
+     * 巡检编号
+     */
+    private String examineNumber;
+    /**
      *本部id
      */
     private Integer headquartersDeptId;

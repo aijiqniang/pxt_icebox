@@ -164,6 +164,11 @@ public class IceBoxTransferHistory {
      */
     private String newPutStoreNumber;
 
+    /**
+     * 是否审批：0-不审批，1-审批
+     */
+    private Integer isCheck;
+
 
     /**
      * 数据来源  0 SFA  1 后台管理

@@ -24,4 +24,6 @@ public class RedisConstant {
     public final static String ICE_BOX_LOCK = "ice_box_lock_";
 
     public final static String ICE_BOX_PUT_REPORT_EXPORT_KEY = "ICE_BOX_PUT_REPORT_EXPORT_";
+
+    public final static String ICE_BOX_EXCEPTION_REPORT_EXPORT_KEY = "ICE_BOX_EXCEPTION_REPORT_EXPORT_";
 }

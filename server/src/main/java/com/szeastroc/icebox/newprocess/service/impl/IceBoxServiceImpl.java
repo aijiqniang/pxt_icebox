@@ -756,6 +756,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .storeAddress(storeAddress)
                 .releaseTime(iceBoxExtend.getReleaseTime())
                 .iceBoxType(iceBox.getIceBoxType())
+                .status(iceBox.getStatus())
                 .build();
 
 
@@ -2583,6 +2584,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             BeanUtils.copyProperties(historyVo, history);
             history.setIceBoxId(iceBoxId);
             history.setTransferNumber(map.get("transferNumber").toString());
+            history.setIsCheck(0);
+            history.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
+            Object isCheck = map.get("isCheck");
+            if(isCheck == null){
+                history.setIsCheck(1);
+                history.setExamineStatus(ExamineStatus.DEFAULT_EXAMINE.getStatus());
+            }
             history.setCreateTime(new Date());
             iceBoxTransferHistoryDao.insert(history);
         }
@@ -2626,6 +2634,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     //创建冰柜转移申请审批流
     private Map<String, Object> createIceBoxTransferCheckProcess(IceBoxTransferHistoryVo historyVo) throws ImproperOptionException, NormalOptionException {
         Map<String, Object> map = new HashMap<>();
+        String transferNumber = UUID.randomUUID().toString().replace("-", "");
+        map.put("transferNumber", transferNumber);
         Date now = new Date();
         log.info("订单所属人marketAreaId--》【{}】，供货商marketAreaId--》【{}】", historyVo.getOldMarketAreaId(), historyVo.getNewMarketAreaId());
         SessionDeptInfoVo sameDept = FeignResponseUtil.getFeignData(feignDeptClient.getSameDeptInfoById(historyVo.getOldMarketAreaId(), historyVo.getNewMarketAreaId()));
@@ -2876,7 +2886,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         IceBoxTransferModel transferModel = new IceBoxTransferModel();
 
-        String transferNumber = UUID.randomUUID().toString().replace("-", "");
+
         transferModel.setTransferNumber(transferNumber);
 
         transferModel.setOldSupplierName(historyVo.getOldSupplierName());
@@ -2905,7 +2915,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxTransfer(sessionExamineVo));
         List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
         map.put("iceBoxTransferNodes", visitExamineNodes);
-        map.put("transferNumber", transferNumber);
         return map;
     }
 

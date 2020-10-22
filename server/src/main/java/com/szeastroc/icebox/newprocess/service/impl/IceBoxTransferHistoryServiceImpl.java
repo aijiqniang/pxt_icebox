@@ -1,15 +1,11 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.BeanUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
@@ -17,24 +13,17 @@ import com.szeastroc.icebox.newprocess.dao.IceBoxTransferHistoryDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxTransferHistory;
 import com.szeastroc.icebox.newprocess.service.IceBoxTransferHistoryService;
-import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-
 import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryVo;
-import com.szeastroc.icebox.newprocess.vo.request.IceBoxTransferHistoryPage;
+import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.common.SessionExamineVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransferHistoryDao, IceBoxTransferHistory> implements IceBoxTransferHistoryService {

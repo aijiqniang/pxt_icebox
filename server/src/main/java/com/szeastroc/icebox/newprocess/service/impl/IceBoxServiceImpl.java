@@ -45,6 +45,7 @@ import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.*;
+import com.szeastroc.icebox.newprocess.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
@@ -2958,7 +2959,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IceBoxTransferHistory iceBoxTransferHistory = new IceBoxTransferHistory();
 
         // 资产编号变更
-
         IceBox currentIceBox = iceBoxDao.selectById(iceBoxId);
         if (!currentIceBox.getAssetId().contains(assetId + "-")) {
             IceBox selectIceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId).ne(IceBox::getId, iceBoxId));
@@ -2976,6 +2976,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
         LambdaUpdateWrapper<IceBox> updateWrapper = Wrappers.<IceBox>lambdaUpdate().eq(IceBox::getId, iceBoxId);
+
+        Integer newStatus = iceBox.getStatus();
+        Integer oldStatus = oldIceBox.getStatus();
+
+        boolean modifyCustomer = iceBoxManagerVo.isModifyCustomer();
+
+        if (IceBoxEnums.StatusEnum.NORMAL.getType().equals(oldStatus) && !IceBoxEnums.StatusEnum.NORMAL.getType().equals(newStatus) && modifyCustomer) {
+            // 正常的冰柜改为异常的冰柜时 不能变更使用客户
+            throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
+        }
         if (null != modifyCustomerType) {
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
             String customerNumber = iceBoxManagerVo.getCustomerNumber();
@@ -2988,6 +2998,58 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "如更改客户为经销商则该经销商必须是冰柜所属经销商");
                 }
             } else {
+/*                String oldPutStoreNumber = oldIceBox.getPutStoreNumber();
+                if (!oldPutStoreNumber.equals(customerNumber)) {
+                    // 处理申请冰柜流程数据
+                    // 创建申请流程
+                    String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+                    IcePutApply icePutApply = IcePutApply.builder()
+                            .applyNumber(applyNumber)
+                            .putStoreNumber(iceBox.getPutStoreNumber())
+                            .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
+                            .userId(iceBox.getUpdatedBy())
+                            .createdBy(iceBox.getUpdatedBy())
+                            .build();
+                    icePutApplyDao.insert(icePutApply);
+
+                    Date now = new Date();
+                    PutStoreRelateModel relateModel = PutStoreRelateModel.builder()
+                            .putStoreNumber(iceBox.getPutStoreNumber())
+                            .modelId(iceBox.getModelId())
+                            .supplierId(iceBox.getSupplierId())
+                            .createBy(iceBox.getUpdatedBy())
+                            .createTime(now)
+                            .putStatus(PutStatus.DO_PUT.getStatus())
+                            .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
+                            .remark("已签收的旧冰柜重新签收")
+                            .build();
+                    putStoreRelateModelDao.insert(relateModel);
+
+                    ApplyRelatePutStoreModel applyRelatePutStoreModel = ApplyRelatePutStoreModel.builder()
+                            .applyNumber(applyNumber)
+                            .storeRelateModelId(relateModel.getId())
+                            .freeType(FreePayTypeEnum.IS_FREE.getType())
+                            .build();
+                    applyRelatePutStoreModelDao.insert(applyRelatePutStoreModel);
+
+                    IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                    iceBoxExtend.setId(iceBox.getId());
+                    iceBoxExtend.setLastApplyNumber(applyNumber);
+                    iceBoxExtendDao.updateById(iceBoxExtend);
+
+                    IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+                            .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                            .eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+                    if (icePutApplyRelateBox == null) {
+                        IcePutApplyRelateBox relateBox = new IcePutApplyRelateBox();
+                        relateBox.setApplyNumber(iceBoxExtend.getLastApplyNumber());
+                        relateBox.setFreeType(FreePayTypeEnum.IS_FREE.getType());
+                        relateBox.setBoxId(iceBox.getId());
+                        relateBox.setModelId(iceBox.getModelId());
+                        icePutApplyRelateBoxDao.insert(relateBox);
+                    }
+
+                }*/
                 iceBoxTransferHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(3);
@@ -3015,7 +3077,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         if (StringUtils.isBlank(assetId)) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL,"资产编号不能为空");
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "资产编号不能为空");
         }
         IceBox currentIceBox = iceBoxDao.selectById(iceBoxId);
         if (currentIceBox.getAssetId().contains(assetId + "-")) {
@@ -3052,7 +3114,21 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }).reduce(Integer::max).orElse(0) + 1;
                 newAssetId = assetId + "-" + integer;
             } else {
-                throw new NormalOptionException(4101, "该资产编号与现有资产编号重复,是否继续提交？");
+                String message = "";
+                String deptName = "";
+                String supplierName = "";
+                Integer supplierId = iceBox.getSupplierId();
+                Integer deptId = iceBox.getDeptId();
+                SessionDeptInfoVo sessionDeptInfoVo = FeignResponseUtil.getFeignData(feignCacheClient.getForDeptInfoVo(deptId));
+                if (null != sessionDeptInfoVo) {
+                    deptName = sessionDeptInfoVo.getName();
+                }
+                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(supplierId));
+                if (null != subordinateInfoVo) {
+                    supplierName = subordinateInfoVo.getName();
+                }
+                message = "该资产编号与" + deptName + supplierName + "现有冰柜资产编号重复,是否继续提交？";
+                throw new NormalOptionException(4101, message);
             }
         } else {
             newAssetId = assetId;
@@ -3202,7 +3278,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                     .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                     .eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
-            if(icePutApplyRelateBox == null){
+            if (icePutApplyRelateBox == null) {
                 IcePutApplyRelateBox relateBox = new IcePutApplyRelateBox();
                 relateBox.setApplyNumber(iceBoxExtend.getLastApplyNumber());
                 relateBox.setFreeType(FreePayTypeEnum.IS_FREE.getType());

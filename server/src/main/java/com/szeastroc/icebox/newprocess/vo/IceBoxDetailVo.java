@@ -108,4 +108,9 @@ public class IceBoxDetailVo {
      * 冰柜类型：0-旧冰柜，1-新冰柜
      */
     private Integer iceBoxType;
+
+    /**
+     * 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
+     */
+    private Integer status;
 }

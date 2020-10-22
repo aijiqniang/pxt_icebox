@@ -17,11 +17,16 @@ import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
+import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
+import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
+import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxExamineExceptionReportDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.enums.*;
@@ -30,14 +35,12 @@ import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignDeptRuleClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.session.MatchRuleVo;
-import com.szeastroc.user.common.vo.SessionUserInfoVo;
-import com.szeastroc.user.common.vo.SimpleUserInfoVo;
-import com.szeastroc.user.common.vo.SysRuleDetailVo;
-import com.szeastroc.user.common.vo.SysRuleIceDetailVo;
+import com.szeastroc.user.common.vo.*;
 import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.common.IceBoxExamineModel;
@@ -46,6 +49,7 @@ import com.szeastroc.visit.common.SessionExamineVo;
 import com.szeastroc.visit.common.SessionVisitExamineBacklog;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -83,7 +87,13 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     @Autowired
     private FeignDeptRuleClient feignDeptRuleClient;
     @Autowired
+    private FeignCacheClient feignCacheClient;
+    @Autowired
     private JedisClient jedisClient;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -113,17 +123,93 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         }
         iceExamineDao.insert(iceExamine);
 
+        Date now = new Date();
         Integer iceExamineId = iceExamine.getId();
         IceBoxExtend iceBoxExtend = new IceBoxExtend();
         iceBoxExtend.setLastExamineId(iceExamineId);
-        iceBoxExtend.setLastExamineTime(new Date());
+        iceBoxExtend.setLastExamineTime(now);
 
         iceBoxExtendDao.update(iceBoxExtend, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId));
 
         //发送mq消息,同步申请数据到报表
-//        CompletableFuture.runAsync(() -> {
-//            buildReportAndSendMq(requestVo,now);
-//        }, ExecutorServiceFactory.getInstance());
+        CompletableFuture.runAsync(() -> {
+            buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.allow_report.getStatus(),now);
+        }, ExecutorServiceFactory.getInstance());
+    }
+
+    private void buildReportAndSendMq(IceExamine iceExamine, Integer status, Date now) {
+        IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportDao.selectOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, iceExamine.getExamineNumber()));
+        IceBoxExamineExceptionReportMsg report = new IceBoxExamineExceptionReportMsg();
+        if(isExsit != null){
+            report.setExamineNumber(iceExamine.getExamineNumber());
+            report.setStatus(status);
+            report.setOperateType(OperateTypeEnum.UPDATE.getType());
+        }else {
+            IceBox iceBox = iceBoxDao.selectById(iceExamine.getIceBoxId());
+            report.setExamineNumber(iceExamine.getExamineNumber());
+            report.setStatus(status);
+            Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(iceBox.getDeptId()));
+            SessionDeptInfoVo group = deptInfoVoMap.get(1);
+            if (group != null) {
+                report.setGroupDeptId(group.getId());
+                report.setGroupDeptName(group.getName());
+            }
+            SessionDeptInfoVo service = deptInfoVoMap.get(2);
+            if (service != null) {
+                report.setServiceDeptId(service.getId());
+                report.setServiceDeptName(service.getName());
+            }
+            SessionDeptInfoVo region = deptInfoVoMap.get(3);
+            if (region != null) {
+                report.setRegionDeptId(region.getId());
+                report.setRegionDeptName(region.getName());
+            }
+
+            SessionDeptInfoVo business = deptInfoVoMap.get(4);
+            if (business != null) {
+                report.setBusinessDeptId(business.getId());
+                report.setBusinessDeptName(business.getName());
+            }
+
+            SessionDeptInfoVo headquarters = deptInfoVoMap.get(5);
+            if (headquarters != null) {
+                report.setHeadquartersDeptId(headquarters.getId());
+                report.setHeadquartersDeptName(headquarters.getName());
+            }
+            report.setToOaType(iceExamine.getExaminStatus());
+            report.setDepositMoney(iceBox.getDepositMoney());
+            report.setIceBoxModelId(iceBox.getModelId());
+            report.setIceBoxModelName(iceBox.getModelName());
+            report.setIceBoxAssetId(iceBox.getAssetId());
+            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
+            report.setSupplierId(iceBox.getSupplierId());
+            if (supplier != null) {
+                report.setSupplierNumber(supplier.getNumber());
+                report.setSupplierName(supplier.getName());
+            }
+            report.setPutCustomerNumber(iceExamine.getStoreNumber());
+            if(iceExamine.getStoreNumber().startsWith("C0")){
+                StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceExamine.getStoreNumber()));
+                if(store != null){
+                    report.setPutCustomerName(store.getStoreName());
+                    report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
+                }
+            }else {
+                SubordinateInfoVo customer = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceExamine.getStoreNumber()));
+                if(customer != null){
+                    report.setPutCustomerName(customer.getName());
+                    report.setPutCustomerType(customer.getSupplierType());
+                }
+            }
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceExamine.getCreateBy()));
+            report.setSubmitterId(iceExamine.getCreateBy());
+            if (userInfoVo != null) {
+                report.setSubmitterName(userInfoVo.getRealname());
+            }
+            report.setSubmitTime(now);
+            report.setOperateType(OperateTypeEnum.INSERT.getType());
+        }
+        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, report);
     }
 
     @Override
@@ -286,10 +372,14 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         IceExamine iceExamine = new IceExamine();
         BeanUtils.copyProperties(iceExamineVo,iceExamine);
         Map<String, Object> map = new HashMap<>();
+        String examineNumber = UUID.randomUUID().toString().replace("-", "");
+        map.put("examineNumber", examineNumber);
         //冰柜状态是正常，巡检也是正常，不需要审批
         if(IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
-
+            iceExamine.setExamineNumber(examineNumber);
             doExamine(iceExamine);
+            map.put("isCheck", CommonIsCheckEnum.IS_CHECK.getStatus());
+            return map;
         }
         MatchRuleVo matchRuleVo = new MatchRuleVo();
         //冰柜状态是报废，巡检是正常，需要走与报废相同的审批
@@ -302,17 +392,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             matchRuleVo.setOpreateType(6);
             map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
         }
-        //冰柜状态是报修，巡检是正常，需要走与报修相同的审批
-        if(IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
-            matchRuleVo.setOpreateType(7);
-            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
-        }
+//        //冰柜状态是报修，巡检是正常，需要走与报修相同的审批   产品说报修没了，以后还要，所以保留代码
+//        if(IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
+//            matchRuleVo.setOpreateType(7);
+//            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
+//        }
         //冰柜状态不是报废，巡检是报废，需要走报废审批
         if(!IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(5);
             map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
-
-
         }
 
         //冰柜状态不是遗失，巡检是遗失，需要走遗失审批
@@ -321,53 +409,57 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
         }
 
-        //冰柜状态不是报修，巡检是报修，需要走报修通知上级
-        if(!IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceExamineStatus())){
-
-//            SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceExamineVo.getCreateBy()));
-            Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(iceExamineVo.getMarketAreaId()));
-            List<Integer> ids = new ArrayList<Integer>();
-            //获取上级部门领导
-            SessionUserInfoVo groupUser = new SessionUserInfoVo();
-            SessionUserInfoVo serviceUser = new SessionUserInfoVo();
-            Set<Integer> keySet = sessionUserInfoMap.keySet();
-            for (Integer key : keySet) {
-                SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(key);
-                if(userInfoVo == null){
-                    continue;
-                }
-                if(DeptTypeEnum.GROUP.getType().equals(userInfoVo.getDeptType())){
-                    groupUser = userInfoVo;
-                    continue;
-                }
-                if(DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())){
-                    serviceUser = userInfoVo;
-                    continue;
-                }
-
-            }
-            if(groupUser.getId() != null){
-                ids.add(groupUser.getId());
-            }
-
-            if(serviceUser.getId() != null && !ids.contains(serviceUser.getId())){
-                ids.add(groupUser.getId());
-            }
-
-            if(CollectionUtil.isNotEmpty(ids)){
-                for(Integer id:ids){
-                    SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
-                    backlog.setBacklogName(iceExamineVo.getCreateName()+"冰柜报修通知信息");
-                    backlog.setCode(iceExamineVo.getAssetId());
-                    backlog.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
-                    backlog.setExamineType(ExamineTypeEnum.ICEBOX_REPAIR.getType());
-                    backlog.setSendType(1);
-                    backlog.setSendUserId(id);
-                    backlog.setCreateBy(iceExamineVo.getCreateBy());
-                    feignBacklogClient.createBacklog(backlog);
-                }
-            }
-        }
+        //冰柜状态不是报修，巡检是报修，需要走报修通知上级  产品说报修现在没了，以后还要，所以保留代码
+//        if(!IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceExamineStatus())){
+//
+////            SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceExamineVo.getCreateBy()));
+//            Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(iceExamineVo.getMarketAreaId()));
+//            List<Integer> ids = new ArrayList<Integer>();
+//            //获取上级部门领导
+//            SessionUserInfoVo groupUser = new SessionUserInfoVo();
+//            SessionUserInfoVo serviceUser = new SessionUserInfoVo();
+//            Set<Integer> keySet = sessionUserInfoMap.keySet();
+//            for (Integer key : keySet) {
+//                SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(key);
+//                if(userInfoVo == null){
+//                    continue;
+//                }
+//                if(DeptTypeEnum.GROUP.getType().equals(userInfoVo.getDeptType())){
+//                    groupUser = userInfoVo;
+//                    continue;
+//                }
+//                if(DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())){
+//                    serviceUser = userInfoVo;
+//                    continue;
+//                }
+//
+//            }
+//            if(groupUser.getId() != null){
+//                ids.add(groupUser.getId());
+//            }
+//
+//            if(serviceUser.getId() != null && !ids.contains(serviceUser.getId())){
+//                ids.add(groupUser.getId());
+//            }
+//
+//            if(CollectionUtil.isNotEmpty(ids)){
+//                for(Integer id:ids){
+//                    SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
+//                    backlog.setBacklogName(iceExamineVo.getCreateName()+"冰柜报修通知信息");
+//                    backlog.setCode(iceExamineVo.getAssetId());
+//                    backlog.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
+//                    backlog.setExamineType(ExamineTypeEnum.ICEBOX_REPAIR.getType());
+//                    backlog.setSendType(1);
+//                    backlog.setSendUserId(id);
+//                    backlog.setCreateBy(iceExamineVo.getCreateBy());
+//                    feignBacklogClient.createBacklog(backlog);
+//                }
+//            }
+//        }
+        //发送mq消息,同步申请数据到报表
+        CompletableFuture.runAsync(() -> {
+            buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_reporting.getStatus(),new Date());
+        }, ExecutorServiceFactory.getInstance());
         return map;
     }
 
@@ -382,7 +474,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(iceBoxDao == null){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "审批失败,找不到冰柜信息！");
         }
-        if(status.equals(ExamineStatusEnum.IS_PASS.getStatus())){
+        //OA审批才能变更状态,由异常状态变更为正常状态不需要提报OA审批
+        if(status.equals(ExamineStatusEnum.IS_PASS.getStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceBoxExamineModel.getIceStatus())){
             iceBox.setStatus(iceBoxExamineModel.getIceStatus());
             iceBox.setUpdatedTime(new Date());
             iceBoxDao.updateById(iceBox);
@@ -390,6 +483,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
         IceExamine iceExamine = new IceExamine();
         iceExamine.setIceBoxId(iceBox.getId());
+        iceExamine.setExamineNumber(iceBoxExamineModel.getExamineNumber());
         iceExamine.setStoreNumber(iceBoxExamineModel.getStoreNumber());
         iceExamine.setDisplayImage(iceBoxExamineModel.getDisplayImage());
         iceExamine.setExteriorImage(iceBoxExamineModel.getExteriorImage());
@@ -920,8 +1014,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
     private void createExamineModel(IceExamineVo iceExamineVo, Map<String, Object> map, IceBox isExist, IceBoxExtend iceBoxExtend, List<Integer> ids) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String examineNumber = map.get("examineNumber").toString();
         IceBoxExamineModel examineModel = new IceBoxExamineModel();
-        examineModel.setExamineNumber(iceExamineVo.getAssetId());
+        examineModel.setExamineNumber(examineNumber);
         examineModel.setAssetId(isExist.getAssetId());
         examineModel.setDepositMoney(isExist.getDepositMoney());
         examineModel.setDisplayImage(iceExamineVo.getDisplayImage());
@@ -944,7 +1039,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
                 .code(iceExamineVo.getAssetId())
-                .relateCode(iceExamineVo.getAssetId())
+                .relateCode(examineNumber)
                 .createBy(iceExamineVo.getCreateBy())
                 .userIds(ids)
                 .build();
@@ -952,8 +1047,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         sessionExamineVo.setIceBoxExamineModel(examineModel);
         SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxExamine(sessionExamineVo));
         List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
-        map.put("iceBoxTransferNodes",visitExamineNodes);
-        map.put("transferNumber",iceExamineVo.getAssetId());
+        map.put("iceBoxExamineNodes",visitExamineNodes);
     }
 
     private Map<String, Object> checkExamine(IceExamineVo iceExamineVo, Map<String, Object> map) {

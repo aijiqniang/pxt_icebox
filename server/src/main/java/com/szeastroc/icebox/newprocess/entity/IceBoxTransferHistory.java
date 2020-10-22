@@ -163,4 +163,9 @@ public class IceBoxTransferHistory {
      * 变更后投放编号
      */
     private String newPutStoreNumber;
+
+    /**
+     * 是否审批：0-不审批，1-审批
+     */
+    private Integer isCheck;
 }

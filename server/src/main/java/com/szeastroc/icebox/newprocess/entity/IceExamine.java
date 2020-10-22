@@ -23,6 +23,12 @@ public class IceExamine {
     private Integer id;
 
     /**
+     * 冰柜巡检编号
+     */
+    @TableField(value = "examine_number")
+    private String examineNumber;
+
+    /**
      * 冰柜的id
      */
     @TableField(value = "ice_box_id")

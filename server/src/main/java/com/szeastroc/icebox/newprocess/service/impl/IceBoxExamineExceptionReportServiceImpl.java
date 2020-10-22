@@ -59,7 +59,7 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
     public CommonResponse<IceBoxExamineExceptionReport> sendExportMsg(IceBoxExamineExceptionReportMsg reportMsg) {
         // 获取当前用户相关信息
         UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
-        String key = String.format("%s%s", RedisConstant.ICE_BOX_PUT_REPORT_EXPORT_KEY, userManageVo.getSessionUserInfoVo().getId());
+        String key = String.format("%s%s", RedisConstant.ICE_BOX_EXCEPTION_REPORT_EXPORT_KEY, userManageVo.getSessionUserInfoVo().getId());
 //        if (null != jedis.get(key)) {
 //            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
 //        }
@@ -70,14 +70,14 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
         }
         // 生成下载任务
         Integer recordsId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userManageVo.getSessionUserInfoVo().getId(),
-                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "冰柜投放信息-导出"));
+                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "冰柜异常报备信息-导出"));
 
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
             reportMsg.setOperateType(OperateTypeEnum.SELECT.getType());
             reportMsg.setRecordsId(recordsId);
             reportMsg.setOperateName(userManageVo.getSessionUserInfoVo().getRealname());
-            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, reportMsg);
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, reportMsg);
         }, ExecutorServiceFactory.getInstance());
         // 三分钟间隔
         jedis.set(key, "ex", 300, TimeUnit.SECONDS);

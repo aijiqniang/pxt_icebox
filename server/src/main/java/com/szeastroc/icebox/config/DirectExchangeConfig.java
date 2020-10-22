@@ -59,7 +59,34 @@ public class DirectExchangeConfig {
      * 队列消费配置
      */
     @Bean(name = "iceBoxPutContainer")
-    public SimpleRabbitListenerContainerFactory fxBillExportContainer(){
+    public SimpleRabbitListenerContainerFactory iceBoxPutContainer(){
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.NONE);
+        factory.setPrefetchCount(10);
+        return factory;
+    }
+
+    // 定义冰柜异常报备队列
+    @Bean(name = "iceboxExceptionReportQueue")
+    public Queue iceboxExceptionReportQueue() {
+        Queue queue = new Queue(MqConstant.iceboxExceptionReportQueue);
+        return queue;
+    }
+
+    // 定义队列跟交换机的绑定关系
+    @Bean
+    public Binding bindingIceBoxExceptionExchange() {
+        Binding binding = BindingBuilder.bind(iceboxExceptionReportQueue()).to(directExchange()).with(MqConstant.iceboxExceptionReportKey);
+        return binding;
+    }
+
+    /**
+     * DEATAIL_EXPORT
+     * 队列消费配置
+     */
+    @Bean(name = "iceBoxExceptionContainer")
+    public SimpleRabbitListenerContainerFactory iceBoxExceptionContainer(){
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factoryConfigurer.configure(factory, connectionFactory);
         factory.setAcknowledgeMode(AcknowledgeMode.NONE);

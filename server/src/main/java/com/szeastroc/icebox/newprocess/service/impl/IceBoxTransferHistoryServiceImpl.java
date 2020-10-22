@@ -59,12 +59,12 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
             List<Integer> iceBoxIds = list.stream().map(x -> x.getIceBoxId()).collect(Collectors.toList());
             List<IceBox> iceBoxList = iceBoxDao.selectBatchIds(iceBoxIds);
             historyVo.setIceBoxs(iceBoxList);
-            List<SessionExamineVo.VisitExamineNodeVo> examineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(transferNumber));
-            historyVo.setExamineNodeVoList(examineNodeVos);
+            if(history.getIsCheck().equals(1)){
+                List<SessionExamineVo.VisitExamineNodeVo> examineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(transferNumber));
+                historyVo.setExamineNodeVoList(examineNodeVos);
+            }
             historyVoList.add(historyVo);
         }
-
-
         return historyVoList;
     }
 }

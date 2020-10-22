@@ -16,6 +16,12 @@ public interface MqConstant {
      */
     String iceboxReportQueue = "ice_box_report_queue";
     String iceboxReportKey = "ice_box_report_routing_key";
+
+    /**
+     * 冰柜异常报备报表
+     */
+    String iceboxExceptionReportQueue = "ice_box_exception_report_queue";
+    String iceboxExceptionReportKey = "ice_box_exception_report_routing_key";
     /*****************************  直连模式的参数   *************************************/
 
 

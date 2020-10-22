@@ -3,8 +3,10 @@ package com.szeastroc.icebox.newprocess.controller;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.icebox.newprocess.entity.IceBoxChangeHistory;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
+import com.szeastroc.icebox.newprocess.service.IceBoxChangeHistoryService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceModelService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
@@ -25,6 +27,8 @@ public class IceBoxManagerController {
     private IceModelService iceModelService;
     @Resource
     private IceBoxService iceBoxService;
+    @Resource
+    private IceBoxChangeHistoryService iceBoxChangeHistoryService;
 
 
     /**
@@ -82,6 +86,17 @@ public class IceBoxManagerController {
     public CommonResponse<Void> changeAssetId(@RequestParam("iceBoxId") Integer iceBoxId, @RequestParam("assetId") String assetId, @RequestParam("reconfirm") boolean reconfirm) {
         iceBoxService.changeAssetId(iceBoxId, assetId, reconfirm);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+
+    @PostMapping("/findChangeHistory")
+    public CommonResponse<List<IceBoxChangeHistory>> findChangeHistory(@RequestParam("iceBoxId") Integer iceBoxId) {
+        if (null == iceBoxId) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+
+        List<IceBoxChangeHistory> list = iceBoxChangeHistoryService.iceBoxChangeHistoryService(iceBoxId);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, list);
     }
 
 }

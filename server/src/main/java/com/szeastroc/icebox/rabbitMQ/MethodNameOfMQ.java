@@ -11,4 +11,7 @@ public interface MethodNameOfMQ {
 
     String EXPORT_ICE_REFUND = "exportIceRefund";
 
+
+    String EXPORT_ICE_TRANSFER = "exportIceTransfer";
+
 }

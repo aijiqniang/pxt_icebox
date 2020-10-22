@@ -136,6 +136,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxTransferHistoryDao iceBoxTransferHistoryDao;
     private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
     private final RabbitTemplate rabbitTemplate;
+    private final IceBoxChangeHistoryDao iceBoxChangeHistoryDao;
 
 
     @Override
@@ -2587,7 +2588,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             history.setIsCheck(0);
             history.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
             Object isCheck = map.get("isCheck");
-            if(isCheck == null){
+            if (isCheck == null) {
                 history.setIsCheck(1);
                 history.setExamineStatus(ExamineStatus.DEFAULT_EXAMINE.getStatus());
             }
@@ -2965,7 +2966,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Integer modifyCustomerType = iceBoxManagerVo.getModifyCustomerType();
         String assetId = iceBox.getAssetId();
         IceBox oldIceBox = iceBoxDao.selectById(iceBoxId);
-        IceBoxTransferHistory iceBoxTransferHistory = new IceBoxTransferHistory();
+        IceBoxChangeHistory iceBoxChangeHistory = new IceBoxChangeHistory();
 
         // 资产编号变更
         IceBox currentIceBox = iceBoxDao.selectById(iceBoxId);
@@ -3059,14 +3060,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
 
                 }*/
-                iceBoxTransferHistory.setNewPutStoreNumber(customerNumber);
+                iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(3);
             }
         }
         iceBoxDao.update(iceBox, updateWrapper);
         iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, iceBox.getAssetId()));
-        convertToIceBoxTransferHistory(oldIceBox, iceBox, iceBoxTransferHistory);
+        convertToIceBoxChangeHistory(oldIceBox, iceBox, iceBoxChangeHistory);
     }
 
     @Override
@@ -3360,44 +3361,43 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
     }
 
-    private void convertToIceBoxTransferHistory(IceBox oldIceBox, IceBox newIcebox, IceBoxTransferHistory iceBoxTransferHistory) {
-        iceBoxTransferHistory.setOldAssetId(oldIceBox.getAssetId());
-        iceBoxTransferHistory.setOldBrandName(oldIceBox.getBrandName());
-        iceBoxTransferHistory.setOldChestDepositMoney(oldIceBox.getDepositMoney());
-        iceBoxTransferHistory.setOldChestMoney(oldIceBox.getChestMoney());
-        iceBoxTransferHistory.setOldChestDepositMoney(oldIceBox.getDepositMoney());
-        iceBoxTransferHistory.setOldMarketAreaId(oldIceBox.getDeptId());
-        iceBoxTransferHistory.setOldModelId(oldIceBox.getModelId());
-        iceBoxTransferHistory.setOldModelName(oldIceBox.getModelName());
+    private void convertToIceBoxChangeHistory(IceBox oldIceBox, IceBox newIcebox, IceBoxChangeHistory iceBoxChangeHistory) {
+        iceBoxChangeHistory.setOldAssetId(oldIceBox.getAssetId());
+        iceBoxChangeHistory.setOldBrandName(oldIceBox.getBrandName());
+        iceBoxChangeHistory.setOldChestDepositMoney(oldIceBox.getDepositMoney());
+        iceBoxChangeHistory.setOldChestMoney(oldIceBox.getChestMoney());
+        iceBoxChangeHistory.setOldChestDepositMoney(oldIceBox.getDepositMoney());
+        iceBoxChangeHistory.setOldMarketAreaId(oldIceBox.getDeptId());
+        iceBoxChangeHistory.setOldModelId(oldIceBox.getModelId());
+        iceBoxChangeHistory.setOldModelName(oldIceBox.getModelName());
         Integer oldSupplierId = oldIceBox.getSupplierId();
-        iceBoxTransferHistory.setOldSupplierId(oldSupplierId);
-        iceBoxTransferHistory.setOldChestNorm(oldIceBox.getChestNorm());
-        iceBoxTransferHistory.setOldPutStoreNumber(oldIceBox.getPutStoreNumber());
-        iceBoxTransferHistory.setOldChestName(oldIceBox.getChestName());
+        iceBoxChangeHistory.setOldSupplierId(oldSupplierId);
+        iceBoxChangeHistory.setOldChestNorm(oldIceBox.getChestNorm());
+        iceBoxChangeHistory.setOldPutStoreNumber(oldIceBox.getPutStoreNumber());
+        iceBoxChangeHistory.setOldChestName(oldIceBox.getChestName());
 
 
-        iceBoxTransferHistory.setNewAssetId(newIcebox.getAssetId());
-        iceBoxTransferHistory.setNewBrandName(newIcebox.getBrandName());
-        iceBoxTransferHistory.setNewChestDepositMoney(newIcebox.getDepositMoney());
-        iceBoxTransferHistory.setNewChestMoney(newIcebox.getChestMoney());
-        iceBoxTransferHistory.setNewChestDepositMoney(newIcebox.getDepositMoney());
-        iceBoxTransferHistory.setNewMarketAreaId(newIcebox.getDeptId());
-        iceBoxTransferHistory.setNewModelId(newIcebox.getModelId());
-        iceBoxTransferHistory.setNewModelName(newIcebox.getModelName());
+        iceBoxChangeHistory.setNewAssetId(newIcebox.getAssetId());
+        iceBoxChangeHistory.setNewBrandName(newIcebox.getBrandName());
+        iceBoxChangeHistory.setNewChestDepositMoney(newIcebox.getDepositMoney());
+        iceBoxChangeHistory.setNewChestMoney(newIcebox.getChestMoney());
+        iceBoxChangeHistory.setNewChestDepositMoney(newIcebox.getDepositMoney());
+        iceBoxChangeHistory.setNewMarketAreaId(newIcebox.getDeptId());
+        iceBoxChangeHistory.setNewModelId(newIcebox.getModelId());
+        iceBoxChangeHistory.setNewModelName(newIcebox.getModelName());
         Integer newSupplierId = newIcebox.getSupplierId();
-        iceBoxTransferHistory.setNewSupplierId(newSupplierId);
-        iceBoxTransferHistory.setNewChestNorm(newIcebox.getChestNorm());
-        iceBoxTransferHistory.setNewPutStoreNumber(newIcebox.getPutStoreNumber());
-        iceBoxTransferHistory.setNewChestName(newIcebox.getChestName());
+        iceBoxChangeHistory.setNewSupplierId(newSupplierId);
+        iceBoxChangeHistory.setNewChestNorm(newIcebox.getChestNorm());
+        iceBoxChangeHistory.setNewPutStoreNumber(newIcebox.getPutStoreNumber());
+        iceBoxChangeHistory.setNewChestName(newIcebox.getChestName());
 
 
         UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
-        iceBoxTransferHistory.setCreateBy(userManageVo.getSessionUserInfoVo().getId());
-        iceBoxTransferHistory.setCreateByName(userManageVo.getSessionUserInfoVo().getRealname());
+        iceBoxChangeHistory.setCreateBy(userManageVo.getSessionUserInfoVo().getId());
+        iceBoxChangeHistory.setCreateByName(userManageVo.getSessionUserInfoVo().getRealname());
 
 
-        iceBoxTransferHistory.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
-        iceBoxTransferHistory.setIceBoxId(oldIceBox.getId());
+        iceBoxChangeHistory.setIceBoxId(oldIceBox.getId());
 
         List<Integer> list = new ArrayList<>();
         list.add(oldSupplierId);
@@ -3405,11 +3405,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         Map<Integer, SubordinateInfoVo> map = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(list));
 
-        iceBoxTransferHistory.setOldSupplierName(map.get(oldSupplierId).getName());
-        iceBoxTransferHistory.setNewSupplierName(map.get(newSupplierId).getName());
-        iceBoxTransferHistory.setCreateTime(new Date());
-        iceBoxTransferHistory.setSourceType(IceBoxEnums.ChangeSourceTypeEnum.BACKSTAGE_MANAGEMENT.getType());
+        iceBoxChangeHistory.setOldSupplierName(map.get(oldSupplierId).getName());
+        iceBoxChangeHistory.setNewSupplierName(map.get(newSupplierId).getName());
+        iceBoxChangeHistory.setCreateTime(new Date());
 
-        iceBoxTransferHistoryDao.insert(iceBoxTransferHistory);
+        iceBoxChangeHistoryDao.insert(iceBoxChangeHistory);
     }
 }

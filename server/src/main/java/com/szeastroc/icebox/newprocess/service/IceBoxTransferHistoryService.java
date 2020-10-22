@@ -3,12 +3,9 @@ package com.szeastroc.icebox.newprocess.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.icebox.newprocess.entity.IceBoxTransferHistory;
-import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
-
-import java.util.List;
-
+import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryPageVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryVo;
-import com.szeastroc.icebox.newprocess.vo.request.IceBoxTransferHistoryPage;
+import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 
 import java.util.List;
 
@@ -17,10 +14,12 @@ public interface IceBoxTransferHistoryService extends IService<IceBoxTransferHis
     List<IceBoxTransferHistoryVo> findListBySupplierId(Integer supplierId);
 
 
-    IPage<IceBoxTransferHistory> report(IceTransferRecordPage iceTransferRecordPage);
+    IPage<IceBoxTransferHistoryPageVo> report(IceTransferRecordPage iceTransferRecordPage);
 
-    Void reportExport(IceTransferRecordPage iceTransferRecordPage);
+    void reportExport(IceTransferRecordPage iceTransferRecordPage);
 
     List<IceBoxTransferHistory> findByIceBoxId(Integer iceBoxId);
+
+    void exportRefundTransfer(IceTransferRecordPage iceTransferRecordPage);
 }
 

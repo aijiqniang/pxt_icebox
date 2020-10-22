@@ -32,6 +32,9 @@ public class IceTransferRecordPage extends Page {
     private Date endTime;
 
 
+    private String assetId;
+
+    private Integer exportRecordId;
 
 
 }

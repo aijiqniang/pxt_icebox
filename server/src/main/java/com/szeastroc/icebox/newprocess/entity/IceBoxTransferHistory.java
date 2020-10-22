@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 @Getter
@@ -74,104 +73,7 @@ public class IceBoxTransferHistory {
 
 
     /**
-     * 变更前资产编号
-     */
-    private String oldAssetId;
-
-    /**
-     * 变更前型号id
-     */
-    private Integer oldModelId;
-
-    /**
-     * 变更前型号名称
-     */
-    private String oldModelName;
-
-    /**
-     * 变更前品牌
-     */
-    private String oldBrandName;
-
-    /**
-     * 变更前冰柜名称
-     */
-    private String oldChestName;
-
-    /**
-     * 变更前规格
-     */
-    private String oldChestNorm;
-
-    /**
-     * 变更前价值
-     */
-    private BigDecimal oldChestMoney;
-
-    /**
-     * 变更前押金
-     */
-    private BigDecimal oldChestDepositMoney;
-
-    /**
-     * 变更前投放编号
-     */
-    private String oldPutStoreNumber;
-
-    /**
-     * 变更后资产编号
-     */
-    private String newAssetId;
-
-    /**
-     * 变更后型号id
-     */
-    private Integer newModelId;
-
-    /**
-     * 变更后型号名称
-     */
-    private String newModelName;
-
-    /**
-     * 变更后品牌
-     */
-    private String newBrandName;
-
-    /**
-     * 变更后冰柜名称
-     */
-    private String newChestName;
-
-    /**
-     * 变更后规格
-     */
-    private String newChestNorm;
-
-    /**
-     * 变更后价值
-     */
-    private BigDecimal newChestMoney;
-
-    /**
-     * 变更后押金
-     */
-    private BigDecimal newChestDepositMoney;
-
-
-    /**
-     * 变更后投放编号
-     */
-    private String newPutStoreNumber;
-
-    /**
      * 是否审批：0-不审批，1-审批
      */
     private Integer isCheck;
-
-
-    /**
-     * 数据来源  0 SFA  1 后台管理
-     */
-    private Integer sourceType;
 }

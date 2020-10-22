@@ -4,13 +4,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceBoxTransferHistory;
+import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxTransferHistoryService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryPageVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryVo;
+import com.szeastroc.icebox.newprocess.vo.request.ExamineStatusVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -22,17 +26,31 @@ public class IceBoxTransferHistoryController {
     private IceBoxTransferHistoryService iceBoxTransferHistoryService;
 
 
-//    @RequestMapping("findByPage")
+    //    @RequestMapping("findByPage")
 //    public CommonResponse<IPage<IceBoxPutReport>> findByPage(IceBoxPutReportMsg reportMsg){
 //        IPage<IceBoxPutReport> reportIPage = iceBoxPutReportService.findByPage(reportMsg);
 //        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null, reportIPage);
 //    }
+    @RequestMapping("/getExamineStatus")
+    public CommonResponse<List<ExamineStatusVo>> getExamineStatus() {
+        List<ExamineStatusVo> list = new ArrayList<>();
+        for (ExamineStatus examineStatus : ExamineStatus.values()) {
+            Integer status = examineStatus.getStatus();
+            String desc = examineStatus.getDesc();
+            ExamineStatusVo examineStatusVo = ExamineStatusVo.builder()
+                    .type(status)
+                    .message(desc)
+                    .build();
+            list.add(examineStatusVo);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, list);
+    }
 
 
     @PostMapping("/report")
-    public CommonResponse<IPage<IceBoxTransferHistory>> report(@RequestBody IceTransferRecordPage iceTransferRecordPage) {
+    public CommonResponse<IPage<IceBoxTransferHistoryPageVo>> report(@RequestBody IceTransferRecordPage iceTransferRecordPage) {
 
-        IPage<IceBoxTransferHistory> page = iceBoxTransferHistoryService.report(iceTransferRecordPage);
+        IPage<IceBoxTransferHistoryPageVo> page = iceBoxTransferHistoryService.report(iceTransferRecordPage);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, page);
     }
 

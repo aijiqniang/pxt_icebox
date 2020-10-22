@@ -1639,7 +1639,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .setRepairBeginTime(repairBeginTime);
 
             // 新的 冰柜状态/投放状态
-            Integer newPutStatus = iceBox.getStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
+            Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
             Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.NORMAL.getType() : iceBox.getStatus();
 
             /**

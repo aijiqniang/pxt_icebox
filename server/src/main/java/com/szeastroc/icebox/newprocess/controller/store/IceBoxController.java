@@ -236,7 +236,20 @@ public class IceBoxController {
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea() + "");
         clientInfoRequest.setOrderSource(OrderSourceEnums.OTOC.getType());
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
+        Map<String, Object> map = icePutOrderService.applyPayIceBox(clientInfoRequest);
+        OrderPayResponse orderPayResponse = (OrderPayResponse) map.get("orderPayResponse");
+        IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
+        if(assetReportVo!=null){
+            DataPack dataPack = new DataPack(); // 数据包
+            dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+            dataPack.setObj(Lists.newArrayList(assetReportVo));
+            ExecutorServiceFactory.getInstance().execute(() -> {
+                // 发送mq消息
+                directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+            });
+        }
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
     }
 
     /**
@@ -259,7 +272,19 @@ public class IceBoxController {
         }
         clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");
         clientInfoRequest.setOrderSource(OrderSourceEnums.DMS.getType());
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
+        Map<String, Object> map = icePutOrderService.applyPayIceBox(clientInfoRequest);
+        OrderPayResponse orderPayResponse = (OrderPayResponse) map.get("orderPayResponse");
+        IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
+        if(assetReportVo!=null){
+            DataPack dataPack = new DataPack(); // 数据包
+            dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+            dataPack.setObj(Lists.newArrayList(assetReportVo));
+            ExecutorServiceFactory.getInstance().execute(() -> {
+                // 发送mq消息
+                directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+            });
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,orderPayResponse);
     }
 
     /**
@@ -274,7 +299,17 @@ public class IceBoxController {
         OrderPayBack orderPayBack = CommonUtil.xmlToObj(request);
         if (orderPayBack.getReturnCode().equals("SUCCESS")) {
             //修改订单信息
-            icePutOrderService.notifyOrderInfo(orderPayBack);
+            IceBoxAssetReportVo assetReportVo = icePutOrderService.notifyOrderInfo(orderPayBack);
+            if(assetReportVo!=null){
+                DataPack dataPack = new DataPack(); // 数据包
+                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                dataPack.setObj(Lists.newArrayList(assetReportVo));
+                ExecutorServiceFactory.getInstance().execute(() -> {
+                    // 发送mq消息
+                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                });
+            }
+
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
@@ -287,8 +322,21 @@ public class IceBoxController {
      */
     @GetMapping("/udpateAndGetOrderPayStatus")
     public CommonResponse<String> udpateAndGetOrderPayStatus(String orderNumber) throws Exception {
-        boolean flag = icePutOrderService.getPayStatus(orderNumber);
+        Map<String, Object> map = icePutOrderService.getPayStatus(orderNumber);
+        Boolean flag = (Boolean) map.get("boo");
+        IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
+
         if (flag) {
+            if(assetReportVo!=null){
+                DataPack dataPack = new DataPack(); // 数据包
+                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                dataPack.setObj(Lists.newArrayList(assetReportVo));
+                ExecutorServiceFactory.getInstance().execute(() -> {
+                    // 发送mq消息
+                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                });
+            }
+
             return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
         } else {
             return new CommonResponse<>(Constants.API_CODE_FAIL_LOOP, null);
@@ -488,7 +536,18 @@ public class IceBoxController {
         while (true) {
             Thread.sleep(2000);
 
-            flag = icePutOrderService.getPayStatus(orderNumber);
+            Map<String, Object> map = icePutOrderService.getPayStatus(orderNumber);
+            flag = (boolean) map.get("boo");
+            IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
+            if(assetReportVo!=null){
+                DataPack dataPack = new DataPack(); // 数据包
+                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                dataPack.setObj(Lists.newArrayList(assetReportVo));
+                ExecutorServiceFactory.getInstance().execute(() -> {
+                    // 发送mq消息
+                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                });
+            }
 
             // 订单未完成时, 长连接时间判断
             long nowTime = System.currentTimeMillis();

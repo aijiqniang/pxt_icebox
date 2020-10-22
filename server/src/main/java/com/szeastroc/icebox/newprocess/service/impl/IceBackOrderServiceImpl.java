@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -27,9 +28,11 @@ import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.BackType;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
@@ -308,12 +311,22 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         } else if (status == 1) {
             //批准
-            doTransfer(applyNumber);
+            IceBoxAssetReportVo assetReportVo = doTransfer(applyNumber);
             IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
             iceBackApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
             iceBackApplyDao.updateById(iceBackApply);
             CompletableFuture.runAsync(() ->
                     feignCusLabelClient.manualExpired(9999, iceBackApply.getBackStoreNumber()), ExecutorServiceFactory.getInstance());
+
+            if(assetReportVo!=null){
+                DataPack dataPack = new DataPack(); // 数据包
+                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                dataPack.setObj(Lists.newArrayList(assetReportVo));
+                ExecutorServiceFactory.getInstance().execute(() -> {
+                    // 发送mq消息
+                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                });
+            }
         } else if (status == 2) {
             // 驳回
             IceBackApply iceBackApply = new IceBackApply();
@@ -728,7 +741,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         }
     }
 
-    private void doTransfer(String applyNumber) {
+    private IceBoxAssetReportVo doTransfer(String applyNumber) {
 
         IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
 
@@ -737,6 +750,9 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         Integer iceBoxId = iceBackApplyRelateBox.getBoxId();
         IceBox iceBox = iceBoxDao.selectById(iceBoxId);
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+        // 旧的 冰柜状态/投放状态
+        Integer oldPutStatus =iceBox.getPutStatus();
+        Integer oldStatus =iceBox.getStatus();
 
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
@@ -793,13 +809,16 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBoxDao.updateById(iceBox);
 //         免押时, 不校验订单, 直接跳过
         if (FreePayTypeEnum.IS_FREE.getType().equals(icePutApplyRelateBox.getFreeType())) {
-            return;
+            return null;
         }
+        // 新的 冰柜状态/投放状态
+        Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
+        Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
 
 
         // 非免押，但是不退押金，直接跳过
         if (BackType.BACK_WITHOUT_MONEY.getType() == iceBackApplyRelateBox.getBackType()) {
-            return;
+            return null;
         }
 
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
@@ -834,6 +853,26 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         log.info("转账服务返回的数据-->[{}]", JSON.toJSONString(transferReponse, true));
         // 修改冰柜状态
+
+        SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readId(iceBox.getSupplierId()));
+        String suppName=null;
+        String supplierNumber=null;
+        if(subordinateInfoVo!=null){
+            suppName=subordinateInfoVo.getName()==null?null:subordinateInfoVo.getName();
+            supplierNumber=subordinateInfoVo.getNumber()==null?null:subordinateInfoVo.getNumber();
+        }
+
+        IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
+                .assetId(iceBox.getAssetId())
+                .modelId(iceBox.getModelId())
+                .modelName(iceBox.getModelName())
+                .suppName(suppName)
+                .suppNumber(supplierNumber)
+                .oldPutStatus(oldPutStatus)
+                .oldStatus(oldStatus)
+                .newPutStatus(newPutStatus)
+                .newStatus(newStatus).build();
+        return assetReportVo;
     }
 
 

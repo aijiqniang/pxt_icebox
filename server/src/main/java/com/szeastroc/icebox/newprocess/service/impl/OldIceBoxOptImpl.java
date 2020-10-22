@@ -152,7 +152,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                Integer newPutStatus = iceBox.getStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
+                Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
                 Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
 
                 IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
@@ -247,7 +247,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                Integer newPutStatus = iceBox.getStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
+                Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
                 Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
 
 
@@ -350,7 +350,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                Integer newPutStatus = iceBox.getStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
+                Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
                 Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
 
 

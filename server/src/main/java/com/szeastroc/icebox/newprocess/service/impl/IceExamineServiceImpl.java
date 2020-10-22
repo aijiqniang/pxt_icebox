@@ -46,7 +46,6 @@ import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.common.IceBoxExamineModel;
 import com.szeastroc.visit.common.SessionExamineCreateVo;
 import com.szeastroc.visit.common.SessionExamineVo;
-import com.szeastroc.visit.common.SessionVisitExamineBacklog;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -133,7 +132,14 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
-            buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.allow_report.getStatus(),now);
+            Integer examineExceptionStatus = ExamineExceptionStatusEnums.is_reporting.getStatus();
+            if(iceExamine.getExaminStatus().equals(ExamineStatus.PASS_EXAMINE.getStatus())){
+                examineExceptionStatus = ExamineExceptionStatusEnums.allow_report.getStatus();
+            }
+            if(iceExamine.getExaminStatus().equals(ExamineStatus.REJECT_EXAMINE.getStatus())){
+                examineExceptionStatus = ExamineExceptionStatusEnums.is_unpass.getStatus();
+            }
+            buildReportAndSendMq(iceExamine,examineExceptionStatus,now);
         }, ExecutorServiceFactory.getInstance());
     }
 
@@ -176,7 +182,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                 report.setHeadquartersDeptId(headquarters.getId());
                 report.setHeadquartersDeptName(headquarters.getName());
             }
-            report.setToOaType(iceExamine.getExaminStatus());
+            report.setToOaType(iceExamine.getIceStatus());
             report.setDepositMoney(iceBox.getDepositMoney());
             report.setIceBoxModelId(iceBox.getModelId());
             report.setIceBoxModelName(iceBox.getModelName());
@@ -369,28 +375,28 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
     @Override
     public Map<String, Object> doExamineNew(IceExamineVo iceExamineVo) {
+        String examineNumber = UUID.randomUUID().toString().replace("-", "");
         IceExamine iceExamine = new IceExamine();
         BeanUtils.copyProperties(iceExamineVo,iceExamine);
+        iceExamine.setExamineNumber(examineNumber);
+        iceExamine.setIceStatus(iceExamineVo.getIceExamineStatus());
         Map<String, Object> map = new HashMap<>();
-        String examineNumber = UUID.randomUUID().toString().replace("-", "");
         map.put("examineNumber", examineNumber);
         //冰柜状态是正常，巡检也是正常，不需要审批
         if(IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
-            iceExamine.setExamineNumber(examineNumber);
-            doExamine(iceExamine);
+            iceExamine.setExaminStatus(ExamineStatus.PASS_EXAMINE.getStatus());
             map.put("isCheck", CommonIsCheckEnum.IS_CHECK.getStatus());
-            return map;
         }
         MatchRuleVo matchRuleVo = new MatchRuleVo();
         //冰柜状态是报废，巡检是正常，需要走与报废相同的审批
         if(IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(5);
-            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
+            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo, iceExamine);
         }
         //冰柜状态是遗失，巡检是正常，需要走与遗失相同的审批
         if(IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(6);
-            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
+            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo, iceExamine);
         }
 //        //冰柜状态是报修，巡检是正常，需要走与报修相同的审批   产品说报修没了，以后还要，所以保留代码
 //        if(IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
@@ -400,13 +406,13 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         //冰柜状态不是报废，巡检是报废，需要走报废审批
         if(!IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(5);
-            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
+            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo, iceExamine);
         }
 
         //冰柜状态不是遗失，巡检是遗失，需要走遗失审批
         if(!IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(6);
-            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo);
+            map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo,iceExamine);
         }
 
         //冰柜状态不是报修，巡检是报修，需要走报修通知上级  产品说报修现在没了，以后还要，所以保留代码
@@ -456,10 +462,12 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //                }
 //            }
 //        }
+
+        doExamine(iceExamine);
         //发送mq消息,同步申请数据到报表
-        CompletableFuture.runAsync(() -> {
-            buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_reporting.getStatus(),new Date());
-        }, ExecutorServiceFactory.getInstance());
+//        CompletableFuture.runAsync(() -> {
+//            buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_reporting.getStatus(),new Date());
+//        }, ExecutorServiceFactory.getInstance());
         return map;
     }
 
@@ -480,21 +488,38 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             iceBox.setUpdatedTime(new Date());
             iceBoxDao.updateById(iceBox);
         }
-
-        IceExamine iceExamine = new IceExamine();
-        iceExamine.setIceBoxId(iceBox.getId());
-        iceExamine.setExamineNumber(iceBoxExamineModel.getExamineNumber());
-        iceExamine.setStoreNumber(iceBoxExamineModel.getStoreNumber());
-        iceExamine.setDisplayImage(iceBoxExamineModel.getDisplayImage());
-        iceExamine.setExteriorImage(iceBoxExamineModel.getExteriorImage());
-        iceExamine.setIceStatus(iceBoxExamineModel.getIceStatus());
-        iceExamine.setExaminMsg(iceBoxExamineModel.getExaminMsg());
-        iceExamine.setCreateBy(iceBoxExamineModel.getCreateBy());
-        iceExamine.setExaminStatus(status);
-        doExamine(iceExamine);
+        IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getExamineNumber, iceBoxExamineModel.getExamineNumber()));
+        if(iceExamine != null){
+            iceExamine.setExaminStatus(status);
+            iceExamine.setUpdateTime(new Date());
+            iceExamineDao.updateById(iceExamine);
+        }
+        if(status.equals(ExamineStatusEnum.IS_PASS.getStatus())){
+            //发送mq消息,同步申请数据到报表
+            CompletableFuture.runAsync(() -> {
+                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.allow_report.getStatus(),new Date());
+            }, ExecutorServiceFactory.getInstance());
+        }
+        if(status.equals(ExamineStatusEnum.UN_PASS.getStatus())){
+            //发送mq消息,同步申请数据到报表
+            CompletableFuture.runAsync(() -> {
+                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_unpass.getStatus(),new Date());
+            }, ExecutorServiceFactory.getInstance());
+        }
+//        IceExamine iceExamine = new IceExamine();
+//        iceExamine.setIceBoxId(iceBox.getId());
+//        iceExamine.setExamineNumber(iceBoxExamineModel.getExamineNumber());
+//        iceExamine.setStoreNumber(iceBoxExamineModel.getStoreNumber());
+//        iceExamine.setDisplayImage(iceBoxExamineModel.getDisplayImage());
+//        iceExamine.setExteriorImage(iceBoxExamineModel.getExteriorImage());
+//        iceExamine.setIceStatus(iceBoxExamineModel.getIceStatus());
+//        iceExamine.setExaminMsg(iceBoxExamineModel.getExaminMsg());
+//        iceExamine.setCreateBy(iceBoxExamineModel.getCreateBy());
+//        iceExamine.setExaminStatus(status);
+//        doExamine(iceExamine);
     }
 
-    private Map<String, Object> createExamineCheckProcess(IceExamineVo iceExamineVo, Map<String, Object> map, MatchRuleVo matchRuleVo) {
+    private Map<String, Object> createExamineCheckProcess(IceExamineVo iceExamineVo, Map<String, Object> map, MatchRuleVo matchRuleVo, IceExamine iceExamine) {
 
         matchRuleVo.setDeptId(iceExamineVo.getMarketAreaId());
         matchRuleVo.setType(2);
@@ -508,7 +533,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜信息！");
         }
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceExamineVo.getCreateBy()));
-        Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(iceExamineVo.getMarketAreaId()));
+        Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(iceExamineVo.getUserMarketAreaId()));
         List<Integer> ids = new ArrayList<Integer>();
         //获取上级部门领导
         SessionUserInfoVo groupUser = new SessionUserInfoVo();
@@ -554,9 +579,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(ruleIceDetailVo != null){
             //规则设置：不需审批
             if(!ruleIceDetailVo.getIsApproval()){
-                IceExamine iceExamine = new IceExamine();
-                BeanUtils.copyProperties(iceExamineVo,iceExamine);
-                doExamine(iceExamine);
+//                IceExamine iceExamine = new IceExamine();
+//                BeanUtils.copyProperties(iceExamineVo,iceExamine);
+//                doExamine(iceExamine);
+                iceExamine.setExaminStatus(ExamineStatus.PASS_EXAMINE.getStatus());
                 return map;
             }
 
@@ -571,13 +597,13 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.LARGE_AREA.getType())
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.BUSINESS_UNIT.getType())
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {
-                    return checkExamine(iceExamineVo,map);
+                    return checkExamine(iceExamineVo,map, iceExamine);
                 }
                 ids.add(groupUser.getId());
                 if (CollectionUtil.isEmpty(ids)) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
                 }
-                createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                 return map;
             }
 
@@ -604,7 +630,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.LARGE_AREA.getType())
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.BUSINESS_UNIT.getType())
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {
-                    return checkExamine(iceExamineVo,map);
+
+                    return checkExamine(iceExamineVo,map,iceExamine);
                 }
 
                 //规则设置：是否上级审批
@@ -623,10 +650,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
-                            return checkExamine(iceExamineVo,map);
+                            return checkExamine(iceExamineVo,map, iceExamine);
                         }
                         ids.add(userInfoVo.getId());
-                        createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                        createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }
                 }
@@ -640,7 +667,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                     }
                     ids.add(serviceUser.getId());
-                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
                 }else {
                     if(groupUser == null || groupUser.getId() == null){
@@ -654,7 +681,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if(!ids.contains(serviceUser.getId())){
                         ids.add(serviceUser.getId());
                     }
-                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
                 }
 
@@ -666,7 +693,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                 if (simpleUserInfoVo.getId().equals(regionUser.getId())
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.BUSINESS_UNIT.getType())
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {
-                    return checkExamine(iceExamineVo,map);
+                    return checkExamine(iceExamineVo,map, iceExamine);
                 }
 
                 //规则设置：是否上级审批
@@ -685,10 +712,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
-                            return checkExamine(iceExamineVo,map);
+                            return checkExamine(iceExamineVo,map, iceExamine);
                         }
                         ids.add(userInfoVo.getId());
-                        createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                        createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }else {
                         /**
@@ -708,10 +735,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                             }
                             if ((groupUser.getId() != null && groupUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map);
+                                return checkExamine(iceExamineVo,map, iceExamine);
                             }
                             ids.add(groupUser.getId());
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
 
@@ -720,10 +747,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                             }
                             if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map);
+                                return checkExamine(iceExamineVo,map, iceExamine);
                             }
                             ids.add(serviceUser.getId());
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
 
@@ -732,10 +759,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
                             }
                             if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map);
+                                return checkExamine(iceExamineVo,map, iceExamine);
                             }
                             ids.add(regionUser.getId());
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
                     }
@@ -769,7 +796,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if (CollectionUtil.isEmpty(ids)) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
                     }
-                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
                 }else {
                     List<Integer> allNodes = new ArrayList<>();
@@ -804,7 +831,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if (CollectionUtil.isEmpty(ids)) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
                     }
-                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
                 }
 
@@ -815,7 +842,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
                 //申请人事业部领导或者部门是高于大区的，直接置为审核状态
                 if (simpleUserInfoVo.getId().equals(businessUser.getId()) || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {
-                    return checkExamine(iceExamineVo,map);
+                    return checkExamine(iceExamineVo,map, iceExamine);
                 }
 
                 //规则设置：是否上级审批
@@ -834,10 +861,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
-                            return checkExamine(iceExamineVo,map);
+                            return checkExamine(iceExamineVo,map, iceExamine);
                         }
                         ids.add(userInfoVo.getId());
-                        createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                        createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }else {
                         /**
@@ -858,10 +885,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                             }
                             if ((groupUser.getId() != null && groupUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map);
+                                return checkExamine(iceExamineVo,map, iceExamine);
                             }
                             ids.add(groupUser.getId());
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
 
@@ -870,10 +897,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                             }
                             if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map);
+                                return checkExamine(iceExamineVo,map, iceExamine);
                             }
                             ids.add(serviceUser.getId());
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
 
@@ -882,10 +909,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
                             }
                             if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map);
+                                return checkExamine(iceExamineVo,map, iceExamine);
                             }
                             ids.add(regionUser.getId());
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
 
@@ -894,10 +921,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部经理！");
                             }
                             if ((businessUser.getId() != null && businessUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map);
+                                return checkExamine(iceExamineVo,map, iceExamine);
                             }
                             ids.add(businessUser.getId());
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
                     }
@@ -936,7 +963,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if (CollectionUtil.isEmpty(ids)) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
                     }
-                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
                 }else {
                     List<Integer> allNodes = new ArrayList<>();
@@ -980,7 +1007,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if (CollectionUtil.isEmpty(ids)) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
                     }
-                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+                    createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
                 }
             }
@@ -991,7 +1018,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }
             //申请人是服务处经理，直接置为审核状态
             if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
-                return checkExamine(iceExamineVo,map);
+                return checkExamine(iceExamineVo,map, iceExamine);
             }
 
             if(groupUser == null || groupUser.getId() == null){
@@ -1006,13 +1033,13 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             if (CollectionUtil.isEmpty(ids)) {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
             }
-            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids);
+            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
             return map;
         }
         return map;
     }
 
-    private void createExamineModel(IceExamineVo iceExamineVo, Map<String, Object> map, IceBox isExist, IceBoxExtend iceBoxExtend, List<Integer> ids) {
+    private void createExamineModel(IceExamineVo iceExamineVo, Map<String, Object> map, IceBox isExist, IceBoxExtend iceBoxExtend, List<Integer> ids, IceExamine iceExamine) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String examineNumber = map.get("examineNumber").toString();
         IceBoxExamineModel examineModel = new IceBoxExamineModel();
@@ -1025,6 +1052,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         examineModel.setIceBoxModel(isExist.getModelName());
         examineModel.setIceBoxName(isExist.getChestName());
         examineModel.setIceStatus(iceExamineVo.getIceStatus());
+        examineModel.setIceExaminStatus(iceExamineVo.getIceExamineStatus());
         examineModel.setPutTime(dateFormat.format(isExist.getUpdatedTime()));
         if(iceBoxExtend.getReleaseTime() != null){
             examineModel.setReleaseTimeStr(dateFormat.format(iceBoxExtend.getReleaseTime()));
@@ -1048,18 +1076,19 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxExamine(sessionExamineVo));
         List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
         map.put("iceBoxExamineNodes",visitExamineNodes);
+        iceExamine.setExaminStatus(ExamineStatus.DEFAULT_EXAMINE.getStatus());
     }
 
-    private Map<String, Object> checkExamine(IceExamineVo iceExamineVo, Map<String, Object> map) {
+    private Map<String, Object> checkExamine(IceExamineVo iceExamineVo, Map<String, Object> map, IceExamine iceExamine) {
         IceBox iceBox = iceBoxDao.selectById(iceExamineVo.getIceBoxId());
         if(iceBox == null){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "巡检的冰柜不存在！");
         }
-
-        iceBox.setStatus(iceExamineVo.getIceStatus());
-        iceBox.setUpdatedBy(iceExamineVo.getCreateBy());
-        iceBox.setUpdatedTime(new Date());
-        iceBoxDao.updateById(iceBox);
+        iceExamine.setExaminStatus(ExamineStatus.PASS_EXAMINE.getStatus());
+//        iceBox.setStatus(iceExamineVo.getIceStatus());
+//        iceBox.setUpdatedBy(iceExamineVo.getCreateBy());
+//        iceBox.setUpdatedTime(new Date());
+//        iceBoxDao.updateById(iceBox);
 
         map.put("isCheck", CommonIsCheckEnum.IS_CHECK.getStatus());
         return map;

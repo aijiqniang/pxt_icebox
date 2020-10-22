@@ -1,6 +1,5 @@
 package com.szeastroc.icebox.newprocess.vo;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -123,4 +122,16 @@ public class IceBoxVo {
      */
     private String cancelMsg;
 
+    /**
+     * 巡检审批状态 0:未审核1:审核中2:通过3:驳回
+     */
+    private Integer examineStatus;
+    /**
+     * 巡检编号
+     */
+    private String examineNumber;
+    /**
+     * 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
+     */
+    private Integer iceStatus;
 }

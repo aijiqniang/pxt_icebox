@@ -44,6 +44,11 @@ public class IceExamineVo {
      */
     private Integer marketAreaId;
 
+    /**
+     * 业务员营销区域
+     */
+    private Integer userMarketAreaId;
+
 
     /**
      * 外观照片的URL

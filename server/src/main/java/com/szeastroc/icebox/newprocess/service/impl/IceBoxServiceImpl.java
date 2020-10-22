@@ -152,6 +152,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             for (IceBox iceBox : iceBoxes) {
                 IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+                LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+                wrapper.eq(IceExamine::getIceBoxId,iceBox.getId());
+//                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE));
+                IceExamine iceExamine = iceExamineDao.selectOne(wrapper);
+                if(iceExamine != null){
+
+                }
                 iceBoxVos.add(boxVo);
             }
         }
@@ -2069,6 +2076,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             for (IceBox iceBox : iceBoxes) {
                 IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+                LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+                wrapper.eq(IceExamine::getIceBoxId,iceBox.getId());
+                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE));
+                IceExamine iceExamine = iceExamineDao.selectOne(wrapper);
+                if(iceExamine != null){
+                    boxVo.setExamineStatus(iceExamine.getExaminStatus());
+                    boxVo.setExamineNumber(iceExamine.getExamineNumber());
+                    boxVo.setIceStatus(iceExamine.getIceStatus());
+                }
                 iceBoxVos.add(boxVo);
             }
         }

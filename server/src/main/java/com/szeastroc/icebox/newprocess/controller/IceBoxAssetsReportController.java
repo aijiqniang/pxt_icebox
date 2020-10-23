@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,7 +47,7 @@ public class IceBoxAssetsReportController {
      * @Date: 2020/10/20 16:33 xiao
      *  将老数据同步到报表中
      */
-    @PostMapping("/syncOldDatas")
+    @GetMapping("/syncOldDatas")
     public CommonResponse<Void> syncOldDatas() {
 
         iceBoxAssetsReportService.syncOldDatas();

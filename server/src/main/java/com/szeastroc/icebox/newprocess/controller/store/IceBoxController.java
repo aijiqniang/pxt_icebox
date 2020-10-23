@@ -239,7 +239,7 @@ public class IceBoxController {
         Map<String, Object> map = icePutOrderService.applyPayIceBox(clientInfoRequest);
         OrderPayResponse orderPayResponse = (OrderPayResponse) map.get("orderPayResponse");
         IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
-        if(assetReportVo!=null){
+        if (assetReportVo != null) {
             DataPack dataPack = new DataPack(); // 数据包
             dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
             dataPack.setObj(Lists.newArrayList(assetReportVo));
@@ -275,7 +275,7 @@ public class IceBoxController {
         Map<String, Object> map = icePutOrderService.applyPayIceBox(clientInfoRequest);
         OrderPayResponse orderPayResponse = (OrderPayResponse) map.get("orderPayResponse");
         IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
-        if(assetReportVo!=null){
+        if (assetReportVo != null) {
             DataPack dataPack = new DataPack(); // 数据包
             dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
             dataPack.setObj(Lists.newArrayList(assetReportVo));
@@ -284,7 +284,7 @@ public class IceBoxController {
                 directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
             });
         }
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,orderPayResponse);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
     }
 
     /**
@@ -300,7 +300,7 @@ public class IceBoxController {
         if (orderPayBack.getReturnCode().equals("SUCCESS")) {
             //修改订单信息
             IceBoxAssetReportVo assetReportVo = icePutOrderService.notifyOrderInfo(orderPayBack);
-            if(assetReportVo!=null){
+            if (assetReportVo != null) {
                 DataPack dataPack = new DataPack(); // 数据包
                 dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
                 dataPack.setObj(Lists.newArrayList(assetReportVo));
@@ -327,7 +327,7 @@ public class IceBoxController {
         IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
 
         if (flag) {
-            if(assetReportVo!=null){
+            if (assetReportVo != null) {
                 DataPack dataPack = new DataPack(); // 数据包
                 dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
                 dataPack.setObj(Lists.newArrayList(assetReportVo));
@@ -539,7 +539,7 @@ public class IceBoxController {
             Map<String, Object> map = icePutOrderService.getPayStatus(orderNumber);
             flag = (boolean) map.get("boo");
             IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
-            if(assetReportVo!=null){
+            if (assetReportVo != null) {
                 DataPack dataPack = new DataPack(); // 数据包
                 dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
                 dataPack.setObj(Lists.newArrayList(assetReportVo));

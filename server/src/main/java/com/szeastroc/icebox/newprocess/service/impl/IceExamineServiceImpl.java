@@ -376,6 +376,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     @Override
     public Map<String, Object> doExamineNew(IceExamineVo iceExamineVo) {
         String examineNumber = UUID.randomUUID().toString().replace("-", "");
+        iceExamineVo.setExamineNumber(examineNumber);
         IceExamine iceExamine = new IceExamine();
         BeanUtils.copyProperties(iceExamineVo,iceExamine);
         iceExamine.setExamineNumber(examineNumber);
@@ -1041,9 +1042,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
     private void createExamineModel(IceExamineVo iceExamineVo, Map<String, Object> map, IceBox isExist, IceBoxExtend iceBoxExtend, List<Integer> ids, IceExamine iceExamine) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String examineNumber = map.get("examineNumber").toString();
         IceBoxExamineModel examineModel = new IceBoxExamineModel();
-        examineModel.setExamineNumber(examineNumber);
+        examineModel.setExamineNumber(iceExamineVo.getExamineNumber());
         examineModel.setAssetId(isExist.getAssetId());
         examineModel.setDepositMoney(isExist.getDepositMoney());
         examineModel.setDisplayImage(iceExamineVo.getDisplayImage());
@@ -1067,7 +1067,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
                 .code(iceExamineVo.getAssetId())
-                .relateCode(examineNumber)
+                .relateCode(iceExamineVo.getExamineNumber())
                 .createBy(iceExamineVo.getCreateBy())
                 .userIds(ids)
                 .build();
@@ -1145,7 +1145,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                 }
             }
             iceExamineVo = iceExamine.convert(iceExamine, sessionUserInfoVo.getRealname(), storeName, iceExamine.getStoreNumber());
-
+            List<SessionExamineVo.VisitExamineNodeVo> examineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(examineNumber));
+            iceExamineVo.setExamineNodeVos(examineNodeVos);
 //            iceExamineVo = IceExamineVo.builder()
 //                    .id(iceExamine.getId())
 //                    .createBy(iceExamine.getCreateBy())

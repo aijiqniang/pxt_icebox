@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class IceBoxVo {
 
+    private Integer id;
     /**
      * 冰柜名称
      */

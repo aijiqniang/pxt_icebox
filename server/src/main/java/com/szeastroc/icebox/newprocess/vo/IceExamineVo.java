@@ -1,12 +1,14 @@
 package com.szeastroc.icebox.newprocess.vo;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.szeastroc.visit.common.SessionExamineVo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 
 @Builder
@@ -16,6 +18,10 @@ import java.util.Date;
 public class IceExamineVo {
 
     private Integer id;
+    /**
+     * 冰柜巡检编号
+     */
+    private String examineNumber;
 
     /**
      * 冰柜的id
@@ -118,6 +124,10 @@ public class IceExamineVo {
      * 巡检备注
      */
     private String examinMsg;
+    /**
+     * 巡检节点
+     */
+    private List<SessionExamineVo.VisitExamineNodeVo> examineNodeVos;
 
 
 }

@@ -29,7 +29,7 @@ public interface FeignIceBoxClient {
     CommonResponse updateExamineStatus(@RequestBody IceBoxRequest iceBoxRequest);
 
     @RequestMapping("/iceBox/dealTransferCheck")
-    CommonResponse<IceBoxTransferHistoryVo> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo);
+    CommonResponse<Void> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo);
 
     @RequestMapping("/examine/dealIceExamineCheck")
     CommonResponse dealIceExamineCheck(@RequestParam("redisKey") String redisKey, @RequestParam("status") Integer status);

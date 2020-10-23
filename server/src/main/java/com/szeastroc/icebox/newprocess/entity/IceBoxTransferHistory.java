@@ -76,4 +76,6 @@ public class IceBoxTransferHistory {
      * 是否审批：0-不审批，1-审批
      */
     private Integer isCheck;
+
+    private String assetId;
 }

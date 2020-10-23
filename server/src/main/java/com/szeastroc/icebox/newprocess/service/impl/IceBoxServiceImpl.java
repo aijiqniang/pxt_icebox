@@ -152,13 +152,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             for (IceBox iceBox : iceBoxes) {
                 IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
-                LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-                wrapper.eq(IceExamine::getIceBoxId,iceBox.getId());
-//                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE));
-                IceExamine iceExamine = iceExamineDao.selectOne(wrapper);
-                if(iceExamine != null){
-
-                }
                 iceBoxVos.add(boxVo);
             }
         }
@@ -2078,12 +2071,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
                 LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
                 wrapper.eq(IceExamine::getIceBoxId,iceBox.getId());
-                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE));
+                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE.getStatus()));
                 IceExamine iceExamine = iceExamineDao.selectOne(wrapper);
                 if(iceExamine != null){
                     boxVo.setExamineStatus(iceExamine.getExaminStatus());
                     boxVo.setExamineNumber(iceExamine.getExamineNumber());
                     boxVo.setIceStatus(iceExamine.getIceStatus());
+                }else {
+                    boxVo.setIceStatus(iceBox.getStatus());
                 }
                 iceBoxVos.add(boxVo);
             }
@@ -2583,9 +2578,26 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    public List<IceBox> findIceBoxsBySupplierId(Integer supplierId) {
+    public List<IceBoxVo> findIceBoxsBySupplierId(Integer supplierId) {
         List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, supplierId));
-        return iceBoxList;
+        if(CollectionUtil.isEmpty(iceBoxList)){
+            return null;
+        }
+        List<IceBoxVo> iceBoxVoList = new ArrayList<>();
+        for(IceBox iceBox:iceBoxList){
+            IceBoxVo iceBoxVo = new IceBoxVo();
+            BeanUtils.copyProperties(iceBox,iceBoxVo);
+            iceBoxVo.setChestModel(iceBox.getModelName());
+            LambdaQueryWrapper<IceBoxTransferHistory> wrapper = Wrappers.<IceBoxTransferHistory>lambdaQuery();
+            wrapper.eq(IceBoxTransferHistory::getIceBoxId,iceBox.getId());
+            wrapper.and(x -> x.eq(IceBoxTransferHistory::getExamineStatus,ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceBoxTransferHistory::getExamineStatus,ExamineStatus.DOING_EXAMINE.getStatus()));
+            IceBoxTransferHistory history = iceBoxTransferHistoryDao.selectOne(wrapper);
+            if(history != null){
+                iceBoxVo.setExamineStatus(history.getExamineStatus());
+            }
+            iceBoxVoList.add(iceBoxVo);
+        }
+        return iceBoxVoList;
     }
 
     @Override
@@ -2595,11 +2607,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (CollectionUtil.isEmpty(iceBoxIds)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择要转移的冰柜！");
         }
+        List<IceBox> iceBoxList = iceBoxDao.selectBatchIds(iceBoxIds);
         Map<String, Object> map = createIceBoxTransferCheckProcess(historyVo);
-        for (Integer iceBoxId : iceBoxIds) {
+        for (IceBox iceBox : iceBoxList) {
             IceBoxTransferHistory history = new IceBoxTransferHistory();
             BeanUtils.copyProperties(historyVo, history);
-            history.setIceBoxId(iceBoxId);
+            history.setIceBoxId(iceBox.getId());
+            history.setAssetId(iceBox.getAssetId());
             history.setTransferNumber(map.get("transferNumber").toString());
             history.setIsCheck(0);
             history.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
@@ -2615,7 +2629,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-//    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void dealTransferCheck(IceBoxTransferHistoryVo historyVo) {
         List<IceBoxTransferHistory> iceBoxTransferHistoryList = iceBoxTransferHistoryDao.selectList(Wrappers.<IceBoxTransferHistory>lambdaQuery().eq(IceBoxTransferHistory::getTransferNumber, historyVo.getTransferNumber()));
         if (CollectionUtil.isEmpty(iceBoxTransferHistoryList)) {

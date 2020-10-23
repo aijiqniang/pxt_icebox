@@ -215,8 +215,8 @@ public class MyIceBoxController {
      * @return
      */
     @RequestMapping("findIceBoxsBySupplierId")
-    public CommonResponse<List<IceBox>> findIceBoxsBySupplierId(Integer supplierId){
-        List<IceBox> iceBoxList = iceBoxService.findIceBoxsBySupplierId(supplierId);
+    public CommonResponse<List<IceBoxVo>> findIceBoxsBySupplierId(Integer supplierId){
+        List<IceBoxVo> iceBoxList = iceBoxService.findIceBoxsBySupplierId(supplierId);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxList);
     }
 
@@ -243,8 +243,8 @@ public class MyIceBoxController {
      * @return
      */
     @RequestMapping("dealTransferCheck")
-    public CommonResponse<IceBoxTransferHistoryVo> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo){
+    public CommonResponse<Void> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo){
         iceBoxService.dealTransferCheck(historyVo);
-        return new CommonResponse(Constants.API_CODE_SUCCESS,null,null);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 }

@@ -10,7 +10,7 @@ public enum ResultEnum {
 
     DUPLICATE_ASSET_NUMBER(4101, "资产编号重复"),
     EXCEPTION_REPORTING(4102, "异常报备中,不能变更冰柜信息"),
-    CANNOT_CHANGE_CUSTOMER(4103,"不能更改客户")
+    CANNOT_CHANGE_CUSTOMER(4103,"正常的冰柜改为异常的冰柜时,不能变更使用客户")
     ;
 
     private final Integer code;

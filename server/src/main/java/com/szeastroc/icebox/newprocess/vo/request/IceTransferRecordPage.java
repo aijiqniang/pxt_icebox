@@ -26,10 +26,12 @@ public class IceTransferRecordPage extends Page {
     private String newSupplierName;
 
 
-    private String userMessage;
+    private String createBy;
 
     private Date startTime;
     private Date endTime;
+
+    private Integer examineStatus;
 
 
     private String assetId;

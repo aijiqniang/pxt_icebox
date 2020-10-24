@@ -88,7 +88,7 @@ public class ExamineController {
 
         iceExamineService.dealIceExamineCheck(redisKey,status);
 
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,null);
     }
 
     @RequestMapping("/findExamineByNumber")

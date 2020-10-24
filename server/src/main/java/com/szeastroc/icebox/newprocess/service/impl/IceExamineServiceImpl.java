@@ -484,8 +484,16 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             throw new NormalOptionException(Constants.API_CODE_FAIL, "审批失败,找不到冰柜信息！");
         }
         //OA审批才能变更状态,由异常状态变更为正常状态不需要提报OA审批
-        if(status.equals(ExamineStatusEnum.IS_PASS.getStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceBoxExamineModel.getIceStatus())){
-            iceBox.setStatus(iceBoxExamineModel.getIceStatus());
+        if(status.equals(ExamineStatusEnum.IS_PASS.getStatus())){
+            if(IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceBoxExamineModel.getIceExaminStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.NORMAL.getType());
+            }
+            if(IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceBoxExamineModel.getIceExaminStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.IS_SCRAPING.getType());
+            }
+            if(IceBoxEnums.StatusEnum.LOSE.getType().equals(iceBoxExamineModel.getIceExaminStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.IS_LOSEING.getType());
+            }
             iceBox.setUpdatedTime(new Date());
             iceBoxDao.updateById(iceBox);
         }
@@ -1066,7 +1074,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
-                .code(iceExamineVo.getAssetId())
+                .code(iceExamineVo.getExamineNumber())
                 .relateCode(iceExamineVo.getExamineNumber())
                 .createBy(iceExamineVo.getCreateBy())
                 .userIds(ids)

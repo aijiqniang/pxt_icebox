@@ -2070,13 +2070,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             for (IceBox iceBox : iceBoxes) {
                 IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
                 LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-                wrapper.eq(IceExamine::getIceBoxId,iceBox.getId());
-                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE.getStatus()));
+                wrapper.eq(IceExamine::getIceBoxId,iceBox.getId()).orderByDesc(IceExamine::getId).last("limit 1");
+//                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE.getStatus()));
                 IceExamine iceExamine = iceExamineDao.selectOne(wrapper);
                 if(iceExamine != null){
                     boxVo.setExamineStatus(iceExamine.getExaminStatus());
                     boxVo.setExamineNumber(iceExamine.getExamineNumber());
                     boxVo.setIceStatus(iceExamine.getIceStatus());
+                    if(ExamineStatus.REJECT_EXAMINE.getStatus().equals(iceExamine.getExaminStatus())){
+                        boxVo.setIceStatus(iceBox.getStatus());
+                    }
                 }else {
                     boxVo.setIceStatus(iceBox.getStatus());
                 }
@@ -2096,7 +2099,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Set<Integer> supplierIds = supplierInfoVos.stream().map(x -> x.getId()).collect(Collectors.toSet());
             Map<Integer, SimpleSupplierInfoVo> supplierInfoVoMap = supplierInfoVos.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, x -> x));
             LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
-            wrapper.in(IceBox::getSupplierId, supplierIds).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
+            wrapper.in(IceBox::getSupplierId, supplierIds)
+                    .eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus())
+                    .eq(IceBox::getStatus, CommonStatus.VALID.getStatus());
             if (StringUtils.isNotEmpty(requestVo.getSearchContent())) {
                 List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestModel, requestVo.getSearchContent()));
                 if (CollectionUtil.isNotEmpty(iceModels)) {

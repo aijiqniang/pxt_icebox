@@ -688,7 +688,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
                             return checkExamine(iceExamineVo,map, iceExamine);
                         }
-                        ids.add(userInfoVo.getId());
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
                         createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }
@@ -702,19 +704,23 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if(serviceUser == null || serviceUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                     }
-                    ids.add(serviceUser.getId());
+                    if(!ids.contains(serviceUser.getId())){
+                        ids.add(serviceUser.getId());
+                    }
                     createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
                 }else {
                     if(groupUser == null || groupUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                     }
-                    ids.add(groupUser.getId());
+                    if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                        ids.add(groupUser.getId());
+                    }
 
                     if(serviceUser == null || serviceUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                     }
-                    if(!ids.contains(serviceUser.getId())){
+                    if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                         ids.add(serviceUser.getId());
                     }
                     createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
@@ -765,7 +771,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
                             return checkExamine(iceExamineVo,map, iceExamine);
                         }
-                        ids.add(userInfoVo.getId());
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
                         createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }else {
@@ -788,7 +796,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((groupUser.getId() != null && groupUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(groupUser.getId());
+                            if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                                ids.add(groupUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -800,7 +810,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(serviceUser.getId());
+                            if(!ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -812,7 +824,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(regionUser.getId());
+                            if(!ids.contains(regionUser.getId())){
+                                ids.add(regionUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -834,13 +848,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if(groupUser == null || groupUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                     }
-                    ids.add(groupUser.getId());
+                    if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                        ids.add(groupUser.getId());
+                    }
 
-                    if(!ids.contains(serviceUser.getId())){
+                    if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                         ids.add(serviceUser.getId());
                     }
 
-                    if(!ids.contains(regionUser.getId())){
+                    if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
                         ids.add(regionUser.getId());
                     }
 
@@ -861,13 +877,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(groupUser == null || groupUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                         }
-                        ids.add(groupUser.getId());
+                        if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                            ids.add(groupUser.getId());
+                        }
                     }
                     if(allNodes.contains(1)){
                         if(serviceUser == null || serviceUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                         }
-                        if(!ids.contains(serviceUser.getId())){
+                        if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                             ids.add(serviceUser.getId());
                         }
                     }
@@ -875,7 +893,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(regionUser == null || regionUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
                         }
-                        if(!ids.contains(regionUser.getId())){
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
                             ids.add(regionUser.getId());
                         }
                     }
@@ -935,7 +953,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
                             return checkExamine(iceExamineVo,map, iceExamine);
                         }
-                        ids.add(userInfoVo.getId());
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
                         createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }else {
@@ -959,7 +979,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((groupUser.getId() != null && groupUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(groupUser.getId());
+                            if(!ids.contains(groupUser.getId())){
+                                ids.add(groupUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -971,7 +993,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(serviceUser.getId());
+                            if(!ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -983,7 +1007,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(regionUser.getId());
+                            if(!ids.contains(regionUser.getId())){
+                                ids.add(regionUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -995,7 +1021,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((businessUser.getId() != null && businessUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(businessUser.getId());
+                            if(!ids.contains(businessUser.getId())){
+                                ids.add(businessUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -1022,13 +1050,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if(groupUser == null || groupUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                     }
-                    ids.add(groupUser.getId());
+                    if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                        ids.add(groupUser.getId());
+                    }
 
-                    if(!ids.contains(serviceUser.getId())){
+                    if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                         ids.add(serviceUser.getId());
                     }
 
-                    if(!ids.contains(regionUser.getId())){
+                    if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
                         ids.add(regionUser.getId());
                     }
 
@@ -1050,13 +1080,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(groupUser == null || groupUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                         }
-                        ids.add(groupUser.getId());
+                        if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                            ids.add(groupUser.getId());
+                        }
                     }
                     if(allNodes.contains(2)){
                         if(serviceUser == null || serviceUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                         }
-                        if(!ids.contains(serviceUser.getId())){
+                        if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                             ids.add(serviceUser.getId());
                         }
                     }
@@ -1064,7 +1096,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(regionUser == null || regionUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
                         }
-                        if(!ids.contains(regionUser.getId())){
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
                             ids.add(regionUser.getId());
                         }
                     }
@@ -1072,7 +1104,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(businessUser == null || businessUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部总监！");
                         }
-                        if(!ids.contains(businessUser.getId())){
+                        if(!ids.contains(businessUser.getId()) && !simpleUserInfoVo.getId().equals(businessUser.getId())){
                             ids.add(businessUser.getId());
                         }
                     }
@@ -1096,7 +1128,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             if(groupUser == null || groupUser.getId() == null){
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
             }
-            ids.add(groupUser.getId());
+            if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                ids.add(groupUser.getId());
+            }
 
             if(!ids.contains(serviceUser.getId())){
                 ids.add(serviceUser.getId());

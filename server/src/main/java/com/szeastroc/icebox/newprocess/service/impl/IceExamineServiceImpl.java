@@ -122,6 +122,22 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         }
         iceExamineDao.insert(iceExamine);
 
+        IceBox iceBox = iceBoxDao.selectById(iceBoxId);
+        //OA审批才能变更状态,由异常状态变更为正常状态不需要提报OA审批
+        if(ExamineStatusEnum.IS_PASS.getStatus().equals(iceExamine.getExaminStatus())){
+            if(IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamine.getIceStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.NORMAL.getType());
+            }
+            if(IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamine.getIceStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.IS_SCRAPING.getType());
+            }
+            if(IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamine.getIceStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.IS_LOSEING.getType());
+            }
+            iceBox.setUpdatedTime(new Date());
+            iceBoxDao.updateById(iceBox);
+        }
+
         Date now = new Date();
         Integer iceExamineId = iceExamine.getId();
         IceBoxExtend iceBoxExtend = new IceBoxExtend();
@@ -655,6 +671,17 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批审批
                          */
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                        }
+
                         if(userInfoVo == null || userInfoVo.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }
@@ -717,6 +744,21 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批
                          */
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
+                            }
+                        }
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                        }
                         if(userInfoVo == null || userInfoVo.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }
@@ -866,6 +908,27 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批
                          */
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
+                            }
+                        }
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = businessUser;
+                            }
+                        }
+                        if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = businessUser;
+                        }
                         if(userInfoVo == null || userInfoVo.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }

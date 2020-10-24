@@ -104,7 +104,7 @@ public class IceBoxManagerVo {
 
     public boolean validateMain() {
         return null != iceBoxId && StringUtils.isNotBlank(assetId) && null != modelId
-                && StringUtils.isNotBlank(modelName) && null != supplierId && StringUtils.isNotBlank(supplierNumber)
+                && StringUtils.isNotBlank(modelName) && null != supplierId
                 && null != status && StringUtils.isNotBlank(chestNorm) && StringUtils.isNotBlank(brandName) && null != deptId;
     }
 

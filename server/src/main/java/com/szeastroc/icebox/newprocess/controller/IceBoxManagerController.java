@@ -10,13 +10,13 @@ import com.szeastroc.icebox.newprocess.service.IceBoxChangeHistoryService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceModelService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
+import com.szeastroc.icebox.newprocess.vo.IceStatusVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -51,19 +51,20 @@ public class IceBoxManagerController {
      * @return
      */
     @GetMapping("/getAllStatus")
-    public CommonResponse<Map<String, Integer>> getAllStatus() {
+    public CommonResponse<List<IceStatusVo>> getAllStatus() {
 
-        Map<String, Integer> map = new HashMap<>();
+        List<IceStatusVo> list = new ArrayList<>();
 
         for (IceBoxEnums.StatusEnum statusEnum : IceBoxEnums.StatusEnum.values()) {
 
             Integer type = statusEnum.getType();
             if (!IceBoxEnums.StatusEnum.ABNORMAL.getType().equals(type)) {
                 String desc = statusEnum.getDesc();
-                map.put(desc, type);
+                IceStatusVo iceStatusVo = IceStatusVo.builder().status(type).message(desc).build();
+                list.add(iceStatusVo);
             }
         }
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, map);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, list);
     }
 
 

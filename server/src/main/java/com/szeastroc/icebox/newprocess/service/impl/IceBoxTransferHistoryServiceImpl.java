@@ -35,11 +35,13 @@ import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import com.szeastroc.visit.common.SessionExamineVo;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -73,60 +75,10 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
     @Override
     public IPage<IceBoxTransferHistoryPageVo> report(IceTransferRecordPage iceTransferRecordPage) {
 
-        LambdaQueryWrapper<IceBoxTransferHistory> wrapper = Wrappers.lambdaQuery();
-        Integer deptId = iceTransferRecordPage.getDeptId();
-
-
+        LambdaQueryWrapper<IceBoxTransferHistory> wrapper = buildWrapper(iceTransferRecordPage);
         IPage<IceBoxTransferHistory> iPage = iceBoxTransferHistoryDao.selectPage(iceTransferRecordPage, wrapper);
-
-
         IPage<IceBoxTransferHistoryPageVo> page = new Page<>();
-        page = iPage.convert(iceBoxTransferHistory -> {
-            Integer iceBoxId = iceBoxTransferHistory.getIceBoxId();
-            IceBox iceBox = iceBoxDao.selectById(iceBoxId);
-            IceBoxTransferHistoryPageVo iceBoxTransferHistoryPageVo = new IceBoxTransferHistoryPageVo();
-            iceBoxTransferHistoryPageVo.setAssetId(iceBox.getAssetId());
-            iceBoxTransferHistoryPageVo.setModelName(iceBox.getModelName());
-            iceBoxTransferHistoryPageVo.setDepositMoney(iceBox.getDepositMoney());
-            iceBoxTransferHistoryPageVo.setExamineStatusStr(ExamineStatusEnum.convertVo(iceBoxTransferHistory.getExamineStatus()));
-
-            Integer oldMarketAreaId = iceBoxTransferHistory.getOldMarketAreaId();
-            Integer newMarketAreaId = iceBoxTransferHistory.getNewMarketAreaId();
-
-            Map<Integer, SessionDeptInfoVo> oldDeptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(oldMarketAreaId));
-            Map<Integer, SessionDeptInfoVo> newDeptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(newMarketAreaId));
-
-
-            iceBoxTransferHistoryPageVo.setOldServiceDept(oldDeptMap.get(2).getName());
-            iceBoxTransferHistoryPageVo.setOldRegionDept(oldDeptMap.get(3).getName());
-            iceBoxTransferHistoryPageVo.setOldBusinessDept(oldDeptMap.get(4).getName());
-
-            iceBoxTransferHistoryPageVo.setNewServiceDept(newDeptMap.get(2).getName());
-            iceBoxTransferHistoryPageVo.setNewRegionDept(newDeptMap.get(3).getName());
-            iceBoxTransferHistoryPageVo.setNewBusinessDept(newDeptMap.get(4).getName());
-
-            Integer oldSupplierId = iceBoxTransferHistory.getOldSupplierId();
-            Integer newSupplierId = iceBoxTransferHistory.getNewSupplierId();
-
-            List<Integer> list = new ArrayList<>();
-
-            list.add(oldSupplierId);
-            list.add(newSupplierId);
-            Map<Integer, SubordinateInfoVo> subordinateInfoVoMap = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(list));
-
-            iceBoxTransferHistoryPageVo.setOldSupplierName(subordinateInfoVoMap.get(oldSupplierId).getName());
-            iceBoxTransferHistoryPageVo.setOldSupplierNumber(subordinateInfoVoMap.get(oldSupplierId).getNumber());
-
-            iceBoxTransferHistoryPageVo.setNewSupplierName(subordinateInfoVoMap.get(newSupplierId).getName());
-            iceBoxTransferHistoryPageVo.setNewSupplierNumber(subordinateInfoVoMap.get(newSupplierId).getNumber());
-
-            iceBoxTransferHistoryPageVo.setCreateByName(iceBoxTransferHistory.getCreateByName());
-
-            iceBoxTransferHistoryPageVo.setCreateTimeStr(new DateTime(iceBoxTransferHistory.getCreateTime()).toString("yyyy-MM-dd"));
-
-            return iceBoxTransferHistoryPageVo;
-        });
-
+        page = iPage.convert(this::buildPageVo);
         return page;
     }
 
@@ -163,55 +115,10 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
     @Override
     public void exportRefundTransfer(IceTransferRecordPage iceTransferRecordPage) {
         try {
-            LambdaQueryWrapper<IceBoxTransferHistory> wrapper = Wrappers.lambdaQuery();
-            Integer deptId = iceTransferRecordPage.getDeptId();
+            LambdaQueryWrapper<IceBoxTransferHistory> wrapper = buildWrapper(iceTransferRecordPage);
             List<IceBoxTransferHistory> iceBoxTransferHistoryList = iceBoxTransferHistoryDao.selectList(wrapper);
             List<IceBoxTransferHistoryPageVo> iceBoxTransferHistoryPageVos = new ArrayList<IceBoxTransferHistoryPageVo>();
-            iceBoxTransferHistoryList.forEach(iceBoxTransferHistory -> {
-                Integer iceBoxId = iceBoxTransferHistory.getIceBoxId();
-                IceBox iceBox = iceBoxDao.selectById(iceBoxId);
-                IceBoxTransferHistoryPageVo iceBoxTransferHistoryPageVo = new IceBoxTransferHistoryPageVo();
-                iceBoxTransferHistoryPageVo.setAssetId(iceBox.getAssetId());
-                iceBoxTransferHistoryPageVo.setModelName(iceBox.getModelName());
-                iceBoxTransferHistoryPageVo.setDepositMoney(iceBox.getDepositMoney());
-                iceBoxTransferHistoryPageVo.setExamineStatusStr(ExamineStatusEnum.convertVo(iceBoxTransferHistory.getExamineStatus()));
-
-                Integer oldMarketAreaId = iceBoxTransferHistory.getOldMarketAreaId();
-                Integer newMarketAreaId = iceBoxTransferHistory.getNewMarketAreaId();
-
-                Map<Integer, SessionDeptInfoVo> oldDeptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(oldMarketAreaId));
-                Map<Integer, SessionDeptInfoVo> newDeptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(newMarketAreaId));
-
-
-                iceBoxTransferHistoryPageVo.setOldServiceDept(oldDeptMap.get(2).getName());
-                iceBoxTransferHistoryPageVo.setOldRegionDept(oldDeptMap.get(3).getName());
-                iceBoxTransferHistoryPageVo.setOldBusinessDept(oldDeptMap.get(4).getName());
-
-                iceBoxTransferHistoryPageVo.setNewServiceDept(newDeptMap.get(2).getName());
-                iceBoxTransferHistoryPageVo.setNewRegionDept(newDeptMap.get(3).getName());
-                iceBoxTransferHistoryPageVo.setNewBusinessDept(newDeptMap.get(4).getName());
-
-                Integer oldSupplierId = iceBoxTransferHistory.getOldSupplierId();
-                Integer newSupplierId = iceBoxTransferHistory.getNewSupplierId();
-
-                List<Integer> list = new ArrayList<>();
-
-                list.add(oldSupplierId);
-                list.add(newSupplierId);
-                Map<Integer, SubordinateInfoVo> subordinateInfoVoMap = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(list));
-
-                iceBoxTransferHistoryPageVo.setOldSupplierName(subordinateInfoVoMap.get(oldSupplierId).getName());
-                iceBoxTransferHistoryPageVo.setOldSupplierNumber(subordinateInfoVoMap.get(oldSupplierId).getNumber());
-
-                iceBoxTransferHistoryPageVo.setNewSupplierName(subordinateInfoVoMap.get(newSupplierId).getName());
-                iceBoxTransferHistoryPageVo.setNewSupplierNumber(subordinateInfoVoMap.get(newSupplierId).getNumber());
-
-                iceBoxTransferHistoryPageVo.setCreateByName(iceBoxTransferHistory.getCreateByName());
-
-                iceBoxTransferHistoryPageVo.setCreateTimeStr(new DateTime(iceBoxTransferHistory.getCreateTime()).toString("yyyy-MM-dd"));
-
-                iceBoxTransferHistoryPageVos.add(iceBoxTransferHistoryPageVo);
-            });
+            iceBoxTransferHistoryList.forEach(iceBoxTransferHistory -> iceBoxTransferHistoryPageVos.add(buildPageVo(iceBoxTransferHistory)));
             String fileName = "冰柜转移明细表";
             String titleName = "冰柜转移明细表";
             NewExcelUtil<IceBoxTransferHistoryPageVo> newExcelUtil = new NewExcelUtil<>();
@@ -250,4 +157,94 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
         }
         return historyVoList;
     }
+
+
+    private LambdaQueryWrapper<IceBoxTransferHistory> buildWrapper(IceTransferRecordPage iceTransferRecordPage) {
+        LambdaQueryWrapper<IceBoxTransferHistory> wrapper = Wrappers.lambdaQuery();
+        Integer deptId = iceTransferRecordPage.getDeptId();
+        String assetId = iceTransferRecordPage.getAssetId();
+
+        if (StringUtils.isNotBlank(assetId)) {
+            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId));
+            if (null != iceBox) {
+                Integer iceBoxId = iceBox.getId();
+                wrapper.eq(IceBoxTransferHistory::getIceBoxId, iceBoxId);
+            }
+        }
+        String oldSupplierName = iceTransferRecordPage.getOldSupplierName();
+        String oldSupplierNumber = iceTransferRecordPage.getOldSupplierNumber();
+        String newSupplierName = iceTransferRecordPage.getNewSupplierName();
+        String newSupplierNumber = iceTransferRecordPage.getNewSupplierNumber();
+
+        if (StringUtils.isNotBlank(oldSupplierName)) {
+            wrapper.like(IceBoxTransferHistory::getOldSupplierName, oldSupplierName);
+        }
+
+        if (StringUtils.isNotBlank(newSupplierName)) {
+            wrapper.like(IceBoxTransferHistory::getNewSupplierName, newSupplierName);
+        }
+
+        Date startTime = iceTransferRecordPage.getStartTime();
+        Date endTime = iceTransferRecordPage.getEndTime();
+
+
+        if (null != startTime) {
+            wrapper.ge(IceBoxTransferHistory::getCreateTime, startTime);
+        }
+
+        if (null != endTime) {
+            wrapper.le(IceBoxTransferHistory::getCreateTime, startTime);
+        }
+
+        String createBy = iceTransferRecordPage.getCreateBy();
+
+        if (StringUtils.isNotBlank(createBy)) {
+            wrapper.like(IceBoxTransferHistory::getCreateBy, createBy);
+        }
+        return wrapper;
+    }
+
+    private IceBoxTransferHistoryPageVo buildPageVo(IceBoxTransferHistory iceBoxTransferHistory) {
+        Integer iceBoxId = iceBoxTransferHistory.getIceBoxId();
+        IceBox iceBox = iceBoxDao.selectById(iceBoxId);
+        IceBoxTransferHistoryPageVo iceBoxTransferHistoryPageVo = new IceBoxTransferHistoryPageVo();
+        iceBoxTransferHistoryPageVo.setAssetId(iceBox.getAssetId());
+        iceBoxTransferHistoryPageVo.setModelName(iceBox.getModelName());
+        iceBoxTransferHistoryPageVo.setDepositMoney(iceBox.getDepositMoney());
+        iceBoxTransferHistoryPageVo.setExamineStatusStr(ExamineStatusEnum.convertVo(iceBoxTransferHistory.getExamineStatus()));
+
+        Integer oldMarketAreaId = iceBoxTransferHistory.getOldMarketAreaId();
+        Integer newMarketAreaId = iceBoxTransferHistory.getNewMarketAreaId();
+
+        Map<Integer, SessionDeptInfoVo> oldDeptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(oldMarketAreaId));
+        Map<Integer, SessionDeptInfoVo> newDeptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(newMarketAreaId));
+        iceBoxTransferHistoryPageVo.setOldServiceDept(oldDeptMap.get(2).getName());
+        iceBoxTransferHistoryPageVo.setOldRegionDept(oldDeptMap.get(3).getName());
+        iceBoxTransferHistoryPageVo.setOldBusinessDept(oldDeptMap.get(4).getName());
+
+        iceBoxTransferHistoryPageVo.setNewServiceDept(newDeptMap.get(2).getName());
+        iceBoxTransferHistoryPageVo.setNewRegionDept(newDeptMap.get(3).getName());
+        iceBoxTransferHistoryPageVo.setNewBusinessDept(newDeptMap.get(4).getName());
+
+        Integer oldSupplierId = iceBoxTransferHistory.getOldSupplierId();
+        Integer newSupplierId = iceBoxTransferHistory.getNewSupplierId();
+
+        List<Integer> list = new ArrayList<>();
+
+        list.add(oldSupplierId);
+        list.add(newSupplierId);
+        Map<Integer, SubordinateInfoVo> subordinateInfoVoMap = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(list));
+
+        iceBoxTransferHistoryPageVo.setOldSupplierName(subordinateInfoVoMap.get(oldSupplierId).getName());
+        iceBoxTransferHistoryPageVo.setOldSupplierNumber(subordinateInfoVoMap.get(oldSupplierId).getNumber());
+
+        iceBoxTransferHistoryPageVo.setNewSupplierName(subordinateInfoVoMap.get(newSupplierId).getName());
+        iceBoxTransferHistoryPageVo.setNewSupplierNumber(subordinateInfoVoMap.get(newSupplierId).getNumber());
+
+        iceBoxTransferHistoryPageVo.setCreateByName(iceBoxTransferHistory.getCreateByName());
+
+        iceBoxTransferHistoryPageVo.setCreateTimeStr(new DateTime(iceBoxTransferHistory.getCreateTime()).toString("yyyy-MM-dd"));
+        return iceBoxTransferHistoryPageVo;
+    }
+
 }

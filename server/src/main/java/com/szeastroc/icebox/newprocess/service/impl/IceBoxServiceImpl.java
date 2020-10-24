@@ -1253,6 +1253,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IceBox iceBox = iceBoxDao.selectById(id);
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
         Map<String, Object> map = new HashMap<>(32);
+        map.put("iceBoxId", iceBox.getId()); // 设备编号 --东鹏资产id
         map.put("assetId", iceBoxExtend.getAssetId()); // 设备编号 --东鹏资产id
         map.put("chestName", iceBox.getChestName()); // 名称
         IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getId, iceBox.getModelId()).last(" limit 1"));
@@ -1262,8 +1263,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("chestMoney", iceBox.getChestMoney()); // 价值
         map.put("depositMoney", iceBox.getDepositMoney()); // 标准押金
         map.put("statusStr", IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 状态
+        map.put("status", iceBox.getStatus()); // 状态
         map.put("releaseTime", iceBoxExtend.getReleaseTime()); // 生产日期
         map.put("repairBeginTime", iceBoxExtend.getRepairBeginTime()); // 保修起算日期
+        map.put("remark", iceBox.getRemark()); // 保修起算日期
+        map.put("supplierId", iceBox.getSupplierId());
         // 营销区域对应得部门  服务处->大区->事业部
         String deptStr = null;
         if (iceBox.getDeptId() != null) {
@@ -2070,14 +2074,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             for (IceBox iceBox : iceBoxes) {
                 IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
                 LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-                wrapper.eq(IceExamine::getIceBoxId,iceBox.getId());
-                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE.getStatus()));
+                wrapper.eq(IceExamine::getIceBoxId, iceBox.getId());
+                wrapper.and(x -> x.eq(IceExamine::getExaminStatus, ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceExamine::getExaminStatus, ExamineStatus.DOING_EXAMINE.getStatus()));
                 IceExamine iceExamine = iceExamineDao.selectOne(wrapper);
-                if(iceExamine != null){
+                if (iceExamine != null) {
                     boxVo.setExamineStatus(iceExamine.getExaminStatus());
                     boxVo.setExamineNumber(iceExamine.getExamineNumber());
                     boxVo.setIceStatus(iceExamine.getIceStatus());
-                }else {
+                } else {
                     boxVo.setIceStatus(iceBox.getStatus());
                 }
                 iceBoxVos.add(boxVo);
@@ -2580,19 +2584,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Override
     public List<IceBoxVo> findIceBoxsBySupplierId(Integer supplierId) {
         List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, supplierId));
-        if(CollectionUtil.isEmpty(iceBoxList)){
+        if (CollectionUtil.isEmpty(iceBoxList)) {
             return null;
         }
         List<IceBoxVo> iceBoxVoList = new ArrayList<>();
-        for(IceBox iceBox:iceBoxList){
+        for (IceBox iceBox : iceBoxList) {
             IceBoxVo iceBoxVo = new IceBoxVo();
-            BeanUtils.copyProperties(iceBox,iceBoxVo);
+            BeanUtils.copyProperties(iceBox, iceBoxVo);
             iceBoxVo.setChestModel(iceBox.getModelName());
             LambdaQueryWrapper<IceBoxTransferHistory> wrapper = Wrappers.<IceBoxTransferHistory>lambdaQuery();
-            wrapper.eq(IceBoxTransferHistory::getIceBoxId,iceBox.getId());
-            wrapper.and(x -> x.eq(IceBoxTransferHistory::getExamineStatus,ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceBoxTransferHistory::getExamineStatus,ExamineStatus.DOING_EXAMINE.getStatus()));
+            wrapper.eq(IceBoxTransferHistory::getIceBoxId, iceBox.getId());
+            wrapper.and(x -> x.eq(IceBoxTransferHistory::getExamineStatus, ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceBoxTransferHistory::getExamineStatus, ExamineStatus.DOING_EXAMINE.getStatus()));
             IceBoxTransferHistory history = iceBoxTransferHistoryDao.selectOne(wrapper);
-            if(history != null){
+            if (history != null) {
                 iceBoxVo.setExamineStatus(history.getExamineStatus());
             }
             iceBoxVoList.add(iceBoxVo);
@@ -3030,12 +3034,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
             String customerNumber = iceBoxManagerVo.getCustomerNumber();
             if (modifyCustomerType == 1) {
-                String supplierNumber = iceBoxManagerVo.getSupplierNumber();
-                if (supplierNumber.equals(customerNumber)) {
-                    // 退仓
-                    updateWrapper.set(IceBox::getPutStoreNumber, null).set(IceBox::getPutStatus, 0);
-                } else {
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "如更改客户为经销商则该经销商必须是冰柜所属经销商");
+                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBoxManagerVo.getSupplierId()));
+                if (null != subordinateInfoVo && StringUtils.isNotBlank(subordinateInfoVo.getNumber())) {
+                    String supplierNumber = subordinateInfoVo.getNumber();
+                    if (supplierNumber.equals(customerNumber)) {
+                        // 退仓
+                        updateWrapper.set(IceBox::getPutStoreNumber, null).set(IceBox::getPutStatus, 0);
+                    } else {
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "如更改客户为经销商则该经销商必须是冰柜所属经销商");
+                    }
                 }
             } else {
 /*                String oldPutStoreNumber = oldIceBox.getPutStoreNumber();

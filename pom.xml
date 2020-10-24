@@ -34,8 +34,8 @@
         <visit.client.version>1.2.5</visit.client.version>
 
         <!-- icebox服务 -->
-        <icebox.common.version>1.2.0</icebox.common.version>
-        <icebox.client.version>1.2.0</icebox.client.version>
+        <icebox.common.version>1.2.1</icebox.common.version>
+        <icebox.client.version>1.2.1</icebox.client.version>
         <!-- transfer服务 -->
         <transfer.common.version>0.1.0</transfer.common.version>
         <transfer.client.version>0.1.0</transfer.client.version>

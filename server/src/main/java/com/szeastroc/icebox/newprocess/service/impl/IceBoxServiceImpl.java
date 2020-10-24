@@ -362,37 +362,40 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceBoxRequestVo.getUserId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
         List<Integer> userIds = new ArrayList<>();
-        //获取上级部门领导
+
         if (CollectionUtil.isEmpty(sessionUserInfoMap)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
         }
-        for (Integer key : sessionUserInfoMap.keySet()) {
-            SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
-            if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
+        //获取上级部门领导
+        SessionUserInfoVo serviceUser = new SessionUserInfoVo();
+        SessionUserInfoVo regionUser = new SessionUserInfoVo();
+        Set<Integer> keySet = sessionUserInfoMap.keySet();
+        for (Integer key : keySet) {
+            SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(key);
+            if(userInfoVo == null){
                 continue;
             }
-            if (sessionUserInfoVo != null && (FWCJL.equals(sessionUserInfoVo.getOfficeName()) || FWCFJL.equals(sessionUserInfoVo.getOfficeName()))) {
-                if (userIds.contains(sessionUserInfoVo.getId())) {
-                    continue;
-                }
-                userIds.add(sessionUserInfoVo.getId());
-                break;
+            if(DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())){
+                serviceUser = userInfoVo;
             }
-        }
-        for (Integer key : sessionUserInfoMap.keySet()) {
-            SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
-            if (sessionUserInfoVo != null && sessionUserInfoVo.getId().equals(simpleUserInfoVo.getId())) {
+            if(DeptTypeEnum.LARGE_AREA.getType().equals(userInfoVo.getDeptType())){
+                regionUser = userInfoVo;
                 continue;
-            }
-            if (regionLeaderCheck && sessionUserInfoVo != null && (DQZJ.equals(sessionUserInfoVo.getOfficeName()) || DQFZJ.equals(sessionUserInfoVo.getOfficeName()))) {
-                if (userIds.contains(sessionUserInfoVo.getId())) {
-                    continue;
-                }
-                userIds.add(sessionUserInfoVo.getId());
-                break;
             }
         }
 
+        if(serviceUser == null ){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到服务处负责人！");
+        }
+        userIds.add(serviceUser.getId());
+        if(regionLeaderCheck){
+            if(regionUser == null ){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到大区负责人！");
+            }
+            if(!userIds.contains(regionUser.getId())){
+                userIds.add(regionUser.getId());
+            }
+        }
         if (CollectionUtil.isEmpty(userIds)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
         }

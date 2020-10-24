@@ -596,7 +596,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }
 
             //最高组审批
-            if(DeptTypeEnum.GROUP.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
+            if(ExamineLastApprovalEnum.GROUP.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
                 if(groupUser == null || groupUser.getId() == null){
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                 }
@@ -631,7 +631,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
              * 1.2、否，判断是否跳过了审批节点。跳过节点找低于最高节点的其他节点，没跳过正常取
              */
 
-            if(DeptTypeEnum.SERVICE.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
+            if(ExamineLastApprovalEnum.SERVICE.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
 
 
                 //申请人服务处领导或者部门是高于服务处的，直接置为审核状态
@@ -697,7 +697,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }
 
             //最高大区审批
-            if(DeptTypeEnum.LARGE_AREA.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
+            if(ExamineLastApprovalEnum.LARGE_AREA.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
                 //申请人大区领导或者部门是高于大区的，直接置为审核状态
                 if (simpleUserInfoVo.getId().equals(regionUser.getId())
                         || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.BUSINESS_UNIT.getType())
@@ -847,7 +847,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }
 
             //最高事业部审批
-            if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
+            if(ExamineLastApprovalEnum.BUSINESS_UNIT.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
 
                 //申请人事业部领导或者部门是高于大区的，直接置为审核状态
                 if (simpleUserInfoVo.getId().equals(businessUser.getId()) || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {

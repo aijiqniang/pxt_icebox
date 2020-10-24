@@ -122,6 +122,22 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         }
         iceExamineDao.insert(iceExamine);
 
+        IceBox iceBox = iceBoxDao.selectById(iceBoxId);
+        //OA审批才能变更状态,由异常状态变更为正常状态不需要提报OA审批
+        if(ExamineStatusEnum.IS_PASS.getStatus().equals(iceExamine.getExaminStatus())){
+            if(IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamine.getIceStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.NORMAL.getType());
+            }
+            if(IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamine.getIceStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.IS_SCRAPING.getType());
+            }
+            if(IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamine.getIceStatus())){
+                iceBox.setStatus(IceBoxEnums.StatusEnum.IS_LOSEING.getType());
+            }
+            iceBox.setUpdatedTime(new Date());
+            iceBoxDao.updateById(iceBox);
+        }
+
         Date now = new Date();
         Integer iceExamineId = iceExamine.getId();
         IceBoxExtend iceBoxExtend = new IceBoxExtend();
@@ -655,13 +671,26 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批审批
                          */
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                        }
+
                         if(userInfoVo == null || userInfoVo.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
                             return checkExamine(iceExamineVo,map, iceExamine);
                         }
-                        ids.add(userInfoVo.getId());
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
                         createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }
@@ -675,19 +704,23 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if(serviceUser == null || serviceUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                     }
-                    ids.add(serviceUser.getId());
+                    if(!ids.contains(serviceUser.getId())){
+                        ids.add(serviceUser.getId());
+                    }
                     createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
                 }else {
                     if(groupUser == null || groupUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                     }
-                    ids.add(groupUser.getId());
+                    if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                        ids.add(groupUser.getId());
+                    }
 
                     if(serviceUser == null || serviceUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                     }
-                    if(!ids.contains(serviceUser.getId())){
+                    if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                         ids.add(serviceUser.getId());
                     }
                     createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
@@ -717,13 +750,30 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批
                          */
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
+                            }
+                        }
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                        }
                         if(userInfoVo == null || userInfoVo.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
                             return checkExamine(iceExamineVo,map, iceExamine);
                         }
-                        ids.add(userInfoVo.getId());
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
                         createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }else {
@@ -746,7 +796,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((groupUser.getId() != null && groupUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(groupUser.getId());
+                            if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                                ids.add(groupUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -758,7 +810,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(serviceUser.getId());
+                            if(!ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -770,7 +824,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(regionUser.getId());
+                            if(!ids.contains(regionUser.getId())){
+                                ids.add(regionUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -792,13 +848,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if(groupUser == null || groupUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                     }
-                    ids.add(groupUser.getId());
+                    if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                        ids.add(groupUser.getId());
+                    }
 
-                    if(!ids.contains(serviceUser.getId())){
+                    if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                         ids.add(serviceUser.getId());
                     }
 
-                    if(!ids.contains(regionUser.getId())){
+                    if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
                         ids.add(regionUser.getId());
                     }
 
@@ -819,13 +877,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(groupUser == null || groupUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                         }
-                        ids.add(groupUser.getId());
+                        if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                            ids.add(groupUser.getId());
+                        }
                     }
                     if(allNodes.contains(1)){
                         if(serviceUser == null || serviceUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                         }
-                        if(!ids.contains(serviceUser.getId())){
+                        if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                             ids.add(serviceUser.getId());
                         }
                     }
@@ -833,7 +893,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(regionUser == null || regionUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
                         }
-                        if(!ids.contains(regionUser.getId())){
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
                             ids.add(regionUser.getId());
                         }
                     }
@@ -866,13 +926,36 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批
                          */
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
+                            }
+                        }
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = businessUser;
+                            }
+                        }
+                        if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = businessUser;
+                        }
                         if(userInfoVo == null || userInfoVo.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
                         }
                         if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
                             return checkExamine(iceExamineVo,map, iceExamine);
                         }
-                        ids.add(userInfoVo.getId());
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
                         createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                         return map;
                     }else {
@@ -896,7 +979,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((groupUser.getId() != null && groupUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(groupUser.getId());
+                            if(!ids.contains(groupUser.getId())){
+                                ids.add(groupUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -908,7 +993,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(serviceUser.getId());
+                            if(!ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -920,7 +1007,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(regionUser.getId());
+                            if(!ids.contains(regionUser.getId())){
+                                ids.add(regionUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -932,7 +1021,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                             if ((businessUser.getId() != null && businessUser.getId().equals(simpleUserInfoVo.getId()))) {
                                 return checkExamine(iceExamineVo,map, iceExamine);
                             }
-                            ids.add(businessUser.getId());
+                            if(!ids.contains(businessUser.getId())){
+                                ids.add(businessUser.getId());
+                            }
                             createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                             return map;
                         }
@@ -959,13 +1050,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     if(groupUser == null || groupUser.getId() == null){
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                     }
-                    ids.add(groupUser.getId());
+                    if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                        ids.add(groupUser.getId());
+                    }
 
-                    if(!ids.contains(serviceUser.getId())){
+                    if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                         ids.add(serviceUser.getId());
                     }
 
-                    if(!ids.contains(regionUser.getId())){
+                    if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
                         ids.add(regionUser.getId());
                     }
 
@@ -987,13 +1080,15 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(groupUser == null || groupUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
                         }
-                        ids.add(groupUser.getId());
+                        if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                            ids.add(groupUser.getId());
+                        }
                     }
                     if(allNodes.contains(2)){
                         if(serviceUser == null || serviceUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
                         }
-                        if(!ids.contains(serviceUser.getId())){
+                        if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
                             ids.add(serviceUser.getId());
                         }
                     }
@@ -1001,7 +1096,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(regionUser == null || regionUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
                         }
-                        if(!ids.contains(regionUser.getId())){
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
                             ids.add(regionUser.getId());
                         }
                     }
@@ -1009,7 +1104,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         if(businessUser == null || businessUser.getId() == null){
                             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部总监！");
                         }
-                        if(!ids.contains(businessUser.getId())){
+                        if(!ids.contains(businessUser.getId()) && !simpleUserInfoVo.getId().equals(businessUser.getId())){
                             ids.add(businessUser.getId());
                         }
                     }
@@ -1033,7 +1128,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             if(groupUser == null || groupUser.getId() == null){
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
             }
-            ids.add(groupUser.getId());
+            if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                ids.add(groupUser.getId());
+            }
 
             if(!ids.contains(serviceUser.getId())){
                 ids.add(serviceUser.getId());

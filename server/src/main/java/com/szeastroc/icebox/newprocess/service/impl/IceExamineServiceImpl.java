@@ -786,50 +786,47 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         allNodes.add(1);
                         allNodes.add(2);
                         allNodes.add(3);
-                        for(String node:skipNodeList){
-                            allNodes.remove(node);
+                        for(int i=0;i<allNodes.size();i++){
+                            if(skipNodeList.contains(allNodes.get(i)+"")){
+                                allNodes.remove(i);
+                            }
                         }
-                        if(allNodes.get(0).equals(1)){
-                            if(groupUser == null || groupUser.getId() == null){
-                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
+                        SessionUserInfoVo userInfoVo = null;
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                if(allNodes.contains(2)){
+                                    userInfoVo = serviceUser;
+                                }
+                                if(!allNodes.contains(2) && allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
                             }
-                            if ((groupUser.getId() != null && groupUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map, iceExamine);
-                            }
-                            if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
-                                ids.add(groupUser.getId());
-                            }
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
-                            return map;
-                        }
-
-                        if(allNodes.get(0).equals(2)){
-                            if(serviceUser == null || serviceUser.getId() == null){
-                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
-                            }
-                            if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map, iceExamine);
-                            }
-                            if(!ids.contains(serviceUser.getId())){
-                                ids.add(serviceUser.getId());
-                            }
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
-                            return map;
                         }
 
-                        if(allNodes.get(0).equals(3)){
-                            if(regionUser == null || regionUser.getId() == null){
-                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
                             }
-                            if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map, iceExamine);
-                            }
-                            if(!ids.contains(regionUser.getId())){
-                                ids.add(regionUser.getId());
-                            }
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
-                            return map;
                         }
+
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                        }
+
+                        if(userInfoVo == null || userInfoVo.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到领导审批！");
+                        }
+                        if ((userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                            return checkExamine(iceExamineVo,map, iceExamine);
+                        }
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
+                        createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
+                        return map;
+
                     }
                 }
                 /**
@@ -870,35 +867,38 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     allNodes.add(1);
                     allNodes.add(2);
                     allNodes.add(3);
-                    for(String node:skipNodeList){
-                        allNodes.remove(node);
-                    }
-                    if(allNodes.contains(1)){
-                        if(groupUser == null || groupUser.getId() == null){
-                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
-                        }
-                        if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
-                            ids.add(groupUser.getId());
+                    for(int i=0;i<allNodes.size();i++){
+                        if(skipNodeList.contains(allNodes.get(i)+"")){
+                            allNodes.remove(i);
                         }
                     }
-                    if(allNodes.contains(1)){
-                        if(serviceUser == null || serviceUser.getId() == null){
-                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
-                        }
-                        if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
-                            ids.add(serviceUser.getId());
-                        }
-                    }
-                    if(allNodes.contains(1)){
-                        if(regionUser == null || regionUser.getId() == null){
-                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
-                        }
-                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
-                            ids.add(regionUser.getId());
+                    SessionUserInfoVo userInfoVo = null;
+                    if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                        userInfoVo = groupUser;
+                        if(simpleUserInfoVo.getIsLearder().equals(1)){
+                            userInfoVo = serviceUser;
                         }
                     }
-                    if (CollectionUtil.isEmpty(ids)) {
-                        throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+
+                    if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                        userInfoVo = serviceUser;
+                        if(simpleUserInfoVo.getIsLearder().equals(1)){
+                            userInfoVo = regionUser;
+                        }
+                    }
+
+                    if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                        userInfoVo = regionUser;
+                    }
+
+                    if(userInfoVo == null || userInfoVo.getId() == null){
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到领导审批！");
+                    }
+                    if ((userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                        return checkExamine(iceExamineVo,map, iceExamine);
+                    }
+                    if(!ids.contains(userInfoVo.getId())){
+                        ids.add(userInfoVo.getId());
                     }
                     createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;
@@ -969,64 +969,54 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                         allNodes.add(2);
                         allNodes.add(3);
                         allNodes.add(4);
-                        for(String node:skipNodeList){
-                            allNodes.remove(node);
-                        }
-                        if(allNodes.get(0).equals(1)){
-                            if(groupUser == null || groupUser.getId() == null){
-                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
+                        for(int i=0;i<allNodes.size();i++){
+                            if(skipNodeList.contains(allNodes.get(i)+"")){
+                                allNodes.remove(i);
                             }
-                            if ((groupUser.getId() != null && groupUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map, iceExamine);
-                            }
-                            if(!ids.contains(groupUser.getId())){
-                                ids.add(groupUser.getId());
-                            }
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
-                            return map;
                         }
 
-                        if(allNodes.get(0).equals(2)){
-                            if(serviceUser == null || serviceUser.getId() == null){
-                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+                        SessionUserInfoVo userInfoVo = null;
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                if(allNodes.contains(2)){
+                                    userInfoVo = serviceUser;
+                                }
+                                if(!allNodes.contains(2) && allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
                             }
-                            if ((serviceUser.getId() != null && serviceUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map, iceExamine);
-                            }
-                            if(!ids.contains(serviceUser.getId())){
-                                ids.add(serviceUser.getId());
-                            }
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
-                            return map;
                         }
 
-                        if(allNodes.get(0).equals(3)){
-                            if(regionUser == null || regionUser.getId() == null){
-                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
                             }
-                            if ((regionUser.getId() != null && regionUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map, iceExamine);
-                            }
-                            if(!ids.contains(regionUser.getId())){
-                                ids.add(regionUser.getId());
-                            }
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
-                            return map;
                         }
 
-                        if(allNodes.get(0).equals(4)){
-                            if(businessUser == null || businessUser.getId() == null){
-                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部经理！");
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = businessUser;
                             }
-                            if ((businessUser.getId() != null && businessUser.getId().equals(simpleUserInfoVo.getId()))) {
-                                return checkExamine(iceExamineVo,map, iceExamine);
-                            }
-                            if(!ids.contains(businessUser.getId())){
-                                ids.add(businessUser.getId());
-                            }
-                            createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
-                            return map;
                         }
+
+                        if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = businessUser;
+                        }
+
+                        if(userInfoVo == null || userInfoVo.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到领导审批！");
+                        }
+                        if ((userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                            return checkExamine(iceExamineVo,map, iceExamine);
+                        }
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
+                        createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
+                        return map;
                     }
                 }
                 /**
@@ -1073,43 +1063,45 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                     allNodes.add(2);
                     allNodes.add(3);
                     allNodes.add(4);
-                    for(String node:skipNodeList){
-                        allNodes.remove(node);
-                    }
-                    if(allNodes.contains(1)){
-                        if(groupUser == null || groupUser.getId() == null){
-                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
-                        }
-                        if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
-                            ids.add(groupUser.getId());
+                    for(int i=0;i<allNodes.size();i++){
+                        if(skipNodeList.contains(allNodes.get(i)+"")){
+                            allNodes.remove(i);
                         }
                     }
-                    if(allNodes.contains(2)){
-                        if(serviceUser == null || serviceUser.getId() == null){
-                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
-                        }
-                        if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
-                            ids.add(serviceUser.getId());
-                        }
-                    }
-                    if(allNodes.contains(3)){
-                        if(regionUser == null || regionUser.getId() == null){
-                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区总监！");
-                        }
-                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
-                            ids.add(regionUser.getId());
+                    SessionUserInfoVo userInfoVo = null;
+                    if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                        userInfoVo = groupUser;
+                        if(simpleUserInfoVo.getIsLearder().equals(1)){
+                            userInfoVo = serviceUser;
                         }
                     }
-                    if(allNodes.contains(4)){
-                        if(businessUser == null || businessUser.getId() == null){
-                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部总监！");
-                        }
-                        if(!ids.contains(businessUser.getId()) && !simpleUserInfoVo.getId().equals(businessUser.getId())){
-                            ids.add(businessUser.getId());
+
+                    if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                        userInfoVo = serviceUser;
+                        if(simpleUserInfoVo.getIsLearder().equals(1)){
+                            userInfoVo = regionUser;
                         }
                     }
-                    if (CollectionUtil.isEmpty(ids)) {
-                        throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+
+                    if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                        userInfoVo = regionUser;
+                        if(simpleUserInfoVo.getIsLearder().equals(1)){
+                            userInfoVo = businessUser;
+                        }
+                    }
+
+                    if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())){
+                        userInfoVo = businessUser;
+                    }
+
+                    if(userInfoVo == null || userInfoVo.getId() == null){
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到领导审批！");
+                    }
+                    if ((userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                        return checkExamine(iceExamineVo,map, iceExamine);
+                    }
+                    if(!ids.contains(userInfoVo.getId())){
+                        ids.add(userInfoVo.getId());
                     }
                     createExamineModel(iceExamineVo, map, isExist, iceBoxExtend, ids, iceExamine);
                     return map;

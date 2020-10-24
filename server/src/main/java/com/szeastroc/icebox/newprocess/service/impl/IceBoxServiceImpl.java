@@ -2622,6 +2622,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<IceBox> iceBoxList = iceBoxDao.selectBatchIds(iceBoxIds);
         Map<String, Object> map = createIceBoxTransferCheckProcess(historyVo);
         for (IceBox iceBox : iceBoxList) {
+            LambdaQueryWrapper<IceBoxTransferHistory> wrapper = Wrappers.<IceBoxTransferHistory>lambdaQuery();
+            wrapper.eq(IceBoxTransferHistory::getIceBoxId, iceBox.getId());
+            wrapper.and(x -> x.eq(IceBoxTransferHistory::getExamineStatus, ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceBoxTransferHistory::getExamineStatus, ExamineStatus.DOING_EXAMINE.getStatus()));
+            IceBoxTransferHistory isExist = iceBoxTransferHistoryDao.selectOne(wrapper);
+            if (isExist != null) {
+                continue;
+            }
             IceBoxTransferHistory history = new IceBoxTransferHistory();
             BeanUtils.copyProperties(historyVo, history);
             history.setIceBoxId(iceBox.getId());
@@ -2943,7 +2950,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         if (CollectionUtil.isNotEmpty(iceBoxList)) {
             for (IceBox iceBox : iceBoxList) {
-                transferModel.addIceModelList(iceBox.getId(), iceBox.getAssetId(), iceBox.getModelName(), iceBox.getChestName(), iceBox.getChestMoney());
+                transferModel.addIceModelList(iceBox.getId(), iceBox.getAssetId(), iceBox.getModelName(), iceBox.getChestName(), iceBox.getDepositMoney());
             }
         }
         SessionExamineVo sessionExamineVo = new SessionExamineVo();

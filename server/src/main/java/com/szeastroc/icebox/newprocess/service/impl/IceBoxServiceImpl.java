@@ -3066,6 +3066,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
                 }
             } else {
+                // 说明开始要投放的该门店。校验相关参数
+
+
+
                 if (PutStatus.NO_PUT.getStatus().equals(oldPutStatus)) {
                     // 冰柜未投放  直接投放至门店，需要创建投放相关数据 方便退还
                     // 创建免押类型投放
@@ -3122,7 +3126,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 } else if (PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) {
                     // 已投放的门店变更  查询是否有投放流程相关的数据 然后变更数据
 
-                    // 查询是否存在了 投放相关的流程数据
+                    // 查询是否存在了 投放相关的流程数据 (可能会没有)
+
+
+
+
+
 
                 }
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);

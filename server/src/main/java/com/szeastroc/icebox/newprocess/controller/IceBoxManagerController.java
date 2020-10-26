@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
@@ -11,6 +12,7 @@ import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceModelService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
 import com.szeastroc.icebox.newprocess.vo.IceStatusVo;
+import com.szeastroc.icebox.newprocess.vo.request.IceChangeHistoryPage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -91,13 +93,13 @@ public class IceBoxManagerController {
 
 
     @PostMapping("/findChangeHistory")
-    public CommonResponse<List<IceBoxChangeHistory>> findChangeHistory(@RequestParam("iceBoxId") Integer iceBoxId) {
-        if (null == iceBoxId) {
+    public CommonResponse<IPage<IceBoxChangeHistory>> findChangeHistory(@RequestBody IceChangeHistoryPage iceChangeHistoryPage) {
+        if (null == iceChangeHistoryPage || null == iceChangeHistoryPage.getIceBoxId()) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
-        List<IceBoxChangeHistory> list = iceBoxChangeHistoryService.iceBoxChangeHistoryService(iceBoxId);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, list);
+        IPage<IceBoxChangeHistory> page = iceBoxChangeHistoryService.iceBoxChangeHistoryService(iceChangeHistoryPage);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, page);
     }
 
 }

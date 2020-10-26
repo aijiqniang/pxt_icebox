@@ -1,13 +1,13 @@
 package com.szeastroc.icebox.newprocess.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.icebox.newprocess.entity.IceBoxChangeHistory;
-
-import java.util.List;
+import com.szeastroc.icebox.newprocess.vo.request.IceChangeHistoryPage;
 
 public interface IceBoxChangeHistoryService extends IService<IceBoxChangeHistory> {
 
 
-    List<IceBoxChangeHistory> iceBoxChangeHistoryService(Integer iceBoxId);
+    IPage<IceBoxChangeHistory> iceBoxChangeHistoryService(IceChangeHistoryPage iceChangeHistoryPage);
 }
 

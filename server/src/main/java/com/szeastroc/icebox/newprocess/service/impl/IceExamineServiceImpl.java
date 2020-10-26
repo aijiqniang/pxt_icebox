@@ -557,7 +557,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(iceBoxExtend == null ){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜信息！");
         }
-        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceExamineVo.getCreateBy()));
+        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserByIdAndDept(iceExamineVo.getCreateBy(),iceExamineVo.getUserMarketAreaId()));
         Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(iceExamineVo.getUserMarketAreaId()));
         List<Integer> ids = new ArrayList<Integer>();
         //获取上级部门领导

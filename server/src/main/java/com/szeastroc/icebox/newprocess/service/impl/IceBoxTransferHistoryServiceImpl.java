@@ -231,7 +231,7 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
         Integer examineStatus = iceTransferRecordPage.getExamineStatus();
 
         if (null != examineStatus) {
-            wrapper.eq(IceBoxTransferHistory::getExamineStatus,examineStatus);
+            wrapper.eq(IceBoxTransferHistory::getExamineStatus, examineStatus);
         }
         return wrapper;
     }
@@ -275,7 +275,9 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
 
         iceBoxTransferHistoryPageVo.setCreateByName(iceBoxTransferHistory.getCreateByName());
 
-        iceBoxTransferHistoryPageVo.setCreateTimeStr(new DateTime(iceBoxTransferHistory.getCreateTime()).toString("yyyy-MM-dd"));
+        iceBoxTransferHistoryPageVo.setCreateTimeStr(new DateTime(iceBoxTransferHistory.getCreateTime()).toString("yyyy-MM-dd HH:mm:ss"));
+        iceBoxTransferHistoryPageVo.setReviewer(iceBoxTransferHistory.getReviewerName());
+        iceBoxTransferHistoryPageVo.setReviewTimeStr(new DateTime(iceBoxTransferHistory.getReviewerTime()).toString("yyyy-MM-dd HH:mm:ss"));
         return iceBoxTransferHistoryPageVo;
     }
 

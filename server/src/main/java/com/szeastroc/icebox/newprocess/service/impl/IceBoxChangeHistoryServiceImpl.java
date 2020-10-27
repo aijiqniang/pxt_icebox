@@ -4,8 +4,6 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
@@ -38,10 +36,6 @@ public class IceBoxChangeHistoryServiceImpl extends ServiceImpl<IceBoxChangeHist
     public IPage<IceBoxChangeHistory> iceBoxChangeHistoryService(IceChangeHistoryPage iceChangeHistoryPage) {
 
         Integer iceBoxId = iceChangeHistoryPage.getIceBoxId();
-        if (null == iceBoxId) {
-            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
-        }
-
         IPage<IceBoxChangeHistory> iPage = iceBoxChangeHistoryDao.selectPage(iceChangeHistoryPage, Wrappers.<IceBoxChangeHistory>lambdaQuery().eq(IceBoxChangeHistory::getIceBoxId, iceBoxId).orderByDesc(IceBoxChangeHistory::getCreateTime));
 
         iPage.convert(iceBoxChangeHistory -> {

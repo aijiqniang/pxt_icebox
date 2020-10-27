@@ -9,26 +9,20 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
-import com.szeastroc.commondb.config.annotation.RoutingDataSource;
-import com.szeastroc.commondb.config.mybatis.Datasources;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
-import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
-import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportExcelVo;
-import com.szeastroc.user.common.session.UserManageVo;
+import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xssf.streaming.SXSSFRow;
-import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +32,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -51,7 +44,8 @@ public class IceBoxPutReportConsumer {
     private ImageUploadUtil imageUploadUtil;
     @Autowired
     private FeignExportRecordsClient feignExportRecordsClient;
-
+    @Autowired
+    private FeignUserClient feignUserClient;
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
     public void task(IceBoxPutReportMsg reportMsg) throws Exception {
@@ -209,10 +203,19 @@ public class IceBoxPutReportConsumer {
             wrapper.eq(IceBoxPutReport::getApplyNumber,reportMsg.getApplyNumber());
         }
         if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getSupplierName())){
-            wrapper.and(x -> x.like(IceBoxPutReport::getSupplierName,reportMsg.getSupplierName()).or().like(IceBoxPutReport::getSupplierNumber,reportMsg.getSupplierNumber()));
+            wrapper.like(IceBoxPutReport::getSupplierName,reportMsg.getSupplierName());
         }
-        if(reportMsg.getSubmitterId() != null){
-            wrapper.eq(IceBoxPutReport::getSubmitterId,reportMsg.getSubmitterId());
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getSupplierNumber())){
+            wrapper.like(IceBoxPutReport::getSupplierNumber,reportMsg.getSupplierNumber());
+        }
+        if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getSubmitterName())){
+            List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.findUserIdsByUserName(reportMsg.getSubmitterName()));
+            if(CollectionUtil.isNotEmpty(userIds)){
+                wrapper.in(IceBoxPutReport::getSubmitterId,userIds);
+            }else {
+                wrapper.eq(IceBoxPutReport::getSubmitterId,"");
+            }
+
         }
         if(reportMsg.getSubmitTime() != null){
             wrapper.ge(IceBoxPutReport::getSubmitTime,reportMsg.getSubmitTime());
@@ -221,13 +224,23 @@ public class IceBoxPutReportConsumer {
             wrapper.le(IceBoxPutReport::getSubmitTime,reportMsg.getSubmitEndTime());
         }
         if(reportMsg.getPutCustomerName() != null){
-            wrapper.and(x -> x.like(IceBoxPutReport::getPutCustomerName,reportMsg.getPutCustomerName()).or().like(IceBoxPutReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber()));
+            wrapper.like(IceBoxPutReport::getPutCustomerName,reportMsg.getPutCustomerName());
+        }
+        if(reportMsg.getPutCustomerNumber() != null){
+            wrapper.like(IceBoxPutReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber());
         }
         if(reportMsg.getPutCustomerType() != null){
             wrapper.eq(IceBoxPutReport::getPutCustomerType,reportMsg.getPutCustomerType());
         }
         if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
             wrapper.eq(IceBoxPutReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
+        }
+        if(reportMsg.getPutStatus() != null){
+            if(PutStatus.DO_PUT.getStatus().equals(reportMsg.getPutStatus())){
+                wrapper.and(x -> x.eq(IceBoxPutReport::getPutStatus,PutStatus.LOCK_PUT.getStatus()).or().eq(IceBoxPutReport::getPutStatus,PutStatus.DO_PUT.getStatus()));
+            }else {
+                wrapper.eq(IceBoxPutReport::getPutStatus,reportMsg.getPutStatus());
+            }
         }
         return wrapper;
     }

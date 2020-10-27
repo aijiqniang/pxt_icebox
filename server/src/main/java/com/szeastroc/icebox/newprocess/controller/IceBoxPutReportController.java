@@ -39,13 +39,13 @@ public class IceBoxPutReportController {
 
 
     @RequestMapping("findByPage")
-    public CommonResponse<IPage<IceBoxPutReport>> findByPage(IceBoxPutReportMsg reportMsg){
+    public CommonResponse<IPage<IceBoxPutReport>> findByPage(@RequestBody IceBoxPutReportMsg reportMsg){
         IPage<IceBoxPutReport> reportIPage = iceBoxPutReportService.findByPage(reportMsg);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null, reportIPage);
     }
 
     @RequestMapping("sendExportMsg")
-    public CommonResponse<IceBoxPutReport> sendExportMsg(IceBoxPutReportMsg reportMsg){
+    public CommonResponse<IceBoxPutReport> sendExportMsg(@RequestBody IceBoxPutReportMsg reportMsg){
         return iceBoxPutReportService.sendExportMsg(reportMsg);
     }
 

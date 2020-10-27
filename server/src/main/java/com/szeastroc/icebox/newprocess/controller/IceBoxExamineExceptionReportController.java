@@ -10,6 +10,7 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,13 +26,13 @@ public class IceBoxExamineExceptionReportController {
 
 
     @RequestMapping("findByPage")
-    public CommonResponse<IPage< IceBoxExamineExceptionReport>> findByPage( IceBoxExamineExceptionReportMsg reportMsg){
+    public CommonResponse<IPage< IceBoxExamineExceptionReport>> findByPage(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
         IPage<IceBoxExamineExceptionReport> reportIPage = iceBoxExamineExceptionReportService.findByPage(reportMsg);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null, reportIPage);
     }
 
     @RequestMapping("sendExportMsg")
-    public CommonResponse< IceBoxExamineExceptionReport> sendExportMsg( IceBoxExamineExceptionReportMsg reportMsg){
+    public CommonResponse< IceBoxExamineExceptionReport> sendExportMsg(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
         return iceBoxExamineExceptionReportService.sendExportMsg(reportMsg);
     }
 

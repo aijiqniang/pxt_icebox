@@ -1287,7 +1287,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         String khStatusStr = null;
         String khContactPerson = null;
         String khContactNumber = null;
-        String putStatusStr=null; // 客户状态
+        String putStatusStr = null; // 客户状态
         SubordinateInfoVo suppInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readById(iceBox.getSupplierId()));
         if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus())) { // 经销商
             if (suppInfoVo != null) {
@@ -1298,26 +1298,39 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 khStatusStr = (suppInfoVo.getStatus() != null && suppInfoVo.getStatus().equals(1)) ? "启用" : "禁用";
                 khContactPerson = suppInfoVo.getLinkman();
                 khContactNumber = suppInfoVo.getLinkmanMobile();
-                putStatusStr=suppInfoVo.getTypeName();
+                putStatusStr = suppInfoVo.getTypeName();
             }
         } else {
-            // 批发商/邮差/分销商
-//            Map<String, Map<String, String>> storeMaps=null;
-//            getSuppMap(storeMaps,Lists.newArrayList(iceBox.getPutStoreNumber()));
+            // 门店/批发商/邮差/分销商
             // 门店
             StoreInfoDtoVo dtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
-            Map<String, SessionStoreInfoVo> storeInfoVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Lists.newArrayList(iceBox.getPutStoreNumber())));
             if (dtoVo != null) {
-                khName = dtoVo.getStoreName();
-                khAddress = dtoVo.getAddress();
-                khGrade = dtoVo.getStoreLevel();
-                putStatusStr=dtoVo.getStoreTypeName();
-                // 状态：0-禁用，1-启用
-                khStatusStr = (dtoVo.getStatus() != null && dtoVo.getStatus().equals(1)) ? "启用" : "禁用";
-                if (storeInfoVoMap != null && storeInfoVoMap.get(iceBox.getPutStoreNumber()) != null) {
-                    SessionStoreInfoVo infoVo = storeInfoVoMap.get(iceBox.getPutStoreNumber());
-                    khContactPerson = infoVo.getMemberName();
-                    khContactNumber = infoVo.getMemberMobile();
+                Map<String, SessionStoreInfoVo> storeInfoVoMap = FeignResponseUtil.getFeignData(feignStoreClient.getSessionStoreInfoVo(Lists.newArrayList(iceBox.getPutStoreNumber())));
+                if (dtoVo != null) {
+                    khName = dtoVo.getStoreName();
+                    khAddress = dtoVo.getAddress();
+                    khGrade = dtoVo.getStoreLevel();
+                    putStatusStr = dtoVo.getStoreTypeName();
+                    // 状态：0-禁用，1-启用
+                    khStatusStr = (dtoVo.getStatus() != null && dtoVo.getStatus().equals(1)) ? "启用" : "禁用";
+                    if (storeInfoVoMap != null && storeInfoVoMap.get(iceBox.getPutStoreNumber()) != null) {
+                        SessionStoreInfoVo infoVo = storeInfoVoMap.get(iceBox.getPutStoreNumber());
+                        khContactPerson = infoVo.getMemberName();
+                        khContactNumber = infoVo.getMemberMobile();
+                    }
+                }
+            }
+            if (dtoVo == null) { // 不在门店那里
+                SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
+                if (infoVo != null) {
+                    khName = infoVo.getName();
+                    khAddress = infoVo.getAddress();
+                    khGrade = infoVo.getLevel();
+                    // 状态：0-禁用，1-启用
+                    khStatusStr = (infoVo.getStatus() != null && infoVo.getStatus().equals(1)) ? "启用" : "禁用";
+                    khContactPerson = infoVo.getLinkman();
+                    khContactNumber = infoVo.getLinkmanMobile();
+                    putStatusStr = infoVo.getTypeName();
                 }
             }
         }
@@ -1327,7 +1340,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("khStatusStr", khStatusStr); // 客户状态
         map.put("khContactPerson", khContactPerson); // 联系人
         map.put("khContactNumber", khContactNumber); // 联系电话
-        map.put("putStatusStr",putStatusStr); // 客户类型  todo
+        map.put("putStatusStr", putStatusStr); // 客户类型
         String belongDealer = null;
         if (suppInfoVo != null && suppInfoVo.getName() != null) {
             map.put("supplierNumber", suppInfoVo.getNumber());
@@ -2691,7 +2704,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             history.setUpdateTime(new Date());
             history.setReviewerId(historyVo.getReviewerId());
             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(historyVo.getReviewerId()));
-            if(userInfoVo != null){
+            if (userInfoVo != null) {
                 history.setReviewerName(userInfoVo.getRealname());
             }
             iceBoxTransferHistoryDao.updateById(history);

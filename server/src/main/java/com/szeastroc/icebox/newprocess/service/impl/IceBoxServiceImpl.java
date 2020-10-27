@@ -44,8 +44,8 @@ import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
-import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
@@ -3074,20 +3074,23 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
             } else {
                 // 说明开始要投放的该门店。校验相关参数
-
-
+                // 先判断 当前 客户 存在几台冰柜
+                Integer selectCount = iceBoxDao.selectCount(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStoreNumber, customerNumber).ne(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+                if (selectCount > 2) {
+                    // 当前客户不能超过三个冰柜
+                    throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
+                }
 
                 if (PutStatus.NO_PUT.getStatus().equals(oldPutStatus)) {
                     // 冰柜未投放  直接投放至门店，需要创建投放相关数据 方便退还
                     // 创建免押类型投放
                     // 处理申请冰柜流程数据
                     // 创建申请流程
-                    // 判断当前客户存在多少个冰柜
                     Integer optUserId = userManageVo.getSessionUserInfoVo().getId();
                     String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
                     IcePutApply icePutApply = IcePutApply.builder()
                             .applyNumber(applyNumber)
-                            .putStoreNumber(iceBox.getPutStoreNumber())
+                            .putStoreNumber(customerNumber)
                             .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
                             .userId(optUserId)
                             .createdBy(optUserId)
@@ -3096,7 +3099,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
                     Date now = new Date();
                     PutStoreRelateModel relateModel = PutStoreRelateModel.builder()
-                            .putStoreNumber(iceBox.getPutStoreNumber())
+                            .putStoreNumber(customerNumber)
                             .modelId(iceBox.getModelId())
                             .supplierId(iceBox.getSupplierId())
                             .createBy(optUserId)
@@ -3115,31 +3118,38 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     applyRelatePutStoreModelDao.insert(applyRelatePutStoreModel);
 
                     IceBoxExtend iceBoxExtend = new IceBoxExtend();
-                    iceBoxExtend.setId(iceBox.getId());
+                    iceBoxExtend.setId(iceBoxId);
                     iceBoxExtend.setLastApplyNumber(applyNumber);
                     iceBoxExtendDao.updateById(iceBoxExtend);
 
                     IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                             .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
-                            .eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+                            .eq(IcePutApplyRelateBox::getBoxId, iceBoxId));
                     if (icePutApplyRelateBox == null) {
                         IcePutApplyRelateBox relateBox = new IcePutApplyRelateBox();
                         relateBox.setApplyNumber(iceBoxExtend.getLastApplyNumber());
                         relateBox.setFreeType(FreePayTypeEnum.IS_FREE.getType());
-                        relateBox.setBoxId(iceBox.getId());
+                        relateBox.setBoxId(iceBoxId);
                         relateBox.setModelId(iceBox.getModelId());
                         icePutApplyRelateBoxDao.insert(relateBox);
                     }
                 } else if (PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) {
                     // 已投放的门店变更  查询是否有投放流程相关的数据 然后变更数据
-
                     // 查询是否存在了 投放相关的流程数据 (可能会没有)
+                    IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, iceBoxId));
+                    String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
+                    if (StringUtils.isNotBlank(lastApplyNumber)) {
+                        icePutApplyRelateBoxDao.update(null, Wrappers.<IcePutApplyRelateBox>lambdaUpdate()
+                                .eq(IcePutApplyRelateBox::getBoxId, iceBoxId).eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber).set(IcePutApplyRelateBox::getModelId, iceBox.getModelId()));
 
-
-
-
-
-
+                        icePutApplyDao.update(null, Wrappers.<IcePutApply>lambdaUpdate().eq(IcePutApply::getApplyNumber, lastApplyNumber).set(IcePutApply::getPutStoreNumber, customerNumber));
+                        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaUpdate().eq(ApplyRelatePutStoreModel::getApplyNumber, lastApplyNumber));
+                        if (null != applyRelatePutStoreModel) {
+                            putStoreRelateModelDao.update(null, Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                                    .eq(PutStoreRelateModel::getId, applyRelatePutStoreModel.getId())
+                                    .set(PutStoreRelateModel::getPutStoreNumber, customerNumber));
+                        }
+                    }
                 }
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
@@ -3485,8 +3495,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         Map<Integer, SubordinateInfoVo> map = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(list));
 
-        iceBoxChangeHistory.setOldSupplierName(map.get(oldSupplierId).getName());
-        iceBoxChangeHistory.setNewSupplierName(map.get(newSupplierId).getName());
+
+        iceBoxChangeHistory.setOldSupplierName(null == map.get(oldSupplierId) ? "" : map.get(oldSupplierId).getName());
+        iceBoxChangeHistory.setNewSupplierName(null == map.get(oldSupplierId) ? "" : map.get(oldSupplierId).getName());
         iceBoxChangeHistory.setCreateTime(new Date());
 
         iceBoxChangeHistoryDao.insert(iceBoxChangeHistory);

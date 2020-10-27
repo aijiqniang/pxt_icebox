@@ -30,6 +30,11 @@ public class IceBoxTransferHistory {
      * 转移前经销商名称
      */
     private String oldSupplierName;
+
+    /**
+     * 转移前经销商编号
+     */
+    private String oldSupplierNumber;
     /**
      * 转移前经销商营销区域
      */
@@ -42,6 +47,11 @@ public class IceBoxTransferHistory {
      * 转移后经销商名称
      */
     private String newSupplierName;
+
+    /**
+     * 转移后经销商编号
+     */
+    private String newSupplierNumber;
     /**
      * 转移后经销商营销区域
      */
@@ -77,5 +87,18 @@ public class IceBoxTransferHistory {
      */
     private Integer isCheck;
 
+    /**
+     * 资产编号
+     */
     private String assetId;
+
+    /**
+     * 审核人id
+     */
+    private Integer reviewerId;
+
+    /**
+     * 审核人姓名
+     */
+    private Integer reviewerName;
 }

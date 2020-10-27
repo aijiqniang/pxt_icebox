@@ -188,11 +188,7 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
         }
 
         if (StringUtils.isNotBlank(assetId)) {
-            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId));
-            if (null != iceBox) {
-                Integer iceBoxId = iceBox.getId();
-                wrapper.eq(IceBoxTransferHistory::getIceBoxId, iceBoxId);
-            }
+            wrapper.eq(IceBoxTransferHistory::getAssetId, assetId);
         }
         String oldSupplierName = iceTransferRecordPage.getOldSupplierName();
         String oldSupplierNumber = iceTransferRecordPage.getOldSupplierNumber();
@@ -210,8 +206,8 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
         if (StringUtils.isNotBlank(oldSupplierNumber)) {
             wrapper.like(IceBoxTransferHistory::getOldSupplierNumber, oldSupplierNumber);
         }
-        if (StringUtils.isNotBlank(newSupplierName)) {
-            wrapper.like(IceBoxTransferHistory::getNewSupplierNumber, newSupplierName);
+        if (StringUtils.isNotBlank(newSupplierNumber)) {
+            wrapper.like(IceBoxTransferHistory::getNewSupplierNumber, newSupplierNumber);
         }
 
         Date startTime = iceTransferRecordPage.getStartTime();
@@ -223,13 +219,19 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
         }
 
         if (null != endTime) {
-            wrapper.le(IceBoxTransferHistory::getCreateTime, startTime);
+            wrapper.le(IceBoxTransferHistory::getCreateTime, endTime);
         }
 
         String createBy = iceTransferRecordPage.getCreateByName();
 
         if (StringUtils.isNotBlank(createBy)) {
             wrapper.like(IceBoxTransferHistory::getCreateByName, createBy);
+        }
+
+        Integer examineStatus = iceTransferRecordPage.getExamineStatus();
+
+        if (null != examineStatus) {
+            wrapper.eq(IceBoxTransferHistory::getExamineStatus,examineStatus);
         }
         return wrapper;
     }

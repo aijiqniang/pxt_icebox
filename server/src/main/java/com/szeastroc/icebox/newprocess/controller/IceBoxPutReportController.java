@@ -49,4 +49,10 @@ public class IceBoxPutReportController {
         return iceBoxPutReportService.sendExportMsg(reportMsg);
     }
 
+    @RequestMapping("dealHistoryData")
+    public CommonResponse<IceBoxPutReport> dealHistoryData(){
+        iceBoxPutReportService.dealHistoryData();
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
+    }
+
 }

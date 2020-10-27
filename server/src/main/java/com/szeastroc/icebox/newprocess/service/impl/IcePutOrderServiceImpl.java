@@ -237,7 +237,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //根据订单号查询订单
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery().eq(IcePutOrder::getOrderNum, orderPayBack.getOutTradeNo()));
         if(Objects.isNull(icePutOrder)){
-            log.error("异常:订单成功回调,丢失订单数据 -> {}", JSON.toJSONString(orderPayBack));
+            log.info("异常:订单成功回调,丢失订单数据 -> {}", JSON.toJSONString(orderPayBack));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         //判断是否订单完成, 完成则无需修改
@@ -248,7 +248,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //查询对应冰柜信息
         IceBox iceBox = iceBoxDao.selectById(icePutOrder.getChestId());
         if(Objects.isNull(iceBox)){
-            log.error("异常:订单成功回调,丢失冰柜信息-> {}", JSON.toJSONString(icePutOrder));
+            log.info("异常:订单成功回调,丢失冰柜信息-> {}", JSON.toJSONString(icePutOrder));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         updateInfoWhenFinishPay(orderPayBack, icePutOrder, iceBox);
@@ -269,7 +269,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //查询对应冰柜投放记录信息
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, icePutOrder.getApplyNumber()));
         if(icePutApply == null){
-            log.error("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(icePutOrder));
+            log.info("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(icePutOrder));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
@@ -328,20 +328,20 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //查询数据库中对应订单状态
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery().eq(IcePutOrder::getOrderNum, orderNumber));
         if(Objects.isNull(icePutOrder)){
-            log.error("异常:主动查询订单状态,丢失订单数据 -> {}", JSON.toJSONString(orderNumber));
+            log.info("异常:主动查询订单状态,丢失订单数据 -> {}", JSON.toJSONString(orderNumber));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 
         //查询对应冰柜信息
         IceBox iceBox = iceBoxDao.selectById(icePutOrder.getChestId());
         if(Objects.isNull(iceBox)){
-            log.error("异常:主动查询订单状态,丢失冰柜信息-> {}", JSON.toJSONString(icePutOrder));
+            log.info("异常:主动查询订单状态,丢失冰柜信息-> {}", JSON.toJSONString(icePutOrder));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         //查询对应冰柜投放记录信息
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, icePutOrder.getApplyNumber()));
         if(Objects.isNull(icePutApply)){
-            log.error("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(icePutOrder));
+            log.info("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(icePutOrder));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 

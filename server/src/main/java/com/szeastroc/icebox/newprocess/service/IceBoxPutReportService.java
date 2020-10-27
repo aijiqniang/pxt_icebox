@@ -15,6 +15,8 @@ public interface IceBoxPutReportService extends IService<IceBoxPutReport> {
     CommonResponse<IceBoxPutReport> sendExportMsg(IceBoxPutReportMsg reportMsg);
 
     Integer selectByExportCount(LambdaQueryWrapper<IceBoxPutReport> wrapper);
+
+    void dealHistoryData();
 }
 
 

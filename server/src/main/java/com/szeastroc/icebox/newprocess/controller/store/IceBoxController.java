@@ -188,12 +188,12 @@ public class IceBoxController {
     @PostMapping("/createPactRecord")
     public CommonResponse<Void> createPactRecord(ClientInfoRequest clientInfoRequest) {
         if (!clientInfoRequest.validate()) {
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
         if (storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null) {
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea() + "");
@@ -211,13 +211,13 @@ public class IceBoxController {
     @PostMapping("/createPactRecordDMS")
     public CommonResponse<Void> createPactRecordDMS(ClientInfoRequest clientInfoRequest) {
         if (!clientInfoRequest.validate()) {
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
         SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(clientInfoRequest.getClientNumber()));
         if (subordinateInfoVo == null || subordinateInfoVo.getMarketAreaId() == null) {
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");
@@ -249,13 +249,13 @@ public class IceBoxController {
     @PostMapping("/applyPayIceBox")
     public CommonResponse<OrderPayResponse> applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
         if (!clientInfoRequest.validate()) {
-            log.error("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
         StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
         if (storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null) {
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea() + "");
@@ -273,13 +273,13 @@ public class IceBoxController {
     @PostMapping("/applyPayIceBoxDMS")
     public CommonResponse<OrderPayResponse> applyPayIceBoxDMS(ClientInfoRequest clientInfoRequest) throws Exception {
         if (!clientInfoRequest.validate()) {
-            log.error("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("applyPayIceBox传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
         SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(clientInfoRequest.getClientNumber()));
         if (subordinateInfoVo == null || subordinateInfoVo.getMarketAreaId() == null) {
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");

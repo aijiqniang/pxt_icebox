@@ -105,20 +105,20 @@ public class PoiUtil {
             fops = new FileOutputStream(file);
             wb.write(fops);
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
+            log.info(e.getMessage(),e);
         } finally {
             if (null != wb) {
                 try {
                     wb.dispose();
                 } catch (Exception e) {
-                    log.error(e.getMessage(),e);
+                    log.info(e.getMessage(),e);
                 }
             }
             if (null != fops) {
                 try {
                     fops.close();
                 } catch (Exception e) {
-                    log.error(e.getMessage(),e);
+                    log.info(e.getMessage(),e);
                 }
             }
         }

@@ -199,16 +199,16 @@ public class IceBoxPutReportConsumer {
         if(reportMsg.getHeadquartersDeptId() != null){
             wrapper.eq(IceBoxPutReport::getHeadquartersDeptId,reportMsg.getHeadquartersDeptId());
         }
-        if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getApplyNumber())){
+        if(StringUtils.isNotEmpty(reportMsg.getApplyNumber())){
             wrapper.eq(IceBoxPutReport::getApplyNumber,reportMsg.getApplyNumber());
         }
-        if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getSupplierName())){
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierName())){
             wrapper.like(IceBoxPutReport::getSupplierName,reportMsg.getSupplierName());
         }
-        if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getSupplierNumber())){
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierNumber())){
             wrapper.like(IceBoxPutReport::getSupplierNumber,reportMsg.getSupplierNumber());
         }
-        if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getSubmitterName())){
+        if(StringUtils.isNotEmpty(reportMsg.getSubmitterName())){
             List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.findUserIdsByUserName(reportMsg.getSubmitterName()));
             if(CollectionUtil.isNotEmpty(userIds)){
                 wrapper.in(IceBoxPutReport::getSubmitterId,userIds);
@@ -232,7 +232,7 @@ public class IceBoxPutReportConsumer {
         if(reportMsg.getPutCustomerType() != null){
             wrapper.eq(IceBoxPutReport::getPutCustomerType,reportMsg.getPutCustomerType());
         }
-        if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
+        if(StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
             wrapper.eq(IceBoxPutReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
         }
         if(reportMsg.getPutStatus() != null){

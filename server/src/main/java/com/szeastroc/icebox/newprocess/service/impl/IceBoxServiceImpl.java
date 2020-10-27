@@ -444,14 +444,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         examineVo.setExamineInfoIds(examineIds);
         List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
         if (CollectionUtil.isEmpty(sessionExamineVos)) {
-            log.error("退押查询不到审批流信息");
+            log.info("退押查询不到审批流信息");
             return iceBoxVos;
         }
         Map<Integer, SessionExamineVo> sessionExamineVoMap = sessionExamineVos.stream().collect(Collectors.toMap(SessionExamineVo::getExamineInfoId, x -> x));
         Set<String> applyNumbers = iceBackApplies.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
         List<IceBackApplyRelateBox> iceBackApplyRelateBoxes = iceBackApplyRelateBoxDao.selectList(Wrappers.<IceBackApplyRelateBox>lambdaQuery().in(IceBackApplyRelateBox::getApplyNumber, applyNumbers));
         if (CollectionUtil.isEmpty(iceBackApplyRelateBoxes)) {
-            log.error("查询不到申请退押信息和冰柜的关联关系");
+            log.info("查询不到申请退押信息和冰柜的关联关系");
             return iceBoxVos;
         }
         Map<Integer, IceBackApplyRelateBox> relateBoxMap = iceBackApplyRelateBoxes.stream().collect(Collectors.toMap(IceBackApplyRelateBox::getBoxId, x -> x));
@@ -459,7 +459,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Set<Integer> boxIds = iceBackApplyRelateBoxes.stream().map(x -> x.getBoxId()).collect(Collectors.toSet());
         List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getId, boxIds));
         if (CollectionUtil.isEmpty(iceBoxes)) {
-            log.error("查询不到申请退押信息关联的冰柜详情");
+            log.info("查询不到申请退押信息关联的冰柜详情");
             return iceBoxVos;
         }
         for (IceBox iceBox : iceBoxes) {
@@ -504,14 +504,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         examineVo.setExamineInfoIds(examineIds);
         List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
         if (CollectionUtil.isEmpty(sessionExamineVos)) {
-            log.error("投放查询不到审批流信息");
+            log.info("投放查询不到审批流信息");
             return iceBoxVos;
         }
         Map<Integer, SessionExamineVo> sessionExamineVoMap = sessionExamineVos.stream().collect(Collectors.toMap(SessionExamineVo::getExamineInfoId, x -> x));
         Set<String> applyNumbers = icePutApplies.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
         List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().in(IcePutApplyRelateBox::getApplyNumber, applyNumbers));
         if (CollectionUtil.isEmpty(icePutApplyRelateBoxes)) {
-            log.error("查询不到申请投放信息和冰柜的关联关系");
+            log.info("查询不到申请投放信息和冰柜的关联关系");
             return iceBoxVos;
         }
         Map<Integer, IcePutApplyRelateBox> relateBoxMap = icePutApplyRelateBoxes.stream().collect(Collectors.toMap(IcePutApplyRelateBox::getBoxId, x -> x));
@@ -519,7 +519,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Set<Integer> boxIds = icePutApplyRelateBoxes.stream().map(x -> x.getBoxId()).collect(Collectors.toSet());
         List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getId, boxIds));
         if (CollectionUtil.isEmpty(iceBoxes)) {
-            log.error("查询不到申请投放信息关联的冰柜详情");
+            log.info("查询不到申请投放信息关联的冰柜详情");
             return iceBoxVos;
         }
         for (IceBox iceBox : iceBoxes) {
@@ -562,14 +562,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Set<Integer> relateModelIds = relateModelList.stream().map(x -> x.getId()).collect(Collectors.toSet());
         List<ApplyRelatePutStoreModel> putStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().in(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModelIds));
         if (CollectionUtil.isEmpty(putStoreModels)) {
-            log.error("查询不到申请投放信息和冰柜的关联关系");
+            log.info("查询不到申请投放信息和冰柜的关联关系");
             return iceBoxVos;
         }
         Map<Integer, ApplyRelatePutStoreModel> putStoreModelMap = putStoreModels.stream().collect(Collectors.toMap(ApplyRelatePutStoreModel::getStoreRelateModelId, x -> x));
         Set<String> applyNumbers = putStoreModels.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
         List<IcePutApply> icePutApplies = icePutApplyDao.selectList(Wrappers.<IcePutApply>lambdaQuery().in(IcePutApply::getApplyNumber, applyNumbers));
         if (CollectionUtil.isEmpty(icePutApplies)) {
-            log.error("查询不到申请投放信息和冰柜的关联关系");
+            log.info("查询不到申请投放信息和冰柜的关联关系");
             return iceBoxVos;
         }
         Map<String, IcePutApply> icePutApplyMap = icePutApplies.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
@@ -578,7 +578,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         examineVo.setExamineInfoIds(examineIds);
         List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
         if (CollectionUtil.isEmpty(sessionExamineVos)) {
-            log.error("投放查询不到审批流信息");
+            log.info("投放查询不到审批流信息");
             return iceBoxVos;
         }
         for (SessionExamineVo sessionExamineVo : sessionExamineVos) {
@@ -1696,7 +1696,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
                 } catch (Exception e) {
-                    log.error("插入冰柜数据错误", e);
+                    log.info("插入冰柜数据错误", e);
                     iceBoxDao.deleteById(iceBox.getId());
                     iceBoxExtendDao.deleteById(iceBox.getId());
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
@@ -1706,7 +1706,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxDao.updateById(iceBox);
                     iceBoxExtendDao.updateById(iceBoxExtend);
                 } catch (Exception e) {
-                    log.error("更新冰柜数据错误", e);
+                    log.info("更新冰柜数据错误", e);
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             }
@@ -2548,7 +2548,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 更新下载列表中的数据
             feignExportRecordsClient.updateExportRecord(imgUrl, 1, iceBoxPage.getExportRecordId());
         } catch (Exception e) {
-            log.error("付费陈列导出excel错误", e);
+            log.info("付费陈列导出excel错误", e);
         } finally {
             // 删除临时目录
             if (StringUtils.isNotBlank(xlsxPath)) {

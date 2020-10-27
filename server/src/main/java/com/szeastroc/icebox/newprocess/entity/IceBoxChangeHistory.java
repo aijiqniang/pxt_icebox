@@ -34,6 +34,10 @@ public class IceBoxChangeHistory {
      */
     private String oldSupplierName;
     /**
+     * 转移前经销商名称
+     */
+    private String oldSupplierNumber;
+    /**
      * 转移前经销商营销区域
      */
     private Integer oldMarketAreaId;
@@ -45,6 +49,10 @@ public class IceBoxChangeHistory {
      * 转移后经销商名称
      */
     private String newSupplierName;
+    /**
+     * 转移前经销商名称
+     */
+    private String newSupplierNumber;
     /**
      * 转移后经销商营销区域
      */

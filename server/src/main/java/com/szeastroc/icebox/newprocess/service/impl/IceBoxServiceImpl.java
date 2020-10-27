@@ -1932,9 +1932,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         report.setPutCustomerName(iceBoxRequestVo.getStoreName());
 
         report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
-        if(StringUtils.isNotEmpty(iceBoxRequestVo.getStoreNumber()) && !iceBoxRequestVo.getStoreNumber().startsWith("C0")){
+        if (StringUtils.isNotEmpty(iceBoxRequestVo.getStoreNumber()) && !iceBoxRequestVo.getStoreNumber().startsWith("C0")) {
             SubordinateInfoVo putSupplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBoxRequestVo.getStoreNumber()));
-            if(putSupplier != null){
+            if (putSupplier != null) {
                 report.setPutCustomerType(putSupplier.getSupplierType());
             }
         }
@@ -3554,7 +3554,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
         iceBoxChangeHistory.setOldSupplierName(null == map.get(oldSupplierId) ? "" : map.get(oldSupplierId).getName());
-        iceBoxChangeHistory.setNewSupplierName(null == map.get(oldSupplierId) ? "" : map.get(oldSupplierId).getName());
+        iceBoxChangeHistory.setNewSupplierName(null == map.get(newSupplierId) ? "" : map.get(newSupplierId).getName());
+        iceBoxChangeHistory.setOldSupplierNumber(null == map.get(oldSupplierId) ? "" : map.get(oldSupplierId).getNumber());
+        iceBoxChangeHistory.setNewSupplierNumber(null == map.get(newSupplierId) ? "" : map.get(newSupplierId).getNumber());
         iceBoxChangeHistory.setCreateTime(new Date());
 
         iceBoxChangeHistoryDao.insert(iceBoxChangeHistory);

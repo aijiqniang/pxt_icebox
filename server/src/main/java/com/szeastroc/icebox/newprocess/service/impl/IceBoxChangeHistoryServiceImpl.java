@@ -52,7 +52,7 @@ public class IceBoxChangeHistoryServiceImpl extends ServiceImpl<IceBoxChangeHist
             String newPutStoreNumber = iceBoxChangeHistory.getNewPutStoreNumber();
             String oldStoreMsg = "";
             String newStoreMsg = "";
-            if (null != oldPutStoreNumber) {
+            if (StringUtils.isNotBlank(oldPutStoreNumber)) {
                 StoreInfoDtoVo oldStoreInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(oldPutStoreNumber));
                 if (null != oldStoreInfoDtoVo && oldStoreInfoDtoVo.getId() != null) {
                     oldStoreMsg = oldStoreInfoDtoVo.getStoreName() + "(" + oldStoreInfoDtoVo.getStoreNumber() + ")";
@@ -65,7 +65,7 @@ public class IceBoxChangeHistoryServiceImpl extends ServiceImpl<IceBoxChangeHist
             }
 
 
-            if (null != newPutStoreNumber) {
+            if (StringUtils.isNotBlank(newPutStoreNumber)) {
                 StoreInfoDtoVo newStoreInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(newPutStoreNumber));
                 if (null != newStoreInfoDtoVo && newStoreInfoDtoVo.getId() != null) {
                     newStoreMsg = newStoreInfoDtoVo.getStoreName() + "(" + newStoreInfoDtoVo.getStoreNumber() + ")";

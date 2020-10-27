@@ -1932,9 +1932,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         report.setPutCustomerName(iceBoxRequestVo.getStoreName());
 
         report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
-        if (StringUtils.isNotEmpty(iceBoxRequestVo.getStoreNumber()) && !iceBoxRequestVo.getStoreNumber().startsWith("C0")) {
-            SubordinateInfoVo putSupplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBoxRequestVo.getSupplierId()));
-            if (putSupplier != null) {
+        if(StringUtils.isNotEmpty(iceBoxRequestVo.getStoreNumber()) && !iceBoxRequestVo.getStoreNumber().startsWith("C0")){
+            SubordinateInfoVo putSupplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBoxRequestVo.getStoreNumber()));
+            if(putSupplier != null){
                 report.setPutCustomerType(putSupplier.getSupplierType());
             }
         }
@@ -2715,7 +2715,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (userInfoVo != null) {
                 history.setReviewerName(userInfoVo.getRealname());
             }
-            history.setReviewerTime(new Date());
             iceBoxTransferHistoryDao.updateById(history);
         }
 
@@ -3116,7 +3115,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 正常的冰柜改为异常的冰柜时 不能变更使用客户
             throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
         }
-        if (modifyCustomer && null != modifyCustomerType) {
+        if (null != modifyCustomerType) {
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
             String customerNumber = iceBoxManagerVo.getCustomerNumber();
             if (modifyCustomerType == 1) {
@@ -3213,8 +3212,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(3);
             }
-        }else {
-            iceBox.setPutStoreNumber(oldIceBox.getPutStoreNumber());
         }
         iceBoxDao.update(iceBox, updateWrapper);
         iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, iceBox.getAssetId()));

@@ -1933,7 +1933,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
         if(StringUtils.isNotEmpty(iceBoxRequestVo.getStoreNumber()) && !iceBoxRequestVo.getStoreNumber().startsWith("C0")){
-            SubordinateInfoVo putSupplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBoxRequestVo.getSupplierId()));
+            SubordinateInfoVo putSupplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBoxRequestVo.getStoreNumber()));
             if(putSupplier != null){
                 report.setPutCustomerType(putSupplier.getSupplierType());
             }

@@ -73,7 +73,7 @@ public class IceBoxPutReportConsumer {
         Integer count = iceBoxPutReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
         log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
-        String[] columnName = {"事业部","大区","服务处", "流程编号", "所属经销商编号", "所属经销商名称", "提交人","提交日期", "投放客户编号", "投放客户名称","投放客户类型", "冰柜型号","冰柜编号","申请台数", "是否免押", "押金金额", "审核人员",
+        String[] columnName = {"事业部","大区","服务处", "流程编号", "所属经销商编号", "所属经销商名称", "提交人","提交日期", "投放客户编号", "投放客户名称","投放客户类型", "冰柜型号","冰柜编号", "是否免押", "押金金额", "审核人员",
                 "审核日期", "投放状态"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

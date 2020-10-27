@@ -1930,7 +1930,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         report.setPutCustomerNumber(iceBoxRequestVo.getStoreNumber());
         report.setPutCustomerName(iceBoxRequestVo.getStoreName());
-        report.setPutCustomerType(iceBoxRequestVo.getStoreType());
+
+        report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
+        if(StringUtils.isNotEmpty(iceBoxRequestVo.getStoreNumber()) && !iceBoxRequestVo.getStoreNumber().startsWith("C0")){
+            SubordinateInfoVo putSupplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBoxRequestVo.getSupplierId()));
+            if(putSupplier != null){
+                report.setPutCustomerType(putSupplier.getSupplierType());
+            }
+        }
+
         report.setPutStatus(PutStatus.DO_PUT.getStatus());
         SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequestVo.getUserId()));
         report.setSubmitterId(iceBoxRequestVo.getUserId());

@@ -2454,4 +2454,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         feignCusLabelClient.createCustomerLabelDetail(customerLabelDetailDto);
     }
+
+    @Override
+    public int getCurrentMonthPutCount(List<Integer> userIds) {
+        LambdaQueryWrapper<IceBox> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(IceBox::getPutStatus,3).in(IceBox::getCreatedBy,userIds).apply("date_format(create_time,'%Y-%m-%d') = " + new DateTime().toString("yyyy-MM-dd"));
+        return iceBoxDao.selectCount(wrapper);
+    }
 }

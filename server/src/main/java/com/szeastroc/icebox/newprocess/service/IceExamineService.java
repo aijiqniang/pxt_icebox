@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 
+import java.util.List;
+
 public interface IceExamineService extends IService<IceExamine>{
 
 
@@ -15,5 +17,7 @@ public interface IceExamineService extends IService<IceExamine>{
     IPage<IceExamineVo> findExamine(IceExamineRequest iceExamineRequest);
 
     IceExamineVo findOneExamine(IceExamineRequest iceExamineRequest);
+
+    Integer inspectionCount(List<Integer> userIds);
 
 }

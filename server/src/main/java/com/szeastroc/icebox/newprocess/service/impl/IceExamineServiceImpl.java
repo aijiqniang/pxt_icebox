@@ -16,6 +16,7 @@ import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.enums.ExamineEnums;
@@ -28,6 +29,7 @@ import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -273,4 +275,12 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //        }
 //        return null;
 //    }
+
+
+    @Override
+    public Integer inspectionCount(List<Integer> userIds) {
+        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(IceExamine::gete,3).in(IceBox::getCreatedBy,userIds).apply("date_format(create_time,'%Y-%m-%d') = " + new DateTime().toString("yyyy-MM-dd"));
+        return iceBoxDao.selectCount(wrapper);
+    }
 }

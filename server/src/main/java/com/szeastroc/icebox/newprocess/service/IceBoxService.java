@@ -84,6 +84,8 @@ public interface IceBoxService extends IService<IceBox> {
     void cancelApplyByNumber(IceBoxVo iceBoxVo);
 
     PutStoreRelateModel getApplyInfoByNumber(String applyNumber);
+
+    int getCurrentMonthPutCount(List<Integer> userIds);
 }
 
 

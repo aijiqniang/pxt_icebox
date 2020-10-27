@@ -275,9 +275,9 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
 
         iceBoxTransferHistoryPageVo.setCreateByName(iceBoxTransferHistory.getCreateByName());
 
-        iceBoxTransferHistoryPageVo.setCreateTimeStr(new DateTime(iceBoxTransferHistory.getCreateTime()).toString("yyyy-MM-dd HH:mm:ss"));
+        iceBoxTransferHistoryPageVo.setCreateTimeStr(iceBoxTransferHistory.getCreateTime() != null ? new DateTime(iceBoxTransferHistory.getCreateTime()).toString("yyyy-MM-dd HH:mm:ss") : "");
         iceBoxTransferHistoryPageVo.setReviewer(iceBoxTransferHistory.getReviewerName());
-        iceBoxTransferHistoryPageVo.setReviewTimeStr(new DateTime(iceBoxTransferHistory.getReviewerTime()).toString("yyyy-MM-dd HH:mm:ss"));
+        iceBoxTransferHistoryPageVo.setReviewTimeStr(iceBoxTransferHistory.getReviewerTime() != null ? new DateTime(iceBoxTransferHistory.getReviewerTime()).toString("yyyy-MM-dd HH:mm:ss") : "");
         return iceBoxTransferHistoryPageVo;
     }
 

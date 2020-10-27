@@ -2632,6 +2632,34 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             IceBoxTransferHistory history = new IceBoxTransferHistory();
             BeanUtils.copyProperties(historyVo, history);
+            Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(historyVo.getOldMarketAreaId()));
+            SessionDeptInfoVo group = deptInfoVoMap.get(1);
+            if (group != null) {
+                history.setGroupDeptId(group.getId());
+                history.setGroupDeptName(group.getName());
+            }
+            SessionDeptInfoVo service = deptInfoVoMap.get(2);
+            if (service != null) {
+                history.setServiceDeptId(service.getId());
+                history.setServiceDeptName(service.getName());
+            }
+            SessionDeptInfoVo region = deptInfoVoMap.get(3);
+            if (region != null) {
+                history.setRegionDeptId(region.getId());
+                history.setRegionDeptName(region.getName());
+            }
+
+            SessionDeptInfoVo business = deptInfoVoMap.get(4);
+            if (business != null) {
+                history.setBusinessDeptId(business.getId());
+                history.setBusinessDeptName(business.getName());
+            }
+
+            SessionDeptInfoVo headquarters = deptInfoVoMap.get(5);
+            if (headquarters != null) {
+                history.setHeadquartersDeptId(headquarters.getId());
+                history.setHeadquartersDeptName(headquarters.getName());
+            }
             history.setIceBoxId(iceBox.getId());
             history.setAssetId(iceBox.getAssetId());
             history.setTransferNumber(map.get("transferNumber").toString());
@@ -2658,6 +2686,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         for (IceBoxTransferHistory history : iceBoxTransferHistoryList) {
             history.setExamineStatus(historyVo.getExamineStatus());
             history.setUpdateTime(new Date());
+            history.setReviewerId(historyVo.getReviewerId());
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(historyVo.getReviewerId()));
+            if(userInfoVo != null){
+                history.setReviewerName(userInfoVo.getRealname());
+            }
             iceBoxTransferHistoryDao.updateById(history);
         }
 

@@ -142,5 +142,5 @@ public class IceBoxTransferHistory {
     /**
      * 审核人姓名
      */
-    private Integer reviewerName;
+    private String reviewerName;
 }

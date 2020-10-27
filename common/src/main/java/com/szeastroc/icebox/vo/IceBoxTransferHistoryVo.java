@@ -23,6 +23,10 @@ public class IceBoxTransferHistoryVo {
      */
     private Integer oldSupplierId;
     /**
+     * 转移前经销商编号
+     */
+    private String oldSupplierNumber;
+    /**
      *转移前经销商名称
      */
     private String oldSupplierName;
@@ -34,6 +38,10 @@ public class IceBoxTransferHistoryVo {
      *转移后经销商id
      */
     private Integer newSupplierId;
+    /**
+     * 转移后经销商编号
+     */
+    private String newSupplierNumber;
     /**
      *转移后经销商名称
      */
@@ -62,4 +70,13 @@ public class IceBoxTransferHistoryVo {
      *申请时间
      */
     private Date createTime;
+    /**
+     * 审核人id
+     */
+    private Integer reviewerId;
+
+    /**
+     * 审核人姓名
+     */
+    private String reviewerName;
 }

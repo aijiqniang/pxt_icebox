@@ -18,6 +18,48 @@ import java.util.Date;
 public class IceBoxTransferHistory {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
+
+    /**
+     * 本部id
+     */
+    private Integer headquartersDeptId;
+    /**
+     * 本部名称
+     */
+    private String headquartersDeptName;
+    /**
+     * 事业部id
+     */
+    private Integer businessDeptId;
+    /**
+     * 事业部名称
+     */
+    private String businessDeptName;
+    /**
+     * 大区id
+     */
+    private Integer regionDeptId;
+    /**
+     * 大区名称
+     */
+    private String regionDeptName;
+    /**
+     * 服务处id
+     */
+    private Integer serviceDeptId;
+    /**
+     * 服务处名称
+     */
+    private String serviceDeptName;
+    /**
+     * 组id
+     */
+    private Integer groupDeptId;
+    /**
+     * 组名称
+     */
+    private String groupDeptName;
+
     /**
      * 转移批号
      */
@@ -100,5 +142,5 @@ public class IceBoxTransferHistory {
     /**
      * 审核人姓名
      */
-    private Integer reviewerName;
+    private String reviewerName;
 }

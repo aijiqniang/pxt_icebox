@@ -196,10 +196,10 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
             wrapper.le(IceBoxTransferHistory::getCreateTime, startTime);
         }
 
-        String createBy = iceTransferRecordPage.getCreateBy();
+        String createBy = iceTransferRecordPage.getCreateByName();
 
         if (StringUtils.isNotBlank(createBy)) {
-            wrapper.like(IceBoxTransferHistory::getCreateBy, createBy);
+            wrapper.like(IceBoxTransferHistory::getCreateByName, createBy);
         }
         return wrapper;
     }

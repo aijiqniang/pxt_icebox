@@ -26,7 +26,7 @@ public class IceTransferRecordPage extends Page {
     private String newSupplierName;
 
 
-    private String createBy;
+    private String createByName;
 
     private Date startTime;
     private Date endTime;

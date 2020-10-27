@@ -1280,7 +1280,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("iceBoxType", iceBox.getIceBoxType());
         map.put("deptId", iceBox.getDeptId());
         map.put("deptStr", deptStr); // 责任部门
-        map.put("putStatusStr", PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) ? "经销商" : "门店"); // 客户类型
 
         String khName = null;
         String khAddress = null;
@@ -1288,7 +1287,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         String khStatusStr = null;
         String khContactPerson = null;
         String khContactNumber = null;
-        SubordinateInfoVo suppInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readId(iceBox.getSupplierId()));
+        String putStatusStr=null; // 客户状态
+        SubordinateInfoVo suppInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readById(iceBox.getSupplierId()));
         if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus())) { // 经销商
             if (suppInfoVo != null) {
                 khName = suppInfoVo.getName();
@@ -1298,6 +1298,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 khStatusStr = (suppInfoVo.getStatus() != null && suppInfoVo.getStatus().equals(1)) ? "启用" : "禁用";
                 khContactPerson = suppInfoVo.getLinkman();
                 khContactNumber = suppInfoVo.getLinkmanMobile();
+                putStatusStr=suppInfoVo.getTypeName();
             }
         } else {
             // 批发商/邮差/分销商
@@ -1310,6 +1311,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 khName = dtoVo.getStoreName();
                 khAddress = dtoVo.getAddress();
                 khGrade = dtoVo.getStoreLevel();
+                putStatusStr=dtoVo.getStoreTypeName();
                 // 状态：0-禁用，1-启用
                 khStatusStr = (dtoVo.getStatus() != null && dtoVo.getStatus().equals(1)) ? "启用" : "禁用";
                 if (storeInfoVoMap != null && storeInfoVoMap.get(iceBox.getPutStoreNumber()) != null) {
@@ -1325,6 +1327,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("khStatusStr", khStatusStr); // 客户状态
         map.put("khContactPerson", khContactPerson); // 联系人
         map.put("khContactNumber", khContactNumber); // 联系电话
+        map.put("putStatusStr",putStatusStr); // 客户类型  todo
         String belongDealer = null;
         if (suppInfoVo != null && suppInfoVo.getName() != null) {
             map.put("supplierNumber", suppInfoVo.getNumber());

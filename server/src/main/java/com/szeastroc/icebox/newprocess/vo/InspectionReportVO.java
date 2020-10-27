@@ -22,7 +22,7 @@ public class InspectionReportVO {
     /**
      * 巡检率
      */
-    private Double rate;
+    private String rate;
     /**
      * 未投放
      */

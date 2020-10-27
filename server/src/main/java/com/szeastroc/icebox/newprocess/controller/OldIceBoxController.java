@@ -22,6 +22,7 @@ import com.szeastroc.icebox.newprocess.dao.IceModelDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.OldIceBoxOpt;
 import com.szeastroc.icebox.newprocess.vo.OldIceBoxImportVo;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +53,8 @@ public class OldIceBoxController {
     private IceBoxExtendDao iceBoxExtendDao;
     @Autowired
     private IceModelDao iceModelDao;
+    @Autowired
+    private IceBoxService iceBoxService;
     @Autowired
     private FeignSupplierClient feignSupplierClient;
     @Resource
@@ -176,6 +179,17 @@ public class OldIceBoxController {
         log.info("同时存在的数据-->[{}]", JSON.toJSONString(list, true));
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
+
+
+    /**
+     * 查询已投放未重新签收的旧冰柜发送签收通知
+     */
+    @RequestMapping("dealOldIceBoxNotice")
+    public CommonResponse<List<IceBox>> dealOldIceBoxNotice(){
+        iceBoxService.dealOldIceBoxNotice();
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
 
     /**
      * 针对旧冰柜需要更新旧冰柜信息需求

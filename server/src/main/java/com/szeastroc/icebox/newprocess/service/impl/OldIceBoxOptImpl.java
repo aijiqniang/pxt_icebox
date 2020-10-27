@@ -131,6 +131,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBox.setId(selectIceBox.getId());
                     iceBoxDao.updateById(iceBox);
                 } else {
+                    iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
@@ -206,6 +207,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     }
                     iceBox.setPutStoreNumber("0");
                     iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
+                    iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
@@ -287,6 +289,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBox.setPutStoreNumber("0");
                     iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
                     iceBox.setStatus(IceBoxEnums.StatusEnum.ABNORMAL.getType());
+                    iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);

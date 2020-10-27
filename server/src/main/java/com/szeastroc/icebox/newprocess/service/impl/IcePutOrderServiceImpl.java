@@ -8,15 +8,17 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
+import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
+import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
+import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
-import com.szeastroc.icebox.newprocess.enums.PutStatus;
-import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
@@ -27,18 +29,20 @@ import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.util.wechatpay.WeiXinService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.szeastroc.icebox.newprocess.enums.RecordStatus;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -57,6 +61,8 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
     private final IcePutPactRecordDao icePutPactRecordDao;
     private final IceTransferRecordDao iceTransferRecordDao;
+    private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
+    private final RabbitTemplate rabbitTemplate;
 
 
     @Override
@@ -78,6 +84,17 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 //            throw new ImproperOptionException("不免押流程的申请存在免押冰柜");
             icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
             icePutApplyDao.updateById(icePutApply);
+            //旧冰柜更新通知状态
+            if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
+                        .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
+                        .eq(OldIceBoxSignNotice::getApplyNumber, icePutApplyRelateBox.getApplyNumber()));
+                if(oldIceBoxSignNotice != null){
+                    oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                    oldIceBoxSignNotice.setUpdateTime(new Date());
+                    oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+                }
+            }
             return createByFree(clientInfoRequest, iceBox);
         }
 
@@ -186,6 +203,26 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                         transferRecord.setUpdateTime(new Date());
                         iceTransferRecordDao.updateById(transferRecord);
                     }
+                    //旧冰柜更新通知状态
+                    if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                        OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
+                                .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
+                                .eq(OldIceBoxSignNotice::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
+                        if(oldIceBoxSignNotice != null){
+                            oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                            oldIceBoxSignNotice.setUpdateTime(new Date());
+                            oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+                        }
+                    }
+                    //发送mq消息,同步申请数据到报表
+                    CompletableFuture.runAsync(() -> {
+                        IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                        report.setIceBoxAssetId(iceBox.getAssetId());
+                        report.setApplyNumber(applyRelatePutStoreModel.getApplyNumber());
+                        report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                        report.setOperateType(OperateTypeEnum.UPDATE.getType());
+                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+                    }, ExecutorServiceFactory.getInstance());
                     break;
                 }
             }
@@ -253,6 +290,27 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             putStoreRelateModelDao.updateById(relateModel);
         }
         iceBoxDao.updateById(iceBox);
+
+        //旧冰柜更新通知状态
+        if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+            OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
+                    .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
+                    .eq(OldIceBoxSignNotice::getApplyNumber, icePutOrder.getApplyNumber()));
+            if(oldIceBoxSignNotice != null){
+                oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                oldIceBoxSignNotice.setUpdateTime(new Date());
+                oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+            }
+        }
+        //发送mq消息,同步申请数据到报表
+        CompletableFuture.runAsync(() -> {
+            IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+            report.setIceBoxAssetId(iceBox.getAssetId());
+            report.setApplyNumber(icePutOrder.getApplyNumber());
+            report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+            report.setOperateType(OperateTypeEnum.UPDATE.getType());
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+        }, ExecutorServiceFactory.getInstance());
 
         IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutApply.getApplyNumber()));
         if(transferRecord != null){
@@ -374,6 +432,28 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 transferRecord.setUpdateTime(new Date());
                 iceTransferRecordDao.updateById(transferRecord);
             }
+
+            //旧冰柜更新通知状态
+            if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
+                        .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
+                        .eq(OldIceBoxSignNotice::getApplyNumber, icePutOrder.getApplyNumber()));
+                if(oldIceBoxSignNotice != null){
+                    oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
+                    oldIceBoxSignNotice.setUpdateTime(new Date());
+                    oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+                }
+            }
+            //发送mq消息,同步申请数据到报表
+            CompletableFuture.runAsync(() -> {
+                IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                report.setIceBoxAssetId(iceBox.getAssetId());
+                report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                report.setApplyNumber(icePutOrder.getApplyNumber());
+                report.setOperateType(OperateTypeEnum.UPDATE.getType());
+                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+            }, ExecutorServiceFactory.getInstance());
+
 //            LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
 //            wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
 //            wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());

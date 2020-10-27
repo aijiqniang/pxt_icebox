@@ -12,8 +12,9 @@ public interface InspectionService {
 
     /**
      * 资产巡检
-     * @param type 1业代 2组长 3服务处经理 4大区总
+     *
+     * @param deptId 部门id
      * @return
      */
-    InspectionReportVO query(Integer type);
+    InspectionReportVO query(Integer deptId);
 }

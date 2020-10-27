@@ -17,16 +17,12 @@ import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.enums.IceBoxStatus;
 import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
+import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
-import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
-import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
-import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.service.*;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
@@ -41,16 +37,14 @@ import com.szeastroc.icebox.util.ExcelUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Created by Tulane
@@ -63,6 +57,7 @@ import java.util.Objects;
 public class IceBoxController {
 
     private final IceBoxService iceBoxService;
+    private final IceBoxExtendService iceBoxExtendService;
     private final IcePutPactRecordService icePutPactRecordService;
     private final IcePutOrderService icePutOrderService;
     private final IceBackOrderService iceBackOrderService;
@@ -115,6 +110,21 @@ public class IceBoxController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.checkIceBoxByQrcodeNew(qrcode, pxtNumber));
     }
 
+    /**
+     * 检查当前冰柜状态(新)
+     *
+     * @param id
+     * @param pxtNumber
+     * @return
+     */
+    @RequestMapping("/checkIceBoxById")
+    public CommonResponse<IceBoxStatusVo> checkIceBoxById(Integer id, String pxtNumber) {
+        if (id == null || StringUtils.isBlank(pxtNumber)) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.checkIceBoxById(id, pxtNumber));
+    }
+
 
     /**
      * 根据冰柜二维码查找冰柜信息
@@ -136,6 +146,7 @@ public class IceBoxController {
      * 根据冰柜二维码查找冰柜信息
      *
      * @param qrcode
+     * @param pxtNumber
      * @return
      * @throws ImproperOptionException
      * @throws NormalOptionException
@@ -147,6 +158,25 @@ public class IceBoxController {
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxByQrcodeNew(qrcode,pxtNumber));
     }
+
+    /**
+     * 根据冰柜id查找冰柜信息
+     *
+     * @param id
+     * @param pxtNumber
+     * @return
+     * @throws ImproperOptionException
+     * @throws NormalOptionException
+     */
+    @PostMapping("/getIceBoxById")
+    public CommonResponse<IceBoxVo> getIceBoxById(Integer id, String pxtNumber) {
+        if (id == null || StringUtils.isBlank(pxtNumber)) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxById(id,pxtNumber));
+    }
+
+
 
     /**
      * 门店老板签署电子协议(otoc)
@@ -230,6 +260,7 @@ public class IceBoxController {
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea() + "");
         clientInfoRequest.setOrderSource(OrderSourceEnums.OTOC.getType());
+        clientInfoRequest.setType(1);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
     }
 
@@ -253,6 +284,7 @@ public class IceBoxController {
         }
         clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");
         clientInfoRequest.setOrderSource(OrderSourceEnums.DMS.getType());
+        clientInfoRequest.setType(1);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
     }
 

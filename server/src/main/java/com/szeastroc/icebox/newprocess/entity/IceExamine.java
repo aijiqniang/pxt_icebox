@@ -23,6 +23,12 @@ public class IceExamine {
     private Integer id;
 
     /**
+     * 冰柜巡检编号
+     */
+    @TableField(value = "examine_number")
+    private String examineNumber;
+
+    /**
      * 冰柜的id
      */
     @TableField(value = "ice_box_id")
@@ -96,6 +102,24 @@ public class IceExamine {
      */
     @TableField(value = "gps_address")
     private String gpsAddress;
+
+    /**
+     * 冰柜状态
+     */
+    @TableField(value = "ice_status")
+    private Integer iceStatus;
+
+    /**
+     * 巡检备注
+     */
+    @TableField(value = "examin_msg")
+    private String examinMsg;
+
+    /**
+     * 审批状态：0-驳回，1-审核通过
+     */
+    @TableField(value = "examin_status")
+    private Integer examinStatus;
 
 
     public boolean validate() {

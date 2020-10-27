@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -16,6 +17,7 @@ import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import com.szeastroc.user.client.FeignUserClient;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -113,10 +116,19 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             wrapper.eq(IceBoxPutReport::getApplyNumber,reportMsg.getApplyNumber());
         }
         if(StringUtils.isNotEmpty(reportMsg.getSupplierName())){
-            wrapper.and(x -> x.like(IceBoxPutReport::getSupplierName,reportMsg.getSupplierName()).or().like(IceBoxPutReport::getSupplierNumber,reportMsg.getSupplierNumber()));
+            wrapper.like(IceBoxPutReport::getSupplierName,reportMsg.getSupplierName());
         }
-        if(reportMsg.getSubmitterId() != null){
-            wrapper.eq(IceBoxPutReport::getSubmitterId,reportMsg.getSubmitterId());
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierNumber())){
+            wrapper.like(IceBoxPutReport::getSupplierNumber,reportMsg.getSupplierNumber());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getSubmitterName())){
+            List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.findUserIdsByUserName(reportMsg.getSubmitterName()));
+            if(CollectionUtil.isNotEmpty(userIds)){
+                wrapper.in(IceBoxPutReport::getSubmitterId,userIds);
+            }else {
+                wrapper.eq(IceBoxPutReport::getSubmitterId,"");
+            }
+
         }
         if(reportMsg.getSubmitTime() != null){
             wrapper.ge(IceBoxPutReport::getSubmitTime,reportMsg.getSubmitTime());
@@ -125,13 +137,19 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             wrapper.le(IceBoxPutReport::getSubmitTime,reportMsg.getSubmitEndTime());
         }
         if(reportMsg.getPutCustomerName() != null){
-            wrapper.and(x -> x.like(IceBoxPutReport::getPutCustomerName,reportMsg.getPutCustomerName()).or().like(IceBoxPutReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber()));
+            wrapper.like(IceBoxPutReport::getPutCustomerName,reportMsg.getPutCustomerName());
+        }
+        if(reportMsg.getPutCustomerNumber() != null){
+            wrapper.like(IceBoxPutReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber());
         }
         if(reportMsg.getPutCustomerType() != null){
             wrapper.eq(IceBoxPutReport::getPutCustomerType,reportMsg.getPutCustomerType());
         }
         if(StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
             wrapper.eq(IceBoxPutReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
+        }
+        if(reportMsg.getPutStatus() != null){
+            wrapper.eq(IceBoxPutReport::getPutStatus,reportMsg.getPutStatus());
         }
         return wrapper;
     }

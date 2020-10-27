@@ -151,6 +151,10 @@ public class IceBoxExamineExceptionReportMsg extends Page implements Serializabl
      */
     private Date toOaTime;
     /**
+     *提报结束时间
+     */
+    private Date toOaEndTime;
+    /**
      *提报单号
      */
     private String toOaNumber;

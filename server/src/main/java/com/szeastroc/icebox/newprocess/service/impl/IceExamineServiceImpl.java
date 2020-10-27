@@ -155,14 +155,22 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             if(iceExamine.getExaminStatus().equals(ExamineStatus.REJECT_EXAMINE.getStatus())){
                 examineExceptionStatus = ExamineExceptionStatusEnums.is_unpass.getStatus();
             }
-            buildReportAndSendMq(iceExamine,examineExceptionStatus,now);
+            buildReportAndSendMq(iceExamine,examineExceptionStatus,now, null);
         }, ExecutorServiceFactory.getInstance());
     }
 
-    private void buildReportAndSendMq(IceExamine iceExamine, Integer status, Date now) {
+    private void buildReportAndSendMq(IceExamine iceExamine, Integer status, Date now, Integer updateBy) {
         IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportDao.selectOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, iceExamine.getExamineNumber()));
         IceBoxExamineExceptionReportMsg report = new IceBoxExamineExceptionReportMsg();
         if(isExsit != null){
+            if(updateBy != null){
+                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(updateBy));
+                report.setExamineUserId(updateBy);
+                report.setExamineTime(now);
+                if(userInfoVo != null){
+                    report.setExamineUserName(userInfoVo.getRealname());
+                }
+            }
             report.setExamineNumber(iceExamine.getExamineNumber());
             report.setStatus(status);
             report.setOperateType(OperateTypeEnum.UPDATE.getType());
@@ -489,7 +497,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     }
 
     @Override
-    public void dealIceExamineCheck(String redisKey, Integer status) {
+    public void dealIceExamineCheck(String redisKey, Integer status, Integer updateBy) {
         String str = jedisClient.get(redisKey);
         if(StringUtils.isBlank(str)){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "审批失败,找不到冰柜巡检信息！");
@@ -522,13 +530,13 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(status.equals(ExamineStatusEnum.IS_PASS.getStatus())){
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
-                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.allow_report.getStatus(),new Date());
+                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.allow_report.getStatus(),new Date(),updateBy);
             }, ExecutorServiceFactory.getInstance());
         }
         if(status.equals(ExamineStatusEnum.UN_PASS.getStatus())){
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
-                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_unpass.getStatus(),new Date());
+                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_unpass.getStatus(),new Date(), updateBy);
             }, ExecutorServiceFactory.getInstance());
         }
 //        IceExamine iceExamine = new IceExamine();

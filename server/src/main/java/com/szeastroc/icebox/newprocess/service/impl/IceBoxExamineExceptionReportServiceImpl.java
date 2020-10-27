@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -30,6 +31,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -107,11 +109,23 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
         if(reportMsg.getHeadquartersDeptId() != null){
             wrapper.eq(IceBoxExamineExceptionReport::getHeadquartersDeptId,reportMsg.getHeadquartersDeptId());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getSupplierName())){
-            wrapper.and(x -> x.like(IceBoxExamineExceptionReport::getSupplierName,reportMsg.getSupplierName()).or().like(IceBoxExamineExceptionReport::getSupplierNumber,reportMsg.getSupplierNumber()));
+        if(StringUtils.isNotEmpty(reportMsg.getExamineNumber())){
+            wrapper.like(IceBoxExamineExceptionReport::getExamineNumber,reportMsg.getExamineNumber());
         }
-        if(reportMsg.getSubmitterId() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getSubmitterId,reportMsg.getSubmitterId());
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierName())){
+            wrapper.like(IceBoxExamineExceptionReport::getSupplierName,reportMsg.getSupplierName());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierNumber())){
+            wrapper.like(IceBoxExamineExceptionReport::getSupplierNumber,reportMsg.getSupplierNumber());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getSubmitterName())){
+            List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.findUserIdsByUserName(reportMsg.getSubmitterName()));
+            if(CollectionUtil.isNotEmpty(userIds)){
+                wrapper.in(IceBoxExamineExceptionReport::getSubmitterId,userIds);
+            }else {
+                wrapper.eq(IceBoxExamineExceptionReport::getSubmitterId,"");
+            }
+
         }
         if(reportMsg.getSubmitTime() != null){
             wrapper.ge(IceBoxExamineExceptionReport::getSubmitTime,reportMsg.getSubmitTime());
@@ -119,14 +133,29 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
         if(reportMsg.getSubmitEndTime() != null){
             wrapper.le(IceBoxExamineExceptionReport::getSubmitTime,reportMsg.getSubmitEndTime());
         }
+        if(reportMsg.getToOaTime() != null){
+            wrapper.ge(IceBoxExamineExceptionReport::getToOaTime,reportMsg.getToOaTime());
+        }
+        if(reportMsg.getToOaEndTime() != null){
+            wrapper.le(IceBoxExamineExceptionReport::getToOaTime,reportMsg.getToOaEndTime());
+        }
         if(reportMsg.getPutCustomerName() != null){
-            wrapper.and(x -> x.like(IceBoxExamineExceptionReport::getPutCustomerName,reportMsg.getPutCustomerName()).or().like(IceBoxExamineExceptionReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber()));
+            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerName,reportMsg.getPutCustomerName());
+        }
+        if(reportMsg.getPutCustomerNumber() != null){
+            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber());
         }
         if(reportMsg.getPutCustomerType() != null){
             wrapper.eq(IceBoxExamineExceptionReport::getPutCustomerType,reportMsg.getPutCustomerType());
         }
         if(StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
             wrapper.eq(IceBoxExamineExceptionReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
+        }
+        if(reportMsg.getStatus() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getStatus,reportMsg.getStatus());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getToOaNumber())){
+            wrapper.eq(IceBoxExamineExceptionReport::getToOaNumber,reportMsg.getToOaNumber());
         }
         return wrapper;
     }

@@ -19,6 +19,7 @@ import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.session.UserManageVo;
@@ -149,7 +150,11 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             wrapper.eq(IceBoxPutReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
         }
         if(reportMsg.getPutStatus() != null){
-            wrapper.eq(IceBoxPutReport::getPutStatus,reportMsg.getPutStatus());
+            if(PutStatus.DO_PUT.getStatus().equals(reportMsg.getPutStatus())){
+                wrapper.and(x -> x.eq(IceBoxPutReport::getPutStatus,PutStatus.LOCK_PUT.getStatus()).or().eq(IceBoxPutReport::getPutStatus,PutStatus.DO_PUT.getStatus()));
+            }else {
+                wrapper.eq(IceBoxPutReport::getPutStatus,reportMsg.getPutStatus());
+            }
         }
         return wrapper;
     }

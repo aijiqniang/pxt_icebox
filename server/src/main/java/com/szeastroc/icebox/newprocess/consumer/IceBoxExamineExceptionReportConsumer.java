@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
@@ -17,6 +18,7 @@ import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExamineExceptionReportExcelVo;
+import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -28,9 +30,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -42,6 +42,8 @@ public class IceBoxExamineExceptionReportConsumer {
     private ImageUploadUtil imageUploadUtil;
     @Autowired
     private FeignExportRecordsClient feignExportRecordsClient;
+    @Autowired
+    private FeignUserClient feignUserClient;
 
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue)
@@ -175,11 +177,23 @@ public class IceBoxExamineExceptionReportConsumer {
         if(reportMsg.getHeadquartersDeptId() != null){
             wrapper.eq(IceBoxExamineExceptionReport::getHeadquartersDeptId,reportMsg.getHeadquartersDeptId());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getSupplierName())){
-            wrapper.and(x -> x.like(IceBoxExamineExceptionReport::getSupplierName,reportMsg.getSupplierName()).or().like(IceBoxExamineExceptionReport::getSupplierNumber,reportMsg.getSupplierNumber()));
+        if(StringUtils.isNotEmpty(reportMsg.getExamineNumber())){
+            wrapper.like(IceBoxExamineExceptionReport::getExamineNumber,reportMsg.getExamineNumber());
         }
-        if(reportMsg.getSubmitterId() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getSubmitterId,reportMsg.getSubmitterId());
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierName())){
+            wrapper.like(IceBoxExamineExceptionReport::getSupplierName,reportMsg.getSupplierName());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierNumber())){
+            wrapper.like(IceBoxExamineExceptionReport::getSupplierNumber,reportMsg.getSupplierNumber());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getSubmitterName())){
+            List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.findUserIdsByUserName(reportMsg.getSubmitterName()));
+            if(CollectionUtil.isNotEmpty(userIds)){
+                wrapper.in(IceBoxExamineExceptionReport::getSubmitterId,userIds);
+            }else {
+                wrapper.eq(IceBoxExamineExceptionReport::getSubmitterId,"");
+            }
+
         }
         if(reportMsg.getSubmitTime() != null){
             wrapper.ge(IceBoxExamineExceptionReport::getSubmitTime,reportMsg.getSubmitTime());
@@ -187,14 +201,29 @@ public class IceBoxExamineExceptionReportConsumer {
         if(reportMsg.getSubmitEndTime() != null){
             wrapper.le(IceBoxExamineExceptionReport::getSubmitTime,reportMsg.getSubmitEndTime());
         }
+        if(reportMsg.getToOaTime() != null){
+            wrapper.ge(IceBoxExamineExceptionReport::getToOaTime,reportMsg.getToOaTime());
+        }
+        if(reportMsg.getToOaEndTime() != null){
+            wrapper.le(IceBoxExamineExceptionReport::getToOaTime,reportMsg.getToOaEndTime());
+        }
         if(reportMsg.getPutCustomerName() != null){
-            wrapper.and(x -> x.like(IceBoxExamineExceptionReport::getPutCustomerName,reportMsg.getPutCustomerName()).or().like(IceBoxExamineExceptionReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber()));
+            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerName,reportMsg.getPutCustomerName());
+        }
+        if(reportMsg.getPutCustomerNumber() != null){
+            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber());
         }
         if(reportMsg.getPutCustomerType() != null){
             wrapper.eq(IceBoxExamineExceptionReport::getPutCustomerType,reportMsg.getPutCustomerType());
         }
-        if(org.apache.commons.lang3.StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
+        if(StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
             wrapper.eq(IceBoxExamineExceptionReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
+        }
+        if(reportMsg.getStatus() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getStatus,reportMsg.getStatus());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getToOaNumber())){
+            wrapper.eq(IceBoxExamineExceptionReport::getToOaNumber,reportMsg.getToOaNumber());
         }
         return wrapper;
     }

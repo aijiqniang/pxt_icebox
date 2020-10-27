@@ -19,6 +19,7 @@ import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxTransferHistoryDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxTransferHistory;
+import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxTransferHistoryService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryPageVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryVo;
@@ -164,6 +165,28 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
         Integer deptId = iceTransferRecordPage.getDeptId();
         String assetId = iceTransferRecordPage.getAssetId();
 
+        if (null != deptId) {
+            SessionDeptInfoVo sessionDeptInfoVo = FeignResponseUtil.getFeignData(feignCacheClient.getForDeptInfoVo(deptId));
+            Integer deptType = sessionDeptInfoVo.getDeptType();
+
+            if (DeptTypeEnum.SERVICE.getType().equals(deptType)) {
+                wrapper.eq(IceBoxTransferHistory::getServiceDeptId, deptId);
+            }
+            if (DeptTypeEnum.LARGE_AREA.getType().equals(deptType)) {
+                wrapper.eq(IceBoxTransferHistory::getRegionDeptId, deptId);
+            }
+            if (DeptTypeEnum.BUSINESS_UNIT.getType().equals(deptType)) {
+                wrapper.eq(IceBoxTransferHistory::getBusinessDeptId, deptId);
+            }
+            if (DeptTypeEnum.THIS_PART.getType().equals(deptType)) {
+                wrapper.eq(IceBoxTransferHistory::getHeadquartersDeptId, deptId);
+            }
+            if (DeptTypeEnum.GROUP.getType().equals(deptType)) {
+                wrapper.eq(IceBoxTransferHistory::getGroupDeptId, deptId);
+            }
+
+        }
+
         if (StringUtils.isNotBlank(assetId)) {
             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId));
             if (null != iceBox) {
@@ -182,6 +205,13 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
 
         if (StringUtils.isNotBlank(newSupplierName)) {
             wrapper.like(IceBoxTransferHistory::getNewSupplierName, newSupplierName);
+        }
+
+        if (StringUtils.isNotBlank(oldSupplierNumber)) {
+            wrapper.like(IceBoxTransferHistory::getOldSupplierNumber, oldSupplierNumber);
+        }
+        if (StringUtils.isNotBlank(newSupplierName)) {
+            wrapper.like(IceBoxTransferHistory::getNewSupplierNumber, newSupplierName);
         }
 
         Date startTime = iceTransferRecordPage.getStartTime();

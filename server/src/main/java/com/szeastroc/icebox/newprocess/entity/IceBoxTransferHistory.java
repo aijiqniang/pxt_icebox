@@ -59,7 +59,7 @@ public class IceBoxTransferHistory {
      * 组名称
      */
     private String groupDeptName;
-    
+
     /**
      * 转移批号
      */

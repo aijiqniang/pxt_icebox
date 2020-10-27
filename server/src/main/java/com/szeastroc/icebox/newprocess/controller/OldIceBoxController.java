@@ -25,17 +25,20 @@ import com.szeastroc.icebox.newprocess.entity.IceModel;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.OldIceBoxOpt;
 import com.szeastroc.icebox.newprocess.vo.OldIceBoxImportVo;
+import com.szeastroc.icebox.util.NewExcelUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -185,9 +188,9 @@ public class OldIceBoxController {
      * 查询已投放未重新签收的旧冰柜发送签收通知
      */
     @RequestMapping("dealOldIceBoxNotice")
-    public CommonResponse<List<IceBox>> dealOldIceBoxNotice(){
+    public CommonResponse<List<IceBox>> dealOldIceBoxNotice() {
         iceBoxService.dealOldIceBoxNotice();
-        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+        return new CommonResponse(Constants.API_CODE_SUCCESS, null);
     }
 
 
@@ -207,5 +210,20 @@ public class OldIceBoxController {
             oldIceBoxOpt.opt(oldIceBoxImportVoList);
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+
+    @GetMapping("/getImportExcel")
+    public void getImportExcel(HttpServletResponse response) throws Exception {
+        response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+        String fileName = "旧冰柜导入模板";
+        String titleName = "旧冰柜导入模板";
+        String[] columnName = {"事业部", "大区", "服务处", "所属经销商编号", "所属经销商名称", "冰柜编号", "冰柜名称", "品牌", "冰柜型号", "冰柜规格", "押金金额", "现投放门店编号", "现投放门店名称", "冰柜状态", "导入类型"};
+        NewExcelUtil<OldIceBoxImportVo> excelUtil = new NewExcelUtil<>();
+        List<OldIceBoxImportVo> oldIceBoxImportVoList = new ArrayList<OldIceBoxImportVo>();
+        oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("新增").build());
+        oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("退仓").build());
+        oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("报废").build());
+        excelUtil.oldExportExcel(fileName, titleName, columnName, oldIceBoxImportVoList, response);
     }
 }

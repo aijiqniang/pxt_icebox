@@ -3115,7 +3115,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 正常的冰柜改为异常的冰柜时 不能变更使用客户
             throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
         }
-        if (null != modifyCustomerType) {
+        if (modifyCustomer && null != modifyCustomerType) {
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
             String customerNumber = iceBoxManagerVo.getCustomerNumber();
             if (modifyCustomerType == 1) {
@@ -3212,6 +3212,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
             }
+        } else {
+            iceBox.setPutStoreNumber(oldIceBox.getPutStoreNumber());
         }
         iceBoxDao.update(iceBox, updateWrapper);
         iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, iceBox.getAssetId()));

@@ -3124,7 +3124,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     String supplierNumber = subordinateInfoVo.getNumber();
                     if (supplierNumber.equals(customerNumber)) {
                         // 退仓
-                        updateWrapper.set(IceBox::getPutStoreNumber, null).set(IceBox::getPutStatus, 0);
+                        updateWrapper.set(IceBox::getPutStoreNumber, null).set(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
                     } else {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "如更改客户为经销商则该经销商必须是冰柜所属经销商");
                     }
@@ -3138,7 +3138,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
                 }
 
-                if (PutStatus.NO_PUT.getStatus().equals(oldPutStatus)) {
+                /*if (PutStatus.NO_PUT.getStatus().equals(oldPutStatus)) {
                     // 冰柜未投放  直接投放至门店，需要创建投放相关数据 方便退还
                     // 创建免押类型投放
                     // 处理申请冰柜流程数据
@@ -3207,10 +3207,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                     .set(PutStoreRelateModel::getPutStoreNumber, customerNumber));
                         }
                     }
-                }
+                }*/
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
-                iceBox.setPutStatus(3);
+                iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
             }
         }
         iceBoxDao.update(iceBox, updateWrapper);
@@ -3523,6 +3523,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxChangeHistory.setOldChestNorm(oldIceBox.getChestNorm());
         iceBoxChangeHistory.setOldPutStoreNumber(oldIceBox.getPutStoreNumber());
         iceBoxChangeHistory.setOldChestName(oldIceBox.getChestName());
+        iceBoxChangeHistory.setOldStatus(oldIceBox.getStatus());
+        iceBoxChangeHistory.setOldRemake(oldIceBox.getRemark());
 
 
         iceBoxChangeHistory.setNewAssetId(newIcebox.getAssetId());
@@ -3538,7 +3540,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxChangeHistory.setNewChestNorm(newIcebox.getChestNorm());
         iceBoxChangeHistory.setNewPutStoreNumber(newIcebox.getPutStoreNumber());
         iceBoxChangeHistory.setNewChestName(newIcebox.getChestName());
-
+        iceBoxChangeHistory.setNewStatus(newIcebox.getStatus());
+        iceBoxChangeHistory.setNewRemake(newIcebox.getRemark());
 
         iceBoxChangeHistory.setCreateBy(userManageVo.getSessionUserInfoVo().getId());
         iceBoxChangeHistory.setCreateByName(userManageVo.getSessionUserInfoVo().getRealname());

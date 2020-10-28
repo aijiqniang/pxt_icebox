@@ -11,6 +11,7 @@ import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.IceBoxChangeHistoryDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxChangeHistory;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.service.IceBoxChangeHistoryService;
 import com.szeastroc.icebox.newprocess.vo.request.IceChangeHistoryPage;
 import com.szeastroc.user.client.FeignCacheClient;
@@ -79,6 +80,10 @@ public class IceBoxChangeHistoryServiceImpl extends ServiceImpl<IceBoxChangeHist
 
             iceBoxChangeHistory.setOldStoreName(oldStoreMsg);
             iceBoxChangeHistory.setNewStoreName(newStoreMsg);
+
+
+            iceBoxChangeHistory.setOldStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBoxChangeHistory.getOldStatus()));
+            iceBoxChangeHistory.setNewStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBoxChangeHistory.getNewStatus()));
             return iceBoxChangeHistory;
         });
 

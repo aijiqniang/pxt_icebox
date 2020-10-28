@@ -684,7 +684,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_BOX.getCode(), ResultEnum.CANNOT_FIND_ICE_BOX.getMessage());
         }
 
-        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
+        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery()
+                .eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApply::getPutStoreNumber, iceBox.getPutStoreNumber()));
         // 校验: 投放表中数据
         if (Objects.isNull(icePutApply)) {
             throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_BOX_APPLY.getCode(), ResultEnum.CANNOT_FIND_ICE_BOX_APPLY.getMessage());
@@ -696,7 +697,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
                 .eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber())
-                .eq(IcePutPactRecord::getBoxId, iceBoxId));
+                .eq(IcePutPactRecord::getBoxId, iceBoxId).eq(IcePutPactRecord::getStoreNumber, iceBox.getPutStoreNumber()));
 
         // 校验: 电子协议
         if (icePutPactRecord == null) {

@@ -5,6 +5,7 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
+import com.szeastroc.icebox.newprocess.vo.StoreVO;
 import com.szeastroc.user.client.FeignUserClient;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,5 +42,10 @@ public class GroupLeaderInspectionServiceImpl implements InspectionService, Init
     @Override
     public void afterPropertiesSet() {
         InspectionServiceFactory.register(2,this);
+    }
+
+
+    public List<StoreVO> getStoreByDeptId(Integer deptId){
+        return null;
     }
 }

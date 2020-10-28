@@ -3,7 +3,6 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
-import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.service.PutStoreRelateModelService;
@@ -11,7 +10,6 @@ import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.vo.SessionDeptInfoVo;
-import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,7 +40,7 @@ public class ServiceManagerInspectionServiceImpl implements InspectionService, I
         List<SessionDeptInfoVo> childDepts = FeignResponseUtil.getFeignData(feignDeptClient.findNormalChildDeptInfosByParentId(deptId));
         for (SessionDeptInfoVo childDept : childDepts) {
             List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.getUserIdsByDeptInfoId(childDept.getId()));
-            Integer inspectionCount = iceExamineService.getCurrentMonthInspectionCount(userIds).size();
+            Integer inspectionCount = iceExamineService.getInspectionBoxes(userIds).size();
             Integer putCount = putStoreRelateModelService.getCurrentMonthPutCount(userIds);
             DecimalFormat df = new DecimalFormat("0.00");
             String rate = df.format((float)inspectionCount/putCount);

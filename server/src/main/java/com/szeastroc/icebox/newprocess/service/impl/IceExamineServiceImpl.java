@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -32,6 +33,7 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
+import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
@@ -95,6 +97,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
+    @Autowired
+    private IcePutApplyService icePutApplyService;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -1418,7 +1422,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
 
     @Override
-    public List<IceExamine> getCurrentMonthInspectionCount(List<Integer> userIds) {
+    public List<IceExamine> getInspectionBoxes(List<Integer> userIds) {
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
         wrapper.eq(IceExamine::getExaminStatus,3)
                 .in(IceExamine::getCreateBy,userIds)
@@ -1428,13 +1432,29 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     }
 
     @Override
-    public List<IceExamine> getCurrentMonthInspectionCount(Integer userId) {
+    public List<IceExamine> getInspectionBoxes(Integer userId) {
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.eq(IceExamine::getExaminStatus,3)
+        wrapper.eq(IceExamine::getExaminStatus,2)
                 .eq(IceExamine::getCreateBy,userId)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);
         return iceExamineDao.selectList(wrapper);
+    }
+
+    @Override
+    public Integer getNoInspectionBoxes(Integer putCount, Integer userId) {
+        List<Integer> boxIds = icePutApplyService.getOwnerBoxIds(userId);
+        if(CollectionUtils.isEmpty(boxIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+        wrapper.eq(IceExamine::getExaminStatus,2)
+                .eq(IceExamine::getCreateBy,userId)
+                .in(IceExamine::getIceBoxId,boxIds)
+                .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
+                .groupBy(IceExamine::getIceBoxId);
+        int size = iceExamineDao.selectList(wrapper).size();
+        return putCount-size;
     }
 
     @Override

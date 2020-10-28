@@ -1418,10 +1418,23 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
 
     @Override
-    public Integer getCurrentMonthInspectionCount(List<Integer> userIds) {
-        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.lambdaQuery();
-        wrapper.eq(IceExamine::getExaminStatus,3).in(IceExamine::getCreateBy,userIds).apply("date_format(create_time,'%Y-%m-%d') = " + new DateTime().toString("yyyy-MM-dd"));
-        return iceExamineDao.selectCount(wrapper);
+    public List<IceExamine> getCurrentMonthInspectionCount(List<Integer> userIds) {
+        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+        wrapper.eq(IceExamine::getExaminStatus,3)
+                .in(IceExamine::getCreateBy,userIds)
+                .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
+                .groupBy(IceExamine::getIceBoxId);
+        return iceExamineDao.selectList(wrapper);
+    }
+
+    @Override
+    public List<IceExamine> getCurrentMonthInspectionCount(Integer userId) {
+        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+        wrapper.eq(IceExamine::getExaminStatus,3)
+                .eq(IceExamine::getCreateBy,userId)
+                .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
+                .groupBy(IceExamine::getIceBoxId);
+        return iceExamineDao.selectList(wrapper);
     }
 
     @Override

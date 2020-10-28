@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.vo;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -9,6 +10,7 @@ import lombok.Data;
  * @Date: 2020/10/27 10:40
  **/
 @Data
+@Builder
 public class InspectionReportVO {
 
     /**
@@ -27,4 +29,12 @@ public class InspectionReportVO {
      * 未投放
      */
     private Integer noInspection;
+    /**
+     * 巡检人
+     */
+    private String name;
+
+    private String deptName;
+
+    private Integer deptId;
 }

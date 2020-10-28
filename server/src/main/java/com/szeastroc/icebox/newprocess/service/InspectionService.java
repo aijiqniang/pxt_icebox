@@ -2,6 +2,8 @@ package com.szeastroc.icebox.newprocess.service;
 
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 
+import java.util.List;
+
 /**
  * @ClassName: InspectionService
  * @Description:
@@ -11,10 +13,10 @@ import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 public interface InspectionService {
 
     /**
-     * 资产巡检
+     * 资产巡检报表
      *
      * @param deptId 部门id
      * @return
      */
-    InspectionReportVO query(Integer deptId);
+    List<InspectionReportVO> report(Integer deptId);
 }

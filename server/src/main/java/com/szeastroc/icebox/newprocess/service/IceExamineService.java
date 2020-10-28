@@ -19,7 +19,9 @@ public interface IceExamineService extends IService<IceExamine>{
 
     IceExamineVo findOneExamine(IceExamineRequest iceExamineRequest);
 
-    Integer getCurrentMonthInspectionCount(List<Integer> userIds);
+    List<IceExamine> getCurrentMonthInspectionCount(List<Integer> userIds);
+
+    List<IceExamine> getCurrentMonthInspectionCount(Integer userId);
 
     Map<String, Object> doExamineNew(IceExamineVo iceExamineVo);
 

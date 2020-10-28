@@ -14,12 +14,12 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.config.MqConstant;
-import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxTransferHistoryDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxTransferHistory;
 import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxTransferHistoryService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryPageVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxTransferHistoryVo;
@@ -114,7 +114,7 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
     }
 
     @Override
-    public void exportRefundTransfer(IceTransferRecordPage iceTransferRecordPage) {
+    public void exportTransferHistory(IceTransferRecordPage iceTransferRecordPage) {
         try {
             LambdaQueryWrapper<IceBoxTransferHistory> wrapper = buildWrapper(iceTransferRecordPage);
             List<IceBoxTransferHistory> iceBoxTransferHistoryList = iceBoxTransferHistoryDao.selectList(wrapper);
@@ -243,7 +243,7 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
         iceBoxTransferHistoryPageVo.setAssetId(iceBox.getAssetId());
         iceBoxTransferHistoryPageVo.setModelName(iceBox.getModelName());
         iceBoxTransferHistoryPageVo.setDepositMoney(iceBox.getDepositMoney());
-        iceBoxTransferHistoryPageVo.setExamineStatusStr(ExamineStatusEnum.convertVo(iceBoxTransferHistory.getExamineStatus()));
+        iceBoxTransferHistoryPageVo.setExamineStatusStr(ExamineStatus.convertVo(iceBoxTransferHistory.getExamineStatus()));
 
         Integer oldMarketAreaId = iceBoxTransferHistory.getOldMarketAreaId();
         Integer newMarketAreaId = iceBoxTransferHistory.getNewMarketAreaId();

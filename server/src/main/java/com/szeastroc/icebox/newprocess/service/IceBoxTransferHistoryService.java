@@ -20,6 +20,6 @@ public interface IceBoxTransferHistoryService extends IService<IceBoxTransferHis
 
     List<IceBoxTransferHistory> findByIceBoxId(Integer iceBoxId);
 
-    void exportRefundTransfer(IceTransferRecordPage iceTransferRecordPage);
+    void exportTransferHistory(IceTransferRecordPage iceTransferRecordPage);
 }
 

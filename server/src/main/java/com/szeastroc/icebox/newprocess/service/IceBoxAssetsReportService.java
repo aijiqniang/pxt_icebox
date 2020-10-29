@@ -1,13 +1,11 @@
 package com.szeastroc.icebox.newprocess.service;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxAssetsReport;
 import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
-import com.szeastroc.icebox.newprocess.vo.request.IceBoxAssetReportPage;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IceBoxAssetsReportService extends IService<IceBoxAssetsReport> {
 
@@ -15,7 +13,9 @@ public interface IceBoxAssetsReportService extends IService<IceBoxAssetsReport> 
 
     void createOne(IceBoxAssetReportVo assetReportVo);
 
-    IPage readPage(IceBoxAssetReportPage reportPage);
+    List<Map<String, Object>> readReportJl(Integer deptId);
+
+    List<Map<String, Object>> readReportDqzj(Integer deptId);
 
     void syncOldDatas();
 

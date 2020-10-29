@@ -1,10 +1,10 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -19,7 +19,6 @@ import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxAssetsReportService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
-import com.szeastroc.icebox.newprocess.vo.request.IceBoxAssetReportPage;
 import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -78,13 +78,12 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
             return;
         }
         log.info("冰柜资产报表导入数据:{}", JSON.toJSONString(assetReportVo));
-        if (StringUtils.isBlank(assetReportVo.getSuppNumber())
-                || assetReportVo.getModelId() == null
+        if (assetReportVo.getModelId() == null
                 || assetReportVo.getNewPutStatus() == null
                 || assetReportVo.getNewStatus() == null
                 || assetReportVo.getSuppDeptId() == null
         ) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "参数不对");
         }
         IceBoxAssetsReport iceBoxAssetsReport = iceBoxAssetsReportDao.readBySuppNumberAndModelId(assetReportVo.getSuppNumber(), assetReportVo.getModelId());
         if (iceBoxAssetsReport == null) {
@@ -169,11 +168,98 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
     }
 
     @Override
-    public IPage readPage(IceBoxAssetReportPage reportPage) {
+    public List<Map<String, Object>> readReportJl(Integer deptId) {
 
-        IPage page = iceBoxAssetsReportDao.selectPage(reportPage,
-                Wrappers.<IceBoxAssetsReport>lambdaQuery().orderByDesc(IceBoxAssetsReport::getId));
-        return page;
+        if (deptId == null) {
+            return null;
+        }
+
+        List<IceBoxAssetsReport> assetsReportList = iceBoxAssetsReportDao.selectList(Wrappers.<IceBoxAssetsReport>lambdaQuery()
+                .eq(IceBoxAssetsReport::getServiceDeptId, deptId)
+                .orderByAsc(IceBoxAssetsReport::getSuppNumber)
+        );
+        if (CollectionUtils.isEmpty(assetsReportList)) {
+            return null;
+        }
+
+        Map<String, List<IceBoxAssetsReport>> suppNumberMaps = Maps.newHashMap();
+        for (IceBoxAssetsReport report : assetsReportList) {
+            String suppNumber = report.getSuppNumber();
+            List<IceBoxAssetsReport> assetsReports = suppNumberMaps.get(suppNumber);
+            if (CollectionUtils.isEmpty(assetsReports)) {
+                suppNumberMaps.put(suppNumber, Lists.newArrayList(report));
+            } else {
+                assetsReports.add(report);
+                suppNumberMaps.put(suppNumber, assetsReports);
+            }
+        }
+
+
+        List<Map<String, Object>> list = Lists.newArrayList();
+        HashMap<String, Object> heJi_fwc = Maps.newHashMap();
+        // 服务处合计
+        Integer yiTou_fwc = 0;
+        Integer zaiCang_fwc = 0;
+        Integer yiShi_fwc = 0;
+        Integer baoFei_fwc = 0;
+        for (Map.Entry<String, List<IceBoxAssetsReport>> entry : suppNumberMaps.entrySet()) {
+            String suppNumber = entry.getKey();
+            // 经销商小计
+            Integer yiTou_jxs = 0;
+            Integer zaiCang_jxs = 0;
+            Integer yiShi_jxs = 0;
+            Integer baoFei_jxs = 0;
+
+            String suppName = null;
+            List<IceBoxAssetsReport> reportList = entry.getValue();
+            for (IceBoxAssetsReport report : reportList) {
+                HashMap<String, Object> hashMap = Maps.newHashMap();
+                suppName = report.getSuppName();
+                hashMap.put("suppNumber", suppNumber);
+                hashMap.put("suppName", suppName);
+                hashMap.put("xingHao", report.getXingHao());
+                hashMap.put("fenPei", null);
+                hashMap.put("yiTou", report.getYiTou());
+                hashMap.put("zaiCang", report.getZaiCang());
+                hashMap.put("yiShi", report.getYiShi());
+                hashMap.put("baoFei", report.getBaoFei());
+                yiTou_jxs += report.getYiTou();
+                zaiCang_jxs += report.getZaiCang();
+                yiShi_jxs += report.getYiShi();
+                baoFei_jxs += report.getBaoFei();
+                list.add(hashMap);
+            }
+            HashMap<String, Object> heJi_jxs = Maps.newHashMap();
+            heJi_jxs.put("suppNumber", suppNumber);
+            heJi_jxs.put("suppName", suppName);
+            heJi_jxs.put("xingHao", null);
+            heJi_jxs.put("fenPei", null);
+            heJi_jxs.put("yiTou", yiTou_jxs);
+            heJi_jxs.put("zaiCang", zaiCang_jxs);
+            heJi_jxs.put("yiShi", yiShi_jxs);
+            heJi_jxs.put("baoFei", baoFei_jxs);
+            list.add(heJi_jxs);
+            yiTou_fwc += yiTou_jxs;
+            zaiCang_fwc += zaiCang_jxs;
+            yiShi_fwc += yiShi_jxs;
+            baoFei_fwc += baoFei_jxs;
+        }
+        heJi_fwc.put("xingHao", null);
+        heJi_fwc.put("fenPei", null);
+        heJi_fwc.put("yiTou", yiTou_fwc);
+        heJi_fwc.put("zaiCang", zaiCang_fwc);
+        heJi_fwc.put("yiShi", yiShi_fwc);
+        heJi_fwc.put("baoFei", baoFei_fwc);
+
+        list.add(heJi_fwc);
+        return list;
+    }
+
+    @Override
+    public List<Map<String, Object>> readReportDqzj(Integer deptId) {
+
+
+        return null;
     }
 
     @Override
@@ -198,8 +284,8 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
                             .assetId(iceBox.getAssetId())
                             .modelId(iceBox.getModelId())
                             .modelName(iceBox.getModelName())
-                            .suppName(infoVo.getName())
-                            .suppNumber(infoVo.getNumber())
+                            .suppName(infoVo == null ? null : infoVo.getName())
+                            .suppNumber(infoVo == null ? null : infoVo.getNumber())
                             .oldPutStatus(null) // 投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放
                             .oldStatus(null) // 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
                             .newPutStatus(iceBox.getPutStatus())

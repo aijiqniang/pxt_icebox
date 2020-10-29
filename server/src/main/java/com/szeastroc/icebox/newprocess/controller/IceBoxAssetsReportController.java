@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author xiao
@@ -34,13 +35,23 @@ public class IceBoxAssetsReportController {
     private final IceBoxAssetsReportService iceBoxAssetsReportService;
 
     /**
-     * 分页查找数据
+     * sfa 冰柜资产(经理)
      */
-    @PostMapping("/readPage")
-    public CommonResponse<IPage> readPage(IceBoxAssetReportPage reportPage) {
+    @PostMapping("/readReportJl")
+    public CommonResponse<List<Map<String, Object>>> readReportJl(Integer deptId) {
 
-        IPage page = iceBoxAssetsReportService.readPage(reportPage);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,page);
+        List<Map<String, Object>> list = iceBoxAssetsReportService.readReportJl(deptId);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,list);
+    }
+
+    /**
+     * sfa 冰柜资产(大区总监)
+     */
+    @PostMapping("/readReportDqzj")
+    public CommonResponse<List<Map<String, Object>>> readReportDqzj(Integer deptId) {
+
+        List<Map<String, Object>> list = iceBoxAssetsReportService.readReportDqzj(deptId);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,list);
     }
 
     /**

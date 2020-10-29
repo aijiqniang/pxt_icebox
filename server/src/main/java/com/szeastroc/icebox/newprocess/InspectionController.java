@@ -1,11 +1,17 @@
 package com.szeastroc.icebox.newprocess;
 
+import com.netflix.discovery.converters.Auto;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
 import com.szeastroc.icebox.newprocess.service.impl.GroupMemberInspectionServiceImpl;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 import com.szeastroc.icebox.newprocess.vo.StoreVO;
+import com.szeastroc.user.client.FeignDeptClient;
+import com.szeastroc.user.client.FeignUserClient;
+import com.szeastroc.user.common.session.UserManageVo;
+import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +30,10 @@ import java.util.List;
 public class InspectionController {
     @Autowired
     private GroupMemberInspectionServiceImpl groupMemberInspectionService;
+    @Autowired
+    private FeignUserClient feignUserClient;
+    @Autowired
+    private FeignDeptClient feignDeptClient;
 
     @RequestMapping("report")
     public CommonResponse<List<InspectionReportVO>> query(@RequestParam Integer deptId, @RequestParam Integer type) {
@@ -36,8 +46,4 @@ public class InspectionController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,vos);
     }
 
-    @RequestMapping("getStoreByDeptId")
-    public CommonResponse<List<StoreVO>> getStoreByDeptId(@RequestParam Integer deptId) {
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
-    }
 }

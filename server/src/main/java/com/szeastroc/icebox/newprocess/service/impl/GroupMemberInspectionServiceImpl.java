@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.util.NumberUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -82,6 +83,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
                 .rate(percent)
                 .noInspection(noInspectionCount)
                 .name(user.getRealname())
+                .userId(userId)
                 .build();
     }
 
@@ -100,6 +102,9 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
                     idSet.add(putBoxId);
                 }
             }
+        }
+        if(CollectionUtils.isEmpty(idSet)){
+            return Lists.newArrayList();
         }
         LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
         wrapper.in(IceBox::getId,idSet).eq(IceBox::getPutStatus,3).eq(IceBox::getStatus,1);

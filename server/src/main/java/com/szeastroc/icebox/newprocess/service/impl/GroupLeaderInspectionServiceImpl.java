@@ -44,8 +44,4 @@ public class GroupLeaderInspectionServiceImpl implements InspectionService, Init
         InspectionServiceFactory.register(2,this);
     }
 
-
-    public List<StoreVO> getStoreByDeptId(Integer deptId){
-        return null;
-    }
 }

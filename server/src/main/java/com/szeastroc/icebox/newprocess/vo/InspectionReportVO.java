@@ -34,6 +34,8 @@ public class InspectionReportVO {
      */
     private String name;
 
+    private Integer userId;
+
     private String deptName;
 
     private Integer deptId;

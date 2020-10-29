@@ -231,7 +231,7 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
             }
             HashMap<String, Object> heJi_jxs = Maps.newHashMap();
             heJi_jxs.put("suppNumber", suppNumber);
-            heJi_jxs.put("suppName", suppName);
+            heJi_jxs.put("suppName", suppName==null?null:suppName+"经销商小计");
             heJi_jxs.put("xingHao", null);
             heJi_jxs.put("fenPei", null);
             heJi_jxs.put("yiTou", yiTou_jxs);
@@ -244,6 +244,7 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
             yiShi_fwc += yiShi_jxs;
             baoFei_fwc += baoFei_jxs;
         }
+        heJi_fwc.put("suppName", "服务处合计");
         heJi_fwc.put("xingHao", null);
         heJi_fwc.put("fenPei", null);
         heJi_fwc.put("yiTou", yiTou_fwc);
@@ -258,8 +259,11 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
     @Override
     public List<Map<String, Object>> readReportDqzj(Integer deptId) {
 
-
-        return null;
+        if(deptId==null){
+            return null;
+        }
+        List<Map<String, Object>> list = iceBoxAssetsReportDao.readReportDqzj(deptId);
+        return list;
     }
 
     @Override

@@ -37,7 +37,7 @@ public class IceBoxAssetsReportController {
     /**
      * sfa 冰柜资产(经理)
      */
-    @PostMapping("/readReportJl")
+    @GetMapping("/readReportJl")
     public CommonResponse<List<Map<String, Object>>> readReportJl(Integer deptId) {
 
         List<Map<String, Object>> list = iceBoxAssetsReportService.readReportJl(deptId);
@@ -47,7 +47,7 @@ public class IceBoxAssetsReportController {
     /**
      * sfa 冰柜资产(大区总监)
      */
-    @PostMapping("/readReportDqzj")
+    @GetMapping("/readReportDqzj")
     public CommonResponse<List<Map<String, Object>>> readReportDqzj(Integer deptId) {
 
         List<Map<String, Object>> list = iceBoxAssetsReportService.readReportDqzj(deptId);

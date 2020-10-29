@@ -5,6 +5,9 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxAssetsReport;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * @Author xiao
  * @Date create in 2020/10/19 14:35
@@ -14,5 +17,10 @@ public interface IceBoxAssetsReportDao extends BaseMapper<IceBoxAssetsReport> {
 
     @Select("SELECT * FROM `t_ice_box_assets_report` WHERE supp_number=#{suppNumber} and xing_hao_id=#{modelId};")
     IceBoxAssetsReport readBySuppNumberAndModelId(@Param("suppNumber") String suppNumber,@Param("modelId") Integer modelId);
+
+    @Select("SELECT service_dept_name,SUM(yi_tou)yiTou,SUM(zai_cang)zaiCang,SUM(yi_shi)yiShi,SUM(bao_fei)baoFei\n" +
+            "FROM `t_ice_box_assets_report` WHERE region_dept_id=#{deptId}\n" +
+            "GROUP BY service_dept_id;")
+    List<Map<String ,Object>>readReportDqzj(@Param("deptId") Integer deptId);
 
 }

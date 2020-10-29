@@ -1,9 +1,12 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.util.NumberUtil;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
+import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.service.PutStoreRelateModelService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
@@ -14,7 +17,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.text.DecimalFormat;
 import java.util.List;
 
 /**
@@ -33,6 +35,8 @@ public class ServiceManagerInspectionServiceImpl implements InspectionService, I
     private IceExamineService iceExamineService;
     @Autowired
     private PutStoreRelateModelService putStoreRelateModelService;
+    @Autowired
+    private IcePutApplyService icePutApplyService;
 
     @Override
     public List<InspectionReportVO> report(Integer deptId) {
@@ -42,13 +46,16 @@ public class ServiceManagerInspectionServiceImpl implements InspectionService, I
             List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.getUserIdsByDeptInfoId(childDept.getId()));
             Integer inspectionCount = iceExamineService.getInspectionBoxes(userIds).size();
             Integer putCount = putStoreRelateModelService.getCurrentMonthPutCount(userIds);
-            DecimalFormat df = new DecimalFormat("0.00");
-            String rate = df.format((float)inspectionCount/putCount);
+            Integer lostCount =icePutApplyService.getLostCountByDeptId(childDept.getId());
+            String percent = "-";
+            if(0!=putCount){
+                percent = NumberUtil.formatPercent((float) inspectionCount / putCount-lostCount, 2);
+            }
             Integer noInspectionCount = putCount-inspectionCount;
             InspectionReportVO vo = InspectionReportVO.builder()
                     .inspection(inspectionCount)
                     .putCount(putCount)
-                    .rate(rate)
+                    .rate(percent)
                     .noInspection(noInspectionCount)
                     .deptName(childDept.getName())
                     .deptId(childDept.getId())

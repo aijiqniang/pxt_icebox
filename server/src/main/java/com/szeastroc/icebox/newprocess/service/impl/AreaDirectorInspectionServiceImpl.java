@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.util.NumberUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
@@ -9,6 +10,7 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
 import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
+import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 import com.szeastroc.user.client.FeignDeptClient;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @ClassName: AreaDirectorInspectionImpl
@@ -36,6 +39,8 @@ public class AreaDirectorInspectionServiceImpl implements InspectionService, Ini
     private IceBoxPutReportService iceBoxPutReportService;
     @Autowired
     private IceBoxExamineExceptionReportService iceBoxExamineExceptionReportService;
+    @Autowired
+    private IcePutApplyService icePutApplyService;
 
     @Override
     public List<InspectionReportVO> report(Integer deptId) {
@@ -52,16 +57,21 @@ public class AreaDirectorInspectionServiceImpl implements InspectionService, Ini
             wrapper.ge(IceBoxPutReport::getSubmitTime, firstDay + " 00:00:00");
             wrapper.le(IceBoxPutReport::getSubmitTime, lastDay + " 23:59:59");
             Integer putCount = iceBoxPutReportService.selectByExportCount(wrapper);
+
             exceptionReportWrapper.ge(IceBoxExamineExceptionReport::getSubmitTime, firstDay + " 00:00:00");
             exceptionReportWrapper.le(IceBoxExamineExceptionReport::getSubmitTime, lastDay + " 23:59:59");
             Integer inspectionCount = iceBoxExamineExceptionReportService.selectByExportCount(exceptionReportWrapper);
-            DecimalFormat df = new DecimalFormat("0.00");
-            String rate = df.format((float) inspectionCount / putCount);
+            List<SessionDeptInfoVo> groups = FeignResponseUtil.getFeignData(feignDeptClient.findNormalChildDeptInfosByParentId(id));
+            int lostCount = icePutApplyService.getLostCountByDeptIds(groups.stream().map(SessionDeptInfoVo::getId).collect(Collectors.toList()));
+            String percent = "-";
+            if(0!=putCount){
+                percent = NumberUtil.formatPercent((float) inspectionCount / putCount-lostCount, 2);
+            }
             Integer noInspection = putCount - inspectionCount;
             InspectionReportVO vo = InspectionReportVO.builder()
                     .inspection(inspectionCount)
                     .putCount(putCount)
-                    .rate(rate)
+                    .rate(percent)
                     .noInspection(noInspection)
                     .deptName(childDept.getName())
                     .build();

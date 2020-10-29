@@ -27,6 +27,10 @@ public interface IcePutApplyService extends IService<IcePutApply> {
 
     List<Integer> getOwnerBoxIds(Integer userId);
 
+    int getLostCountByDeptId(Integer deptId);
+
+    int getLostCountByDeptIds(List<Integer> deptIds);
+
 }
 
 

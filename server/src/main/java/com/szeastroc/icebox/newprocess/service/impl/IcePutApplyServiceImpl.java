@@ -30,6 +30,7 @@ public class IcePutApplyServiceImpl extends ServiceImpl<IcePutApplyDao, IcePutAp
     @Resource
     private IceBoxDao iceBoxDao;
 
+
     @Override
     public int getPutCount(Integer userId) {
         return getCount(userId,null);
@@ -81,6 +82,24 @@ public class IcePutApplyServiceImpl extends ServiceImpl<IcePutApplyDao, IcePutAp
     public List<Integer> getPutBoxIds(Integer userId) {
         LambdaQueryWrapper<IceBox> wrapper = buildWrapper(userId, null);
         return iceBoxDao.selectList(wrapper).stream().map(IceBox::getId).collect(Collectors.toList());
+    }
+
+    @Override
+    public int getLostCountByDeptId(Integer deptId) {
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+
+    @Override
+    public int getLostCountByDeptIds(List<Integer> deptIds) {
+        if(CollectionUtils.isEmpty(deptIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).in(IceBox::getDeptId,deptIds).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
     }
 }
 

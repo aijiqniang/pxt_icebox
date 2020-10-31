@@ -18,6 +18,7 @@ public class IceBoxAssetsReport {
     private Integer id;
     private String suppName;
     private String suppNumber;
+    private Integer suppId;
     private Integer xingHaoId;
     private String xingHao; // 型号
     private Integer fenPeiLiang; // 分配量

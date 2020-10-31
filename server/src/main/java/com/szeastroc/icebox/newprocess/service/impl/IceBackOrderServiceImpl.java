@@ -868,6 +868,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .modelName(iceBox.getModelName())
                 .suppName(suppName)
                 .suppNumber(supplierNumber)
+                .suppId(iceBox.getSupplierId())
                 .oldPutStatus(oldPutStatus)
                 .oldStatus(oldStatus)
                 .newPutStatus(newPutStatus)

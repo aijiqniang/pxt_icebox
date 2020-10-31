@@ -24,11 +24,11 @@ import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,19 +79,21 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
         }
         log.info("冰柜资产报表导入数据:{}", JSON.toJSONString(assetReportVo));
         if (assetReportVo.getModelId() == null
+                || assetReportVo.getSuppId() == null
                 || assetReportVo.getNewPutStatus() == null
                 || assetReportVo.getNewStatus() == null
                 || assetReportVo.getSuppDeptId() == null
         ) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "参数不对");
         }
-        IceBoxAssetsReport iceBoxAssetsReport = iceBoxAssetsReportDao.readBySuppNumberAndModelId(assetReportVo.getSuppNumber(), assetReportVo.getModelId());
+
+        // 获取五级营销区域
+        Map<Integer, SessionDeptInfoVo> fiveDeptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(assetReportVo.getSuppDeptId()));
+        IceBoxAssetsReport iceBoxAssetsReport = iceBoxAssetsReportDao.readBySuppIdAndModelId(assetReportVo.getSuppId(), assetReportVo.getModelId());
         if (iceBoxAssetsReport == null) {
             iceBoxAssetsReport = new IceBoxAssetsReport();
         }
 
-        // 获取五级营销区域
-        Map<Integer, SessionDeptInfoVo> fiveDeptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(assetReportVo.getSuppDeptId()));
         if (fiveDeptInfoVoMap != null) {
             SessionDeptInfoVo groupVo = fiveDeptInfoVoMap.get(1); // 组
             SessionDeptInfoVo serviceVo = fiveDeptInfoVoMap.get(2); // 服务处
@@ -118,6 +120,7 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
         iceBoxAssetsReport
                 .setSuppNumber(assetReportVo.getSuppNumber())
                 .setSuppName(assetReportVo.getSuppName())
+                .setSuppId(assetReportVo.getSuppId())
                 .setXingHao(assetReportVo.getModelName())
                 .setXingHaoId(assetReportVo.getModelId());
 
@@ -231,7 +234,7 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
             }
             HashMap<String, Object> heJi_jxs = Maps.newHashMap();
             heJi_jxs.put("suppNumber", suppNumber);
-            heJi_jxs.put("suppName", suppName==null?null:suppName+"经销商小计");
+            heJi_jxs.put("suppName", suppName == null ? null : suppName + "经销商小计");
             heJi_jxs.put("xingHao", null);
             heJi_jxs.put("fenPei", null);
             heJi_jxs.put("yiTou", yiTou_jxs);
@@ -259,11 +262,59 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
     @Override
     public List<Map<String, Object>> readReportDqzj(Integer deptId) {
 
-        if(deptId==null){
+        if (deptId == null) {
             return null;
         }
         List<Map<String, Object>> list = iceBoxAssetsReportDao.readReportDqzj(deptId);
-        return list;
+        if (CollectionUtils.isEmpty(list)) {
+            return null;
+        }
+        Map<Integer, List<Map<String, Object>>> seviceDeptIdMaps = Maps.newHashMap();
+        for (Map<String, Object> map : list) {
+            Integer service_dept_id = (Integer) map.get("service_dept_id");
+            List<Map<String, Object>> mapList = seviceDeptIdMaps.get(service_dept_id);
+            if (CollectionUtils.isEmpty(mapList)) {
+                seviceDeptIdMaps.put(service_dept_id, Lists.newArrayList(map));
+            } else {
+                mapList.add(map);
+                seviceDeptIdMaps.put(service_dept_id, mapList);
+            }
+        }
+
+        List<Map<String, Object>> returnList = Lists.newArrayList();
+        for (Map.Entry<Integer, List<Map<String, Object>>> entry : seviceDeptIdMaps.entrySet()) {
+            // 服务处合计
+            BigDecimal yiTou_fwc = BigDecimal.valueOf(0);
+            BigDecimal zaiCang_fwc = BigDecimal.valueOf(0);
+            BigDecimal yiShi_fwc = BigDecimal.valueOf(0);
+            BigDecimal baoFei_fwc = BigDecimal.valueOf(0);
+            List<Map<String, Object>> mapList = entry.getValue();
+            if (CollectionUtils.isEmpty(mapList)) {
+                continue;
+            }
+            String service_dept_name=null;
+            for (Map<String, Object> map : mapList) {
+                service_dept_name= (String) map.get("service_dept_name");
+                BigDecimal yiTou = (BigDecimal) map.get("yiTou");
+                BigDecimal zaiCang = (BigDecimal) map.get("zaiCang");
+                BigDecimal yiShi = (BigDecimal) map.get("yiShi");
+                BigDecimal baoFei = (BigDecimal) map.get("baoFei");
+                yiTou_fwc = yiTou_fwc.add(yiTou);
+                zaiCang_fwc = zaiCang_fwc.add(zaiCang);
+                yiShi_fwc = yiShi_fwc.add(yiShi);
+                baoFei_fwc = baoFei_fwc.add(baoFei);
+                returnList.add(map);
+            }
+            HashMap<String, Object> mm = Maps.newHashMap();
+            mm.put("service_dept_name",service_dept_name==null?null:service_dept_name+"合计");
+            mm.put("yiTou", yiTou_fwc);
+            mm.put("zaiCang", zaiCang_fwc);
+            mm.put("yiShi", yiShi_fwc);
+            mm.put("baoFei", baoFei_fwc);
+            returnList.add(mm);
+        }
+
+        return returnList;
     }
 
     @Override
@@ -290,6 +341,7 @@ public class IceBoxAssetsReportServiceImpl extends ServiceImpl<IceBoxAssetsRepor
                             .modelName(iceBox.getModelName())
                             .suppName(infoVo == null ? null : infoVo.getName())
                             .suppNumber(infoVo == null ? null : infoVo.getNumber())
+                            .suppId(iceBox.getSupplierId())
                             .oldPutStatus(null) // 投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放
                             .oldStatus(null) // 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
                             .newPutStatus(iceBox.getPutStatus())

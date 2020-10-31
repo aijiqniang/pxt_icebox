@@ -15,12 +15,12 @@ import java.util.Map;
  */
 public interface IceBoxAssetsReportDao extends BaseMapper<IceBoxAssetsReport> {
 
-    @Select("SELECT * FROM `t_ice_box_assets_report` WHERE supp_number=#{suppNumber} and xing_hao_id=#{modelId};")
-    IceBoxAssetsReport readBySuppNumberAndModelId(@Param("suppNumber") String suppNumber,@Param("modelId") Integer modelId);
+    @Select("SELECT * FROM `t_ice_box_assets_report` WHERE supp_id=#{suppId} and xing_hao_id=#{modelId};")
+    IceBoxAssetsReport readBySuppIdAndModelId(@Param("suppId") Integer suppId,@Param("modelId") Integer modelId);
 
-    @Select("SELECT service_dept_name,SUM(yi_tou)yiTou,SUM(zai_cang)zaiCang,SUM(yi_shi)yiShi,SUM(bao_fei)baoFei\n" +
+    @Select("SELECT service_dept_name,service_dept_id,xing_hao,SUM(yi_tou)yiTou,SUM(zai_cang)zaiCang,SUM(yi_shi)yiShi,SUM(bao_fei)baoFei\n" +
             "FROM `t_ice_box_assets_report` WHERE region_dept_id=#{deptId}\n" +
-            "GROUP BY service_dept_id;")
+            "GROUP BY service_dept_id,xing_hao;")
     List<Map<String ,Object>>readReportDqzj(@Param("deptId") Integer deptId);
 
 }

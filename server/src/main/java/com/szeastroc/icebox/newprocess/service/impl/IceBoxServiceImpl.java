@@ -1678,6 +1678,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .modelName(modelStr)
                     .suppName(suppName)
                     .suppNumber(supplierNumber)
+                    .suppId(iceBox.getSupplierId())
                     .oldPutStatus(oldPutStatus)
                     .oldStatus(oldStatus)
                     .newPutStatus(newPutStatus)

@@ -18,6 +18,7 @@ public class IceBoxAssetReportVo implements Serializable {
 
     private String suppName; // 经销商名称
     private String suppNumber; // 经销商编号
+    private Integer suppId; // 经销商id
     private Integer suppDeptId; // 经销商对应的服务处id
     private String modelName; // 型号名称
     private Integer modelId; // 型号id

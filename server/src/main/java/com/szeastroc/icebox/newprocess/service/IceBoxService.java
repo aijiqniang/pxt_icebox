@@ -65,6 +65,8 @@ public interface IceBoxService extends IService<IceBox> {
 
     void checkIceBoxNew(IceBoxRequest iceBoxRequest);
 
+    void dealCheckPassIceBox(IceBoxRequest iceBoxRequest);
+
     List<IceBoxVo> findIceBoxListNew(IceBoxRequestVo requestVo);
 
     List<PutStoreRelateModel> getIceBoxListNew(String pxtNumber);

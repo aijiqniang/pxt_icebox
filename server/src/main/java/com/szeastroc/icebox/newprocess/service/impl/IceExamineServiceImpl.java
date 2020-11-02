@@ -235,6 +235,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             report.setSubmitterId(iceExamine.getCreateBy());
             if (userInfoVo != null) {
                 report.setSubmitterName(userInfoVo.getRealname());
+                report.setSubmitterPosion(userInfoVo.getPosion());
             }
             report.setSubmitTime(now);
             report.setOperateType(OperateTypeEnum.INSERT.getType());

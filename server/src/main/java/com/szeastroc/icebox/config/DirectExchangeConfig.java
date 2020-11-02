@@ -1,5 +1,6 @@
-package com.szeastroc.icebox.config;
+package com.szeastroc.report.rabbitMQ;
 
+import com.szeastroc.icebox.config.MqConstant;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -51,6 +52,4 @@ public class DirectExchangeConfig {
         Binding binding = BindingBuilder.bind(directQueueReport()).to(directExchange()).with(MqConstant.directRoutingKeyReport);
         return binding;
     }
-
-
 }

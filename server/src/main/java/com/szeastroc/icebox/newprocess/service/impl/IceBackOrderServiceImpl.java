@@ -32,16 +32,16 @@ import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
-import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
-import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.NewExcelUtil;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
+import com.szeastroc.icebox.vo.DataPack;
+import com.szeastroc.icebox.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.transfer.client.FeignTransferClient;
 import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
@@ -318,7 +318,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             CompletableFuture.runAsync(() ->
                     feignCusLabelClient.manualExpired(9999, iceBackApply.getBackStoreNumber()), ExecutorServiceFactory.getInstance());
 
-            if(assetReportVo!=null){
+            if (assetReportVo != null) {
                 DataPack dataPack = new DataPack(); // 数据包
                 dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
                 dataPack.setObj(Lists.newArrayList(assetReportVo));
@@ -751,8 +751,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         IceBox iceBox = iceBoxDao.selectById(iceBoxId);
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
         // 旧的 冰柜状态/投放状态
-        Integer oldPutStatus =iceBox.getPutStatus();
-        Integer oldStatus =iceBox.getStatus();
+        Integer oldPutStatus = iceBox.getPutStatus();
+        Integer oldStatus = iceBox.getStatus();
 
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
@@ -855,11 +855,11 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         // 修改冰柜状态
 
         SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readId(iceBox.getSupplierId()));
-        String suppName=null;
-        String supplierNumber=null;
-        if(subordinateInfoVo!=null){
-            suppName=subordinateInfoVo.getName()==null?null:subordinateInfoVo.getName();
-            supplierNumber=subordinateInfoVo.getNumber()==null?null:subordinateInfoVo.getNumber();
+        String suppName = null;
+        String supplierNumber = null;
+        if (subordinateInfoVo != null) {
+            suppName = subordinateInfoVo.getName() == null ? null : subordinateInfoVo.getName();
+            supplierNumber = subordinateInfoVo.getNumber() == null ? null : subordinateInfoVo.getNumber();
         }
 
         IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()

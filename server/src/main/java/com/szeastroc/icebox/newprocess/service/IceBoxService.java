@@ -10,6 +10,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
+import com.szeastroc.icebox.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import org.springframework.web.multipart.MultipartFile;
 

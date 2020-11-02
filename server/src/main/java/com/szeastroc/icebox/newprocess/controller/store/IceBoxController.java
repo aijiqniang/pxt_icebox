@@ -27,7 +27,6 @@ import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
-import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
@@ -37,11 +36,12 @@ import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
-import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.util.ExcelUtil;
+import com.szeastroc.icebox.vo.DataPack;
+import com.szeastroc.icebox.vo.IceBoxAssetReportVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -444,6 +444,7 @@ public class IceBoxController {
     public CommonResponse<String> importExcel(@RequestParam("excelFile") MultipartFile mfile) throws Exception {
 
         List<IceBoxAssetReportVo> lists = iceBoxService.importByEasyExcel(mfile);
+
 //        IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
 //                .assetId("XNYC0120160529177")
 //                .modelId(1)

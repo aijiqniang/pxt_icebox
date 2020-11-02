@@ -1,10 +1,9 @@
 package com.szeastroc.icebox.newprocess.service;
 
-import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.OldIceBoxImportVo;
+import com.szeastroc.icebox.vo.IceBoxAssetReportVo;
 
 import java.util.List;
-import java.util.Map;
 
 @FunctionalInterface
 public interface OldIceBoxOpt {

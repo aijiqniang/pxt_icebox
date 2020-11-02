@@ -1,4 +1,4 @@
-package com.szeastroc.icebox.newprocess.vo;
+package com.szeastroc.icebox.vo;
 
 import lombok.Builder;
 import lombok.Getter;

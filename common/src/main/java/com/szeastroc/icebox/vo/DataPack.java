@@ -1,4 +1,4 @@
-package com.szeastroc.icebox.rabbitMQ;
+package com.szeastroc.icebox.vo;
 
 import lombok.Getter;
 import lombok.Setter;

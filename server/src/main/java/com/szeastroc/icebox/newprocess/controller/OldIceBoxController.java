@@ -25,11 +25,11 @@ import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
 import com.szeastroc.icebox.newprocess.service.OldIceBoxOpt;
-import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.OldIceBoxImportVo;
-import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
+import com.szeastroc.icebox.vo.DataPack;
+import com.szeastroc.icebox.vo.IceBoxAssetReportVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -46,7 +46,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -58,7 +57,7 @@ public class OldIceBoxController {
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IceModelDao iceModelDao;
     private final FeignSupplierClient feignSupplierClient;
-    private final  OldIceBoxOpt oldIceBoxOpt;
+    private final OldIceBoxOpt oldIceBoxOpt;
     private final DirectProducer directProducer;
 
     @RequestMapping("/import")
@@ -201,11 +200,11 @@ public class OldIceBoxController {
              * @Date: 2020/10/19 14:50 xiao
              *  将报表中导入数据库中的数据异步更新到报表中
              */
-            if(CollectionUtils.isNotEmpty(lists)){
+            if (CollectionUtils.isNotEmpty(lists)) {
                 DataPack dataPack = new DataPack(); // 数据包
                 dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
                 dataPack.setObj(lists);
-                ExecutorServiceFactory.getInstance().execute(()->{
+                ExecutorServiceFactory.getInstance().execute(() -> {
                     // 发送mq消息
                     directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
                 });

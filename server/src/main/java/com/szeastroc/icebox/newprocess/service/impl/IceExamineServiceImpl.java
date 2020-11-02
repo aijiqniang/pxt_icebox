@@ -400,6 +400,11 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
     @Override
     public Map<String, Object> doExamineNew(IceExamineVo iceExamineVo) {
+
+        IceBox iceBox = iceBoxDao.selectById(iceExamineVo.getIceBoxId());
+        if(iceBox == null){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "巡检的冰柜不存在！");
+        }
         String examineNumber = UUID.randomUUID().toString().replace("-", "");
         iceExamineVo.setExamineNumber(examineNumber);
         IceExamine iceExamine = new IceExamine();
@@ -418,11 +423,13 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(5);
             map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo, iceExamine);
+            iceBox.setStatus(IceBoxEnums.StatusEnum.IS_NORMALING_UNPASS.getType());
         }
         //冰柜状态是遗失，巡检是正常，需要走与遗失相同的审批
         if(IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(6);
             map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo, iceExamine);
+            iceBox.setStatus(IceBoxEnums.StatusEnum.IS_NORMALING_UNPASS.getType());
         }
 //        //冰柜状态是报修，巡检是正常，需要走与报修相同的审批   产品说报修没了，以后还要，所以保留代码
 //        if(IceBoxEnums.StatusEnum.REPAIR.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.NORMAL.getType().equals(iceExamineVo.getIceExamineStatus())){
@@ -433,12 +440,14 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(!IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.SCRAP.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(5);
             map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo, iceExamine);
+            iceBox.setStatus(IceBoxEnums.StatusEnum.IS_SCRAPING_UNPASS.getType());
         }
 
         //冰柜状态不是遗失，巡检是遗失，需要走遗失审批
         if(!IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceStatus()) && IceBoxEnums.StatusEnum.LOSE.getType().equals(iceExamineVo.getIceExamineStatus())){
             matchRuleVo.setOpreateType(6);
             map = createExamineCheckProcess(iceExamineVo,map,matchRuleVo,iceExamine);
+            iceBox.setStatus(IceBoxEnums.StatusEnum.IS_LOSEING_UNPASS.getType());
         }
 
         //冰柜状态不是报修，巡检是报修，需要走报修通知上级  产品说报修现在没了，以后还要，所以保留代码
@@ -494,6 +503,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //        CompletableFuture.runAsync(() -> {
 //            buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_reporting.getStatus(),new Date());
 //        }, ExecutorServiceFactory.getInstance());
+        iceBoxDao.updateById(iceBox);
         return map;
     }
 

@@ -23,7 +23,10 @@ public class IceBoxEnums {
         LOSE(3, "遗失"),
         REPAIR(4, "报修"),
         IS_SCRAPING(5, "报废中"),
-        IS_LOSEING(6, "遗失中");
+        IS_LOSEING(6, "遗失中"),
+        IS_SCRAPING_UNPASS(7, "报废报备中"),
+        IS_LOSEING_UNPASS(8, "遗失报备中"),
+        IS_NORMALING_UNPASS(9, "正常报备中");
 
         private Integer type;
         private String desc;

@@ -34,6 +34,10 @@ public class IceBoxChangeHistory {
      */
     private String oldSupplierName;
     /**
+     * 转移前经销商名称
+     */
+    private String oldSupplierNumber;
+    /**
      * 转移前经销商营销区域
      */
     private Integer oldMarketAreaId;
@@ -45,6 +49,10 @@ public class IceBoxChangeHistory {
      * 转移后经销商名称
      */
     private String newSupplierName;
+    /**
+     * 转移前经销商名称
+     */
+    private String newSupplierNumber;
     /**
      * 转移后经销商营销区域
      */
@@ -97,6 +105,16 @@ public class IceBoxChangeHistory {
     private String oldPutStoreNumber;
 
     /**
+     * 变更前冰柜状态
+     */
+    private Integer oldStatus;
+
+    /**
+     * 变更前冰柜备注
+     */
+    private String oldRemake;
+
+    /**
      * 变更后资产编号
      */
     private String newAssetId;
@@ -142,6 +160,18 @@ public class IceBoxChangeHistory {
      */
     private String newPutStoreNumber;
 
+
+    /**
+     * 变更后冰柜状态
+     */
+    private Integer newStatus;
+
+
+    /**
+     * 变更后冰柜备注
+     */
+    private String newRemake;
+
     /**
      * 申请人
      */
@@ -172,5 +202,11 @@ public class IceBoxChangeHistory {
 
     @TableField(exist = false)
     private String newStoreName;
+
+    @TableField(exist = false)
+    private String oldStatusStr;
+
+    @TableField(exist = false)
+    private String newStatusStr;
 
 }

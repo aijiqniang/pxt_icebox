@@ -40,15 +40,15 @@ public class DirectListener {
         if (methodName.equals(MethodNameOfMQ.EXPORT_EXCEL_METHOD)) { // 冰柜导出
             IceBoxPage iceBoxPage = (IceBoxPage) dataPack.getObj(); // 数据
             iceBoxService.exportExcel(iceBoxPage);
-        } else if (methodName.equals(MethodNameOfMQ.EXPORT_ICE_REFUND)){
+        } else if (methodName.equals(MethodNameOfMQ.EXPORT_ICE_REFUND)) {
             IceDepositPage iceDepositPage = (IceDepositPage) dataPack.getObj();
 
             iceBackOrderService.exportRefundTransfer(iceDepositPage);
 
-        } else if (methodName.equals(MethodNameOfMQ.EXPORT_ICE_TRANSFER)){
+        } else if (methodName.equals(MethodNameOfMQ.EXPORT_ICE_TRANSFER)) {
             IceTransferRecordPage iceTransferRecordPage = (IceTransferRecordPage) dataPack.getObj();
 
-            iceBoxTransferHistoryService.exportRefundTransfer(iceTransferRecordPage);
+            iceBoxTransferHistoryService.exportTransferHistory(iceTransferRecordPage);
 
         }
     }

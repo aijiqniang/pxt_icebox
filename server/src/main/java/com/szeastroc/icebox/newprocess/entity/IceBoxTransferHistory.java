@@ -143,4 +143,9 @@ public class IceBoxTransferHistory {
      * 审核人姓名
      */
     private String reviewerName;
+
+    /**
+     * 审核日期
+     */
+    private Date reviewerTime;
 }

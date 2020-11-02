@@ -1932,9 +1932,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         report.setPutCustomerName(iceBoxRequestVo.getStoreName());
 
         report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
-        if(StringUtils.isNotEmpty(iceBoxRequestVo.getStoreNumber()) && !iceBoxRequestVo.getStoreNumber().startsWith("C0")){
+        if (StringUtils.isNotEmpty(iceBoxRequestVo.getStoreNumber()) && !iceBoxRequestVo.getStoreNumber().startsWith("C0")) {
             SubordinateInfoVo putSupplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBoxRequestVo.getStoreNumber()));
-            if(putSupplier != null){
+            if (putSupplier != null) {
                 report.setPutCustomerType(putSupplier.getSupplierType());
             }
         }
@@ -3115,7 +3115,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 正常的冰柜改为异常的冰柜时 不能变更使用客户
             throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
         }
-        if (null != modifyCustomerType) {
+        if (modifyCustomer && null != modifyCustomerType) {
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
             String customerNumber = iceBoxManagerVo.getCustomerNumber();
             if (modifyCustomerType == 1) {
@@ -3124,7 +3124,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     String supplierNumber = subordinateInfoVo.getNumber();
                     if (supplierNumber.equals(customerNumber)) {
                         // 退仓
-                        updateWrapper.set(IceBox::getPutStoreNumber, null).set(IceBox::getPutStatus, 0);
+                        updateWrapper.set(IceBox::getPutStoreNumber, null).set(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
                     } else {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "如更改客户为经销商则该经销商必须是冰柜所属经销商");
                     }
@@ -3135,10 +3135,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 Integer selectCount = iceBoxDao.selectCount(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStoreNumber, customerNumber).ne(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
                 if (selectCount > 2) {
                     // 当前客户不能超过三个冰柜
-                    throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
+                    throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), "当前客户投放冰柜数量已达到限制");
                 }
 
-                if (PutStatus.NO_PUT.getStatus().equals(oldPutStatus)) {
+                /*if (PutStatus.NO_PUT.getStatus().equals(oldPutStatus)) {
                     // 冰柜未投放  直接投放至门店，需要创建投放相关数据 方便退还
                     // 创建免押类型投放
                     // 处理申请冰柜流程数据
@@ -3207,11 +3207,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                     .set(PutStoreRelateModel::getPutStoreNumber, customerNumber));
                         }
                     }
-                }
+                }*/
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
-                iceBox.setPutStatus(3);
+                iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
             }
+        } else {
+            iceBox.setPutStoreNumber(oldIceBox.getPutStoreNumber());
         }
         iceBoxDao.update(iceBox, updateWrapper);
         iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, iceBox.getAssetId()));
@@ -3501,7 +3503,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         boolean modifySupplier = iceBoxManagerVo.isModifySupplier();
         boolean modifyCustomer = iceBoxManagerVo.isModifyCustomer();
         if (modifyDept && (!modifySupplier || !modifyCustomer)) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, "变更部门必须变更经销商和使用客户");
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "变更部门必须变更经销商和当前所在客户");
         }
         boolean result = iceBoxManagerVo.validateMain();
         if (!result) {
@@ -3523,6 +3525,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxChangeHistory.setOldChestNorm(oldIceBox.getChestNorm());
         iceBoxChangeHistory.setOldPutStoreNumber(oldIceBox.getPutStoreNumber());
         iceBoxChangeHistory.setOldChestName(oldIceBox.getChestName());
+        iceBoxChangeHistory.setOldStatus(oldIceBox.getStatus());
+        iceBoxChangeHistory.setOldRemake(oldIceBox.getRemark());
 
 
         iceBoxChangeHistory.setNewAssetId(newIcebox.getAssetId());
@@ -3538,7 +3542,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxChangeHistory.setNewChestNorm(newIcebox.getChestNorm());
         iceBoxChangeHistory.setNewPutStoreNumber(newIcebox.getPutStoreNumber());
         iceBoxChangeHistory.setNewChestName(newIcebox.getChestName());
-
+        iceBoxChangeHistory.setNewStatus(newIcebox.getStatus());
+        iceBoxChangeHistory.setNewRemake(newIcebox.getRemark());
 
         iceBoxChangeHistory.setCreateBy(userManageVo.getSessionUserInfoVo().getId());
         iceBoxChangeHistory.setCreateByName(userManageVo.getSessionUserInfoVo().getRealname());
@@ -3554,7 +3559,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
 
         iceBoxChangeHistory.setOldSupplierName(null == map.get(oldSupplierId) ? "" : map.get(oldSupplierId).getName());
-        iceBoxChangeHistory.setNewSupplierName(null == map.get(oldSupplierId) ? "" : map.get(oldSupplierId).getName());
+        iceBoxChangeHistory.setNewSupplierName(null == map.get(newSupplierId) ? "" : map.get(newSupplierId).getName());
+        iceBoxChangeHistory.setOldSupplierNumber(null == map.get(oldSupplierId) ? "" : map.get(oldSupplierId).getNumber());
+        iceBoxChangeHistory.setNewSupplierNumber(null == map.get(newSupplierId) ? "" : map.get(newSupplierId).getNumber());
         iceBoxChangeHistory.setCreateTime(new Date());
 
         iceBoxChangeHistoryDao.insert(iceBoxChangeHistory);

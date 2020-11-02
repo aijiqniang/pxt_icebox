@@ -4,8 +4,6 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
@@ -13,6 +11,7 @@ import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.IceBoxChangeHistoryDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxChangeHistory;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.service.IceBoxChangeHistoryService;
 import com.szeastroc.icebox.newprocess.vo.request.IceChangeHistoryPage;
 import com.szeastroc.user.client.FeignCacheClient;
@@ -38,10 +37,6 @@ public class IceBoxChangeHistoryServiceImpl extends ServiceImpl<IceBoxChangeHist
     public IPage<IceBoxChangeHistory> iceBoxChangeHistoryService(IceChangeHistoryPage iceChangeHistoryPage) {
 
         Integer iceBoxId = iceChangeHistoryPage.getIceBoxId();
-        if (null == iceBoxId) {
-            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
-        }
-
         IPage<IceBoxChangeHistory> iPage = iceBoxChangeHistoryDao.selectPage(iceChangeHistoryPage, Wrappers.<IceBoxChangeHistory>lambdaQuery().eq(IceBoxChangeHistory::getIceBoxId, iceBoxId).orderByDesc(IceBoxChangeHistory::getCreateTime));
 
         iPage.convert(iceBoxChangeHistory -> {
@@ -58,7 +53,7 @@ public class IceBoxChangeHistoryServiceImpl extends ServiceImpl<IceBoxChangeHist
             String newPutStoreNumber = iceBoxChangeHistory.getNewPutStoreNumber();
             String oldStoreMsg = "";
             String newStoreMsg = "";
-            if (null != oldPutStoreNumber) {
+            if (StringUtils.isNotBlank(oldPutStoreNumber)) {
                 StoreInfoDtoVo oldStoreInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(oldPutStoreNumber));
                 if (null != oldStoreInfoDtoVo && oldStoreInfoDtoVo.getId() != null) {
                     oldStoreMsg = oldStoreInfoDtoVo.getStoreName() + "(" + oldStoreInfoDtoVo.getStoreNumber() + ")";
@@ -71,7 +66,7 @@ public class IceBoxChangeHistoryServiceImpl extends ServiceImpl<IceBoxChangeHist
             }
 
 
-            if (null != newPutStoreNumber) {
+            if (StringUtils.isNotBlank(newPutStoreNumber)) {
                 StoreInfoDtoVo newStoreInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(newPutStoreNumber));
                 if (null != newStoreInfoDtoVo && newStoreInfoDtoVo.getId() != null) {
                     newStoreMsg = newStoreInfoDtoVo.getStoreName() + "(" + newStoreInfoDtoVo.getStoreNumber() + ")";
@@ -85,6 +80,10 @@ public class IceBoxChangeHistoryServiceImpl extends ServiceImpl<IceBoxChangeHist
 
             iceBoxChangeHistory.setOldStoreName(oldStoreMsg);
             iceBoxChangeHistory.setNewStoreName(newStoreMsg);
+
+
+            iceBoxChangeHistory.setOldStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBoxChangeHistory.getOldStatus()));
+            iceBoxChangeHistory.setNewStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBoxChangeHistory.getNewStatus()));
             return iceBoxChangeHistory;
         });
 

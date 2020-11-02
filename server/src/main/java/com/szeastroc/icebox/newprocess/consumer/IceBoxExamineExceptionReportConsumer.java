@@ -164,7 +164,7 @@ public class IceBoxExamineExceptionReportConsumer {
         Integer count = iceBoxExamineExceptionReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
         log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
-        String[] columnName = {"事业部","大区","服务处","服务组","冰柜编号","冰柜型号","所属经销商编号", "所属经销商名称", "现投放门店编号", "现投放门店名称","冰柜状态","拜访人姓名","拜访人职位","拜访时间",
+        String[] columnName = {"事业部","大区","服务处","服务组","冰柜编号","冰柜型号","所属经销商编号", "所属经销商名称", "现投放客户编号", "现投放客户名称","冰柜状态","巡检人姓名","巡检人职位","巡检时间",
                 "资产拍照","备注信息"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

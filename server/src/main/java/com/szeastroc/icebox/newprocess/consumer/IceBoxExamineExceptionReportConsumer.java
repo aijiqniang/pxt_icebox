@@ -12,12 +12,19 @@ import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
+import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.enums.ExamineExceptionStatusEnums;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
+import com.szeastroc.icebox.newprocess.enums.IceBoxReprotTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxExamineExcelVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExamineExceptionReportExcelVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxExamineVo;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +51,10 @@ public class IceBoxExamineExceptionReportConsumer {
     private FeignExportRecordsClient feignExportRecordsClient;
     @Autowired
     private FeignUserClient feignUserClient;
+    @Autowired
+    private IceBoxDao iceBoxDao;
+    @Autowired
+    private IceExamineDao iceExamineDao;
 
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue)
@@ -60,6 +71,16 @@ public class IceBoxExamineExceptionReportConsumer {
     }
 
     private void selectReport(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
+        if(IceBoxReprotTypeEnum.EXCEPTION.getType().equals(reportMsg.getReportType())){
+            exportExceptionReport(reportMsg);
+        }else {
+            exportExamineReport(reportMsg);
+        }
+
+        return;
+    }
+
+    private void exportExceptionReport(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
         LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = fillWrapper(reportMsg);
         log.info("fxbill task... [{}]", JSON.toJSONString(reportMsg));
         long start = System.currentTimeMillis();
@@ -67,7 +88,7 @@ public class IceBoxExamineExceptionReportConsumer {
         log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
         String[] columnName = {"事业部","大区","服务处","所属经销商编号", "所属经销商名称", "投放客户编号", "投放客户名称","投放客户类型","冰柜编号", "冰柜型号","押金金额","提报类型","提交人","提交日期",  "审核人员",
-                "审核日期", "状态", "提报时间","提报单号", };
+                "审核日期", "状态", "提报时间","提报单号"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -129,6 +150,74 @@ public class IceBoxExamineExceptionReportConsumer {
                                     eachDataRow.createCell(16).setCellValue(excelVo.getStatus());
                                     eachDataRow.createCell(17).setCellValue(excelVo.getToOaTime());
                                     eachDataRow.createCell(18).setCellValue(excelVo.getToOaNumber());
+                                }
+                            }
+                        }
+                    }
+                });
+    }
+
+    private void exportExamineReport(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
+        LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = fillWrapper(reportMsg);
+        log.info("fxbill task... [{}]", JSON.toJSONString(reportMsg));
+        long start = System.currentTimeMillis();
+        Integer count = iceBoxExamineExceptionReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
+        log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
+        // 列
+        String[] columnName = {"事业部","大区","服务处","服务组","冰柜编号","冰柜型号","所属经销商编号", "所属经销商名称", "现投放门店编号", "现投放门店名称","冰柜状态","拜访人姓名","拜访人职位","拜访时间",
+                "资产拍照","备注信息"};
+        // 先写入本地文件
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
+        PoiUtil.exportReportExcelToLocalPath(count, columnName, tmpPath, imageUploadUtil, feignExportRecordsClient, reportMsg.getRecordsId(),
+                (wb,eachSheet, startRowCount, endRowCount, currentPage, pageSize) -> {
+                    List<IceBoxExamineExcelVo> excelVoList = new ArrayList<>();
+                    Page<IceBoxExamineExceptionReport> page = new Page<>();
+                    page.setCurrent(currentPage);
+                    page.setSize(pageSize);
+                    IPage<IceBoxExamineExceptionReport> putReportIPage = iceBoxExamineExceptionReportService.page(page,wrapper);
+                    List<IceBoxExamineExceptionReport> billInfos = putReportIPage.getRecords();
+                    if (CollectionUtil.isNotEmpty(billInfos)) {
+                        for(IceBoxExamineExceptionReport report:billInfos){
+                            IceBoxExamineExcelVo excelVo = new IceBoxExamineExcelVo();
+                            BeanUtils.copyProperties(report,excelVo);
+                            IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getExamineNumber, report.getExamineNumber()));
+                            if(iceExamine != null){
+                                excelVo.setImageUrl(iceExamine.getDisplayImage()+","+iceExamine.getExteriorImage());
+                                excelVo.setExaminMsg(iceExamine.getExaminMsg());
+                            }
+                            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
+                            if(iceBox != null){
+                                excelVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus()));
+                            }
+                            if(report.getSubmitTime() != null){
+                                excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
+                            }
+                            excelVoList.add(excelVo);
+                        }
+//                        excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxExamineExceptionReportExcelVo::)).collect(Collectors.toList());
+                        if(CollectionUtil.isNotEmpty(excelVoList)){
+                            log.warn("当前检索条件下的分销订单导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
+                            for (int i = startRowCount; i <= endRowCount; i++) {
+                                SXSSFRow eachDataRow = eachSheet.createRow(i);
+                                if ((i - startRowCount) < excelVoList.size()) {
+                                    IceBoxExamineExcelVo excelVo = excelVoList.get(i - startRowCount);
+                                    eachDataRow.createCell(0).setCellValue(excelVo.getBusinessDeptName());
+                                    eachDataRow.createCell(1).setCellValue(excelVo.getRegionDeptName());
+                                    eachDataRow.createCell(2).setCellValue(excelVo.getServiceDeptName());
+                                    eachDataRow.createCell(3).setCellValue(excelVo.getGroupDeptName());
+                                    eachDataRow.createCell(4).setCellValue(excelVo.getIceBoxAssetId());
+                                    eachDataRow.createCell(5).setCellValue(excelVo.getIceBoxModelName());
+                                    eachDataRow.createCell(6).setCellValue(excelVo.getSupplierNumber());
+                                    eachDataRow.createCell(7).setCellValue(excelVo.getSupplierName());
+                                    eachDataRow.createCell(8).setCellValue(excelVo.getPutCustomerNumber());
+                                    eachDataRow.createCell(9).setCellValue(excelVo.getPutCustomerName());
+                                    eachDataRow.createCell(10).setCellValue(excelVo.getStatusStr());
+                                    eachDataRow.createCell(11).setCellValue(excelVo.getSubmitterName());
+                                    eachDataRow.createCell(12).setCellValue(excelVo.getSubmitterPosion());
+                                    eachDataRow.createCell(13).setCellValue(excelVo.getSubmitTime());
+                                    eachDataRow.createCell(14).setCellValue(excelVo.getImageUrl());
+                                    eachDataRow.createCell(15).setCellValue(excelVo.getExaminMsg());
                                 }
                             }
                         }

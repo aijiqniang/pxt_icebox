@@ -84,6 +84,10 @@ public class IceBoxExamineExceptionReport {
      */
     private String submitterName;
     /**
+     *提交人职位
+     */
+    private String submitterPosion;
+    /**
      *提交日期
      */
     private Date submitTime;

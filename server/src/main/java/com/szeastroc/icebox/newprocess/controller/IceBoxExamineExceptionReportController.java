@@ -9,6 +9,7 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxExamineVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,16 +25,45 @@ public class IceBoxExamineExceptionReportController {
     @Resource
     private IceBoxExamineExceptionReportService iceBoxExamineExceptionReportService;
 
-
+    /**
+     * 查询异常报备列表
+     * @param reportMsg
+     * @return
+     */
     @RequestMapping("findByPage")
-    public CommonResponse<IPage< IceBoxExamineExceptionReport>> findByPage(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
+    public CommonResponse<IPage<IceBoxExamineExceptionReport>> findByPage(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
         IPage<IceBoxExamineExceptionReport> reportIPage = iceBoxExamineExceptionReportService.findByPage(reportMsg);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null, reportIPage);
     }
 
+    /**
+     * 导出异常报备记录
+     * @param reportMsg
+     * @return
+     */
     @RequestMapping("sendExportMsg")
-    public CommonResponse< IceBoxExamineExceptionReport> sendExportMsg(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
+    public CommonResponse<IceBoxExamineExceptionReport> sendExportMsg(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
         return iceBoxExamineExceptionReportService.sendExportMsg(reportMsg);
     }
 
+    /**
+     * 查询冰柜巡检列表
+     * @param reportMsg
+     * @return
+     */
+    @RequestMapping("findIceExamineByPage")
+    public CommonResponse<IPage<IceBoxExamineVo>> findIceExamineByPage(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
+        IPage<IceBoxExamineVo> reportIPage = iceBoxExamineExceptionReportService.findIceExamineByPage(reportMsg);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null, reportIPage);
+    }
+
+    /**
+     * 导出冰柜巡检记录
+     * @param reportMsg
+     * @return
+     */
+    @RequestMapping("sendIceExamineExportMsg")
+    public CommonResponse<IceBoxExamineExceptionReport> sendIceExamineExportMsg(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
+        return iceBoxExamineExceptionReportService.sendIceExamineExportMsg(reportMsg);
+    }
 }

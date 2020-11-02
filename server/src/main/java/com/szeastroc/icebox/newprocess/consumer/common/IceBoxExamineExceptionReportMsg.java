@@ -91,11 +91,15 @@ public class IceBoxExamineExceptionReportMsg extends Page implements Serializabl
      */
     private String submitterName;
     /**
-     *提交日期
+     *提交人职位
+     */
+    private String submitterPosion;
+    /**
+     *提交开始日期
      */
     private Date submitTime;
     /**
-     *提交日期
+     *提交结束日期
      */
     private Date submitEndTime;
     /**
@@ -167,4 +171,9 @@ public class IceBoxExamineExceptionReportMsg extends Page implements Serializabl
      * 操作人
      */
     private String operateName;
+
+    /**
+     * 报表类型：1-异常报备，2-冰柜巡检
+     */
+    private Integer reportType;
 }

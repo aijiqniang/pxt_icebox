@@ -5,6 +5,8 @@ import com.szeastroc.common.annotation.MonitorAnnotation;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;

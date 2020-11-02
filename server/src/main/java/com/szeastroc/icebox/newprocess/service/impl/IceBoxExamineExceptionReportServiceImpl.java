@@ -16,18 +16,22 @@ import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
-import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExamineExceptionReportDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
+import com.szeastroc.icebox.newprocess.dao.*;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
+import com.szeastroc.icebox.newprocess.entity.IceExamine;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
+import com.szeastroc.icebox.newprocess.enums.IceBoxReprotTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxExamineVo;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.session.UserManageVo;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,12 +39,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxExamineExceptionReportDao, IceBoxExamineExceptionReport> implements IceBoxExamineExceptionReportService {
 
     @Autowired
     private IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
+    @Autowired
+    private IceBoxDao iceBoxDao;
+    @Autowired
+    private IceExamineDao iceExamineDao;
     @Autowired
     private RabbitTemplate rabbitTemplate;
     @Autowired
@@ -62,9 +71,9 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
         // 获取当前用户相关信息
         UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
         String key = String.format("%s%s", RedisConstant.ICE_BOX_EXCEPTION_REPORT_EXPORT_KEY, userManageVo.getSessionUserInfoVo().getId());
-//        if (null != jedis.get(key)) {
-//            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
-//        }
+        if (null != jedis.get(key)) {
+            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
+        }
         LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = fillWrapper(reportMsg);
         Integer count = Optional.ofNullable(iceBoxExamineExceptionReportDao.selectByExportCount(wrapper)).orElse(0);
         if (0 == count) {
@@ -79,6 +88,7 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
             reportMsg.setOperateType(OperateTypeEnum.SELECT.getType());
             reportMsg.setRecordsId(recordsId);
             reportMsg.setOperateName(userManageVo.getSessionUserInfoVo().getRealname());
+            reportMsg.setReportType(IceBoxReprotTypeEnum.EXCEPTION.getType());
             rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, reportMsg);
         }, ExecutorServiceFactory.getInstance());
         // 三分钟间隔
@@ -157,6 +167,120 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
         if(StringUtils.isNotEmpty(reportMsg.getToOaNumber())){
             wrapper.eq(IceBoxExamineExceptionReport::getToOaNumber,reportMsg.getToOaNumber());
         }
+        return wrapper;
+    }
+
+    @Override
+    public IPage<IceBoxExamineVo> findIceExamineByPage(IceBoxExamineExceptionReportMsg reportMsg) {
+        LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = fillExamineWrapper(reportMsg);
+        IPage<IceBoxExamineExceptionReport> page = iceBoxExamineExceptionReportDao.selectPage(reportMsg, wrapper);
+        IPage<IceBoxExamineVo> examineVoIPage = page.convert(report -> {
+            IceBoxExamineVo examineVo = new IceBoxExamineVo();
+            BeanUtils.copyProperties(report,examineVo);
+            IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getExamineNumber, report.getExamineNumber()));
+            if(iceExamine != null){
+                examineVo.setDisplayImage(iceExamine.getDisplayImage());
+                examineVo.setExteriorImage(iceExamine.getExteriorImage());
+                examineVo.setExaminMsg(iceExamine.getExaminMsg());
+            }
+            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
+            if(iceBox != null){
+                examineVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus()));
+            }
+            return examineVo;
+        });
+        return examineVoIPage;
+    }
+
+    @Override
+    public CommonResponse<IceBoxExamineExceptionReport> sendIceExamineExportMsg(IceBoxExamineExceptionReportMsg reportMsg) {
+        // 获取当前用户相关信息
+        UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
+        String key = String.format("%s%s", RedisConstant.ICE_BOX_EXAMINE_REPORT_EXPORT_KEY, userManageVo.getSessionUserInfoVo().getId());
+        if (null != jedis.get(key)) {
+            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
+        }
+        LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = fillExamineWrapper(reportMsg);
+        Integer count = Optional.ofNullable(iceBoxExamineExceptionReportDao.selectByExportCount(wrapper)).orElse(0);
+        if (0 == count) {
+            return new CommonResponse<>(Constants.API_CODE_FAIL, "暂无可下载数据");
+        }
+        // 生成下载任务
+        Integer recordsId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userManageVo.getSessionUserInfoVo().getId(),
+                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "冰柜巡检信息-导出"));
+
+        //发送mq消息,同步申请数据到报表
+        CompletableFuture.runAsync(() -> {
+            reportMsg.setOperateType(OperateTypeEnum.SELECT.getType());
+            reportMsg.setRecordsId(recordsId);
+            reportMsg.setOperateName(userManageVo.getSessionUserInfoVo().getRealname());
+            reportMsg.setReportType(IceBoxReprotTypeEnum.EXAMINE.getType());
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, reportMsg);
+        }, ExecutorServiceFactory.getInstance());
+        // 三分钟间隔
+        jedis.set(key, "ex", 300, TimeUnit.SECONDS);
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
+    }
+
+    private LambdaQueryWrapper<IceBoxExamineExceptionReport> fillExamineWrapper(IceBoxExamineExceptionReportMsg reportMsg) {
+        LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = Wrappers.<IceBoxExamineExceptionReport>lambdaQuery();
+        if(reportMsg.getGroupDeptId() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getGroupDeptId,reportMsg.getGroupDeptId());
+        }
+        if(reportMsg.getServiceDeptId() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getServiceDeptId,reportMsg.getServiceDeptId());
+        }
+        if(reportMsg.getRegionDeptId() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getRegionDeptId,reportMsg.getRegionDeptId());
+        }
+        if(reportMsg.getBusinessDeptId() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getBusinessDeptId,reportMsg.getBusinessDeptId());
+        }
+        if(reportMsg.getHeadquartersDeptId() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getHeadquartersDeptId,reportMsg.getHeadquartersDeptId());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierName())){
+            wrapper.like(IceBoxExamineExceptionReport::getSupplierName,reportMsg.getSupplierName());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getSupplierNumber())){
+            wrapper.like(IceBoxExamineExceptionReport::getSupplierNumber,reportMsg.getSupplierNumber());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getSubmitterName())){
+            List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.findUserIdsByUserName(reportMsg.getSubmitterName()));
+            if(CollectionUtil.isNotEmpty(userIds)){
+                wrapper.in(IceBoxExamineExceptionReport::getSubmitterId,userIds);
+            }else {
+                wrapper.eq(IceBoxExamineExceptionReport::getSubmitterId,"");
+            }
+        }
+        if(reportMsg.getSubmitTime() != null){
+            wrapper.ge(IceBoxExamineExceptionReport::getSubmitTime,reportMsg.getSubmitTime());
+        }
+        if(reportMsg.getSubmitEndTime() != null){
+            wrapper.le(IceBoxExamineExceptionReport::getSubmitTime,reportMsg.getSubmitEndTime());
+        }
+        if(reportMsg.getPutCustomerName() != null){
+            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerName,reportMsg.getPutCustomerName());
+        }
+        if(reportMsg.getPutCustomerNumber() != null){
+            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber());
+        }
+
+        if(StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
+            wrapper.eq(IceBoxExamineExceptionReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
+        }
+        if(reportMsg.getStatus() != null){
+            List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getStatus, reportMsg.getStatus()));
+            if(CollectionUtil.isNotEmpty(iceBoxList)){
+                List<String> assetIds = iceBoxList.stream().map(x -> x.getAssetId()).collect(Collectors.toList());
+                wrapper.in(IceBoxExamineExceptionReport::getIceBoxAssetId,assetIds);
+            }else {
+                wrapper.eq(IceBoxExamineExceptionReport::getIceBoxAssetId,"");
+            }
+
+        }
+
         return wrapper;
     }
 }

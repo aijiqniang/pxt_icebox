@@ -451,6 +451,7 @@ public class IceBoxController {
 //                .modelName("立式冷藏单门展示柜")
 //                .suppName("浙江台州君秀")
 //                .suppNumber("097850")
+//                .suppId(512)
 //                .oldPutStatus(null) // 投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放
 //                .oldStatus(null) // 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
 //                .newPutStatus(0)
@@ -462,6 +463,7 @@ public class IceBoxController {
 //                .modelName("立式冷藏单门展示柜")
 //                .suppName("青海西宁蓝飞")
 //                .suppNumber("098249")
+//                .suppId(1)
 //                .oldPutStatus(null) // 投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放
 //                .oldStatus(null) // 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
 //                .newPutStatus(0)

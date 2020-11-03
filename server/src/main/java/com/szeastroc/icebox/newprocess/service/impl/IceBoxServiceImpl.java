@@ -3415,13 +3415,24 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         for (IceBox iceBox : noNoticeIceBoxList) {
             //创建申请流程
+            String putStoreNumber = iceBox.getPutStoreNumber();
+            if(StringUtils.isEmpty(putStoreNumber)){
+                continue;
+            }
             String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+            Integer mainUserId = null;
+            if(putStoreNumber.startsWith("C0")){
+                mainUserId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(putStoreNumber));
+            }else {
+                mainUserId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(putStoreNumber));
+            }
+
             IcePutApply icePutApply = IcePutApply.builder()
                     .applyNumber(applyNumber)
                     .putStoreNumber(iceBox.getPutStoreNumber())
                     .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
                     .userId(iceBox.getUpdatedBy())
-                    .createdBy(iceBox.getUpdatedBy())
+                    .createdBy(mainUserId)
                     .build();
             icePutApplyDao.insert(icePutApply);
 
@@ -3430,7 +3441,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .putStoreNumber(iceBox.getPutStoreNumber())
                     .modelId(iceBox.getModelId())
                     .supplierId(iceBox.getSupplierId())
-                    .createBy(iceBox.getUpdatedBy())
+                    .createBy(mainUserId)
                     .createTime(now)
                     .putStatus(PutStatus.DO_PUT.getStatus())
                     .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())

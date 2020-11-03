@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.rabbitMQ;
 
-import com.szeastroc.icebox.vo.DataPack;
+
+import com.szeastroc.report.DataPack;
 
 /**
  * @Author xiao

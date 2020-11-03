@@ -12,10 +12,11 @@ public interface MqConstant {
     String directRoutingKey = "icebox_export_excel_routing_key";
     /**
      * @Date: 2020/10/19 14:14 xiao
-     *  报表中使用的 queue 和  routingKey
+     *  冰柜资产
+     * 报表中使用的 queue 和  routingKey
      */
-    String directQueueReport = "icebox_report_queue";
-    String directRoutingKeyReport = "icebox_report_routing_key";
+    String ICEBOX_ASSETS_REPORT_QUEUE = "icebox_assets_report_queue";
+    String ICEBOX_ASSETS_REPORT_ROUTING_KEY = "icebox_assets_report_routing_key";
     /*****************************  直连模式的参数   *************************************/
 
 

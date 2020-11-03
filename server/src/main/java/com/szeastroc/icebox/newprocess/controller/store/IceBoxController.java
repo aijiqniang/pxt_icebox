@@ -245,7 +245,7 @@ public class IceBoxController {
             dataPack.setObj(Lists.newArrayList(assetReportVo));
             ExecutorServiceFactory.getInstance().execute(() -> {
                 // 发送mq消息
-                directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
             });
         }
 
@@ -281,7 +281,7 @@ public class IceBoxController {
             dataPack.setObj(Lists.newArrayList(assetReportVo));
             ExecutorServiceFactory.getInstance().execute(() -> {
                 // 发送mq消息
-                directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
             });
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
@@ -306,7 +306,7 @@ public class IceBoxController {
                 dataPack.setObj(Lists.newArrayList(assetReportVo));
                 ExecutorServiceFactory.getInstance().execute(() -> {
                     // 发送mq消息
-                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
                 });
             }
 
@@ -333,7 +333,7 @@ public class IceBoxController {
                 dataPack.setObj(Lists.newArrayList(assetReportVo));
                 ExecutorServiceFactory.getInstance().execute(() -> {
                     // 发送mq消息
-                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
                 });
             }
 
@@ -480,7 +480,7 @@ public class IceBoxController {
             dataPack.setObj(lists);
             ExecutorServiceFactory.getInstance().execute(() -> {
                 // 发送mq消息
-                directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
             });
         }
 
@@ -548,7 +548,7 @@ public class IceBoxController {
                 dataPack.setObj(Lists.newArrayList(assetReportVo));
                 ExecutorServiceFactory.getInstance().execute(() -> {
                     // 发送mq消息
-                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
                 });
             }
 

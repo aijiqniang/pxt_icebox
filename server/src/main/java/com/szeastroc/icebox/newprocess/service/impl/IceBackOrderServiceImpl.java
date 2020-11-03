@@ -324,7 +324,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 dataPack.setObj(Lists.newArrayList(assetReportVo));
                 ExecutorServiceFactory.getInstance().execute(() -> {
                     // 发送mq消息
-                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
                 });
             }
         } else if (status == 2) {

@@ -206,7 +206,7 @@ public class OldIceBoxController {
                 dataPack.setObj(lists);
                 ExecutorServiceFactory.getInstance().execute(() -> {
                     // 发送mq消息
-                    directProducer.sendMsg(MqConstant.directRoutingKeyReport, dataPack);
+                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
                 });
             }
         }

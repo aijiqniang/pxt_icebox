@@ -42,14 +42,14 @@ public class DirectExchangeConfig {
     // 定义交队列
     @Bean
     public Queue directQueueReport() {
-        Queue queue = new Queue(MqConstant.directQueueReport);
+        Queue queue = new Queue(MqConstant.ICEBOX_ASSETS_REPORT_QUEUE);
         return queue;
     }
 
     // 定义队列跟交换机的绑定关系
     @Bean
     public Binding bindingExchangeReport() {
-        Binding binding = BindingBuilder.bind(directQueueReport()).to(directExchange()).with(MqConstant.directRoutingKeyReport);
+        Binding binding = BindingBuilder.bind(directQueueReport()).to(directExchange()).with(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY);
         return binding;
     }
 }

@@ -67,7 +67,7 @@ public class IcePutApplyServiceImpl extends ServiceImpl<IcePutApplyDao, IcePutAp
     @Override
     public List<Integer> getOwnerBoxIds(Integer userId) {
         LambdaQueryWrapper<IcePutApply> wrapper = Wrappers.<IcePutApply>lambdaQuery();
-        wrapper.eq(IcePutApply::getCreatedBy,userId).eq(IcePutApply::getExamineStatus,2);
+        wrapper.eq(IcePutApply::getCreatedBy,userId).eq(IcePutApply::getExamineStatus,2).eq(IcePutApply::getStoreSignStatus,1);
         List<IcePutApply> icePutApplies = this.baseMapper.selectList(wrapper);
         if(CollectionUtils.isEmpty(icePutApplies)){
             return Lists.newArrayList();

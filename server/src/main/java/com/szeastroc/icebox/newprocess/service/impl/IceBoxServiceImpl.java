@@ -2264,6 +2264,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         icePutApply.setUpdateTime(new Date());
                         icePutApplyDao.updateById(icePutApply);
                     }
+
+                    LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
+                    wrapper.eq(PutStoreRelateModel::getPutStoreNumber, pxtNumber);
+                    wrapper.eq(PutStoreRelateModel::getModelId, iceBox.getModelId());
+                    wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+                    wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
+                    wrapper.eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()).last("limit 1");
+                    PutStoreRelateModel relateModel = putStoreRelateModelDao.selectOne(wrapper);
+                    if(relateModel != null){
+                        relateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                        relateModel.setUpdateTime(new Date());
+                        putStoreRelateModelDao.updateById(relateModel);
+                    }
                 }
                 //发送mq消息,同步申请数据到报表
                 CompletableFuture.runAsync(() -> {

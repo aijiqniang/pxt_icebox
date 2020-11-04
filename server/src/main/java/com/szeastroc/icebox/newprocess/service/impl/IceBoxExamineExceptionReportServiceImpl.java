@@ -179,10 +179,10 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
             BeanUtils.copyProperties(report,examineVo);
             IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getExamineNumber, report.getExamineNumber()));
             if(iceExamine != null){
-//                String displayImage = StringUtils.isEmpty(iceExamine.getDisplayImage())?"":iceExamine.getDisplayImage().replace("http","https");
-//                String exteriorImage = StringUtils.isEmpty(iceExamine.getExteriorImage())?"":iceExamine.getExteriorImage().replace("http","https");
-                examineVo.setDisplayImage(iceExamine.getDisplayImage());
-                examineVo.setExteriorImage(iceExamine.getExteriorImage());
+                String displayImage = StringUtils.isEmpty(iceExamine.getDisplayImage())?"":iceExamine.getDisplayImage().replace("http","https");
+                String exteriorImage = StringUtils.isEmpty(iceExamine.getExteriorImage())?"":iceExamine.getExteriorImage().replace("http","https");
+                examineVo.setDisplayImage(displayImage);
+                examineVo.setExteriorImage(exteriorImage);
                 examineVo.setExaminMsg(iceExamine.getExaminMsg());
             }
             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));

@@ -2255,6 +2255,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
                         oldIceBoxSignNotice.setUpdateTime(new Date());
                         oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+                        log.info("查到的冰柜信息---》【{}】，扩展信息---》【{}】，通知---》【{}】",JSON.toJSONString(iceBox),JSON.toJSONString(iceBoxExtend),JSON.toJSONString(oldIceBoxSignNotice));
                     }
                     IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                             .eq(IcePutApply::getStoreSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()).last("limit 1"));
@@ -3520,8 +3521,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public IceBoxStatusVo checkIceBoxById(Integer id, String pxtNumber) {
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
-        log.info("签收的旧冰柜id--》【{}】,pxtNumber--》【{}】", id, pxtNumber);
-
+        log.info("签收的旧冰柜id--》【{}】,pxtNumber--》【{}】,冰柜信息---》", id, pxtNumber,JSON.toJSONString(iceBoxExtend));
         return getIceBoxStatusVo(pxtNumber, iceBoxStatusVo, iceBoxExtend);
     }
 

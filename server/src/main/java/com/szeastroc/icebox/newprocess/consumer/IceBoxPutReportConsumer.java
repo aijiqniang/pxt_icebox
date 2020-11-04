@@ -148,7 +148,7 @@ public class IceBoxPutReportConsumer {
             if(PutStatus.FINISH_PUT.getStatus().equals(reportMsg.getPutStatus())){
                 IceBoxPutReport putReport = iceBoxPutReportService.getOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxAssetId, reportMsg.getIceBoxAssetId())
                         .eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber())
-                        .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()));
+                        .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                 if(putReport != null){
                     putReport.setPutStatus(reportMsg.getPutStatus());
                     iceBoxPutReportService.updateById(putReport);
@@ -157,7 +157,7 @@ public class IceBoxPutReportConsumer {
                 IceBoxPutReport report = iceBoxPutReportService.getOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber())
                         .eq(IceBoxPutReport::getIceBoxModelId, reportMsg.getIceBoxModelId())
                         .eq(IceBoxPutReport::getSupplierId, reportMsg.getSupplierId())
-                        .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()));
+                        .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                 if(report != null){
                     report.setIceBoxAssetId(reportMsg.getIceBoxAssetId());
                     iceBoxPutReportService.updateById(report);

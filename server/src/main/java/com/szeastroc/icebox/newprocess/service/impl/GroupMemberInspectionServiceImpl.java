@@ -7,7 +7,9 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.customer.client.FeignStoreClient;
+import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SimpleStoreVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
@@ -30,6 +32,7 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +46,8 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
 
     @Autowired
     private FeignUserClient feignUserClient;
-
+    @Autowired
+    FeignSupplierClient feignSupplierClient;
     @Autowired
     FeignDeptClient deptClient;
     @Autowired
@@ -110,6 +114,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         wrapper.in(IceBox::getId,idSet).eq(IceBox::getPutStatus,3).eq(IceBox::getStatus,1);
         List<IceBox> iceBoxes = iceBoxDao.selectList(wrapper);
         List<String> storeNumbers = iceBoxes.stream().map(IceBox::getPutStoreNumber).distinct().collect(Collectors.toList());
+        //门店
         List<SimpleStoreVo> stores = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumbers(storeNumbers));
         List<StoreVO> vos = stores.stream().map(one -> {
             StoreVO storeVO = new StoreVO();
@@ -119,6 +124,16 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
             storeVO.setDay(day);
             return storeVO;
         }).collect(Collectors.toList());
+        //配送商
+        Map<String, SubordinateInfoVo> suppliers = FeignResponseUtil.getFeignData(feignSupplierClient.getCustomersByNumberList(storeNumbers));
+        for (SubordinateInfoVo supplier : suppliers.values()) {
+            StoreVO storeVO = new StoreVO();
+            storeVO.setCustomerNumber(supplier.getNumber());
+            storeVO.setStoreName(supplier.getName());
+            String day = FeignResponseUtil.getFeignData(feignVisitInfoClient.getStoreWeekIndex(supplier.getNumber()));
+            storeVO.setDay(day);
+            vos.add(storeVO);
+        }
         return vos;
     }
 }

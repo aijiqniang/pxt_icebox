@@ -1,8 +1,6 @@
 package com.szeastroc.icebox.rabbitMQ;
 
 
-import com.szeastroc.report.DataPack;
-
 /**
  * @Author xiao
  * @Date create in 2020/6/12 17:33

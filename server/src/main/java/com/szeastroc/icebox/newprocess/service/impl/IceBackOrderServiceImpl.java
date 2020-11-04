@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -32,17 +33,17 @@ import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
 import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
+import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.NewExcelUtil;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
-import com.szeastroc.icebox.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.vo.IceBoxRequest;
-import com.szeastroc.report.DataPack;
 import com.szeastroc.transfer.client.FeignTransferClient;
 import com.szeastroc.transfer.common.enums.ResourceTypeEnum;
 import com.szeastroc.transfer.common.enums.WechatPayTypeEnum;
@@ -67,6 +68,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -107,6 +109,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final PutStoreRelateModelDao putStoreRelateModelDao;
     private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
     private final WeiXinConfig weiXinConfig;
+    private final RabbitTemplate rabbitTemplate;
 
     private final String group = "销售组长";
     private final String service = "服务处经理";
@@ -319,13 +322,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                     feignCusLabelClient.manualExpired(9999, iceBackApply.getBackStoreNumber()), ExecutorServiceFactory.getInstance());
 
             if (assetReportVo != null) {
-                DataPack dataPack = new DataPack(); // 数据包
-                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
-                dataPack.setObj(Lists.newArrayList(assetReportVo));
-                ExecutorServiceFactory.getInstance().execute(() -> {
-                    // 发送mq消息
-                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
-                });
+
+                // 发送mq消息
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("lists", Lists.newArrayList(assetReportVo));
+                jsonObject.put("methodName", MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                // 发送mq消息
+                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
             }
         } else if (status == 2) {
             // 驳回

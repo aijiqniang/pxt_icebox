@@ -39,10 +39,6 @@
         <!-- transfer服务 -->
         <transfer.common.version>0.1.0</transfer.common.version>
         <transfer.client.version>0.1.0</transfer.client.version>
-
-        <!-- report 服务 -->
-        <report.common.version>0.0.1</report.common.version>
-        <report.client.version>0.0.1</report.client.version>
     </properties>
 
     <parent>
@@ -125,19 +121,6 @@
                 <groupId>com.szeastroc</groupId>
                 <artifactId>transfer-client</artifactId>
                 <version>${transfer.client.version}</version>
-            </dependency>
-
-            <!-- nexus本地jar管理 - report 服务 -->
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>report-common</artifactId>
-                <version>${report.common.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>report-client</artifactId>
-                <version>${report.client.version}</version>
             </dependency>
 
             <!-- nexus本地jar管理 - visit服务 -->

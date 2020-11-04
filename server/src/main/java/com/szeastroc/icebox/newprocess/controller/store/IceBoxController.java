@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.controller.store;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -10,7 +11,6 @@ import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
@@ -27,6 +27,7 @@ import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
@@ -40,12 +41,11 @@ import com.szeastroc.icebox.rabbitMQ.DirectProducer;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.util.ExcelUtil;
-import com.szeastroc.icebox.vo.IceBoxAssetReportVo;
-import com.szeastroc.report.DataPack;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -74,6 +74,7 @@ public class IceBoxController {
     private final FeignStoreClient feignStoreClient;
     private final FeignSupplierClient feignSupplierClient;
     private final DirectProducer directProducer;
+    private final RabbitTemplate rabbitTemplate;
 
     /**
      * 根据门店编号获取所属冰柜信息
@@ -240,13 +241,12 @@ public class IceBoxController {
         OrderPayResponse orderPayResponse = (OrderPayResponse) map.get("orderPayResponse");
         IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
         if (assetReportVo != null) {
-            DataPack dataPack = new DataPack(); // 数据包
-            dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
-            dataPack.setObj(Lists.newArrayList(assetReportVo));
-            ExecutorServiceFactory.getInstance().execute(() -> {
-                // 发送mq消息
-                directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
-            });
+            // 发送mq消息
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("lists", Lists.newArrayList(assetReportVo));
+            jsonObject.put("methodName", MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+            // 发送mq消息
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
         }
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
@@ -276,13 +276,12 @@ public class IceBoxController {
         OrderPayResponse orderPayResponse = (OrderPayResponse) map.get("orderPayResponse");
         IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
         if (assetReportVo != null) {
-            DataPack dataPack = new DataPack(); // 数据包
-            dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
-            dataPack.setObj(Lists.newArrayList(assetReportVo));
-            ExecutorServiceFactory.getInstance().execute(() -> {
-                // 发送mq消息
-                directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
-            });
+            // 发送mq消息
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("lists", Lists.newArrayList(assetReportVo));
+            jsonObject.put("methodName", MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+            // 发送mq消息
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
     }
@@ -301,13 +300,14 @@ public class IceBoxController {
             //修改订单信息
             IceBoxAssetReportVo assetReportVo = icePutOrderService.notifyOrderInfo(orderPayBack);
             if (assetReportVo != null) {
-                DataPack dataPack = new DataPack(); // 数据包
-                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
-                dataPack.setObj(Lists.newArrayList(assetReportVo));
-                ExecutorServiceFactory.getInstance().execute(() -> {
-                    // 发送mq消息
-                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
-                });
+
+                // 发送mq消息
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("lists", Lists.newArrayList(assetReportVo));
+                jsonObject.put("methodName", MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                // 发送mq消息
+                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+
             }
 
         }
@@ -328,13 +328,12 @@ public class IceBoxController {
 
         if (flag) {
             if (assetReportVo != null) {
-                DataPack dataPack = new DataPack(); // 数据包
-                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
-                dataPack.setObj(Lists.newArrayList(assetReportVo));
-                ExecutorServiceFactory.getInstance().execute(() -> {
-                    // 发送mq消息
-                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
-                });
+                // 发送mq消息
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("lists", Lists.newArrayList(assetReportVo));
+                jsonObject.put("methodName", MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                // 发送mq消息
+                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
             }
 
             return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
@@ -475,13 +474,11 @@ public class IceBoxController {
          *  将报表中导入数据库中的数据异步更新到报表中
          */
         if (CollectionUtils.isNotEmpty(lists)) {
-            DataPack dataPack = new DataPack(); // 数据包
-            dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
-            dataPack.setObj(lists);
-            ExecutorServiceFactory.getInstance().execute(() -> {
-                // 发送mq消息
-                directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
-            });
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("lists", lists);
+            jsonObject.put("methodName", MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+            // 发送mq消息
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
         }
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
@@ -543,13 +540,12 @@ public class IceBoxController {
             flag = (boolean) map.get("boo");
             IceBoxAssetReportVo assetReportVo = (IceBoxAssetReportVo) map.get("assetReportVo");
             if (assetReportVo != null) {
-                DataPack dataPack = new DataPack(); // 数据包
-                dataPack.setMethodName(MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
-                dataPack.setObj(Lists.newArrayList(assetReportVo));
-                ExecutorServiceFactory.getInstance().execute(() -> {
-                    // 发送mq消息
-                    directProducer.sendMsg(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, dataPack);
-                });
+                // 发送mq消息
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("lists", Lists.newArrayList(assetReportVo));
+                jsonObject.put("methodName", MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+                // 发送mq消息
+                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
             }
 
             // 订单未完成时, 长连接时间判断

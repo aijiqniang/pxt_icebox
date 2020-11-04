@@ -92,20 +92,10 @@
             <groupId>com.szeastroc</groupId>
             <artifactId>user-client</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.szeastroc</groupId>
             <artifactId>customer-client</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.szeastroc</groupId>
-            <artifactId>report-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.szeastroc</groupId>
-            <artifactId>report-client</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>dom4j</groupId>
             <artifactId>dom4j</artifactId>

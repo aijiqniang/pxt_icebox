@@ -50,7 +50,6 @@ import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
-import com.szeastroc.icebox.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignDeptClient;
@@ -359,27 +358,27 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Set<Integer> keySet = sessionUserInfoMap.keySet();
         for (Integer key : keySet) {
             SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(key);
-            if(userInfoVo == null){
+            if (userInfoVo == null) {
                 continue;
             }
-            if(DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())){
+            if (DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())) {
                 serviceUser = userInfoVo;
             }
-            if(DeptTypeEnum.LARGE_AREA.getType().equals(userInfoVo.getDeptType())){
+            if (DeptTypeEnum.LARGE_AREA.getType().equals(userInfoVo.getDeptType())) {
                 regionUser = userInfoVo;
                 continue;
             }
         }
 
-        if(serviceUser == null ){
+        if (serviceUser == null) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到服务处负责人！");
         }
         userIds.add(serviceUser.getId());
-        if(regionLeaderCheck){
-            if(regionUser == null ){
+        if (regionLeaderCheck) {
+            if (regionUser == null) {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到大区负责人！");
             }
-            if(!userIds.contains(regionUser.getId())){
+            if (!userIds.contains(regionUser.getId())) {
                 userIds.add(regionUser.getId());
             }
         }

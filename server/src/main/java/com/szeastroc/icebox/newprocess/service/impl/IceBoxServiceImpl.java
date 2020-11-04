@@ -2256,6 +2256,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         oldIceBoxSignNotice.setUpdateTime(new Date());
                         oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                     }
+                    IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                            .eq(IcePutApply::getStoreSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()).last("limit 1"));
+                    if(icePutApply != null){
+                        icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+                        icePutApply.setUpdateTime(new Date());
+                        icePutApplyDao.updateById(icePutApply);
+                    }
                 }
                 //发送mq消息,同步申请数据到报表
                 CompletableFuture.runAsync(() -> {
@@ -2264,6 +2271,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     report.setApplyNumber(iceBoxExtend.getLastApplyNumber());
                     report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                     report.setOperateType(OperateTypeEnum.UPDATE.getType());
+                    log.info("旧冰柜签收通知报表-----》【{}】",JSON.toJSONString(report));
                     rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
                 }, ExecutorServiceFactory.getInstance());
                 return iceBoxStatusVo;
@@ -3513,6 +3521,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IceBoxStatusVo iceBoxStatusVo = new IceBoxStatusVo();
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
         log.info("签收的旧冰柜id--》【{}】,pxtNumber--》【{}】", id, pxtNumber);
+
         return getIceBoxStatusVo(pxtNumber, iceBoxStatusVo, iceBoxExtend);
     }
 

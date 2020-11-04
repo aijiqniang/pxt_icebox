@@ -138,6 +138,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final RabbitTemplate rabbitTemplate;
     private final IceBoxChangeHistoryDao iceBoxChangeHistoryDao;
     private final IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
+    private final IceBoxPutReportDao iceBoxPutReportDao;
 
 
     @Override
@@ -2280,6 +2281,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
                 //发送mq消息,同步申请数据到报表
                 CompletableFuture.runAsync(() -> {
+                    if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
+                        IceBoxPutReport report = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                                .eq(IceBoxPutReport::getIceBoxModelId, iceBox.getModelId())
+                                .eq(IceBoxPutReport::getSupplierId, iceBox.getSupplierId())
+                                .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
+                        if(report != null){
+                            report.setIceBoxAssetId(iceBox.getAssetId());
+                            iceBoxPutReportDao.updateById(report);
+                        }
+                    }
                     IceBoxPutReportMsg report = new IceBoxPutReportMsg();
                     report.setIceBoxAssetId(iceBox.getAssetId());
                     report.setApplyNumber(iceBoxExtend.getLastApplyNumber());

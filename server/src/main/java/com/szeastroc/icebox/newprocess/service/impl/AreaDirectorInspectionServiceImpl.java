@@ -50,7 +50,7 @@ public class AreaDirectorInspectionServiceImpl implements InspectionService, Ini
             Integer id = childDept.getId();
             LambdaQueryWrapper<IceBoxPutReport> wrapper = Wrappers.<IceBoxPutReport>lambdaQuery();
             LambdaQueryWrapper<IceBoxExamineExceptionReport> exceptionReportWrapper = Wrappers.<IceBoxExamineExceptionReport>lambdaQuery();
-            wrapper.eq(IceBoxPutReport::getRegionDeptId, id);
+            wrapper.eq(IceBoxPutReport::getServiceDeptId, id);
             exceptionReportWrapper.eq(IceBoxExamineExceptionReport::getRegionDeptId, id);
             String firstDay = new DateTime().dayOfMonth().withMinimumValue().toString("yyyy-MM-dd");
             String lastDay = new DateTime().dayOfMonth().withMaximumValue().toString("yyyy-MM-dd");

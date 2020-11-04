@@ -73,6 +73,7 @@ public class AreaDirectorInspectionServiceImpl implements InspectionService, Ini
                     .putCount(putCount)
                     .rate(percent)
                     .noInspection(noInspection)
+                    .deptId(childDept.getId())
                     .deptName(childDept.getName())
                     .build();
             list.add(vo);

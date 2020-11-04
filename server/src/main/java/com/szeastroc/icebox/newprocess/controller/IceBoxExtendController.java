@@ -14,7 +14,7 @@ import com.szeastroc.icebox.newprocess.vo.CodeVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
-import com.szeastroc.icebox.vo.DataPack;
+import com.szeastroc.report.DataPack;
 import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.session.UserManageVo;

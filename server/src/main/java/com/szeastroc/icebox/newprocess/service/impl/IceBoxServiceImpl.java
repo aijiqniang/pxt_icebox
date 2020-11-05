@@ -58,10 +58,8 @@ import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.icebox.vo.IceBoxRequest;
 import com.szeastroc.icebox.vo.IceBoxTransferHistoryVo;
-import com.szeastroc.user.client.FeignCacheClient;
-import com.szeastroc.user.client.FeignDeptClient;
-import com.szeastroc.user.client.FeignUserClient;
-import com.szeastroc.user.client.FeignXcxBaseClient;
+import com.szeastroc.user.client.*;
+import com.szeastroc.user.common.session.MatchRuleVo;
 import com.szeastroc.user.common.session.UserManageVo;
 import com.szeastroc.user.common.vo.*;
 import com.szeastroc.visit.client.FeignBacklogClient;
@@ -139,6 +137,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxChangeHistoryDao iceBoxChangeHistoryDao;
     private final IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
     private final IceBoxPutReportDao iceBoxPutReportDao;
+    private final FeignDeptRuleClient feignDeptRuleClient;
 
 
     @Override
@@ -1815,6 +1814,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
         BigDecimal totalMoney = new BigDecimal(0);
         Date now = new Date();
+
+        //查询冰柜投放规则
+        MatchRuleVo matchRuleVo = new MatchRuleVo();
+        matchRuleVo.setOpreateType(3);
+        matchRuleVo.setDeptId(iceBoxRequestVo.getMarketAreaId());
+        matchRuleVo.setType(2);
+        SysRuleIceDetailVo ruleIceDetailVo = FeignResponseUtil.getFeignData(feignDeptRuleClient.matchIceRule(matchRuleVo));
+        Integer freeType = null;
+        if(ruleIceDetailVo != null){
+            freeType = FreePayTypeEnum.UN_FREE.getType();
+            if(ruleIceDetailVo.getIsNoDeposit().equals(1)){
+                freeType = FreePayTypeEnum.IS_FREE.getType();
+            }
+        }
         for (IceBoxRequestVo requestVo : requestNewVos) {
             for (int i = 0; i < requestVo.getApplyCount(); i++) {
 
@@ -1852,14 +1865,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 .build();
                         putStoreRelateModelDao.insert(relateModel);
 
+
+                        if(freeType == null){
+                            freeType = requestVo.getFreeType();
+                        }
                         ApplyRelatePutStoreModel applyRelatePutStoreModel = ApplyRelatePutStoreModel.builder()
                                 .applyNumber(applyNumber)
                                 .storeRelateModelId(relateModel.getId())
-                                .freeType(requestVo.getFreeType())
+                                .freeType(freeType)
                                 .build();
                         applyRelatePutStoreModelDao.insert(applyRelatePutStoreModel);
                         //发送mq消息,同步申请数据到报表
+                        Integer isFree = freeType;
                         CompletableFuture.runAsync(() -> {
+                            requestVo.setFreeType(isFree);
                             buildReportAndSendMq(requestVo, applyNumber, now);
                         }, ExecutorServiceFactory.getInstance());
                     }

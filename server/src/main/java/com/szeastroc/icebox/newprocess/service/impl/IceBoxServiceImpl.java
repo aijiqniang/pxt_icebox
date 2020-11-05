@@ -3506,6 +3506,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 icePutApplyRelateBoxDao.insert(relateBox);
             }
             //发送mq消息,同步申请数据到报表
+            Integer userId = mainUserId;
             CompletableFuture.runAsync(() -> {
                 IceBoxRequestVo requestVo = new IceBoxRequestVo();
                 requestVo.setMarketAreaId(iceBox.getDeptId());
@@ -3515,6 +3516,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 requestVo.setFreeType(FreePayTypeEnum.IS_FREE.getType());
                 requestVo.setStoreNumber(iceBox.getPutStoreNumber());
                 requestVo.setStoreType(SupplierTypeEnum.IS_STORE.getType());
+                requestVo.setUserId(userId);
                 if (iceBox.getPutStoreNumber().contains("C7") || iceBox.getPutStoreNumber().contains("C8")) {
                     SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
                     if (supplier != null) {

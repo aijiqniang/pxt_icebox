@@ -224,14 +224,14 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
 
                 String supplierNumber = oldIceBoxImportVo.getSupplierNumber();
-
-                if (StringUtils.isBlank(supplierNumber)) {
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商编号为空，请补充经销商编号");
-                }
-
-                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
-                if (null == subordinateInfoVo.getSupplierId()) {
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
+                SubordinateInfoVo subordinateInfoVo = null;
+                if (StringUtils.isNotBlank(supplierNumber)) {
+                    SubordinateInfoVo feignData = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
+                    if (null == feignData.getSupplierId()) {
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
+                    } else {
+                        subordinateInfoVo = feignData;
+                    }
                 }
                 String service = oldIceBoxImportVo.getService();
 
@@ -245,7 +245,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 if (null != iceBox) {
                     // 更新冰柜状态及经销商信息
                     iceBox.setDeptId(serviceDeptId);
-                    iceBox.setSupplierId(subordinateInfoVo.getSupplierId());
+                    iceBox.setSupplierId(null == subordinateInfoVo ? null : subordinateInfoVo.getSupplierId());
 //                    iceBox.setPutStoreNumber("0");
 //                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
                     iceBox.setStatus(IceBoxEnums.StatusEnum.SCRAP.getType());
@@ -256,7 +256,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBox = new IceBox();
                     IceBoxExtend iceBoxExtend = new IceBoxExtend();
                     iceBox.setDeptId(serviceDeptId);
-                    iceBox.setSupplierId(subordinateInfoVo.getSupplierId());
+                    iceBox.setSupplierId(null == subordinateInfoVo ? null : subordinateInfoVo.getSupplierId());
                     iceBox.setAssetId(assetId);
                     iceBoxExtend.setAssetId(assetId);
                     // 冰柜名称
@@ -307,13 +307,14 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
                 String supplierNumber = oldIceBoxImportVo.getSupplierNumber();
 
-                if (StringUtils.isBlank(supplierNumber)) {
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商编号为空，请补充经销商编号");
-                }
-
-                SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
-                if (null == subordinateInfoVo.getSupplierId()) {
-                    throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
+                SubordinateInfoVo subordinateInfoVo = null;
+                if (StringUtils.isNotBlank(supplierNumber)) {
+                    SubordinateInfoVo feignData = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
+                    if (null == feignData.getSupplierId()) {
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
+                    } else {
+                        subordinateInfoVo = feignData;
+                    }
                 }
                 String service = oldIceBoxImportVo.getService();
 
@@ -327,7 +328,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 if (null != iceBox) {
                     // 更新冰柜状态及经销商信息
                     iceBox.setDeptId(serviceDeptId);
-                    iceBox.setSupplierId(subordinateInfoVo.getSupplierId());
+                    iceBox.setSupplierId(null == subordinateInfoVo ? null : subordinateInfoVo.getSupplierId());
                     iceBox.setStatus(IceBoxEnums.StatusEnum.LOSE.getType());
                     iceBoxDao.updateById(iceBox);
                 } else {
@@ -336,7 +337,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBox = new IceBox();
                     IceBoxExtend iceBoxExtend = new IceBoxExtend();
                     iceBox.setDeptId(serviceDeptId);
-                    iceBox.setSupplierId(subordinateInfoVo.getSupplierId());
+                    iceBox.setSupplierId(null == subordinateInfoVo ? null : subordinateInfoVo.getSupplierId());
                     iceBox.setAssetId(assetId);
                     iceBoxExtend.setAssetId(assetId);
                     // 冰柜名称

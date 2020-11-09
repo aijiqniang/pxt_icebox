@@ -258,6 +258,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         icePutApplyDao.insert(icePutApply);
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
         BigDecimal totalMoney = new BigDecimal(0);
+        //查询冰柜投放规则
+        MatchRuleVo matchRuleVo = new MatchRuleVo();
+        matchRuleVo.setOpreateType(3);
+        matchRuleVo.setDeptId(iceBoxRequestVo.getMarketAreaId());
+        matchRuleVo.setType(2);
+        SysRuleIceDetailVo ruleIceDetailVo = FeignResponseUtil.getFeignData(feignDeptRuleClient.matchIceRule(matchRuleVo));
+        Integer freeType = null;
+        if(ruleIceDetailVo != null){
+            freeType = FreePayTypeEnum.UN_FREE.getType();
+            if(ruleIceDetailVo.getIsNoDeposit().equals(1)){
+                freeType = FreePayTypeEnum.IS_FREE.getType();
+            }
+        }
         for (IceBoxRequestVo requestVo : iceBoxRequestVos) {
             for (int i = 0; i < requestVo.getApplyCount(); i++) {
                 List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, requestVo.getModelId()).eq(IceBox::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
@@ -352,7 +365,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             regionLeaderCheck = true;
         }
         map.put("isCheck", 0);
-        map = createIceBoxPutExamine(iceBoxRequestVo, applyNumber, iceBoxModels, regionLeaderCheck);
+        map = createIceBoxPutExamine(iceBoxRequestVo, applyNumber, iceBoxModels, regionLeaderCheck, ruleIceDetailVo);
         List<SessionExamineVo.VisitExamineNodeVo> iceBoxPutExamine = (List<SessionExamineVo.VisitExamineNodeVo>) map.get("iceBoxPutExamine");
         if (CollectionUtil.isNotEmpty(iceBoxPutExamine)) {
             SessionExamineVo.VisitExamineNodeVo visitExamineNodeVo = iceBoxPutExamine.get(0);
@@ -362,60 +375,835 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         return map;
     }
 
-    private Map<String, Object> createIceBoxPutExamine(IceBoxRequestVo iceBoxRequestVo, String applyNumber, List<IceBoxPutModel.IceBoxModel> iceBoxModels, boolean regionLeaderCheck) {
-        // 创建审批流
+    private Map<String, Object> createIceBoxPutExamine(IceBoxRequestVo iceBoxRequestVo, String applyNumber, List<IceBoxPutModel.IceBoxModel> iceBoxModels, boolean regionLeaderCheck, SysRuleIceDetailVo ruleIceDetailVo) {
         Map<String, Object> map = new HashMap<>();
         map.put("iceBoxPutExamine", new ArrayList<>());
-        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(iceBoxRequestVo.getUserId()));
-        Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
-        List<Integer> userIds = new ArrayList<>();
 
-        if (CollectionUtil.isEmpty(sessionUserInfoMap)) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
-        }
+        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserByIdAndDept(iceBoxRequestVo.getUserId(),iceBoxRequestVo.getUserMarketAreaId()));
+        Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(iceBoxRequestVo.getUserMarketAreaId()));
+        List<Integer> ids = new ArrayList<Integer>();
         //获取上级部门领导
+        SessionUserInfoVo groupUser = new SessionUserInfoVo();
         SessionUserInfoVo serviceUser = new SessionUserInfoVo();
         SessionUserInfoVo regionUser = new SessionUserInfoVo();
+        SessionUserInfoVo businessUser = new SessionUserInfoVo();
         Set<Integer> keySet = sessionUserInfoMap.keySet();
         for (Integer key : keySet) {
             SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(key);
-            if (userInfoVo == null) {
+            if(userInfoVo == null){
                 continue;
             }
-            if (DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())) {
+            if(DeptTypeEnum.GROUP.getType().equals(userInfoVo.getDeptType())){
+                groupUser = userInfoVo;
+                if(userInfoVo.getId() == null){
+                    groupUser = null;
+                }
+                continue;
+            }
+            if(DeptTypeEnum.SERVICE.getType().equals(userInfoVo.getDeptType())){
                 serviceUser = userInfoVo;
-            }
-            if (DeptTypeEnum.LARGE_AREA.getType().equals(userInfoVo.getDeptType())) {
-                regionUser = userInfoVo;
+                if(userInfoVo.getId() == null){
+                    serviceUser = null;
+                }
                 continue;
             }
+            if(DeptTypeEnum.LARGE_AREA.getType().equals(userInfoVo.getDeptType())){
+                regionUser = userInfoVo;
+                if(userInfoVo.getId() == null){
+                    regionUser = null;
+                }
+                continue;
+            }
+            if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(userInfoVo.getDeptType())){
+                businessUser = userInfoVo;
+                if(userInfoVo.getId() == null){
+                    businessUser = null;
+                }
+                continue;
+            }
+
         }
-        if(simpleUserInfoVo != null && DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType()) && simpleUserInfoVo.getIsLearder().equals(1)){
-            IceBoxRequest iceBoxRequest = new IceBoxRequest();
-            iceBoxRequest.setApplyNumber(applyNumber);
-            iceBoxRequest.setUpdateBy(serviceUser.getId());
-            iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
-            map.put("isCheck", 1);
+        if(ruleIceDetailVo != null){
+            //规则设置：不需审批
+            if(!ruleIceDetailVo.getIsApproval()){
+                IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                iceBoxRequest.setApplyNumber(applyNumber);
+                iceBoxRequest.setUpdateBy(serviceUser.getId());
+                iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                map.put("isCheck", 1);
+                return map;
+            }
+
+            //最高组审批
+            if(ExamineLastApprovalEnum.GROUP.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
+                if(groupUser == null || groupUser.getId() == null){
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
+                }
+                //申请人组长本人或部门是高于组的，直接置为审核状态
+                if (simpleUserInfoVo.getId().equals(groupUser.getId())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.SERVICE.getType())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.LARGE_AREA.getType())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.BUSINESS_UNIT.getType())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {
+                    IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                    iceBoxRequest.setApplyNumber(applyNumber);
+                    iceBoxRequest.setUpdateBy(serviceUser.getId());
+                    iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                    iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                    map.put("isCheck", 1);
+                    return map;
+                }
+                ids.add(groupUser.getId());
+                if (CollectionUtil.isEmpty(ids)) {
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+                }
+                createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                return map;
+            }
+
+            List<String> skipNodeList = new ArrayList<>();
+            String skipNode = ruleIceDetailVo.getSkipNode();
+            if(StringUtils.isNotBlank(skipNode)){
+                String[] skipNodeArr = skipNode.split(",");
+                if(skipNodeArr != null){
+                    skipNodeList = Arrays.asList(skipNodeArr);
+                }
+            }
+            /**
+             * 最高服务处审批
+             * 1、是否只需上级审批
+             * 1.1、是，判断是否跳过了审批节点。跳过节点找最接近的上级，没跳过取上级
+             * 1.2、否，判断是否跳过了审批节点。跳过节点找低于最高节点的其他节点，没跳过正常取
+             */
+
+            if(ExamineLastApprovalEnum.SERVICE.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
+
+
+                //申请人服务处领导或者部门是高于服务处的，直接置为审核状态
+                if (simpleUserInfoVo.getId().equals(serviceUser.getId())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.LARGE_AREA.getType())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.BUSINESS_UNIT.getType())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {
+
+                    IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                    iceBoxRequest.setApplyNumber(applyNumber);
+                    iceBoxRequest.setUpdateBy(serviceUser.getId());
+                    iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                    iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                    map.put("isCheck", 1);
+                    return map;
+                }
+
+                //规则设置：是否上级审批
+                if(ruleIceDetailVo.getIsLeaderApproval()){
+                    /**
+                     * 需要上级审批
+                     * 规则设置：需要跳过的节点
+                     */
+                    if(CollectionUtil.isEmpty(skipNodeList)){
+                        /**
+                         * 不存在需要跳过的节点
+                         * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批审批
+                         */
+                        SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                        }
+
+                        if(userInfoVo == null || userInfoVo.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
+                        }
+                        if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                            IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                            iceBoxRequest.setApplyNumber(applyNumber);
+                            iceBoxRequest.setUpdateBy(serviceUser.getId());
+                            iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            map.put("isCheck", 1);
+                            return map;
+                        }
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
+                        createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                        return map;
+                    }
+                }
+
+
+                /**
+                 * 需要或者不需要上级审批，由于最高审批是服务处，所以跳过的只能是组，直接取服务处经理审批；没有跳过的就全部审批
+                 */
+                if(CollectionUtil.isNotEmpty(skipNodeList)){
+                    if(serviceUser == null || serviceUser.getId() == null){
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+                    }
+                    if(!ids.contains(serviceUser.getId())){
+                        ids.add(serviceUser.getId());
+                    }
+                    createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                    return map;
+                }else {
+                    if(groupUser == null || groupUser.getId() == null){
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
+                    }
+                    if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                        ids.add(groupUser.getId());
+                    }
+
+                    if(serviceUser == null || serviceUser.getId() == null){
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+                    }
+                    if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
+                        ids.add(serviceUser.getId());
+                    }
+                    createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                    return map;
+                }
+
+            }
+
+            //最高大区审批
+            if(ExamineLastApprovalEnum.LARGE_AREA.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
+                //申请人大区领导或者部门是高于大区的，直接置为审核状态
+                if (simpleUserInfoVo.getId().equals(regionUser.getId())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.BUSINESS_UNIT.getType())
+                        || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {
+                    IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                    iceBoxRequest.setApplyNumber(applyNumber);
+                    iceBoxRequest.setUpdateBy(serviceUser.getId());
+                    iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                    iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                    map.put("isCheck", 1);
+                    return map;
+                }
+
+                //规则设置：是否上级审批
+                if(ruleIceDetailVo.getIsLeaderApproval()){
+                    /**
+                     * 需要上级审批
+                     * 规则设置：需要跳过的节点
+                     */
+                    if(CollectionUtil.isEmpty(skipNodeList)){
+                        /**
+                         * 不存在需要跳过的节点
+                         * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批
+                         */
+                        SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
+                            }
+                        }
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                        }
+                        if(userInfoVo == null || userInfoVo.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
+                        }
+                        if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                            IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                            iceBoxRequest.setApplyNumber(applyNumber);
+                            iceBoxRequest.setUpdateBy(serviceUser.getId());
+                            iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            map.put("isCheck", 1);
+                            return map;
+                        }
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
+                        createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                        return map;
+                    }else {
+                        /**
+                         * 存在需要跳过的节点
+                         * 查找最近的领导，判断创建人是否和领导为同一人，是：直接审批通过；否：领导审批
+                         * 允许跳过的节点(1-服务组 2-服务处 3-大区 4-事业部)
+                         */
+                        List<Integer> allNodes = new ArrayList<>();
+                        allNodes.add(1);
+                        allNodes.add(2);
+                        allNodes.add(3);
+                        Iterator<Integer> iterator = allNodes.iterator();
+
+                        while (iterator.hasNext()){
+                            Integer next = iterator.next();
+                            if(skipNode.contains(next+"")){
+                                iterator.remove();
+                            }
+                        }
+                        SessionUserInfoVo userInfoVo = null;
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                if(allNodes.contains(2)){
+                                    userInfoVo = serviceUser;
+                                }
+                                if(!allNodes.contains(2) && allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
+                            }else {
+                                if(allNodes.contains(1)){
+                                    userInfoVo = groupUser;
+                                }
+                                if(!allNodes.contains(1) && allNodes.contains(2)){
+                                    userInfoVo = serviceUser;
+                                }
+                                if(!allNodes.contains(1) && !allNodes.contains(2) && allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
+                            }
+                        }
+
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
+                            }else {
+                                if(allNodes.contains(2)){
+                                    userInfoVo = serviceUser;
+                                }
+                                if(!allNodes.contains(2) && allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
+                            }
+                        }
+
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                        }
+
+                        if(userInfoVo == null || userInfoVo.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到领导审批！");
+                        }
+                        if ((userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                            IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                            iceBoxRequest.setApplyNumber(applyNumber);
+                            iceBoxRequest.setUpdateBy(serviceUser.getId());
+                            iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            map.put("isCheck", 1);
+                            return map;
+                        }
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
+                        createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                        return map;
+
+                    }
+                }
+                /**
+                 * 不需要上级审批
+                 * 不需要跳过，全部审批
+                 * 需要跳过，剩下的审批
+                 */
+                if(CollectionUtil.isEmpty(skipNodeList)){
+                    if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                        if(regionUser == null || regionUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
+                        }
+
+                        if(serviceUser == null || serviceUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+                        }
+
+                        if(simpleUserInfoVo.getIsLearder().equals(0)){
+                            if(groupUser == null || groupUser.getId() == null){
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
+                            }
+                            if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                                ids.add(groupUser.getId());
+                            }
+                        }
+
+
+                        if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
+                            ids.add(serviceUser.getId());
+                        }
+
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
+                            ids.add(regionUser.getId());
+                        }
+
+                        if (CollectionUtil.isEmpty(ids)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+                        }
+                    }
+                    if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                        if(regionUser == null || regionUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
+                        }
+
+                        if(simpleUserInfoVo.getIsLearder().equals(0)){
+                            if(serviceUser == null || serviceUser.getId() == null){
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+                            }
+
+                            if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
+                        }
+
+
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
+                            ids.add(regionUser.getId());
+                        }
+
+                        if (CollectionUtil.isEmpty(ids)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+                        }
+                    }
+
+                    if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                        if(regionUser == null || regionUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
+                        }
+
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
+                            ids.add(regionUser.getId());
+                        }
+
+                        if (CollectionUtil.isEmpty(ids)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+                        }
+                    }
+                    createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                    return map;
+                }else {
+                    List<Integer> allNodes = new ArrayList<>();
+                    allNodes.add(1);
+                    allNodes.add(2);
+                    allNodes.add(3);
+                    Iterator<Integer> iterator = allNodes.iterator();
+
+                    while (iterator.hasNext()){
+                        Integer next = iterator.next();
+                        if(skipNode.contains(next+"")){
+                            iterator.remove();
+                        }
+                    }
+
+                    if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                        if(simpleUserInfoVo.getIsLearder().equals(1)){
+                            if(allNodes.contains(2) && !ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
+                        }else {
+                            if(allNodes.contains(1) && !ids.contains(groupUser.getId())){
+                                ids.add(groupUser.getId());
+                            }
+                            if(allNodes.contains(2) && !ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
+                        }
+                    }
+
+                    if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                        if(!simpleUserInfoVo.getIsLearder().equals(1)){
+                            if(allNodes.contains(2) && !ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
+                        }
+                    }
+
+                    if(allNodes.contains(3) && !ids.contains(regionUser.getId())){
+                        ids.add(regionUser.getId());
+                    }
+                    createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                    return map;
+                }
+
+            }
+
+            //最高事业部审批
+            if(ExamineLastApprovalEnum.BUSINESS_UNIT.getType().equals(ruleIceDetailVo.getLastApprovalNode())){
+
+                //申请人事业部领导或者部门是高于大区的，直接置为审核状态
+                if (simpleUserInfoVo.getId().equals(businessUser.getId()) || simpleUserInfoVo.getDeptType().equals(DeptTypeEnum.THIS_PART.getType())) {
+                    IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                    iceBoxRequest.setApplyNumber(applyNumber);
+                    iceBoxRequest.setUpdateBy(serviceUser.getId());
+                    iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                    iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                    map.put("isCheck", 1);
+                    return map;
+                }
+
+                //规则设置：是否上级审批
+                if(ruleIceDetailVo.getIsLeaderApproval()){
+                    /**
+                     * 需要上级审批
+                     * 规则设置：需要跳过的节点
+                     */
+                    if(CollectionUtil.isEmpty(skipNodeList)){
+                        /**
+                         * 不存在需要跳过的节点
+                         * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批
+                         */
+                        SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = groupUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = serviceUser;
+                            }
+                        }
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = serviceUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = regionUser;
+                            }
+                        }
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = regionUser;
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = businessUser;
+                            }
+                        }
+                        if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = businessUser;
+                        }
+                        if(userInfoVo == null || userInfoVo.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到上级领导！");
+                        }
+                        if ((userInfoVo.getId() != null && userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                            IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                            iceBoxRequest.setApplyNumber(applyNumber);
+                            iceBoxRequest.setUpdateBy(serviceUser.getId());
+                            iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            map.put("isCheck", 1);
+                            return map;
+                        }
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
+                        createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                        return map;
+                    }else {
+                        /**
+                         * 存在需要跳过的节点
+                         * 查找最近的领导，判断创建人是否和领导为同一人，是：直接审批通过；否：领导审批
+                         * 允许跳过的节点(1-服务组 2-服务处 3-大区 4-事业部)
+                         */
+                        List<Integer> allNodes = new ArrayList<>();
+                        allNodes.add(1);
+                        allNodes.add(2);
+                        allNodes.add(3);
+                        allNodes.add(4);
+                        Iterator<Integer> iterator = allNodes.iterator();
+
+                        while (iterator.hasNext()){
+                            Integer next = iterator.next();
+                            if(skipNode.contains(next+"")){
+                                iterator.remove();
+                            }
+                        }
+
+                        SessionUserInfoVo userInfoVo = null;
+                        if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                if(allNodes.contains(2)){
+                                    userInfoVo = serviceUser;
+                                }
+                                if(!allNodes.contains(2) && allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
+                            }else {
+                                if(allNodes.contains(1)){
+                                    userInfoVo = groupUser;
+                                }
+                                if(!allNodes.contains(1) && allNodes.contains(2)){
+                                    userInfoVo = serviceUser;
+                                }
+                                if(!allNodes.contains(1) && !allNodes.contains(2) && allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
+                                if(!allNodes.contains(1) && !allNodes.contains(2) && !allNodes.contains(3) && allNodes.contains(4)){
+                                    userInfoVo = businessUser;
+                                }
+                            }
+                        }
+
+                        if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                if(allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
+                                if(!allNodes.contains(3) && allNodes.contains(4)){
+                                    userInfoVo = businessUser;
+                                }
+
+                            }else {
+                                if(allNodes.contains(2)){
+                                    userInfoVo = serviceUser;
+                                }
+                                if(!allNodes.contains(2) && allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
+                                if(!allNodes.contains(2) && !allNodes.contains(3) && allNodes.contains(4)){
+                                    userInfoVo = businessUser;
+                                }
+                            }
+                        }
+
+                        if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                            if(simpleUserInfoVo.getIsLearder().equals(1)){
+                                userInfoVo = businessUser;
+                            }else {
+                                if(allNodes.contains(3)){
+                                    userInfoVo = regionUser;
+                                }
+                                if(!allNodes.contains(3) && allNodes.contains(4)){
+                                    userInfoVo = businessUser;
+                                }
+                            }
+                        }
+
+                        if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())){
+                            userInfoVo = businessUser;
+                        }
+
+                        if(userInfoVo == null || userInfoVo.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到领导审批！");
+                        }
+                        if ((userInfoVo.getId().equals(simpleUserInfoVo.getId()))) {
+                            IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                            iceBoxRequest.setApplyNumber(applyNumber);
+                            iceBoxRequest.setUpdateBy(serviceUser.getId());
+                            iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            map.put("isCheck", 1);
+                            return map;
+                        }
+                        if(!ids.contains(userInfoVo.getId())){
+                            ids.add(userInfoVo.getId());
+                        }
+                        createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                        return map;
+                    }
+                }
+                /**
+                 * 不需要上级审批
+                 * 不需要跳过，全部审批
+                 * 需要跳过，剩下的审批
+                 */
+                if(CollectionUtil.isEmpty(skipNodeList)){
+                    if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                        if(businessUser == null || businessUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部经理！");
+                        }
+
+                        if(regionUser == null || regionUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
+                        }
+
+                        if(serviceUser == null || serviceUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+                        }
+
+                        if(simpleUserInfoVo.getIsLearder().equals(0)){
+                            if(groupUser == null || groupUser.getId() == null){
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到组长！");
+                            }
+                            if(!ids.contains(groupUser.getId()) && !simpleUserInfoVo.getId().equals(groupUser.getId())){
+                                ids.add(groupUser.getId());
+                            }
+                        }
+
+
+                        if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
+                            ids.add(serviceUser.getId());
+                        }
+
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
+                            ids.add(regionUser.getId());
+                        }
+                        if(!ids.contains(businessUser.getId()) && !simpleUserInfoVo.getId().equals(businessUser.getId())){
+                            ids.add(businessUser.getId());
+                        }
+
+                        if (CollectionUtil.isEmpty(ids)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+                        }
+                    }
+                    if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+                        if(businessUser == null || businessUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部经理！");
+                        }
+
+                        if(regionUser == null || regionUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
+                        }
+
+                        if(simpleUserInfoVo.getIsLearder().equals(0)){
+                            if(serviceUser == null || serviceUser.getId() == null){
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到服务处经理！");
+                            }
+
+                            if(!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
+                        }
+
+
+                        if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
+                            ids.add(regionUser.getId());
+                        }
+                        if(!ids.contains(businessUser.getId()) && !simpleUserInfoVo.getId().equals(businessUser.getId())){
+                            ids.add(businessUser.getId());
+                        }
+
+                        if (CollectionUtil.isEmpty(ids)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+                        }
+                    }
+
+                    if(DeptTypeEnum.LARGE_AREA.getType().equals(simpleUserInfoVo.getDeptType())){
+                        if(businessUser == null || businessUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部经理！");
+                        }
+
+                        if(simpleUserInfoVo.getIsLearder().equals(0)){
+                            if(regionUser == null || regionUser.getId() == null){
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到大区经理！");
+                            }
+
+                            if(!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())){
+                                ids.add(regionUser.getId());
+                            }
+                        }
+
+                        if(!ids.contains(businessUser.getId()) && !simpleUserInfoVo.getId().equals(businessUser.getId())){
+                            ids.add(businessUser.getId());
+                        }
+
+                        if (CollectionUtil.isEmpty(ids)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+                        }
+                    }
+
+                    if(DeptTypeEnum.BUSINESS_UNIT.getType().equals(simpleUserInfoVo.getDeptType())){
+                        if(businessUser == null || businessUser.getId() == null){
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到事业部经理！");
+                        }
+                        if (CollectionUtil.isEmpty(ids)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+                        }
+                    }
+
+                    createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                    return map;
+                }else {
+                    List<Integer> allNodes = new ArrayList<>();
+                    allNodes.add(1);
+                    allNodes.add(2);
+                    allNodes.add(3);
+                    allNodes.add(4);
+                    Iterator<Integer> iterator = allNodes.iterator();
+
+                    while (iterator.hasNext()){
+                        Integer next = iterator.next();
+                        if(skipNode.contains(next+"")){
+                            iterator.remove();
+                        }
+                    }
+
+                    if(DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())){
+                        if(simpleUserInfoVo.getIsLearder().equals(1)){
+                            if(allNodes.contains(2) && !ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
+                            if(allNodes.contains(3) && !ids.contains(regionUser.getId())){
+                                ids.add(regionUser.getId());
+                            }
+                        }else {
+                            if(allNodes.contains(1) && !ids.contains(groupUser.getId())){
+                                ids.add(groupUser.getId());
+                            }
+                            if(allNodes.contains(2) && !ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
+                            if(allNodes.contains(3) && !ids.contains(regionUser.getId())){
+                                ids.add(regionUser.getId());
+                            }
+                        }
+                    }
+
+                    if(DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())){
+
+                        if(!simpleUserInfoVo.getIsLearder().equals(1)){
+                            if(allNodes.contains(2) && !ids.contains(serviceUser.getId())){
+                                ids.add(serviceUser.getId());
+                            }
+                        }
+                        if(allNodes.contains(3) && !ids.contains(regionUser.getId())){
+                            ids.add(regionUser.getId());
+                        }
+                    }
+
+                    if(allNodes.contains(4) && !ids.contains(businessUser.getId())){
+                        ids.add(businessUser.getId());
+                    }
+
+                    createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
+                    return map;
+                }
+            }
+        }else {
+            if(!regionLeaderCheck && simpleUserInfoVo != null && DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType()) && simpleUserInfoVo.getIsLearder().equals(1)){
+                IceBoxRequest iceBoxRequest = new IceBoxRequest();
+                iceBoxRequest.setApplyNumber(applyNumber);
+                iceBoxRequest.setUpdateBy(serviceUser.getId());
+                iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
+                iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                map.put("isCheck", 1);
+                return map;
+            }
+            if (serviceUser == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到服务处负责人！");
+            }
+            ids.add(serviceUser.getId());
+            if (regionLeaderCheck) {
+                if (regionUser == null) {
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到大区负责人！");
+                }
+                if (!ids.contains(regionUser.getId())) {
+                    ids.add(regionUser.getId());
+                }
+            }
+            if (CollectionUtil.isEmpty(ids)) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+            }
+            createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
             return map;
         }
-        if (serviceUser == null) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到服务处负责人！");
-        }
-        userIds.add(serviceUser.getId());
-        if (regionLeaderCheck) {
-            if (regionUser == null) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到大区负责人！");
-            }
-            if (!userIds.contains(regionUser.getId())) {
-                userIds.add(regionUser.getId());
-            }
-        }
-        if (CollectionUtil.isEmpty(userIds)) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
-        }
+        return map;
+    }
 
-//        List<Integer> userIds = Arrays.asList(5941, 2103,3088);
+    private void createIceBoxPutModel(IceBoxRequestVo iceBoxRequestVo, String applyNumber, List<IceBoxPutModel.IceBoxModel> iceBoxModels, Map<String, Object> map, SimpleUserInfoVo simpleUserInfoVo, List<Integer> userIds) {
         SessionExamineVo sessionExamineVo = new SessionExamineVo();
         IceBoxPutModel iceBoxPutModel = new IceBoxPutModel();
 
@@ -445,8 +1233,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         SessionExamineVo examineVo = FeignResponseUtil.getFeignData(feignExamineClient.createIceBoxPut(sessionExamineVo));
         List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = examineVo.getVisitExamineNodes();
         map.put("iceBoxPutExamine", visitExamineNodes);
-        return map;
-
     }
 
     private List<IceBoxVo> getIceBoxVosByBackApplys(List<IceBackApply> iceBackApplies) {
@@ -1804,7 +2590,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
+//    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     public Map<String, Object> submitApplyNew(List<IceBoxRequestVo> requestNewVos) throws InterruptedException {
         Map<String, Object> map = new HashMap<>();
         IceBoxRequestVo iceBoxRequestVo = requestNewVos.get(0);
@@ -1829,7 +2615,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Integer freeType = null;
         if(ruleIceDetailVo != null){
             freeType = FreePayTypeEnum.UN_FREE.getType();
-            if(ruleIceDetailVo.getIsNoDeposit().equals(1)){
+            if(ruleIceDetailVo.getIsNoDeposit()){
                 freeType = FreePayTypeEnum.IS_FREE.getType();
             }
         }
@@ -1909,7 +2695,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             regionLeaderCheck = true;
         }
         map.put("isCheck", 0);
-        map = createIceBoxPutExamine(iceBoxRequestVo, applyNumber, iceBoxModels, regionLeaderCheck);
+        map = createIceBoxPutExamine(iceBoxRequestVo, applyNumber, iceBoxModels, regionLeaderCheck, ruleIceDetailVo);
         List<SessionExamineVo.VisitExamineNodeVo> iceBoxPutExamine = (List<SessionExamineVo.VisitExamineNodeVo>) map.get("iceBoxPutExamine");
         if (CollectionUtil.isNotEmpty(iceBoxPutExamine)) {
             SessionExamineVo.VisitExamineNodeVo visitExamineNodeVo = iceBoxPutExamine.get(0);

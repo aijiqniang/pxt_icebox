@@ -64,8 +64,12 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
     private final RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    private IcePutOrderService icePutOrderService;
+
 
     @Override
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     public OrderPayResponse applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
 
         // 获取投放申请数据及对应冰柜的申请
@@ -95,7 +99,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                 }
             }
-            return createByFree(clientInfoRequest, iceBox);
+            return icePutOrderService.createByFree(clientInfoRequest, iceBox);
         }
 
         // 判断是否存在订单
@@ -180,7 +184,8 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         return createByUnFree(clientInfoRequest, iceBox, applyNumber);
     }
 
-    private OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceBox iceBox) throws ImproperOptionException {
+    @Override
+    public OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceBox iceBox) throws ImproperOptionException {
         //修改冰柜信息的投放状态
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         iceBoxDao.updateById(iceBox);

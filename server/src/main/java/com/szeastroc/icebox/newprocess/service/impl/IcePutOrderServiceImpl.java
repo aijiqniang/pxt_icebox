@@ -192,6 +192,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
         wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+        wrapper.eq(PutStoreRelateModel::getModelId, iceBox.getModelId());
         wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
         wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
         List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);

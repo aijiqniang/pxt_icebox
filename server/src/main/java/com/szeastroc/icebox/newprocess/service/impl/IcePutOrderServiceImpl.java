@@ -198,6 +198,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         if(CollectionUtil.isNotEmpty(relateModelList)){
             for(PutStoreRelateModel relateModel:relateModelList){
                 ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
+                log.info("处理不需要审批的冰柜信息,applyRelatePutStoreModel---》【{}】",JSON.toJSONString(applyRelatePutStoreModel));
                 if(applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())){
                     relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
                     relateModel.setUpdateTime(new Date());

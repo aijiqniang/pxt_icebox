@@ -426,11 +426,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if(ruleIceDetailVo != null){
             //规则设置：不需审批
             if(!ruleIceDetailVo.getIsApproval()){
+                log.info("该次冰柜申请不需要审批----》【{}】",applyNumber);
                 IceBoxRequest iceBoxRequest = new IceBoxRequest();
                 iceBoxRequest.setApplyNumber(applyNumber);
                 iceBoxRequest.setUpdateBy(serviceUser.getId());
                 iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                dealCheckPassIceBox(iceBoxRequest);
                 map.put("isCheck", 1);
                 return map;
             }
@@ -450,7 +451,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxRequest.setApplyNumber(applyNumber);
                     iceBoxRequest.setUpdateBy(serviceUser.getId());
                     iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                    iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                    dealCheckPassIceBox(iceBoxRequest);
                     map.put("isCheck", 1);
                     return map;
                 }
@@ -490,7 +491,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxRequest.setApplyNumber(applyNumber);
                     iceBoxRequest.setUpdateBy(serviceUser.getId());
                     iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                    iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                    dealCheckPassIceBox(iceBoxRequest);
                     map.put("isCheck", 1);
                     return map;
                 }
@@ -526,7 +527,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBoxRequest.setApplyNumber(applyNumber);
                             iceBoxRequest.setUpdateBy(serviceUser.getId());
                             iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            dealCheckPassIceBox(iceBoxRequest);
                             map.put("isCheck", 1);
                             return map;
                         }
@@ -581,7 +582,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxRequest.setApplyNumber(applyNumber);
                     iceBoxRequest.setUpdateBy(serviceUser.getId());
                     iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                    iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                    dealCheckPassIceBox(iceBoxRequest);
                     map.put("isCheck", 1);
                     return map;
                 }
@@ -621,7 +622,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBoxRequest.setApplyNumber(applyNumber);
                             iceBoxRequest.setUpdateBy(serviceUser.getId());
                             iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            dealCheckPassIceBox(iceBoxRequest);
                             map.put("isCheck", 1);
                             return map;
                         }
@@ -697,7 +698,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBoxRequest.setApplyNumber(applyNumber);
                             iceBoxRequest.setUpdateBy(serviceUser.getId());
                             iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            dealCheckPassIceBox(iceBoxRequest);
                             map.put("isCheck", 1);
                             return map;
                         }
@@ -844,7 +845,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxRequest.setApplyNumber(applyNumber);
                     iceBoxRequest.setUpdateBy(serviceUser.getId());
                     iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                    iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                    dealCheckPassIceBox(iceBoxRequest);
                     map.put("isCheck", 1);
                     return map;
                 }
@@ -890,7 +891,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBoxRequest.setApplyNumber(applyNumber);
                             iceBoxRequest.setUpdateBy(serviceUser.getId());
                             iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            dealCheckPassIceBox(iceBoxRequest);
                             map.put("isCheck", 1);
                             return map;
                         }
@@ -994,7 +995,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBoxRequest.setApplyNumber(applyNumber);
                             iceBoxRequest.setUpdateBy(serviceUser.getId());
                             iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                            dealCheckPassIceBox(iceBoxRequest);
                             map.put("isCheck", 1);
                             return map;
                         }
@@ -1178,7 +1179,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxRequest.setApplyNumber(applyNumber);
                 iceBoxRequest.setUpdateBy(serviceUser.getId());
                 iceBoxRequest.setMarketAreaId(iceBoxRequestVo.getMarketAreaId());
-                iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+                dealCheckPassIceBox(iceBoxRequest);
                 map.put("isCheck", 1);
                 return map;
             }
@@ -2852,12 +2853,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         //审批通过将冰箱置为投放中状态，商户签收将状态置为已投放
         if (IceBoxStatus.IS_PUTING.getStatus().equals(iceBoxRequest.getStatus())) {
-            iceBoxService.dealCheckPassIceBox(iceBoxRequest);
+            dealCheckPassIceBox(iceBoxRequest);
         }
     }
 
-    @Override
-    public void dealCheckPassIceBox(IceBoxRequest iceBoxRequest) {
+    private void dealCheckPassIceBox(IceBoxRequest iceBoxRequest) {
+        log.info("处理不需要审批的冰柜信息---》【{}】",JSON.toJSONString(iceBoxRequest));
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxRequest.getApplyNumber()));
         if (icePutApply != null) {
             icePutApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
@@ -2907,12 +2908,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 matchRuleVo.setDeptId(marketAreaId);
                 matchRuleVo.setType(2);
                 ruleIceDetailVo = FeignResponseUtil.getFeignData(feignDeptRuleClient.matchIceRule(matchRuleVo));
+                log.info("处理不需要审批的冰柜信息,规则---》【{}】",JSON.toJSONString(ruleIceDetailVo));
                 if(ruleIceDetailVo != null){
                     if(!ruleIceDetailVo.getIsSign()){
                         icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
                         icePutApplyDao.updateById(icePutApply);
                         //创建冰柜和投放申请编号的关联关系
                         IcePutApplyRelateBox isExist = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, icePutApply.getApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+                        log.info("处理不需要审批的冰柜信息,isExist---》【{}】",JSON.toJSONString(isExist));
                         if (isExist == null) {
                             IcePutApplyRelateBox applyRelateBox = new IcePutApplyRelateBox();
                             applyRelateBox.setApplyNumber(icePutApply.getApplyNumber());

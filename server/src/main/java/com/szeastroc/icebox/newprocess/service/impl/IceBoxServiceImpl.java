@@ -1359,60 +1359,113 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private List<IceBoxVo> getIceBoxVosByPutApplysNew(List<PutStoreRelateModel> relateModelList) {
         List<IceBoxVo> iceBoxVos = new ArrayList<>();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Map<Integer, List<PutStoreRelateModel>> relateModelGroup = relateModelList.stream().collect(Collectors.groupingBy(PutStoreRelateModel::getModelId));
+        Map<Integer, PutStoreRelateModel> relateModelMap = relateModelList.stream().collect(Collectors.toMap(PutStoreRelateModel::getId,x->x));
         Set<Integer> relateModelIds = relateModelList.stream().map(x -> x.getId()).collect(Collectors.toSet());
         List<ApplyRelatePutStoreModel> putStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().in(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModelIds));
         if (CollectionUtil.isEmpty(putStoreModels)) {
             log.info("查询不到申请投放信息和冰柜的关联关系");
             return iceBoxVos;
         }
-        Map<Integer, ApplyRelatePutStoreModel> putStoreModelMap = putStoreModels.stream().collect(Collectors.toMap(ApplyRelatePutStoreModel::getStoreRelateModelId, x -> x));
+        Map<String, List<ApplyRelatePutStoreModel>> putStoreModelByApplyNumberMap = putStoreModels.stream().collect(Collectors.groupingBy(ApplyRelatePutStoreModel::getApplyNumber));
+
         Set<String> applyNumbers = putStoreModels.stream().map(x -> x.getApplyNumber()).collect(Collectors.toSet());
         List<IcePutApply> icePutApplies = icePutApplyDao.selectList(Wrappers.<IcePutApply>lambdaQuery().in(IcePutApply::getApplyNumber, applyNumbers));
         if (CollectionUtil.isEmpty(icePutApplies)) {
             log.info("查询不到申请投放信息和冰柜的关联关系");
             return iceBoxVos;
         }
-        Map<String, IcePutApply> icePutApplyMap = icePutApplies.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
+//        Map<String, IcePutApply> icePutApplyMap = icePutApplies.stream().collect(Collectors.toMap(IcePutApply::getApplyNumber, x -> x));
         List<Integer> examineIds = icePutApplies.stream().map(x -> x.getExamineId()).collect(Collectors.toList());
         RequestExamineVo examineVo = new RequestExamineVo();
         examineVo.setExamineInfoIds(examineIds);
-        List<SessionExamineVo> sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
-        if (CollectionUtil.isEmpty(sessionExamineVos)) {
+        List<SessionExamineVo> sessionExamineVos = new ArrayList<>();
+        try {
+            sessionExamineVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByList(examineVo));
+        }catch (Exception e){
             log.info("投放查询不到审批流信息");
-            return iceBoxVos;
         }
-        for (SessionExamineVo sessionExamineVo : sessionExamineVos) {
-            String applyInfoStr = jedis.get(sessionExamineVo.getVisitExamineInfoVo().getRedisKey());
-            JSONObject applyInfo = JSON.parseObject(applyInfoStr);
-            JSONArray iceBoxModelList = applyInfo.getJSONArray("iceBoxModelList");
-            for (Object object : iceBoxModelList) {
-                IceBoxVo boxVo = new IceBoxVo();
-                JSONObject jsonObject = JSONObject.parseObject(object.toString());
-                boxVo.setStatusStr(IceBoxConstant.IS_APPLYING);
-                boxVo.setApplyNumber(applyInfo.getString("applyNumber"));
-                boxVo.setApplyCount(jsonObject.getInteger("applyCount"));
-                boxVo.setFreeType(jsonObject.getInteger("isFree"));
-                boxVo.setApplyTimeStr(applyInfo.getString("createTimeStr"));
-                boxVo.setChestModel(jsonObject.getString("iceBoxModel"));
-                boxVo.setChestName(jsonObject.getString("iceBoxName"));
-                boxVo.setDepositMoney(jsonObject.getBigDecimal("depositMoney"));
-                String supplierName = jsonObject.getString("supplierName");
-                boxVo.setSupplierName(supplierName);
-                List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
-                if (CollectionUtil.isNotEmpty(visitExamineNodes)) {
-                    List<ExamineNodeVo> nodeVos = new ArrayList<>();
-                    for (SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo : visitExamineNodes) {
-                        ExamineNodeVo nodeVo = new ExamineNodeVo();
-                        BeanUtils.copyProperties(sessionVisitExamineNodeVo, nodeVo);
-                        nodeVos.add(nodeVo);
+        String putStoreNumber = relateModelList.get(0).getPutStoreNumber();
+        if (CollectionUtil.isEmpty(sessionExamineVos)) {
+            for(String applyNumber:putStoreModelByApplyNumberMap.keySet()){
+                List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = putStoreModelByApplyNumberMap.get(applyNumber);
+                Map<String,Integer> countMap = new HashMap<>();
+                for(ApplyRelatePutStoreModel storeModel:applyRelatePutStoreModels){
+                    PutStoreRelateModel relateModel = relateModelMap.get(storeModel.getStoreRelateModelId());
+                    Integer value = countMap.get(relateModel.getModelId() + "_" + relateModel.getSupplierId());
+                    if(value == null){
+                        countMap.put(relateModel.getModelId() + "_" + relateModel.getSupplierId(),1);
+                    }else {
+                        countMap.put(relateModel.getModelId() + "_" + relateModel.getSupplierId(),Integer.sum(value,1));
                     }
-                    boxVo.setExamineNodeVoList(nodeVos);
                 }
-                iceBoxVos.add(boxVo);
-            }
+                for(String key:countMap.keySet()){
+                    String[] arr = key.split("_");
+                    Integer modelId = Integer.decode(arr[0]);
+                    Integer supplierId = Integer.decode(arr[1]);
+                    PutStoreRelateModel relateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getModelId, modelId)
+                            .eq(PutStoreRelateModel::getSupplierId, supplierId)
+                            .eq(PutStoreRelateModel::getPutStoreNumber, putStoreNumber)
+                            .eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus())
+                            .last("limit 1"));
 
+                    IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, modelId)
+                            .eq(IceBox::getSupplierId, supplierId)
+                            .last("limit 1"));
+                    Map<Integer, ApplyRelatePutStoreModel> putStoreModelMap = applyRelatePutStoreModels.stream().collect(Collectors.toMap(ApplyRelatePutStoreModel::getStoreRelateModelId,x->x));
+
+                    ApplyRelatePutStoreModel storeModel = putStoreModelMap.get(relateModel.getId());
+                    IceBoxVo boxVo = new IceBoxVo();
+
+                    boxVo.setStatusStr(IceBoxConstant.IS_APPLYING);
+                    boxVo.setApplyNumber(applyNumber);
+                    boxVo.setApplyCount(countMap.get(key));
+                    boxVo.setFreeType(storeModel.getFreeType());
+                    boxVo.setApplyTimeStr(dateFormat.format(relateModel.getCreateTime()));
+                    boxVo.setChestModel(iceBox.getModelName());
+                    boxVo.setChestName(iceBox.getChestName());
+                    boxVo.setDepositMoney(iceBox.getDepositMoney());
+
+                    SubordinateInfoVo supplierInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readById(supplierId));
+                    if(supplierInfoVo != null){
+                        boxVo.setSupplierName(supplierInfoVo.getName());
+                    }
+                    iceBoxVos.add(boxVo);
+                }
+            }
+        }else {
+            for (SessionExamineVo sessionExamineVo : sessionExamineVos) {
+                String applyInfoStr = jedis.get(sessionExamineVo.getVisitExamineInfoVo().getRedisKey());
+                JSONObject applyInfo = JSON.parseObject(applyInfoStr);
+                JSONArray iceBoxModelList = applyInfo.getJSONArray("iceBoxModelList");
+                for (Object object : iceBoxModelList) {
+                    IceBoxVo boxVo = new IceBoxVo();
+                    JSONObject jsonObject = JSONObject.parseObject(object.toString());
+                    boxVo.setStatusStr(IceBoxConstant.IS_APPLYING);
+                    boxVo.setApplyNumber(applyInfo.getString("applyNumber"));
+                    boxVo.setApplyCount(jsonObject.getInteger("applyCount"));
+                    boxVo.setFreeType(jsonObject.getInteger("isFree"));
+                    boxVo.setApplyTimeStr(applyInfo.getString("createTimeStr"));
+                    boxVo.setChestModel(jsonObject.getString("iceBoxModel"));
+                    boxVo.setChestName(jsonObject.getString("iceBoxName"));
+                    boxVo.setDepositMoney(jsonObject.getBigDecimal("depositMoney"));
+                    String supplierName = jsonObject.getString("supplierName");
+                    boxVo.setSupplierName(supplierName);
+                    List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+                    if (CollectionUtil.isNotEmpty(visitExamineNodes)) {
+                        List<ExamineNodeVo> nodeVos = new ArrayList<>();
+                        for (SessionExamineVo.VisitExamineNodeVo sessionVisitExamineNodeVo : visitExamineNodes) {
+                            ExamineNodeVo nodeVo = new ExamineNodeVo();
+                            BeanUtils.copyProperties(sessionVisitExamineNodeVo, nodeVo);
+                            nodeVos.add(nodeVo);
+                        }
+                        boxVo.setExamineNodeVoList(nodeVos);
+                    }
+                    iceBoxVos.add(boxVo);
+                }
+
+            }
         }
+
 
 //        Map<Integer, SessionExamineVo> sessionExamineVoMap = sessionExamineVos.stream().collect(Collectors.toMap(SessionExamineVo::getExamineInfoId, x -> x));
 //

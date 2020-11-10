@@ -3539,6 +3539,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (relateModel == null) {
                 throw new ImproperOptionException("不存在冰柜申请信息！");
             }
+            if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
+                throw new ImproperOptionException("该流程已存在被签收的冰柜！");
+            }
             relateModel.setCancelMsg(iceBoxVo.getCancelMsg());
             relateModel.setPutStatus(PutStatus.NO_PUT.getStatus());
             relateModel.setStatus(CommonStatus.INVALID.getStatus());

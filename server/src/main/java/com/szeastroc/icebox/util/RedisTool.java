@@ -1,6 +1,8 @@
 package com.szeastroc.icebox.util;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.params.SetParams;
+
 import java.util.Collections;
 
 public class RedisTool {
@@ -18,7 +20,11 @@ public class RedisTool {
      */
 
     public static boolean tryGetDistributedLock(Jedis jedis, String lockKey, String requestId, int expireTime) {
-        String result = jedis.set(lockKey, requestId, SET_IF_NOT_EXIST, SET_WITH_EXPIRE_TIME, expireTime);
+        //String result = jedis.set(lockKey, requestId, SET_IF_NOT_EXIST, SET_WITH_EXPIRE_TIME, expireTime);
+        SetParams setParams = new SetParams();
+        setParams.nx();
+        setParams.px(expireTime);
+        String result = jedis.set(lockKey, requestId, setParams);
         if (LOCK_SUCCESS.equals(result)) {
             System.out.println("=============="+Thread.currentThread().getName()+"===============  获取到锁,开始工作！");
             return true;

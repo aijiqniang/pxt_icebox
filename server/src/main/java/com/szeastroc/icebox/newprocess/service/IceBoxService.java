@@ -2,7 +2,8 @@ package com.szeastroc.icebox.newprocess.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
+import com.szeastroc.common.entity.customer.vo.SimpleSupplierInfoVo;
+import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
@@ -13,7 +14,6 @@ import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
-import com.szeastroc.icebox.vo.IceBoxRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

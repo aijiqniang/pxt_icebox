@@ -1,19 +1,14 @@
 package com.szeastroc.icebox.sync;
 
+import com.szeastroc.common.entity.customer.enums.SupplierTypeEnum;
+import com.szeastroc.common.entity.customer.vo.RequestCustomerVo;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.customer.client.FeignStoreClient;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.enums.SupplierTypeEnum;
-import com.szeastroc.customer.common.vo.RequestCustomerVo;
-import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
-import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
-import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.service.IceModelService;
 import com.szeastroc.icebox.oldprocess.entity.ClientInfo;
 import com.szeastroc.icebox.oldprocess.service.ClientInfoService;
-import com.szeastroc.icebox.oldprocess.service.IceChestInfoService;
-import com.szeastroc.icebox.oldprocess.service.IceChestPutRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,19 +21,9 @@ import java.util.Map;
 public class CommonConvert {
 
     @Autowired
-    private IceChestInfoService iceChestInfoService;
-    @Autowired
-    private IceBoxService iceBoxService;
-    @Autowired
-    private IceBoxExtendService iceBoxExtendService;
-    @Autowired
-    private IceModelService iceModelService;
-    @Autowired
     private FeignSupplierClient feignSupplierClient;
     @Autowired
     private ClientInfoService clientInfoService;
-    @Autowired
-    private IceChestPutRecordService iceChestPutRecordService;
     @Autowired
     private FeignStoreClient feignStoreClient;
 

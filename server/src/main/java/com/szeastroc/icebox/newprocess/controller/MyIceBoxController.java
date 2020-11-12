@@ -1,18 +1,17 @@
 package com.szeastroc.icebox.newprocess.controller;
 
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutApplyRelateBoxService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
-import com.szeastroc.icebox.vo.IceBoxRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;

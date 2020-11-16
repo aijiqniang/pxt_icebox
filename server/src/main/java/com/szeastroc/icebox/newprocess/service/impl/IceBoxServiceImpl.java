@@ -2624,6 +2624,17 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             relateModel.setUpdateByName(iceBoxVo.getUserName());
             relateModel.setUpdateTime(new Date());
             putStoreRelateModelDao.updateById(relateModel);
+
+            List<IceBoxPutReport> iceBoxPutReports = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
+            if(CollectionUtil.isNotEmpty(iceBoxPutReports)){
+                for(IceBoxPutReport putReport:iceBoxPutReports){
+                    putReport.setPutStatus(PutStatus.IS_CANCEL.getStatus());
+                    putReport.setExamineUserId(iceBoxVo.getUserId());
+                    putReport.setExamineUserName(iceBoxVo.getUserName());
+                    putReport.setExamineTime(new Date());
+                    iceBoxPutReportDao.updateById(putReport);
+                }
+            }
         }
         this.deleteBacklogByCode(iceBoxVo);
 

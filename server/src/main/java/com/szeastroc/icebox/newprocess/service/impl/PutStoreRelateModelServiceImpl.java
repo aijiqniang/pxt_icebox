@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.icebox.newprocess.dao.PutStoreRelateModelDao;
@@ -30,6 +31,9 @@ public class PutStoreRelateModelServiceImpl extends ServiceImpl<PutStoreRelateMo
 
     @Override
     public Integer getCurrentMonthPutCount(List<Integer> userIds) {
+        if(CollectionUtils.isEmpty(userIds)){
+            return 0;
+        }
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStatus,3)
                 .in(PutStoreRelateModel::getCreateBy,userIds);

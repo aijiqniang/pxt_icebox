@@ -2763,6 +2763,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (userInfoVo != null) {
                 history.setReviewerName(userInfoVo.getRealname());
             }
+            history.setReviewerTime(new Date());
             iceBoxTransferHistoryDao.updateById(history);
         }
 

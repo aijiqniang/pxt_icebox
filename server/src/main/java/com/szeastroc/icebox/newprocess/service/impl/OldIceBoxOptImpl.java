@@ -373,7 +373,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
         },
         LOST("遗失", "旧冰柜遗失") {
             @Override
-            public void operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao) {
+            public IceBoxAssetReportVo operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao) {
 
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
 
@@ -388,6 +388,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         subordinateInfoVo = feignData;
                     }
                 }
+
+                String suppName = subordinateInfoVo.getName(); // 经销商名称
                 String service = oldIceBoxImportVo.getService();
                 Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findMaxIdByName(service));
                 if (null == serviceDeptId) {
@@ -395,6 +397,9 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId));
+                // 旧的 冰柜状态/投放状态
+                Integer oldPutStatus = iceBox == null ? null : iceBox.getPutStatus();
+                Integer oldStatus = iceBox == null ? null : iceBox.getStatus();
                 if (null != iceBox) {
                     // 更新冰柜状态及经销商信息
                     iceBox.setDeptId(serviceDeptId);
@@ -443,6 +448,25 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
+
+                // 新的 冰柜状态/投放状态
+                Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
+                Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
+
+
+                IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
+                        .assetId(assetId)
+                        .modelId(iceBox.getModelId())
+                        .modelName(iceBox.getModelName())
+                        .suppName(suppName)
+                        .suppNumber(supplierNumber)
+                        .suppId(iceBox.getSupplierId())
+                        .oldPutStatus(oldPutStatus)
+                        .oldStatus(oldStatus)
+                        .newPutStatus(newPutStatus)
+                        .newStatus(newStatus)
+                        .suppDeptId(iceBox.getDeptId()).build();
+                return assetReportVo;
             }
         };
 

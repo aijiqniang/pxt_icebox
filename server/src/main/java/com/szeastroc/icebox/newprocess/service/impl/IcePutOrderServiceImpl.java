@@ -64,8 +64,12 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
     private final RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    private IcePutOrderService icePutOrderService;
+
 
     @Override
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     public OrderPayResponse applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
 
         // 获取投放申请数据及对应冰柜的申请
@@ -95,7 +99,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                 }
             }
-            return createByFree(clientInfoRequest, iceBox);
+            return icePutOrderService.createByFree(clientInfoRequest, iceBox);
         }
 
         // 判断是否存在订单
@@ -180,19 +184,22 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         return createByUnFree(clientInfoRequest, iceBox, applyNumber);
     }
 
-    private OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceBox iceBox) throws ImproperOptionException {
+    @Override
+    public OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceBox iceBox) throws ImproperOptionException {
         //修改冰柜信息的投放状态
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         iceBoxDao.updateById(iceBox);
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
         wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+        wrapper.eq(PutStoreRelateModel::getModelId, iceBox.getModelId());
         wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
         wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
         List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
         if(CollectionUtil.isNotEmpty(relateModelList)){
             for(PutStoreRelateModel relateModel:relateModelList){
                 ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
+                log.info("处理不需要审批的冰柜信息,applyRelatePutStoreModel---》【{}】",JSON.toJSONString(applyRelatePutStoreModel));
                 if(applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())){
                     relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
                     relateModel.setUpdateTime(new Date());

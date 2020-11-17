@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.szeastroc.icebox.enums.IceBoxStatus;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -123,8 +125,12 @@ public class IceExamine {
 
 
     public boolean validate() {
-        return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)
-                && StringUtils.isNotBlank(displayImage) && createBy != null;
+        if(IceBoxEnums.StatusEnum.LOSE.getType().equals(iceStatus)){
+            return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && createBy != null;
+        }else {
+            return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)
+                    && StringUtils.isNotBlank(displayImage) && createBy != null;
+        }
     }
 
 

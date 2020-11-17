@@ -3639,4 +3639,45 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         iceBoxChangeHistoryDao.insert(iceBoxChangeHistory);
     }
+
+    @Override
+    public List<Map<String, String>> findIceBoxsModelBySupplierId(Integer supplierId) {
+        List<Map<String,String>> mapList = new ArrayList<>();
+        List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, supplierId));
+        if (CollectionUtil.isEmpty(iceBoxList)) {
+            return mapList;
+        }
+        Map<Integer, List<IceBox>> groupMap = iceBoxList.stream().collect(Collectors.groupingBy(IceBox::getModelId));
+        for(Integer modelId:groupMap.keySet()){
+            IceBox iceBox = groupMap.get(modelId).get(0);
+            Map<String,String> map = new HashMap<>();
+            map.put("modelId",modelId+"");
+            map.put("modelName",iceBox.getModelName());
+            mapList.add(map);
+        }
+        return mapList;
+    }
+
+    @Override
+    public List<IceBoxVo> findIceBoxsBySupplierIdAndModelId(Integer supplierId, Integer modelId) {
+        List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, supplierId).eq(IceBox::getModelId,modelId));
+        if (CollectionUtil.isEmpty(iceBoxList)) {
+            return null;
+        }
+        List<IceBoxVo> iceBoxVoList = new ArrayList<>();
+        for (IceBox iceBox : iceBoxList) {
+            IceBoxVo iceBoxVo = new IceBoxVo();
+            BeanUtils.copyProperties(iceBox, iceBoxVo);
+            iceBoxVo.setChestModel(iceBox.getModelName());
+            LambdaQueryWrapper<IceBoxTransferHistory> wrapper = Wrappers.<IceBoxTransferHistory>lambdaQuery();
+            wrapper.eq(IceBoxTransferHistory::getIceBoxId, iceBox.getId());
+            wrapper.and(x -> x.eq(IceBoxTransferHistory::getExamineStatus, ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceBoxTransferHistory::getExamineStatus, ExamineStatus.DOING_EXAMINE.getStatus()));
+            IceBoxTransferHistory history = iceBoxTransferHistoryDao.selectOne(wrapper);
+            if (history != null) {
+                iceBoxVo.setExamineStatus(history.getExamineStatus());
+            }
+            iceBoxVoList.add(iceBoxVo);
+        }
+        return iceBoxVoList;
+    }
 }

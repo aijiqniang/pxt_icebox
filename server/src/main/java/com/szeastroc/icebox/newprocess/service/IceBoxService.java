@@ -107,6 +107,10 @@ public interface IceBoxService extends IService<IceBox> {
 
 
     IceBoxStatusVo checkIceBoxById(Integer id, String pxtNumber);
+
+    List<Map<String, String>> findIceBoxsModelBySupplierId(Integer supplierId);
+
+    List<IceBoxVo> findIceBoxsBySupplierIdAndModelId(Integer supplierId, Integer modelId);
 }
 
 

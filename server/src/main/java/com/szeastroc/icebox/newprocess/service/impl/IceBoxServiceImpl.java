@@ -2148,7 +2148,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Map<Integer, SimpleSupplierInfoVo> supplierInfoVoMap = supplierInfoVos.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, x -> x));
             LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
             wrapper.in(IceBox::getSupplierId, supplierIds)
-                    .eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus())
+//                    .eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
                     .eq(IceBox::getStatus, CommonStatus.VALID.getStatus());
             if (StringUtils.isNotEmpty(requestVo.getSearchContent())) {
                 List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery().like(IceModel::getChestModel, requestVo.getSearchContent()));
@@ -2193,7 +2193,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         LambdaQueryWrapper<PutStoreRelateModel> wrappers = Wrappers.lambdaQuery();
                         wrappers.eq(PutStoreRelateModel::getSupplierId, supplierId);
                         wrappers.eq(PutStoreRelateModel::getModelId, iceBoxVo.getModelId());
-                        wrappers.and(x -> x.eq(PutStoreRelateModel::getPutStatus, PutStatus.LOCK_PUT.getStatus()).or().eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus()));
+//                        wrappers.and(x -> x.eq(PutStoreRelateModel::getPutStatus, PutStatus.LOCK_PUT.getStatus()).or().eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus()));
+                        wrappers.ne(PutStoreRelateModel::getPutStatus, PutStatus.NO_PUT.getStatus());
                         wrappers.eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus());
                         List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(wrappers);
                         if (CollectionUtil.isNotEmpty(putStoreRelateModels)) {

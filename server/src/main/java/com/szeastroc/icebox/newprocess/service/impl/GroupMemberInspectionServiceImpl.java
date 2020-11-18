@@ -119,7 +119,13 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
         wrapper.in(IceBox::getId, idSet).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1);
         List<IceBox> iceBoxes = iceBoxDao.selectList(wrapper);
+        if(CollectionUtils.isEmpty(iceBoxes)){
+            return Lists.newArrayList();
+        }
         List<String> storeNumbers = iceBoxes.stream().map(IceBox::getPutStoreNumber).distinct().collect(Collectors.toList());
+        if(CollectionUtils.isEmpty(storeNumbers)){
+            return Lists.newArrayList();
+        }
         //门店
         List<SimpleStoreVo> stores = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumbers(storeNumbers));
         List<StoreVO> vos = stores.stream().map(one -> {

@@ -1346,6 +1346,11 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     private void createExamineModel(IceExamineVo iceExamineVo, Map<String, Object> map, IceBox isExist, IceBoxExtend iceBoxExtend, List<Integer> ids, IceExamine iceExamine) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         IceBoxExamineModel examineModel = new IceBoxExamineModel();
+        examineModel.setStoreNumber(isExist.getPutStoreNumber());
+        StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(isExist.getPutStoreNumber()));
+        if(store != null){
+            examineModel.setStoreName(store.getStoreName());
+        }
         examineModel.setExamineNumber(iceExamineVo.getExamineNumber());
         examineModel.setAssetId(isExist.getAssetId());
         examineModel.setDepositMoney(isExist.getDepositMoney());

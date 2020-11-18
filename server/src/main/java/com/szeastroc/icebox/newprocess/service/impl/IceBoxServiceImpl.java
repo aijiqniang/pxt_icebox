@@ -429,6 +429,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPutModel.setCreateByName(simpleUserInfoVo.getRealname());
         iceBoxPutModel.setCreateTimeStr(dateFormat.format(new Date()));
         iceBoxPutModel.setIceBoxModelList(iceBoxModels);
+        iceBoxPutModel.setApplyStoreNumber(iceBoxRequestVo.getStoreNumber());
         iceBoxPutModel.setApplyStoreName(iceBoxRequestVo.getStoreName());
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
                 .code(applyNumber)

@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -70,16 +71,16 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
     }
 
 
-    public InspectionReportVO getByUserId(Integer userId){
+    public InspectionReportVO getByUserId(Integer userId) {
         int inspectionCount = iceExamineService.getInspectionBoxes(userId).size();
         int putCount = icePutApplyService.getPutCount(userId);
 
         int lostCount = icePutApplyService.getLostCount(userId);
         String percent = "-";
-        if(0!=putCount){
-            percent = NumberUtil.formatPercent((float) inspectionCount / putCount-lostCount, 2);
+        if (0 != putCount) {
+            percent = NumberUtil.formatPercent((float) inspectionCount / putCount - lostCount, 2);
         }
-        Integer noInspectionCount = iceExamineService.getNoInspectionBoxes(putCount,userId);
+        Integer noInspectionCount = iceExamineService.getNoInspectionBoxes(putCount, userId);
         SimpleUserInfoVo user = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(userId));
         return InspectionReportVO.builder()
                 .inspection(inspectionCount)
@@ -93,25 +94,30 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
 
     @Override
     public void afterPropertiesSet() {
-        InspectionServiceFactory.register(1,this);
+        InspectionServiceFactory.register(1, this);
     }
 
-    public List<StoreVO> getStoreByUserId(Integer userId){
+    public List<StoreVO> getStoreByUserId(Integer userId) {
         List<Integer> putBoxIds = icePutApplyService.getPutBoxIds(userId);
         List<IceExamine> inspectionBoxes = iceExamineService.getInspectionBoxes(userId);
-        HashSet<Integer> idSet = new HashSet<>();
-        for (Integer putBoxId : putBoxIds) {
-            for (IceExamine inspectionBox : inspectionBoxes) {
-                if(!putBoxId.equals(inspectionBox.getIceBoxId())){
-                    idSet.add(putBoxId);
+        Set<Integer> idSet = new HashSet<>();
+        if (CollectionUtils.isEmpty(inspectionBoxes)) {
+            idSet = new HashSet<>(putBoxIds);
+        } else {
+            for (Integer putBoxId : putBoxIds) {
+                for (IceExamine inspectionBox : inspectionBoxes) {
+                    if (!putBoxId.equals(inspectionBox.getIceBoxId())) {
+                        idSet.add(putBoxId);
+                    }
                 }
             }
+
         }
-        if(CollectionUtils.isEmpty(idSet)){
+        if (CollectionUtils.isEmpty(idSet)) {
             return Lists.newArrayList();
         }
         LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
-        wrapper.in(IceBox::getId,idSet).eq(IceBox::getPutStatus,3).eq(IceBox::getStatus,1);
+        wrapper.in(IceBox::getId, idSet).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1);
         List<IceBox> iceBoxes = iceBoxDao.selectList(wrapper);
         List<String> storeNumbers = iceBoxes.stream().map(IceBox::getPutStoreNumber).distinct().collect(Collectors.toList());
         //门店

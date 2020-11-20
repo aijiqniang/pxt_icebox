@@ -105,7 +105,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
-    private final IceBoxService iceBoxService;
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IceModelDao iceModelDao;
     private final FeignDeptClient feignDeptClient;
@@ -139,6 +138,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
     private final IceBoxPutReportDao iceBoxPutReportDao;
 
+    private IceBoxService iceBoxService;
+    public void setIceBoxService(IceBoxService iceBoxService){
+        this.iceBoxService=iceBoxService;
+    }
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {

@@ -2976,6 +2976,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBoxDao.updateById(iceBox);
+                    //todo 这里冰柜改为已投放
 
                     OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
                     oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
@@ -3016,6 +3017,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                             iceBox.setUpdatedTime(new Date());
                             iceBoxDao.updateById(iceBox);
+                            //todo 这里冰柜改为已投放
 
                             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
                             iceBoxExtend.setLastApplyNumber(icePutApply.getApplyNumber());
@@ -4231,6 +4233,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                //todo 这里冰柜改为已投放
             }
         } else {
             iceBox.setPutStoreNumber(oldIceBox.getPutStoreNumber());

@@ -133,6 +133,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 if (StringUtils.isNotBlank(storeNumber)) {
                     iceBox.setPutStoreNumber(storeNumber);
                     iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                    //todo 这里冰柜改为已投放
                 } else {
                     iceBox.setPutStoreNumber("0");
                     iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());

@@ -224,6 +224,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //修改冰柜信息的投放状态
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         iceBoxDao.updateById(iceBox);
+        //todo 这里冰柜改为已投放
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
         wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
@@ -337,7 +338,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             putStoreRelateModelDao.updateById(relateModel);
         }
         iceBoxDao.updateById(iceBox);
-
+        //todo 这里冰柜改为已投放
         //旧冰柜更新通知状态
         if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
             OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
@@ -485,6 +486,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             //修改冰柜信息的投放状态
             iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
             iceBoxDao.updateById(iceBox);
+            //todo 这里冰柜改为已投放
 //            //修改冰柜投放信息
 //            iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
 //            iceBoxDao.updateById(iceBox);

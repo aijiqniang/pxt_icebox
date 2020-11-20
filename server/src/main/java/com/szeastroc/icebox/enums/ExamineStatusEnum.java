@@ -16,6 +16,16 @@ public enum ExamineStatusEnum {
     IS_PASS(2, "通过"),
     UN_PASS(3, "驳回");
 
-    private int status;
-    private String desc;
+    private final Integer status;
+    private final String desc;
+
+
+    public static String convertVo(int type) {
+        for (ExamineStatusEnum examineStatusEnum : ExamineStatusEnum.values()) {
+            if (examineStatusEnum.getStatus().equals(type)) {
+                return examineStatusEnum.getDesc();
+            }
+        }
+        return "";
     }
+}

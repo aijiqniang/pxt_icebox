@@ -95,6 +95,13 @@ public class PutStoreRelateModel {
     @TableField(value = "cancel_msg")
     private String cancelMsg;
 
+    /**
+     * 备注
+     */
+    @TableField(value = "remark")
+    private String remark;
+
+
 
 
     public static PutStoreRelateModel.PutStoreRelateModelBuilder builder() {

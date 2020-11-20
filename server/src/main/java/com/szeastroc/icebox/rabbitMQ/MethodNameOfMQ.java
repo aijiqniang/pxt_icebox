@@ -14,4 +14,7 @@ public interface MethodNameOfMQ {
     // 创建或更新冰柜资产报表
     String CREATE_ICE_BOX_ASSETS_REPORT="createIceBoxAssetsReport";
 
+
+    String EXPORT_ICE_TRANSFER = "exportIceTransfer";
+
 }

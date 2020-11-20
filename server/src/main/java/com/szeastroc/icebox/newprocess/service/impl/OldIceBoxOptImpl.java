@@ -147,6 +147,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBox.setId(selectIceBox.getId());
                     iceBoxDao.updateById(iceBox);
                 } else {
+                    iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
@@ -241,8 +242,9 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     } else {
                         iceBox.setDepositMoney(depositMoney);
                     }
-                    iceBox.setPutStoreNumber("0");
-                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
+//                    iceBox.setPutStoreNumber("0");
+//                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
+                    iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
@@ -303,9 +305,9 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     // 更新冰柜状态及经销商信息
                     iceBox.setDeptId(serviceDeptId);
                     iceBox.setSupplierId(null == subordinateInfoVo ? null : subordinateInfoVo.getSupplierId());
-                    iceBox.setPutStoreNumber("0");
-                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
-                    iceBox.setStatus(IceBoxEnums.StatusEnum.ABNORMAL.getType());
+//                    iceBox.setPutStoreNumber("0");
+//                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.SCRAP.getType());
                     iceBoxDao.updateById(iceBox);
                 } else {
                     // 新增冰柜至数据库
@@ -343,9 +345,10 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     } else {
                         iceBox.setDepositMoney(depositMoney);
                     }
-                    iceBox.setPutStoreNumber("0");
-                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
-                    iceBox.setStatus(IceBoxEnums.StatusEnum.ABNORMAL.getType());
+//                    iceBox.setPutStoreNumber("0");
+//                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.SCRAP.getType());
+                    iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
@@ -378,7 +381,10 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
 
                 String assetId = oldIceBoxImportVo.getAssetId();
+
+
                 String supplierNumber = oldIceBoxImportVo.getSupplierNumber();
+
                 SubordinateInfoVo subordinateInfoVo = null;
                 if (StringUtils.isNotBlank(supplierNumber)) {
                     SubordinateInfoVo feignData = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
@@ -391,6 +397,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
                 String suppName = subordinateInfoVo.getName(); // 经销商名称
                 String service = oldIceBoxImportVo.getService();
+
+
                 Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findMaxIdByName(service));
                 if (null == serviceDeptId) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 服务处信息查询有误，请核对服务处名称");
@@ -404,7 +412,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     // 更新冰柜状态及经销商信息
                     iceBox.setDeptId(serviceDeptId);
                     iceBox.setSupplierId(null == subordinateInfoVo ? null : subordinateInfoVo.getSupplierId());
-                    iceBox.setStatus(IceBoxEnums.StatusEnum.ABNORMAL.getType());
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.LOSE.getType());
                     iceBoxDao.updateById(iceBox);
                 } else {
                     // 新增冰柜至数据库
@@ -431,7 +439,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     String chestNorm = oldIceBoxImportVo.getChestNorm();
 
                     iceBox.setChestNorm(chestNorm);
-
                     IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                     if (null == iceModel) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
@@ -443,7 +450,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     } else {
                         iceBox.setDepositMoney(depositMoney);
                     }
-                    iceBox.setStatus(IceBoxEnums.StatusEnum.ABNORMAL.getType());
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.LOSE.getType());
+                    iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);

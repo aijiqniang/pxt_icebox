@@ -134,6 +134,12 @@ public class IceBox {
     @TableField(value = "updated_time")
     private Date updatedTime;
 
+    /**
+     * 冰柜类型：0-旧冰柜，1-新冰柜
+     */
+    @TableField(value = "ice_box_type")
+    private Integer iceBoxType;
+
     public static IceBoxBuilder builder() {
         return new IceBoxBuilder();
     }

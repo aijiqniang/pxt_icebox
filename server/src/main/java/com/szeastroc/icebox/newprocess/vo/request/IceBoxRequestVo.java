@@ -9,13 +9,17 @@ import java.math.BigDecimal;
 public class IceBoxRequestVo {
 
     /**
-     * 门店编码
+     * 投放客户编码
      */
     private String storeNumber;
     /**
-     * 门店名称
+     * 投放客户名称
      */
     private String storeName;
+    /**
+     * 投放客户类型
+     */
+    private Integer storeType;
     /**
      * 门店营销区域
      */

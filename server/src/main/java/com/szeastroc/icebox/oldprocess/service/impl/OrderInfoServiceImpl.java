@@ -103,20 +103,20 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoDao, OrderInfo> i
         //查询数据库中对应订单状态
         OrderInfo orderInfo = orderInfoDao.selectOne(Wrappers.<OrderInfo>lambdaQuery().eq(OrderInfo::getOrderNum, orderNum));
         if(orderInfo == null){
-            log.error("异常:主动查询订单状态,丢失订单数据 -> {}", JSON.toJSONString(orderNum));
+            log.info("异常:主动查询订单状态,丢失订单数据 -> {}", JSON.toJSONString(orderNum));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 
         //查询对应冰柜信息
         IceChestInfo iceChestInfo = iceChestInfoDao.selectById(orderInfo.getChestId());
         if(iceChestInfo == null){
-            log.error("异常:主动查询订单状态,丢失冰柜信息-> {}", JSON.toJSONString(orderInfo));
+            log.info("异常:主动查询订单状态,丢失冰柜信息-> {}", JSON.toJSONString(orderInfo));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         //查询对应冰柜投放记录信息
         IceChestPutRecord iceChestPutRecord = iceChestPutRecordDao.selectById(orderInfo.getChestPutRecordId());
         if(iceChestPutRecord == null){
-            log.error("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(orderInfo));
+            log.info("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(orderInfo));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 
@@ -213,7 +213,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoDao, OrderInfo> i
         //根据订单号查询订单
         OrderInfo orderInfo = orderInfoDao.selectOne(Wrappers.<OrderInfo>lambdaQuery().eq(OrderInfo::getOrderNum, orderPayBack.getOutTradeNo()));
         if(orderInfo == null){
-            log.error("异常:订单成功回调,丢失订单数据 -> {}", JSON.toJSONString(orderPayBack));
+            log.info("异常:订单成功回调,丢失订单数据 -> {}", JSON.toJSONString(orderPayBack));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         //判断是否订单完成, 完成则无需修改
@@ -224,13 +224,13 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoDao, OrderInfo> i
         //查询对应冰柜信息
         IceChestInfo iceChestInfo = iceChestInfoDao.selectById(orderInfo.getChestId());
         if(iceChestInfo == null){
-            log.error("异常:订单成功回调,丢失冰柜信息-> {}", JSON.toJSONString(orderInfo));
+            log.info("异常:订单成功回调,丢失冰柜信息-> {}", JSON.toJSONString(orderInfo));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         //查询对应冰柜投放记录信息
         IceChestPutRecord iceChestPutRecord = iceChestPutRecordDao.selectById(orderInfo.getChestPutRecordId());
         if(iceChestPutRecord == null){
-            log.error("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(orderInfo));
+            log.info("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(orderInfo));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 

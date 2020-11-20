@@ -46,6 +46,7 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
     public void createPactRecord(ClientInfoRequest clientInfoRequest) {
         // 通过冰柜找到申请投放的门店
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(clientInfoRequest.getIceChestId());
+
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
         IceBox iceBox = iceBoxDao.selectById(clientInfoRequest.getIceChestId());

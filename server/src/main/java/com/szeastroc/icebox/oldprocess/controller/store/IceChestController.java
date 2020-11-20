@@ -130,12 +130,12 @@ public class IceChestController {
     @PostMapping("/createPactRecord")
     public CommonResponse<String> createPactRecord(@RequestBody ClientInfoRequest clientInfoRequest) throws ImproperOptionException {
         if (!clientInfoRequest.validate()) {
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
         if(storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null){
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea()+"");

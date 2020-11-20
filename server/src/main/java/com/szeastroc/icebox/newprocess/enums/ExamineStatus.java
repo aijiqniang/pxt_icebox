@@ -15,6 +15,15 @@ public enum ExamineStatus {
     PASS_EXAMINE(2, "通过"),
     REJECT_EXAMINE(3, "驳回");
 
-    private Integer status;
-    private String desc;
+    private final Integer status;
+    private final String desc;
+
+    public static String convertVo(int type) {
+        for (ExamineStatus examineStatus : ExamineStatus.values()) {
+            if (examineStatus.getStatus().equals(type)) {
+                return examineStatus.getDesc();
+            }
+        }
+        return "";
+    }
 }

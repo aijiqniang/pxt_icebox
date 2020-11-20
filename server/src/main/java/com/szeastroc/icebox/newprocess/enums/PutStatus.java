@@ -14,7 +14,12 @@ public enum PutStatus {
     NO_PUT(0, "未投放"),
     LOCK_PUT(1, "已锁定(被业务员申请)"),
     DO_PUT(2, "投放中"),
-    FINISH_PUT(3, "已投放");
+    FINISH_PUT(3, "已投放"),
+    NO_PASS(4, "已驳回"),
+    /**
+     * 投放报表使用
+     */
+    IS_CANCEL(5, "已作废");
 
     private Integer status;
     private String desc;

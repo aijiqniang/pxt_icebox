@@ -41,6 +41,10 @@ public class IceBoxRequestVo {
      */
     private Integer userId;
     /**
+     * 业务员营销区域
+     */
+    private Integer userMarketAreaId;
+    /**
      * 冰柜型号
      */
     private String chestModel;

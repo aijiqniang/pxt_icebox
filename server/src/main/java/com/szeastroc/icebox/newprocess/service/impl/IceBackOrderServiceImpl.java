@@ -711,14 +711,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                 .eq(IcePutApplyRelateBox::getBoxId, iceBoxId));
 
-        IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
-                .eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber())
-                .eq(IcePutPactRecord::getBoxId, iceBoxId).eq(IcePutPactRecord::getStoreNumber, iceBox.getPutStoreNumber()));
-
-        // 校验: 电子协议
-        if (icePutPactRecord == null) {
-            throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_PUT_PACT_RECORD.getCode(), ResultEnum.CANNOT_FIND_ICE_PUT_PACT_RECORD.getMessage());
-        }
+        // 2020/11/17  投放新规则，可以不签收直接投放，过滤电子协议校验
+//        IcePutPactRecord icePutPactRecord = icePutPactRecordDao.selectOne(Wrappers.<IcePutPactRecord>lambdaQuery()
+//                .eq(IcePutPactRecord::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+//                .eq(IcePutPactRecord::getBoxId, iceBoxId).eq(IcePutPactRecord::getStoreNumber, iceBox.getPutStoreNumber()));
+//
+//        // 校验: 电子协议
+//        if (icePutPactRecord == null) {
+//            throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_PUT_PACT_RECORD.getCode(), ResultEnum.CANNOT_FIND_ICE_PUT_PACT_RECORD.getMessage());
+//        }
 
         // 校验退还到期时间 //注释掉了这段代码，即使未到期也能退还
 //        if (icePutPactRecord.getPutExpireTime().getTime() > new Date().getTime()) {

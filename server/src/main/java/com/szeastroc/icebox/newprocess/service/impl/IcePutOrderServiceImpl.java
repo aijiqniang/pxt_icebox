@@ -69,6 +69,9 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final RabbitTemplate rabbitTemplate;
     private final FeignSupplierClient feignSupplierClient;
 
+    @Autowired
+    private IcePutOrderService icePutOrderService;
+
 
     @Override
     public Map<String, Object> applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
@@ -216,35 +219,38 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         return createByUnFree(clientInfoRequest, iceBox, applyNumber);
     }
 
-    private OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceBox iceBox) throws ImproperOptionException {
+    @Override
+    public OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceBox iceBox) throws ImproperOptionException {
         //修改冰柜信息的投放状态
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         iceBoxDao.updateById(iceBox);
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
         wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+        wrapper.eq(PutStoreRelateModel::getModelId, iceBox.getModelId());
         wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
         wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
         List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
-        if (CollectionUtil.isNotEmpty(relateModelList)) {
-            for (PutStoreRelateModel relateModel : relateModelList) {
+        if(CollectionUtil.isNotEmpty(relateModelList)){
+            for(PutStoreRelateModel relateModel:relateModelList){
                 ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
-                if (applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())) {
-                    relateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                log.info("处理不需要审批的冰柜信息,applyRelatePutStoreModel---》【{}】",JSON.toJSONString(applyRelatePutStoreModel));
+                if(applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())){
+                    relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
                     relateModel.setUpdateTime(new Date());
                     putStoreRelateModelDao.updateById(relateModel);
                     IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
-                    if (transferRecord != null) {
+                    if(transferRecord != null){
                         transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());
                         transferRecord.setUpdateTime(new Date());
                         iceTransferRecordDao.updateById(transferRecord);
                     }
                     //旧冰柜更新通知状态
-                    if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
+                    if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
                         OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
                                 .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
                                 .eq(OldIceBoxSignNotice::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
-                        if (oldIceBoxSignNotice != null) {
+                        if(oldIceBoxSignNotice != null){
                             oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
                             oldIceBoxSignNotice.setUpdateTime(new Date());
                             oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);

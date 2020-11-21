@@ -154,21 +154,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
-                Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
-
-                IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
-                        .assetId(assetId)
-                        .modelId(iceBox.getModelId())
-                        .modelName(iceBox.getModelName())
-                        .suppName(suppName)
-                        .suppNumber(supplierNumber)
-                        .suppId(iceBox.getSupplierId())
-                        .oldPutStatus(oldPutStatus)
-                        .oldStatus(oldStatus)
-                        .newPutStatus(newPutStatus)
-                        .newStatus(newStatus)
-                        .suppDeptId(iceBox.getDeptId()).build();
+                IceBoxAssetReportVo assetReportVo = setAssetReportVo(iceBox, assetId, suppName, supplierNumber, oldPutStatus, oldStatus);
                 return assetReportVo;
             }
         },
@@ -251,22 +237,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
-                Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
-
-
-                IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
-                        .assetId(assetId)
-                        .modelId(iceBox.getModelId())
-                        .modelName(iceBox.getModelName())
-                        .suppName(suppName)
-                        .suppNumber(supplierNumber)
-                        .suppId(iceBox.getSupplierId())
-                        .oldPutStatus(oldPutStatus)
-                        .oldStatus(oldStatus)
-                        .newPutStatus(newPutStatus)
-                        .newStatus(newStatus)
-                        .suppDeptId(iceBox.getDeptId()).build();
+                IceBoxAssetReportVo assetReportVo = setAssetReportVo(iceBox, assetId, suppName, supplierNumber, oldPutStatus, oldStatus);
                 return assetReportVo;
             }
         },
@@ -356,22 +327,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
-                Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
-
-
-                IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
-                        .assetId(assetId)
-                        .modelId(iceBox.getModelId())
-                        .modelName(iceBox.getModelName())
-                        .suppName(suppName)
-                        .suppNumber(supplierNumber)
-                        .suppId(iceBox.getSupplierId())
-                        .oldPutStatus(oldPutStatus)
-                        .oldStatus(oldStatus)
-                        .newPutStatus(newPutStatus)
-                        .newStatus(newStatus)
-                        .suppDeptId(iceBox.getDeptId()).build();
+                IceBoxAssetReportVo assetReportVo = setAssetReportVo(iceBox, assetId, suppName, supplierNumber, oldPutStatus, oldStatus);
                 return assetReportVo;
             }
         },
@@ -459,22 +415,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
-                Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
-
-
-                IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
-                        .assetId(assetId)
-                        .modelId(iceBox.getModelId())
-                        .modelName(iceBox.getModelName())
-                        .suppName(suppName)
-                        .suppNumber(supplierNumber)
-                        .suppId(iceBox.getSupplierId())
-                        .oldPutStatus(oldPutStatus)
-                        .oldStatus(oldStatus)
-                        .newPutStatus(newPutStatus)
-                        .newStatus(newStatus)
-                        .suppDeptId(iceBox.getDeptId()).build();
+                IceBoxAssetReportVo assetReportVo = setAssetReportVo(iceBox, assetId, suppName, supplierNumber, oldPutStatus, oldStatus);
                 return assetReportVo;
             }
         };
@@ -498,6 +439,24 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
         abstract public IceBoxAssetReportVo operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao,
                                                       IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao);
 
+    }
+
+    private static IceBoxAssetReportVo setAssetReportVo(IceBox iceBox, String assetId, String suppName, String supplierNumber, Integer oldPutStatus, Integer oldStatus) {
+        Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
+        Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.NORMAL.getType() : iceBox.getStatus();
+
+        return IceBoxAssetReportVo.builder()
+                .assetId(assetId)
+                .modelId(iceBox.getModelId())
+                .modelName(iceBox.getModelName())
+                .suppName(suppName)
+                .suppNumber(supplierNumber)
+                .suppId(iceBox.getSupplierId())
+                .oldPutStatus(oldPutStatus)
+                .oldStatus(oldStatus)
+                .newPutStatus(newPutStatus)
+                .newStatus(newStatus)
+                .suppDeptId(iceBox.getDeptId()).build();
     }
 
 

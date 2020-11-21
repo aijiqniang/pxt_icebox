@@ -104,11 +104,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
-    @Autowired
-    private IceBoxService iceBoxService;
-    @Autowired
-    private IcePutOrderService icePutOrderService;
-
+    private final IcePutOrderService icePutOrderService;
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IceModelDao iceModelDao;
     private final FeignDeptClient feignDeptClient;

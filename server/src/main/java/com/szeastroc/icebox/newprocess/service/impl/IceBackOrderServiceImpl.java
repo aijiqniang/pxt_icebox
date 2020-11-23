@@ -846,7 +846,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         log.info("转账服务返回的数据-->[{}]", JSON.toJSONString(transferReponse, true));
 
-        JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox);
+        JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"doTransfer");
         return jsonObject;
     }
 

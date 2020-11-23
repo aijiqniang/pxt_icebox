@@ -113,7 +113,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     List<IceBoxVo> findIceBoxsBySupplierIdAndModelId(Integer supplierId, Integer modelId);
 
-    JSONObject setAssetReportJson(IceBox iceBox);
+    JSONObject setAssetReportJson(IceBox iceBox,String resourceStr);
 
 }
 

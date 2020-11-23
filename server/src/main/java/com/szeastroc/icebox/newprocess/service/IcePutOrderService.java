@@ -16,11 +16,11 @@ import java.util.Map;
 public interface IcePutOrderService extends IService<IcePutOrder> {
 
 
-    Map<String, Object> applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception;
+    OrderPayResponse applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception;
 
     OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceBox iceBox) throws ImproperOptionException;
 
-    IceBoxAssetReportVo notifyOrderInfo(OrderPayBack orderPayBack);
+    JSONObject notifyOrderInfo(OrderPayBack orderPayBack);
 
-    JSONObject getPayStatus(String orderNumber) throws Exception;
+    Boolean getPayStatus(String orderNumber) throws Exception;
 }

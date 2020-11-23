@@ -154,7 +154,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox);
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜入库");
                 return jsonObject;
             }
         },
@@ -234,7 +234,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox);
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜退回经销商");
                 return jsonObject;
             }
         },
@@ -321,7 +321,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox);
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜报废");
                 return jsonObject;
             }
         },
@@ -401,7 +401,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox);
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜遗失");
                 return jsonObject;
             }
         };

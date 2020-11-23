@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -23,6 +24,7 @@ import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.*;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
@@ -68,9 +70,8 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
     private final RabbitTemplate rabbitTemplate;
     private final FeignSupplierClient feignSupplierClient;
-
-    @Autowired
-    private IcePutOrderService icePutOrderService;
+    private final IcePutOrderService icePutOrderService;
+    private final IceBoxService iceBoxService;
 
 
     @Override
@@ -394,10 +395,10 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     }
 
     @Override
-    public Map<String, Object> getPayStatus(String orderNumber) throws Exception {
+    public JSONObject getPayStatus(String orderNumber) throws Exception {
         boolean flag = false;
 
-        HashMap<String, Object> map = Maps.newHashMap();
+        JSONObject jsonObject = new JSONObject();
         //查询数据库中对应订单状态
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery().eq(IcePutOrder::getOrderNum, orderNumber));
         if (Objects.isNull(icePutOrder)) {
@@ -420,8 +421,8 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         //如果订单已完成, 则直接返回完成
         if (icePutOrder.getStatus().equals(OrderStatus.IS_FINISH.getStatus())) {
-            map.put("boo", true);
-            return map;
+            jsonObject.put("boo", true);
+            return jsonObject;
         }
 
         //如果订单已取消, 抛出异常
@@ -547,34 +548,10 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 //            }
 
             // 新的 冰柜状态/投放状态
-            Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
-            Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.ABNORMAL.getType() : iceBox.getStatus();
-
-
-            SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.readId(iceBox.getSupplierId()));
-            String suppName = null;
-            String supplierNumber = null;
-            if (subordinateInfoVo != null) {
-                suppName = subordinateInfoVo.getName();
-                supplierNumber = subordinateInfoVo.getNumber();
-            }
-
-
-            IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
-                    .assetId(iceBox.getAssetId())
-                    .modelId(iceBox.getModelId())
-                    .modelName(iceBox.getModelName())
-                    .suppName(suppName)
-                    .suppNumber(supplierNumber)
-                    .suppId(iceBox.getSupplierId())
-                    .oldPutStatus(oldPutStatus)
-                    .oldStatus(oldStatus)
-                    .newPutStatus(newPutStatus)
-                    .newStatus(newStatus).build();
-            map.put("assetReportVo", assetReportVo);
-            return map;
+            JSONObject jsonObject= iceBoxService.setAssetReportJson(iceBox);
+            return jsonObject;
         }
-        map.put("boo", flag);
-        return map;
+        jsonObject.put("boo", flag);
+        return jsonObject;
     }
 }

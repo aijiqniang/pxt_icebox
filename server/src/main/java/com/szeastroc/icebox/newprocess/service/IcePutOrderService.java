@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
@@ -21,5 +22,5 @@ public interface IcePutOrderService extends IService<IcePutOrder> {
 
     IceBoxAssetReportVo notifyOrderInfo(OrderPayBack orderPayBack);
 
-    Map<String, Object> getPayStatus(String orderNumber) throws Exception;
+    JSONObject getPayStatus(String orderNumber) throws Exception;
 }

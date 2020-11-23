@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
@@ -53,7 +54,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     IPage readExamine(IceExaminePage iceExaminePage);
 
-    List<IceBoxAssetReportVo> importByEasyExcel(MultipartFile mfile) throws Exception;
+    List<JSONObject> importByEasyExcel(MultipartFile mfile) throws Exception;
 
     List<IceBox> getIceBoxList(String pxtNumber);
 
@@ -111,6 +112,9 @@ public interface IceBoxService extends IService<IceBox> {
     List<Map<String, String>> findIceBoxsModelBySupplierId(Integer supplierId);
 
     List<IceBoxVo> findIceBoxsBySupplierIdAndModelId(Integer supplierId, Integer modelId);
+
+    JSONObject setAssetReportJson(IceBox iceBox);
+
 }
 
 

@@ -55,6 +55,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.icebox.vo.IceBoxRequest;
@@ -2395,7 +2396,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     @Override
-    public List<IceBoxAssetReportVo> importByEasyExcel(MultipartFile mfile) throws Exception {
+    public List<JSONObject> importByEasyExcel(MultipartFile mfile) throws Exception {
 
         /**
          * @Date: 2020/5/20 9:19 xiao
@@ -2418,7 +2419,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<String, SubordinateInfoVo> supplierNumberMap = Maps.newHashMap(); // 存储经销商编号和id
 
         int importSize = importDataList.size();
-        List<IceBoxAssetReportVo> lists = Lists.newArrayList();
+        List<JSONObject> lists = Lists.newArrayList();
 
         for (ImportIceBoxVo boxVo : importDataList) {
 
@@ -2516,10 +2517,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 supplierNumberMap.put(supplierNumber, infoVo);
             }
 
-            // 旧的 冰柜状态/投放状态
-            Integer oldPutStatus = iceBox == null ? null : iceBox.getPutStatus();
-            Integer oldStatus = iceBox == null ? null : iceBox.getStatus();
-
             // 鉴于服务处就是对应经销商的服务处,所以直接用经销商的
             Integer deptId = supplierNumberMap.get(supplierNumber).getMarketAreaId(); // 所属服务处
             if (iceBox == null) {
@@ -2546,10 +2543,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .setGpsMac(gpsMac)
                     .setReleaseTime(releaseTime)
                     .setRepairBeginTime(repairBeginTime);
-
-            // 新的 冰柜状态/投放状态
-            Integer newPutStatus = iceBox.getPutStatus() == null ? PutStatus.NO_PUT.getStatus() : iceBox.getPutStatus();
-            Integer newStatus = iceBox.getStatus() == null ? IceBoxEnums.StatusEnum.NORMAL.getType() : iceBox.getStatus();
 
             /**
              * @Date: 2020/5/20 11:07 xiao
@@ -2578,23 +2571,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
             }
 
-            IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
-                    .assetId(assetId)
-                    .modelId(modelId)
-                    .modelName(modelStr)
-                    .suppName(suppName)
-                    .suppNumber(supplierNumber)
-                    .suppId(iceBox.getSupplierId())
-                    .oldPutStatus(oldPutStatus)
-                    .oldStatus(oldStatus)
-                    .newPutStatus(newPutStatus)
-                    .newStatus(newStatus)
-                    .suppDeptId(deptId).build();
-
-            lists.add(assetReportVo);
+            JSONObject jsonObject = setAssetReportJson(iceBox);
+            lists.add(jsonObject);
         }
         log.info("importExcel 处理数据结束-->{}", importSize);
-
         return lists;
     }
 
@@ -4638,5 +4618,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             iceBoxVoList.add(iceBoxVo);
         }
         return iceBoxVoList;
+    }
+
+    @Override
+    public JSONObject setAssetReportJson(IceBox iceBox) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("suppId", iceBox.getSupplierId());
+        jsonObject.put("modelId", iceBox.getModelId());
+        jsonObject.put("deptId", iceBox.getDeptId());
+        jsonObject.put(IceBoxConstant.methodName, MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+        return jsonObject;
     }
 }

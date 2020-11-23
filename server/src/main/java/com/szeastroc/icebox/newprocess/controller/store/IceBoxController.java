@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
@@ -20,11 +21,9 @@ import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.IceBoxStatus;
 import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
-import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.service.*;
 import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
@@ -44,7 +43,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -52,7 +50,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by Tulane
@@ -183,9 +184,8 @@ public class IceBoxController {
         if (id == null || StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxById(id,pxtNumber));
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxById(id, pxtNumber));
     }
-
 
 
     /**
@@ -477,7 +477,7 @@ public class IceBoxController {
     @PostMapping("/importExcel")
     public CommonResponse<String> importExcel(@RequestParam("excelFile") MultipartFile mfile) throws Exception {
 
-        List<IceBoxAssetReportVo> lists = iceBoxService.importByEasyExcel(mfile);
+        List<JSONObject> lists = iceBoxService.importByEasyExcel(mfile);
 
 //        IceBoxAssetReportVo assetReportVo = IceBoxAssetReportVo.builder()
 //                .assetId("XNYC0120160529177")
@@ -509,11 +509,12 @@ public class IceBoxController {
          *  将报表中导入数据库中的数据异步更新到报表中
          */
         if (CollectionUtils.isNotEmpty(lists)) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("lists", lists);
-            jsonObject.put("methodName", MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
-            // 发送mq消息
-            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+            ExecutorServiceFactory.getInstance().execute(() -> {
+                for (JSONObject jsonObject : lists) {
+                    // 发送mq消息
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                }
+            });
         }
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);

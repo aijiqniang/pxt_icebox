@@ -69,4 +69,10 @@ public class SyncController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+    @GetMapping("/syncIceBoxDept")
+    public CommonResponse<Void> syncIceBoxDept() throws Exception {
+        iceOtherSync.syncIceBoxDept();
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
 }

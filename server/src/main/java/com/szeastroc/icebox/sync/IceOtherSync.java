@@ -2,7 +2,11 @@ package com.szeastroc.icebox.sync;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.customer.client.FeignSupplierClient;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.enums.OrderStatus;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.service.*;
 import com.szeastroc.icebox.oldprocess.entity.OrderInfo;
@@ -17,6 +21,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -45,6 +51,10 @@ public class IceOtherSync {
 
     @Autowired
     private IceBoxExtendService iceBoxExtendService;
+    @Autowired
+    private FeignSupplierClient feignSupplierClient;
+    @Autowired
+    private IceBoxDao iceBoxDao;
 
     /**
      * 同步投放订单
@@ -201,5 +211,26 @@ public class IceOtherSync {
             updateIceBoxExtends.add(updateIceBoxExtend);
         }
         iceBoxExtendService.updateBatchById(updateIceBoxExtends);
+    }
+
+    
+    public void syncIceBoxDept() {
+        log.info("开始更新部门信息");
+        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().isNotNull(IceBox::getSupplierId).groupBy(IceBox::getSupplierId));
+
+        List<Integer> collect = iceBoxes.stream().map(IceBox::getSupplierId).collect(Collectors.toList());
+
+        Map<Integer, SubordinateInfoVo> map = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(collect));
+
+        map.forEach((key,value) -> {
+            log.info("key------>[{}]",key);
+            Integer marketAreaId = value.getMarketAreaId();
+            if (null != marketAreaId) {
+                iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate()
+                        .set(IceBox::getDeptId, marketAreaId)
+                        .eq(IceBox::getSupplierId,key));
+            }
+        });
+        log.info("更新部门信息结束");
     }
 }

@@ -551,6 +551,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }, ExecutorServiceFactory.getInstance());
         }
         if(status.equals(ExamineStatusEnum.UN_PASS.getStatus())){
+            iceBox.setStatus(iceBoxExamineModel.getIceStatus());
+            iceBox.setUpdatedTime(new Date());
+            iceBoxDao.updateById(iceBox);
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
                 buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_unpass.getStatus(),new Date(), updateBy);

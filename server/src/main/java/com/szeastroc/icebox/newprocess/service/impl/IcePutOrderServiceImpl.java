@@ -67,10 +67,8 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final IceTransferRecordDao iceTransferRecordDao;
     private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
     private final RabbitTemplate rabbitTemplate;
+    @Autowired
     private IceBoxService iceBoxService;
-    public void setIceBoxService(IceBoxService iceBoxService) {
-        this.iceBoxService = iceBoxService;
-    }
 
     @Override
     public OrderPayResponse applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {

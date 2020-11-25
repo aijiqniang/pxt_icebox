@@ -140,15 +140,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
     private final IceBoxPutReportDao iceBoxPutReportDao;
     private final FeignDeptRuleClient feignDeptRuleClient;
-
+    @Autowired
     private IceBoxService iceBoxService;
-    public void setIceBoxService(IceBoxService iceBoxService) {
-        this.iceBoxService = iceBoxService;
-    }
+    @Autowired
     private IcePutOrderService icePutOrderService;
-    public void setIcePutOrderService(IcePutOrderService icePutOrderService) {
-        this.icePutOrderService = icePutOrderService;
-    }
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {

@@ -85,7 +85,7 @@ public class IceBoxExamineExceptionReportConsumer {
         log.info("fxbill task... [{}]", JSON.toJSONString(reportMsg));
         long start = System.currentTimeMillis();
         Integer count = iceBoxExamineExceptionReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
-        log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
+        log.warn("当前检索条件下的巡检异常记录总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
         String[] columnName = {"事业部","大区","服务处","所属经销商编号", "所属经销商名称", "投放客户编号", "投放客户名称","投放客户类型","冰柜编号", "冰柜型号","押金金额","提报类型","提交人","提交日期",  "审核人员",
                 "审核日期", "状态", "提报时间","提报单号"};
@@ -126,7 +126,7 @@ public class IceBoxExamineExceptionReportConsumer {
                         }
 //                        excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxExamineExceptionReportExcelVo::)).collect(Collectors.toList());
                         if(CollectionUtil.isNotEmpty(excelVoList)){
-                            log.warn("当前检索条件下的分销订单导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
+                            log.warn("当前检索条件下的巡检异常记录导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
                             for (int i = startRowCount; i <= endRowCount; i++) {
                                 SXSSFRow eachDataRow = eachSheet.createRow(i);
                                 if ((i - startRowCount) < excelVoList.size()) {
@@ -162,7 +162,7 @@ public class IceBoxExamineExceptionReportConsumer {
         log.info("fxbill task... [{}]", JSON.toJSONString(reportMsg));
         long start = System.currentTimeMillis();
         Integer count = iceBoxExamineExceptionReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
-        log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
+        log.warn("当前检索条件下的巡检记录总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
         String[] columnName = {"事业部","大区","服务处","服务组","冰柜编号","冰柜型号","所属经销商编号", "所属经销商名称", "现投放客户编号", "现投放客户名称","冰柜状态","巡检人姓名","巡检人职位","巡检时间",
                 "资产拍照","备注信息"};
@@ -197,7 +197,7 @@ public class IceBoxExamineExceptionReportConsumer {
                         }
 //                        excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxExamineExceptionReportExcelVo::)).collect(Collectors.toList());
                         if(CollectionUtil.isNotEmpty(excelVoList)){
-                            log.warn("当前检索条件下的分销订单导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
+                            log.warn("当前检索条件下的巡检记录导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
                             for (int i = startRowCount; i <= endRowCount; i++) {
                                 SXSSFRow eachDataRow = eachSheet.createRow(i);
                                 if ((i - startRowCount) < excelVoList.size()) {
@@ -226,7 +226,6 @@ public class IceBoxExamineExceptionReportConsumer {
     }
 
     private void updateReport(IceBoxExamineExceptionReportMsg reportMsg) {
-        log.info("修改巡检报表——》【{}】",JSON.toJSONString(reportMsg));
         IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportService.getOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, reportMsg.getExamineNumber()));
         isExsit.setStatus(reportMsg.getStatus());
         if(reportMsg.getExamineUserId() != null){
@@ -245,7 +244,6 @@ public class IceBoxExamineExceptionReportConsumer {
     }
 
     private void saveReport(IceBoxExamineExceptionReportMsg reportMsg) {
-        log.info("保存巡检报表——》【{}】",JSON.toJSONString(reportMsg));
         IceBoxExamineExceptionReport report = new IceBoxExamineExceptionReport();
         BeanUtils.copyProperties(reportMsg,report);
         iceBoxExamineExceptionReportService.save(report);

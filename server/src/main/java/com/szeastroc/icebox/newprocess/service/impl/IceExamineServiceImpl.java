@@ -100,7 +100,6 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void doExamine(IceExamine iceExamine) {
-        log.info("开始冰柜巡检doExamine-->[{}]",JSON.toJSONString(iceExamine));
         if (!iceExamine.validate()) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "参数不完整");
         }
@@ -158,13 +157,11 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             if(iceExamine.getExaminStatus().equals(ExamineStatus.REJECT_EXAMINE.getStatus())){
                 examineExceptionStatus = ExamineExceptionStatusEnums.is_unpass.getStatus();
             }
-            log.info("开始构建冰柜巡检报表数据 buildReportAndSendMq-->[{}]",JSON.toJSONString(iceExamine));
             buildReportAndSendMq(iceExamine,examineExceptionStatus,now, null);
         }, ExecutorServiceFactory.getInstance());
     }
 
     private void buildReportAndSendMq(IceExamine iceExamine, Integer status, Date now, Integer updateBy) {
-        log.info("开始进行构建冰柜巡检报表数据 buildReportAndSendMq-->[{}]",JSON.toJSONString(iceExamine));
         try {
             IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportDao.selectOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, iceExamine.getExamineNumber()));
             IceBoxExamineExceptionReportMsg report = new IceBoxExamineExceptionReportMsg();
@@ -508,7 +505,6 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //            }
 //        }
 
-        log.info("开始冰柜巡检doExamineNew-->[{}]",JSON.toJSONString(iceExamine));
         doExamine(iceExamine);
         //发送mq消息,同步申请数据到报表
 //        CompletableFuture.runAsync(() -> {

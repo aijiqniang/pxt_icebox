@@ -1565,6 +1565,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }
             if(StringUtils.isEmpty(iceExamine.getExamineNumber())){
                 String examineNumber = UUID.randomUUID().toString().replace("-", "");
+                iceExamine.setExamineNumber(examineNumber);
+                iceExamineDao.updateById(iceExamine);
                 report.setExamineNumber(examineNumber);
                 report.setStatus(ExamineExceptionStatusEnums.is_repaired.getStatus());
             }
@@ -1634,7 +1636,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                 report.setSubmitterPosion(userInfoVo.getPosion());
             }
             report.setSubmitTime(iceExamine.getCreateTime());
-            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(iceExamine.getExamineNumber()));
+            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(report.getExamineNumber()));
             if(CollectionUtil.isNotEmpty(visitExamineNodeVos)){
                 for(SessionExamineVo.VisitExamineNodeVo examineNodeVo:visitExamineNodeVos){
                     if(examineNodeVo.getExamineStatus().equals(1)){

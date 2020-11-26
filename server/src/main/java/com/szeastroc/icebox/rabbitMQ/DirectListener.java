@@ -29,7 +29,7 @@ public class DirectListener {
     private final IceBoxTransferHistoryService iceBoxTransferHistoryService;
 
     //    @RabbitHandler
-    @RabbitListener(queues = MqConstant.directQueue)
+    @RabbitListener(queues = MqConstant.directQueue,containerFactory = "iceExportExcelContainer")
     public void listener(DataPack dataPack) throws Exception {
 
         String methodName = dataPack.getMethodName();  // 接口名称

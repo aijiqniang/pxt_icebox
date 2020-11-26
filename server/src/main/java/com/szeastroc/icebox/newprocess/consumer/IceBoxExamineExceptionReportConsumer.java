@@ -24,7 +24,6 @@ import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExamineExcelVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExamineExceptionReportExcelVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxExamineVo;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +58,7 @@ public class IceBoxExamineExceptionReportConsumer {
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue)
     public void task(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
+        log.info("接收到的巡检信息到巡检报表——》【{}】",JSON.toJSONString(reportMsg));
         if(OperateTypeEnum.INSERT.getType().equals(reportMsg.getOperateType())){
             saveReport(reportMsg);
         }
@@ -226,6 +226,7 @@ public class IceBoxExamineExceptionReportConsumer {
     }
 
     private void updateReport(IceBoxExamineExceptionReportMsg reportMsg) {
+        log.info("修改巡检报表——》【{}】",JSON.toJSONString(reportMsg));
         IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportService.getOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, reportMsg.getExamineNumber()));
         isExsit.setStatus(reportMsg.getStatus());
         if(reportMsg.getExamineUserId() != null){
@@ -244,6 +245,7 @@ public class IceBoxExamineExceptionReportConsumer {
     }
 
     private void saveReport(IceBoxExamineExceptionReportMsg reportMsg) {
+        log.info("保存巡检报表——》【{}】",JSON.toJSONString(reportMsg));
         IceBoxExamineExceptionReport report = new IceBoxExamineExceptionReport();
         BeanUtils.copyProperties(reportMsg,report);
         iceBoxExamineExceptionReportService.save(report);

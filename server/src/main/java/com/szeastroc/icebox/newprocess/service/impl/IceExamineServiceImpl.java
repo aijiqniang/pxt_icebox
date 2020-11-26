@@ -240,6 +240,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             report.setSubmitTime(now);
             report.setOperateType(OperateTypeEnum.INSERT.getType());
         }
+        log.info("发送巡检信息到巡检报表——》【{}】",JSON.toJSONString(report));
         rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, report);
     }
 

@@ -55,4 +55,15 @@ public class IceBoxPutReportController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
     }
 
+    /**
+     * 同步历史投放数据到报表
+     * @param ids
+     * @return
+     */
+    @RequestMapping("syncPutDataToReport")
+    public CommonResponse<Void> syncPutDataToReport(@RequestBody List<Integer> ids){
+        iceBoxPutReportService.syncPutDataToReport(ids);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
 }

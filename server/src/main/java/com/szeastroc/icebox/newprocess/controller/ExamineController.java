@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -103,5 +104,16 @@ public class ExamineController {
         IceExamineVo iceExamineVo = iceExamineService.findExamineByNumber(examineNumber);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceExamineVo);
+    }
+
+    /**
+     * 同步历史巡检数据到报表
+     * @param ids
+     * @return
+     */
+    @RequestMapping("syncExamineDataToReport")
+    public CommonResponse<Void> syncExamineDataToReport(@RequestBody List<Integer> ids){
+        iceExamineService.syncExamineDataToReport(ids);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 }

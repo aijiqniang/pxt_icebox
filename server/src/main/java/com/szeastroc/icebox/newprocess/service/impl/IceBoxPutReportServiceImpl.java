@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
@@ -15,6 +16,7 @@ import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
+import com.szeastroc.customer.common.vo.SupplierInfoVo;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
@@ -29,18 +31,18 @@ import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.session.UserManageVo;
 import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
+import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
+import com.szeastroc.visit.common.SessionExamineVo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, IceBoxPutReport> implements IceBoxPutReportService {
@@ -69,6 +71,8 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
     private FeignSupplierClient feignSupplierClient;
     @Autowired
     private FeignStoreClient feignStoreClient;
+    @Autowired
+    private FeignExamineClient feignExamineClient ;
 
     @Override
     public IPage<IceBoxPutReport> findByPage(IceBoxPutReportMsg reportMsg) {
@@ -282,6 +286,163 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             if(putReport == null){
                 iceBoxPutReportDao.insert(report);
             }
+        }
+    }
+
+    @Override
+    public void syncPutDataToReport(List<Integer> ids) {
+        List<PutStoreRelateModel> relateModelList = new ArrayList<>();
+        if(CollectionUtil.isNotEmpty(ids)){
+            List<PutStoreRelateModel> valids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus()).eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()).in(PutStoreRelateModel::getId, ids));
+            List<PutStoreRelateModel> inValids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getStatus, CommonStatus.INVALID.getStatus()).in(PutStoreRelateModel::getId, ids));
+            if(CollectionUtil.isNotEmpty(valids)){
+                relateModelList.addAll(valids);
+            }
+            if(CollectionUtil.isNotEmpty(inValids)){
+                relateModelList.addAll(inValids);
+            }
+        }else {
+            List<PutStoreRelateModel> valids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus()).eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()));
+            List<PutStoreRelateModel> inValids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getStatus, CommonStatus.INVALID.getStatus()));
+            if(CollectionUtil.isNotEmpty(valids)){
+                relateModelList.addAll(valids);
+            }
+            if(CollectionUtil.isNotEmpty(inValids)){
+                relateModelList.addAll(inValids);
+            }
+        }
+        if(CollectionUtil.isEmpty(relateModelList)){
+            return;
+        }
+        for(PutStoreRelateModel relateModel:relateModelList){
+            IceBoxPutReport putReport = new IceBoxPutReport();
+            ApplyRelatePutStoreModel storeModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
+            if(storeModel == null){
+                continue;
+            }
+            putReport.setApplyNumber(storeModel.getApplyNumber());
+            putReport.setPutStatus(relateModel.getPutStatus());
+            if(CommonStatus.INVALID.getStatus().equals(relateModel.getStatus())){
+                putReport.setPutStatus(PutStatus.IS_CANCEL.getStatus());
+            }
+            if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
+                List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, storeModel.getApplyNumber()));
+                if(CollectionUtil.isNotEmpty(icePutApplyRelateBoxes)){
+                    List<Integer> iceboxIds = icePutApplyRelateBoxes.stream().map(x -> x.getBoxId()).collect(Collectors.toList());
+                    List<IceBox> iceBoxList = iceBoxDao.selectBatchIds(iceboxIds);
+                    if(CollectionUtil.isNotEmpty(iceBoxList)){
+                        for(IceBox iceBox:iceBoxList){
+                            if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus()) && iceBox.getModelId().equals(relateModel.getModelId())
+                                    && iceBox.getSupplierId().equals(relateModel.getSupplierId())){
+                                IceBoxPutReport isExistPutReport = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxAssetId, iceBox.getAssetId())
+                                        .eq(IceBoxPutReport::getApplyNumber, storeModel.getApplyNumber()));
+                                if(isExistPutReport == null){
+                                    putReport.setIceBoxAssetId(iceBox.getAssetId());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            putReport.setSubmitterId(relateModel.getCreateBy());
+            putReport.setSubmitTime(relateModel.getCreateTime());
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(relateModel.getCreateBy()));
+            if(userInfoVo != null){
+                putReport.setSubmitterName(userInfoVo.getRealname());
+            }
+            putReport.setPutCustomerNumber(relateModel.getPutStoreNumber());
+            Integer headquartersDeptId = null;
+
+            String headquartersDeptName = null;
+
+            Integer businessDeptId = null;
+
+            String businessDeptName = null;
+
+            Integer regionDeptId = null;
+
+            String regionDeptName = null;
+
+            Integer serviceDeptId = null;
+
+            String serviceDeptName = null;
+
+            Integer groupDeptId = null;
+
+            String groupDeptName = null;
+
+            if(relateModel.getPutStoreNumber().startsWith("C0")){
+                putReport.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
+                StoreInfoDtoVo storeInfo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(relateModel.getPutStoreNumber()));
+                if(storeInfo != null){
+                    putReport.setPutCustomerName(storeInfo.getStoreName());
+                    headquartersDeptId = storeInfo.getHeadquartersDeptId();
+                    headquartersDeptName = storeInfo.getHeadquartersDeptName();
+                    businessDeptId = storeInfo.getBusinessDeptId();
+                    businessDeptName = storeInfo.getBusinessDeptName();
+                    regionDeptId = storeInfo.getRegionDeptId();
+                    regionDeptName = storeInfo.getRegionDeptName();
+                    serviceDeptId = storeInfo.getServiceDeptId();
+                    serviceDeptName = storeInfo.getServiceDeptName();
+                    groupDeptId = storeInfo.getGroupDeptId();
+                    groupDeptName = storeInfo.getGroupDeptName();
+                }
+            }else {
+                SupplierInfoVo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(relateModel.getPutStoreNumber()));
+                if(supplierInfo != null){
+                    putReport.setPutCustomerName(supplierInfo.getName());
+                    putReport.setPutCustomerType(supplierInfo.getSupplierType());
+                    headquartersDeptId = supplierInfo.getHeadquartersDeptId();
+                    headquartersDeptName = supplierInfo.getHeadquartersDeptName();
+                    businessDeptId = supplierInfo.getBusinessDeptId();
+                    businessDeptName = supplierInfo.getBusinessDeptName();
+                    regionDeptId = supplierInfo.getRegionDeptId();
+                    regionDeptName = supplierInfo.getRegionDeptName();
+                    serviceDeptId = supplierInfo.getServiceDeptId();
+                    serviceDeptName = supplierInfo.getServiceDeptName();
+                    groupDeptId = supplierInfo.getGroupDeptId();
+                    groupDeptName = supplierInfo.getGroupDeptName();
+                }
+            }
+            putReport.setHeadquartersDeptId(headquartersDeptId);
+            putReport.setHeadquartersDeptName(headquartersDeptName);
+            putReport.setBusinessDeptId(businessDeptId);
+            putReport.setBusinessDeptName(businessDeptName);
+            putReport.setRegionDeptId(regionDeptId);
+            putReport.setRegionDeptName(regionDeptName);
+            putReport.setServiceDeptId(serviceDeptId);
+            putReport.setServiceDeptName(serviceDeptName);
+            putReport.setGroupDeptId(groupDeptId);
+            putReport.setGroupDeptName(groupDeptName);
+
+            putReport.setSupplierId(relateModel.getSupplierId());
+            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(relateModel.getSupplierId()));
+            if(supplier != null){
+                putReport.setSupplierNumber(supplier.getNumber());
+                putReport.setSupplierName(supplier.getName());
+            }
+            putReport.setFreeType(storeModel.getFreeType());
+            putReport.setIceBoxModelId(relateModel.getModelId());
+            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, relateModel.getModelId()).eq(IceBox::getSupplierId, relateModel.getSupplierId()).last("limit 1"));
+            if(iceBox != null){
+                putReport.setIceBoxModelName(iceBox.getModelName());
+                putReport.setDepositMoney(iceBox.getDepositMoney());
+            }
+            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(storeModel.getApplyNumber()));
+            if(CollectionUtil.isNotEmpty(visitExamineNodeVos)){
+                for(SessionExamineVo.VisitExamineNodeVo examineNodeVo:visitExamineNodeVos){
+                    if(examineNodeVo.getExamineStatus().equals(1)){
+                        putReport.setExamineUserId(examineNodeVo.getUserId());
+                        SimpleUserInfoVo userInfo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(examineNodeVo.getUserId()));
+                        if(userInfo != null){
+                            putReport.setExamineUserName(userInfo.getRealname());
+                        }
+                        putReport.setExamineTime(examineNodeVo.getUpdateTime());
+                    }
+                }
+            }
+            iceBoxPutReportDao.insert(putReport);
         }
     }
 }

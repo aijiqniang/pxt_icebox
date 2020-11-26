@@ -7,6 +7,8 @@ import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 
+import java.util.List;
+
 public interface IceBoxPutReportService extends IService<IceBoxPutReport> {
 
 
@@ -17,6 +19,8 @@ public interface IceBoxPutReportService extends IService<IceBoxPutReport> {
     Integer selectByExportCount(LambdaQueryWrapper<IceBoxPutReport> wrapper);
 
     void dealHistoryData();
+
+    void syncPutDataToReport(List<Integer> ids);
 }
 
 

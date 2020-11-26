@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 
+import java.util.List;
 import java.util.Map;
 
 public interface IceExamineService extends IService<IceExamine>{
@@ -22,4 +23,6 @@ public interface IceExamineService extends IService<IceExamine>{
     void dealIceExamineCheck(String redisKey, Integer status, Integer updateBy);
 
     IceExamineVo findExamineByNumber(String examineNumber);
+
+    void syncExamineDataToReport(List<Integer> ids);
 }

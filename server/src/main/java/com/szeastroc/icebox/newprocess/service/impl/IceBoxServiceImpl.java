@@ -2115,6 +2115,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("iceBoxId", iceBox.getId()); // 设备编号 --东鹏资产id
         map.put("assetId", iceBoxExtend.getAssetId()); // 设备编号 --东鹏资产id
         map.put("chestName", iceBox.getChestName()); // 名称
+        map.put("modelId", iceBox.getModelId()); // 型号Id
         IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getId, iceBox.getModelId()).last(" limit 1"));
         map.put("chestModel", iceModel == null ? null : iceModel.getChestModel()); // 型号
         map.put("chestNorm", iceBox.getChestNorm()); // 规格

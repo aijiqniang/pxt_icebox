@@ -1542,4 +1542,117 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         }
         return iceExamineVo;
     }
+
+    @Override
+    public void syncExamineDataToReport(List<Integer> ids) {
+        List<IceExamine> iceExamineList = null;
+        if(CollectionUtil.isNotEmpty(ids)){
+            iceExamineList = iceExamineDao.selectList(Wrappers.<IceExamine>lambdaQuery().in(IceExamine::getId,ids));
+        }else {
+            iceExamineList = iceExamineDao.selectList(null);
+        }
+        if(CollectionUtil.isEmpty(iceExamineList)){
+            return;
+        }
+        for(IceExamine iceExamine:iceExamineList){
+            IceBoxExamineExceptionReport report = new IceBoxExamineExceptionReport();
+            report.setExamineNumber(iceExamine.getExamineNumber());
+            if(ExamineStatus.DEFAULT_EXAMINE.getStatus().equals(iceExamine.getExaminStatus()) || ExamineStatus.DOING_EXAMINE.getStatus().equals(iceExamine.getExaminStatus())){
+                report.setStatus(ExamineExceptionStatusEnums.is_reporting.getStatus());
+            }
+            if(ExamineStatus.PASS_EXAMINE.getStatus().equals(iceExamine.getExaminStatus())){
+                report.setStatus(ExamineExceptionStatusEnums.allow_report.getStatus());
+            }
+
+            if(ExamineStatus.REJECT_EXAMINE.getStatus().equals(iceExamine.getExaminStatus())){
+                report.setStatus(ExamineExceptionStatusEnums.is_unpass.getStatus());
+            }
+            if(StringUtils.isEmpty(iceExamine.getExamineNumber())){
+                String examineNumber = UUID.randomUUID().toString().replace("-", "");
+                report.setExamineNumber(examineNumber);
+                report.setStatus(ExamineExceptionStatusEnums.is_repaired.getStatus());
+            }
+            IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportDao.selectOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, iceExamine.getExamineNumber()));
+            if(isExsit != null){
+                continue;
+            }
+            IceBox iceBox = iceBoxDao.selectById(iceExamine.getIceBoxId());
+
+            Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(iceBox.getDeptId()));
+            SessionDeptInfoVo group = deptInfoVoMap.get(1);
+            if (group != null) {
+                report.setGroupDeptId(group.getId());
+                report.setGroupDeptName(group.getName());
+            }
+            SessionDeptInfoVo service = deptInfoVoMap.get(2);
+            if (service != null) {
+                report.setServiceDeptId(service.getId());
+                report.setServiceDeptName(service.getName());
+            }
+            SessionDeptInfoVo region = deptInfoVoMap.get(3);
+            if (region != null) {
+                report.setRegionDeptId(region.getId());
+                report.setRegionDeptName(region.getName());
+            }
+
+            SessionDeptInfoVo business = deptInfoVoMap.get(4);
+            if (business != null) {
+                report.setBusinessDeptId(business.getId());
+                report.setBusinessDeptName(business.getName());
+            }
+
+            SessionDeptInfoVo headquarters = deptInfoVoMap.get(5);
+            if (headquarters != null) {
+                report.setHeadquartersDeptId(headquarters.getId());
+                report.setHeadquartersDeptName(headquarters.getName());
+            }
+            report.setToOaType(iceExamine.getIceStatus());
+            report.setDepositMoney(iceBox.getDepositMoney());
+            report.setIceBoxModelId(iceBox.getModelId());
+            report.setIceBoxModelName(iceBox.getModelName());
+            report.setIceBoxAssetId(iceBox.getAssetId());
+            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
+            report.setSupplierId(iceBox.getSupplierId());
+            if (supplier != null) {
+                report.setSupplierNumber(supplier.getNumber());
+                report.setSupplierName(supplier.getName());
+            }
+            report.setPutCustomerNumber(iceExamine.getStoreNumber());
+            if(iceExamine.getStoreNumber().startsWith("C0")){
+                StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceExamine.getStoreNumber()));
+                if(store != null){
+                    report.setPutCustomerName(store.getStoreName());
+                    report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
+                }
+            }else {
+                SubordinateInfoVo customer = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceExamine.getStoreNumber()));
+                if(customer != null){
+                    report.setPutCustomerName(customer.getName());
+                    report.setPutCustomerType(customer.getSupplierType());
+                }
+            }
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceExamine.getCreateBy()));
+            report.setSubmitterId(iceExamine.getCreateBy());
+            if (userInfoVo != null) {
+                report.setSubmitterName(userInfoVo.getRealname());
+                report.setSubmitterPosion(userInfoVo.getPosion());
+            }
+            report.setSubmitTime(iceExamine.getCreateTime());
+            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(iceExamine.getExamineNumber()));
+            if(CollectionUtil.isNotEmpty(visitExamineNodeVos)){
+                for(SessionExamineVo.VisitExamineNodeVo examineNodeVo:visitExamineNodeVos){
+                    if(examineNodeVo.getExamineStatus().equals(1)){
+                        report.setExamineUserId(examineNodeVo.getUserId());
+                        SimpleUserInfoVo userInfo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(examineNodeVo.getUserId()));
+                        if(userInfo != null){
+                            report.setExamineUserName(userInfo.getRealname());
+                        }
+                        report.setExamineTime(examineNodeVo.getUpdateTime());
+                    }
+                }
+            }
+            iceBoxExamineExceptionReportDao.insert(report);
+        }
+
+    }
 }

@@ -93,4 +93,13 @@ public class DirectExchangeConfig {
         factory.setPrefetchCount(10);
         return factory;
     }
+
+    @Bean(name = "iceExportExcelContainer")
+    public SimpleRabbitListenerContainerFactory iceExportExcelContainer(){
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.NONE);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
 }

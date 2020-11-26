@@ -40,7 +40,10 @@ import com.szeastroc.user.client.FeignDeptClient;
 import com.szeastroc.user.client.FeignDeptRuleClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.session.MatchRuleVo;
-import com.szeastroc.user.common.vo.*;
+import com.szeastroc.user.common.vo.SessionDeptInfoVo;
+import com.szeastroc.user.common.vo.SessionUserInfoVo;
+import com.szeastroc.user.common.vo.SimpleUserInfoVo;
+import com.szeastroc.user.common.vo.SysRuleIceDetailVo;
 import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.common.IceBoxExamineModel;
@@ -97,7 +100,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void doExamine(IceExamine iceExamine) {
-
+        log.info("开始冰柜巡检doExamine-->[{}]",JSON.toJSONString(iceExamine));
         if (!iceExamine.validate()) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "参数不完整");
         }
@@ -155,92 +158,99 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             if(iceExamine.getExaminStatus().equals(ExamineStatus.REJECT_EXAMINE.getStatus())){
                 examineExceptionStatus = ExamineExceptionStatusEnums.is_unpass.getStatus();
             }
+            log.info("开始构建冰柜巡检报表数据 buildReportAndSendMq-->[{}]",JSON.toJSONString(iceExamine));
             buildReportAndSendMq(iceExamine,examineExceptionStatus,now, null);
         }, ExecutorServiceFactory.getInstance());
     }
 
     private void buildReportAndSendMq(IceExamine iceExamine, Integer status, Date now, Integer updateBy) {
-        IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportDao.selectOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, iceExamine.getExamineNumber()));
-        IceBoxExamineExceptionReportMsg report = new IceBoxExamineExceptionReportMsg();
-        if(isExsit != null){
-            if(updateBy != null){
-                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(updateBy));
-                report.setExamineUserId(updateBy);
-                report.setExamineTime(now);
-                if(userInfoVo != null){
-                    report.setExamineUserName(userInfoVo.getRealname());
+        log.info("开始进行构建冰柜巡检报表数据 buildReportAndSendMq-->[{}]",JSON.toJSONString(iceExamine));
+        try {
+            IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportDao.selectOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, iceExamine.getExamineNumber()));
+            IceBoxExamineExceptionReportMsg report = new IceBoxExamineExceptionReportMsg();
+            if(isExsit != null){
+                if(updateBy != null){
+                    SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(updateBy));
+                    report.setExamineUserId(updateBy);
+                    report.setExamineTime(now);
+                    if(userInfoVo != null){
+                        report.setExamineUserName(userInfoVo.getRealname());
+                    }
                 }
-            }
-            report.setExamineNumber(iceExamine.getExamineNumber());
-            report.setStatus(status);
-            report.setOperateType(OperateTypeEnum.UPDATE.getType());
-        }else {
-            IceBox iceBox = iceBoxDao.selectById(iceExamine.getIceBoxId());
-            report.setExamineNumber(iceExamine.getExamineNumber());
-            report.setStatus(status);
-            Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(iceBox.getDeptId()));
-            SessionDeptInfoVo group = deptInfoVoMap.get(1);
-            if (group != null) {
-                report.setGroupDeptId(group.getId());
-                report.setGroupDeptName(group.getName());
-            }
-            SessionDeptInfoVo service = deptInfoVoMap.get(2);
-            if (service != null) {
-                report.setServiceDeptId(service.getId());
-                report.setServiceDeptName(service.getName());
-            }
-            SessionDeptInfoVo region = deptInfoVoMap.get(3);
-            if (region != null) {
-                report.setRegionDeptId(region.getId());
-                report.setRegionDeptName(region.getName());
-            }
-
-            SessionDeptInfoVo business = deptInfoVoMap.get(4);
-            if (business != null) {
-                report.setBusinessDeptId(business.getId());
-                report.setBusinessDeptName(business.getName());
-            }
-
-            SessionDeptInfoVo headquarters = deptInfoVoMap.get(5);
-            if (headquarters != null) {
-                report.setHeadquartersDeptId(headquarters.getId());
-                report.setHeadquartersDeptName(headquarters.getName());
-            }
-            report.setToOaType(iceExamine.getIceStatus());
-            report.setDepositMoney(iceBox.getDepositMoney());
-            report.setIceBoxModelId(iceBox.getModelId());
-            report.setIceBoxModelName(iceBox.getModelName());
-            report.setIceBoxAssetId(iceBox.getAssetId());
-            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
-            report.setSupplierId(iceBox.getSupplierId());
-            if (supplier != null) {
-                report.setSupplierNumber(supplier.getNumber());
-                report.setSupplierName(supplier.getName());
-            }
-            report.setPutCustomerNumber(iceExamine.getStoreNumber());
-            if(iceExamine.getStoreNumber().startsWith("C0")){
-                StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceExamine.getStoreNumber()));
-                if(store != null){
-                    report.setPutCustomerName(store.getStoreName());
-                    report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
-                }
+                report.setExamineNumber(iceExamine.getExamineNumber());
+                report.setStatus(status);
+                report.setOperateType(OperateTypeEnum.UPDATE.getType());
             }else {
-                SubordinateInfoVo customer = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceExamine.getStoreNumber()));
-                if(customer != null){
-                    report.setPutCustomerName(customer.getName());
-                    report.setPutCustomerType(customer.getSupplierType());
+                IceBox iceBox = iceBoxDao.selectById(iceExamine.getIceBoxId());
+                report.setExamineNumber(iceExamine.getExamineNumber());
+                report.setStatus(status);
+                Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(iceBox.getDeptId()));
+                SessionDeptInfoVo group = deptInfoVoMap.get(1);
+                if (group != null) {
+                    report.setGroupDeptId(group.getId());
+                    report.setGroupDeptName(group.getName());
                 }
+                SessionDeptInfoVo service = deptInfoVoMap.get(2);
+                if (service != null) {
+                    report.setServiceDeptId(service.getId());
+                    report.setServiceDeptName(service.getName());
+                }
+                SessionDeptInfoVo region = deptInfoVoMap.get(3);
+                if (region != null) {
+                    report.setRegionDeptId(region.getId());
+                    report.setRegionDeptName(region.getName());
+                }
+
+                SessionDeptInfoVo business = deptInfoVoMap.get(4);
+                if (business != null) {
+                    report.setBusinessDeptId(business.getId());
+                    report.setBusinessDeptName(business.getName());
+                }
+
+                SessionDeptInfoVo headquarters = deptInfoVoMap.get(5);
+                if (headquarters != null) {
+                    report.setHeadquartersDeptId(headquarters.getId());
+                    report.setHeadquartersDeptName(headquarters.getName());
+                }
+                report.setToOaType(iceExamine.getIceStatus());
+                report.setDepositMoney(iceBox.getDepositMoney());
+                report.setIceBoxModelId(iceBox.getModelId());
+                report.setIceBoxModelName(iceBox.getModelName());
+                report.setIceBoxAssetId(iceBox.getAssetId());
+                SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
+                report.setSupplierId(iceBox.getSupplierId());
+                if (supplier != null) {
+                    report.setSupplierNumber(supplier.getNumber());
+                    report.setSupplierName(supplier.getName());
+                }
+                report.setPutCustomerNumber(iceExamine.getStoreNumber());
+                if(iceExamine.getStoreNumber().startsWith("C0")){
+                    StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceExamine.getStoreNumber()));
+                    if(store != null){
+                        report.setPutCustomerName(store.getStoreName());
+                        report.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
+                    }
+                }else {
+                    SubordinateInfoVo customer = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceExamine.getStoreNumber()));
+                    if(customer != null){
+                        report.setPutCustomerName(customer.getName());
+                        report.setPutCustomerType(customer.getSupplierType());
+                    }
+                }
+                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceExamine.getCreateBy()));
+                report.setSubmitterId(iceExamine.getCreateBy());
+                if (userInfoVo != null) {
+                    report.setSubmitterName(userInfoVo.getRealname());
+                    report.setSubmitterPosion(userInfoVo.getPosion());
+                }
+                report.setSubmitTime(now);
+                report.setOperateType(OperateTypeEnum.INSERT.getType());
             }
-            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceExamine.getCreateBy()));
-            report.setSubmitterId(iceExamine.getCreateBy());
-            if (userInfoVo != null) {
-                report.setSubmitterName(userInfoVo.getRealname());
-                report.setSubmitterPosion(userInfoVo.getPosion());
-            }
-            report.setSubmitTime(now);
-            report.setOperateType(OperateTypeEnum.INSERT.getType());
+            log.info("发送巡检信息到巡检报表——》【{}】",JSON.toJSONString(report));
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, report);
+        } catch (Exception e) {
+            log.info("捕获的buildReportAndSendMq异常信息-->[{}],具体信息-->[{}]",JSON.toJSONString(e), e.getMessage());
         }
-        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, report);
     }
 
     @Override
@@ -498,6 +508,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //            }
 //        }
 
+        log.info("开始冰柜巡检doExamineNew-->[{}]",JSON.toJSONString(iceExamine));
         doExamine(iceExamine);
         //发送mq消息,同步申请数据到报表
 //        CompletableFuture.runAsync(() -> {

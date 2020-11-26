@@ -30,6 +30,7 @@ import com.szeastroc.user.client.FeignCacheClient;
 import com.szeastroc.user.client.FeignUserClient;
 import com.szeastroc.user.common.session.UserManageVo;
 import com.szeastroc.user.common.vo.SessionDeptInfoVo;
+import com.szeastroc.user.common.vo.SessionUserInfoVo;
 import com.szeastroc.user.common.vo.SimpleUserInfoVo;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
@@ -347,9 +348,11 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             }
             putReport.setSubmitterId(relateModel.getCreateBy());
             putReport.setSubmitTime(relateModel.getCreateTime());
-            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(relateModel.getCreateBy()));
-            if(userInfoVo != null){
-                putReport.setSubmitterName(userInfoVo.getRealname());
+            if(relateModel.getCreateBy() != null){
+                SessionUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignCacheClient.getForUserInfoVo(relateModel.getCreateBy()));
+                if(userInfoVo != null){
+                    putReport.setSubmitterName(userInfoVo.getRealname());
+                }
             }
             putReport.setPutCustomerNumber(relateModel.getPutStoreNumber());
             Integer headquartersDeptId = null;

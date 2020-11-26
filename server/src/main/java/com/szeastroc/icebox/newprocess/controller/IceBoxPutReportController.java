@@ -65,7 +65,7 @@ public class IceBoxPutReportController {
         try {
             iceBoxPutReportService.syncPutDataToReport(ids);
         }catch (Exception e){
-            e.printStackTrace();
+            return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
         }
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }

@@ -2,26 +2,29 @@ package com.szeastroc.icebox.newprocess.controller.store;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
+import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.IceBoxStatus;
 import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
-import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.service.*;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
@@ -32,19 +35,25 @@ import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
+import com.szeastroc.icebox.rabbitMQ.DirectProducer;
+import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.util.ExcelUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.BeanUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by Tulane
@@ -63,6 +72,8 @@ public class IceBoxController {
     private final IceBackOrderService iceBackOrderService;
     private final FeignStoreClient feignStoreClient;
     private final FeignSupplierClient feignSupplierClient;
+    private final DirectProducer directProducer;
+    private final RabbitTemplate rabbitTemplate;
 
     /**
      * 根据门店编号获取所属冰柜信息
@@ -156,7 +167,7 @@ public class IceBoxController {
         if (StringUtils.isBlank(qrcode) || StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxByQrcodeNew(qrcode,pxtNumber));
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxByQrcodeNew(qrcode, pxtNumber));
     }
 
     /**
@@ -173,9 +184,8 @@ public class IceBoxController {
         if (id == null || StringUtils.isBlank(pxtNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxById(id,pxtNumber));
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBoxService.getIceBoxById(id, pxtNumber));
     }
-
 
 
     /**
@@ -261,7 +271,8 @@ public class IceBoxController {
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea() + "");
         clientInfoRequest.setOrderSource(OrderSourceEnums.OTOC.getType());
         clientInfoRequest.setType(1);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
+        OrderPayResponse orderPayResponse = icePutOrderService.applyPayIceBox(clientInfoRequest);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
     }
 
     /**
@@ -285,7 +296,8 @@ public class IceBoxController {
         clientInfoRequest.setMarketAreaId(subordinateInfoVo.getMarketAreaId() + "");
         clientInfoRequest.setOrderSource(OrderSourceEnums.DMS.getType());
         clientInfoRequest.setType(1);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutOrderService.applyPayIceBox(clientInfoRequest));
+        OrderPayResponse orderPayResponse = icePutOrderService.applyPayIceBox(clientInfoRequest);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, orderPayResponse);
     }
 
     /**
@@ -300,7 +312,9 @@ public class IceBoxController {
         OrderPayBack orderPayBack = CommonUtil.xmlToObj(request);
         if (orderPayBack.getReturnCode().equals("SUCCESS")) {
             //修改订单信息
-            icePutOrderService.notifyOrderInfo(orderPayBack);
+            JSONObject jsonObject = icePutOrderService.notifyOrderInfo(orderPayBack);
+            // 发送mq消息
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
@@ -313,7 +327,7 @@ public class IceBoxController {
      */
     @GetMapping("/udpateAndGetOrderPayStatus")
     public CommonResponse<String> udpateAndGetOrderPayStatus(String orderNumber) throws Exception {
-        boolean flag = icePutOrderService.getPayStatus(orderNumber);
+        Boolean flag = icePutOrderService.getPayStatus(orderNumber);
         if (flag) {
             return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
         } else {
@@ -420,8 +434,28 @@ public class IceBoxController {
      */
     @PostMapping("/importExcel")
     public CommonResponse<String> importExcel(@RequestParam("excelFile") MultipartFile mfile) throws Exception {
-//        iceBoxService.importExcel(mfile);
-        iceBoxService.importByEasyExcel(mfile);
+
+        List<JSONObject> lists = iceBoxService.importByEasyExcel(mfile);
+
+//        JSONObject jsonObj = new JSONObject();
+//        jsonObj.put("suppId", 12);
+//        jsonObj.put("modelId", 1);
+//        jsonObj.put("deptId", 9548);
+//        jsonObj.put("resourceStr", "importExcel"); // 来源入口
+//        jsonObj.put(IceBoxConstant.methodName, MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+//        List<JSONObject> lists = Lists.newArrayList(jsonObj);
+        /**
+         * @Date: 2020/10/19 14:50 xiao
+         *  将报表中导入数据库中的数据异步更新到报表中
+         */
+        if (CollectionUtils.isNotEmpty(lists)) {
+            ExecutorServiceFactory.getInstance().execute(() -> {
+                for (JSONObject jsonObject : lists) {
+                    // 发送mq消息
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                }
+            });
+        }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
@@ -478,7 +512,6 @@ public class IceBoxController {
             Thread.sleep(2000);
 
             flag = icePutOrderService.getPayStatus(orderNumber);
-
             // 订单未完成时, 长连接时间判断
             long nowTime = System.currentTimeMillis();
             if (breakCode < 0 && (nowTime - startTime) > 8000) {
@@ -515,11 +548,12 @@ public class IceBoxController {
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, flag);
     }
+
     @RequestMapping("dealIceBoxOrder")
     public CommonResponse<IceBox> dealIceBoxOrder() throws Exception {
         List<IcePutOrder> icePutOrders = icePutOrderService.list(Wrappers.<IcePutOrder>lambdaQuery().eq(IcePutOrder::getStatus, OrderStatus.IS_PAY_ING.getStatus()));
-        if(CollectionUtil.isNotEmpty(icePutOrders)){
-            for(IcePutOrder order:icePutOrders){
+        if (CollectionUtil.isNotEmpty(icePutOrders)) {
+            for (IcePutOrder order : icePutOrders) {
                 this.loopPutOrderPayStatus(order.getOrderNum());
             }
         }
@@ -528,13 +562,13 @@ public class IceBoxController {
 
 
     @GetMapping("/judge/customer/bindIceBox")
-    CommonResponse<Boolean> judgeCustomerBindIceBox(@RequestParam("number") String  number){
+    CommonResponse<Boolean> judgeCustomerBindIceBox(@RequestParam("number") String number) {
 
         int count = iceBoxService.count(new LambdaQueryWrapper<IceBox>().eq(IceBox::getPutStoreNumber, number).eq(IceBox::getPutStatus, IceBoxStatus.IS_PUTED.getStatus()));
-       if( count>0){
-           return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null,Boolean.TRUE);
-       }else{
-           return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null,Boolean.FALSE);
-       }
+        if (count > 0) {
+            return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null, Boolean.TRUE);
+        } else {
+            return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null, Boolean.FALSE);
+        }
     }
 }

@@ -55,6 +55,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.icebox.vo.IceBoxRequest;
@@ -80,6 +81,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -104,11 +107,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
-    @Autowired
-    private IceBoxService iceBoxService;
-    @Autowired
-    private IcePutOrderService icePutOrderService;
-
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IceModelDao iceModelDao;
     private final FeignDeptClient feignDeptClient;
@@ -142,7 +140,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
     private final IceBoxPutReportDao iceBoxPutReportDao;
     private final FeignDeptRuleClient feignDeptRuleClient;
-
+    @Autowired
+    private IceBoxService iceBoxService;
+    @Autowired
+    private IcePutOrderService icePutOrderService;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -1922,11 +1923,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPage.setDeptIdList(deptIdList);
         // 处理请求数据
         if (dealIceBoxPage(iceBoxPage)) {
-            return null;
+            return new Page();
         }
         List<IceBox> iceBoxList = iceBoxDao.findPage(iceBoxPage);
         if (CollectionUtils.isEmpty(iceBoxList)) {
-            return null;
+            return new Page();
         }
         List<Integer> deptIds = iceBoxList.stream().map(IceBox::getDeptId).collect(Collectors.toList());
         // 营销区域对应得部门  服务处->大区->事业部
@@ -2396,7 +2397,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     @Override
-    public void importByEasyExcel(MultipartFile mfile) throws Exception {
+    public List<JSONObject> importByEasyExcel(MultipartFile mfile) throws Exception {
 
         /**
          * @Date: 2020/5/20 9:19 xiao
@@ -2419,7 +2420,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<String, SubordinateInfoVo> supplierNumberMap = Maps.newHashMap(); // 存储经销商编号和id
 
         int importSize = importDataList.size();
-        //List<String> message = Lists.newArrayList();
+        List<JSONObject> lists = Lists.newArrayList();
+
         for (ImportIceBoxVo boxVo : importDataList) {
 
             Integer serialNumber = boxVo.getSerialNumber(); // 序号
@@ -2499,20 +2501,23 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Integer modelId = iceModelMap.get(modelStr); // 设备型号
 
 
-            // 经销商id
-            Integer supplierId = null;
+            Integer supplierId = null;  // 经销商id
+            String suppName = null; // 经销商名称
             SubordinateInfoVo subordinateInfoVo = supplierNumberMap.get(supplierNumber);
             if (subordinateInfoVo != null && subordinateInfoVo.getSupplierId() != null) {
                 supplierId = subordinateInfoVo.getSupplierId();
+                suppName = subordinateInfoVo.getName();
             } else {
                 // 去数据库查询
                 SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
                 if (infoVo == null) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商编号不存在");
                 }
+                suppName = infoVo.getName();
                 supplierId = infoVo.getSupplierId();
                 supplierNumberMap.put(supplierNumber, infoVo);
             }
+
             // 鉴于服务处就是对应经销商的服务处,所以直接用经销商的
             Integer deptId = supplierNumberMap.get(supplierNumber).getMarketAreaId(); // 所属服务处
             if (iceBox == null) {
@@ -2566,8 +2571,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             }
+
+            JSONObject jsonObject = setAssetReportJson(iceBox,"importByEasyExcel");
+            lists.add(jsonObject);
         }
         log.info("importExcel 处理数据结束-->{}", importSize);
+        return lists;
     }
 
     @Override
@@ -2944,7 +2953,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBoxDao.updateById(iceBox);
-
                     OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
                     oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
                     oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
@@ -2984,7 +2992,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                             iceBox.setUpdatedTime(new Date());
                             iceBoxDao.updateById(iceBox);
-
                             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
                             iceBoxExtend.setLastApplyNumber(icePutApply.getApplyNumber());
                             iceBoxExtend.setLastPutTime(icePutApply.getCreatedTime());
@@ -4111,6 +4118,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 正常的冰柜改为异常的冰柜时 不能变更使用客户
             throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
         }
+
+        boolean boo = false;
         if (modifyCustomer && null != modifyCustomerType) {
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
             String customerNumber = iceBoxManagerVo.getCustomerNumber();
@@ -4207,6 +4216,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                //todo 这里冰柜改为已投放
+                boo = true;
             }
         } else {
             iceBox.setPutStoreNumber(oldIceBox.getPutStoreNumber());
@@ -4214,6 +4225,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxDao.update(iceBox, updateWrapper);
         iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, iceBox.getAssetId()));
         convertToIceBoxChangeHistory(oldIceBox, iceBox, iceBoxChangeHistory, userManageVo);
+
+        if (boo) {
+            JSONObject jsonObject = setAssetReportJson(iceBox,"changeIcebox");
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                }
+            });
+        }
     }
 
     @Override
@@ -4615,5 +4636,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             iceBoxVoList.add(iceBoxVo);
         }
         return iceBoxVoList;
+    }
+
+    @Override
+    public JSONObject setAssetReportJson(IceBox iceBox, String resourceStr) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("suppId", iceBox.getSupplierId());
+        jsonObject.put("modelId", iceBox.getModelId());
+        jsonObject.put("deptId", iceBox.getDeptId());
+        jsonObject.put("resourceStr", resourceStr); // 来源入口
+        jsonObject.put(IceBoxConstant.methodName, MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+        return jsonObject;
     }
 }

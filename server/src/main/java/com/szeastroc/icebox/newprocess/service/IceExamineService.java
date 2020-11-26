@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 
+import java.util.List;
+
 import java.util.Map;
 
 public interface IceExamineService extends IService<IceExamine>{
@@ -16,6 +18,12 @@ public interface IceExamineService extends IService<IceExamine>{
     IPage<IceExamineVo> findExamine(IceExamineRequest iceExamineRequest);
 
     IceExamineVo findOneExamine(IceExamineRequest iceExamineRequest);
+
+    List<IceExamine> getInspectionBoxes(List<Integer> userIds);
+
+    List<IceExamine> getInspectionBoxes(Integer userId);
+
+    Integer getNoInspectionBoxes(Integer putCount, Integer userId);
 
     Map<String, Object> doExamineNew(IceExamineVo iceExamineVo);
 

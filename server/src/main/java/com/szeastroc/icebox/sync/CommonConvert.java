@@ -36,7 +36,7 @@ public class CommonConvert {
         ClientInfo clientInfo = clientInfoService.getById(clientId);
         SubordinateInfoVo subordinateInfoVo = getSuppilerVoByClientNumber(clientInfo.getClientNumber());
         if(subordinateInfoVo.getId() == null){
-            log.error("未找到匹配的经销商clientId -> clientId: [{}]", clientId);
+            log.info("未找到匹配的经销商clientId -> clientId: [{}]", clientId);
             throw new Exception("数据不正确, 停止同步");
         }
         return subordinateInfoVo.getId();
@@ -65,7 +65,7 @@ public class CommonConvert {
         ClientInfo clientInfo = clientInfoService.getById(clientId);
         SubordinateInfoVo subordinateInfoVo = getSuppilerVoByClientNumber(clientInfo.getClientNumber());
         if(subordinateInfoVo.getMarketAreaId() == null){
-            log.error("未找到匹配的经销商clientId -> clientId: [{}]", clientId);
+            log.info("未找到匹配的经销商clientId -> clientId: [{}]", clientId);
             throw new Exception("数据不正确, 停止同步");
         }
         return subordinateInfoVo.getMarketAreaId();
@@ -82,7 +82,7 @@ public class CommonConvert {
         // 调用customer服务接口, 获取门店Vo
         StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtId(clientInfo.getClientNumber()));
         if(storeInfoDtoVo == null){
-            log.error("未找到匹配的门店 -> pxtId: [{}]", clientInfo.getClientNumber());
+            log.info("未找到匹配的门店 -> pxtId: [{}]", clientInfo.getClientNumber());
             throw new Exception("数据不正确, 停止同步");
         }
         return storeInfoDtoVo.getStoreNumber();

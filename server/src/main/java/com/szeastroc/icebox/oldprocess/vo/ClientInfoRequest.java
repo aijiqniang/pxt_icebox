@@ -27,7 +27,14 @@ public class ClientInfoRequest {
     private String ip;
     private String openid;
     private String qrcode;
-    private Integer orderSource;//1-otoc,2-dms
+    /**
+     * 数据来源：1-otoc,2-dms
+     */
+    private Integer orderSource;
+    /**
+     * 旧冰柜通知类型：1-已投放有冰柜id,2-未投放无冰柜id
+     */
+    private Integer type;
 
     public boolean validate(){
 //        if(StringUtils.isBlank(clientName) || StringUtils.isBlank(clientNumber) || StringUtils.isBlank(marketAreaId)

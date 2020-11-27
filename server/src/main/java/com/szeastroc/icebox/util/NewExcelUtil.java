@@ -108,8 +108,8 @@ public class NewExcelUtil<T> {
             // 更新下载列表中的数据
             feignExportRecordsClient.updateExportRecord(imgUrl, 1, exportRecordsId);
         } catch (Exception e) {
-            log.error("报表导出excel错误", e);
-            log.error("报表导出excel错误,exportRecordsId-->[{}]", exportRecordsId);
+            log.info("报表导出excel错误", e);
+            log.info("报表导出excel错误,exportRecordsId-->[{}]", exportRecordsId);
         } finally {
             // 删除临时目录
             if (StringUtils.isNotBlank(xlsxPath)) {
@@ -137,8 +137,8 @@ public class NewExcelUtil<T> {
             // 更新下载列表中的数据
             feignExportRecordsClient.updateExportRecord(imgUrl, 1, exportRecordsId);
         } catch (Exception e) {
-            log.error("报表导出excel错误", e);
-            log.error("报表导出excel错误,exportRecordsId-->[{}]", exportRecordsId);
+            log.info("报表导出excel错误", e);
+            log.info("报表导出excel错误,exportRecordsId-->[{}]", exportRecordsId);
         } finally {
             // 删除临时目录
             if (StringUtils.isNotBlank(xlsxPath)) {

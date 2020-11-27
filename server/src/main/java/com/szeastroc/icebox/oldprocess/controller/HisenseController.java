@@ -46,10 +46,10 @@ public class HisenseController extends BaseController {
             //调用推送业务
             iceEventRecordService.EventPush(hisenseDTO);
         }catch (DongPengException e){
-            log.error(e.getMessage());
+            log.info(e.getMessage());
             return renderFailed(e.getMessage());
         }catch (Exception e){
-            log.error("推送冰箱数据接口异常", e);
+            log.info("推送冰箱数据接口异常", e);
             e.printStackTrace();
             return renderError("接收异常");
         }

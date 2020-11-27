@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.szeastroc.icebox.enums.IceBoxStatus;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +23,12 @@ import java.util.Date;
 public class IceExamine {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
+
+    /**
+     * 冰柜巡检编号
+     */
+    @TableField(value = "examine_number")
+    private String examineNumber;
 
     /**
      * 冰柜的id
@@ -97,10 +105,32 @@ public class IceExamine {
     @TableField(value = "gps_address")
     private String gpsAddress;
 
+    /**
+     * 冰柜状态
+     */
+    @TableField(value = "ice_status")
+    private Integer iceStatus;
+
+    /**
+     * 巡检备注
+     */
+    @TableField(value = "examin_msg")
+    private String examinMsg;
+
+    /**
+     * 审批状态：0-驳回，1-审核通过
+     */
+    @TableField(value = "examin_status")
+    private Integer examinStatus;
+
 
     public boolean validate() {
-        return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)
-                && StringUtils.isNotBlank(displayImage) && createBy != null;
+        if(IceBoxEnums.StatusEnum.LOSE.getType().equals(iceStatus)){
+            return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && createBy != null;
+        }else {
+            return iceBoxId != null && StringUtils.isNotBlank(storeNumber) && StringUtils.isNotBlank(exteriorImage)
+                    && StringUtils.isNotBlank(displayImage) && createBy != null;
+        }
     }
 
 

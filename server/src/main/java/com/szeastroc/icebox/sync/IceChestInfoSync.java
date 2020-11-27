@@ -112,7 +112,7 @@ public class IceChestInfoSync {
         // |-> 没有则创建
         int count = iceModelService.count(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, chestModel));
         if (count > 1) {
-            log.error("冰柜型号表存在重复数据 -> chestModel: [{}]", chestModel);
+            log.info("冰柜型号表存在重复数据 -> chestModel: [{}]", chestModel);
             throw new Exception("数据不正确, 停止同步");
         }
         if (count > 0) {

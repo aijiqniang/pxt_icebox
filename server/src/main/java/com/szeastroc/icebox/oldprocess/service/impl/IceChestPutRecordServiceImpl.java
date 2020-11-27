@@ -128,7 +128,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
                 .eq(IceChestPutRecord::getRecordStatus, RecordStatus.SEND_ING.getStatus()));
         if (CollectionUtils.isNotEmpty(iceChestPutRecords) && iceChestPutRecords.size() > 1) {
             //数据错误: 不存在对应单个冰柜
-            log.error("数据错误:冰柜投放发出记录存在多条 -> {}", JSON.toJSONString(iceChestPutRecords));
+            log.info("数据错误:冰柜投放发出记录存在多条 -> {}", JSON.toJSONString(iceChestPutRecords));
             throw new ImproperOptionException(Constants.ErrorMsg.RECORD_DATA_ERROR);
         }
 
@@ -169,7 +169,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         }
         if (CollectionUtils.isEmpty(orderInfos) || orderInfos.size() > 1) {
             //数据错误: 不存在对应投放的单个订单
-            log.error("数据错误:投放对应订单记录不存在或存在多条 -> 订单: {} | 投放: {}", JSON.toJSONString(orderInfos), JSON.toJSON(iceChestPutRecord));
+            log.info("数据错误:投放对应订单记录不存在或存在多条 -> 订单: {} | 投放: {}", JSON.toJSONString(orderInfos), JSON.toJSON(iceChestPutRecord));
             throw new ImproperOptionException(Constants.ErrorMsg.RECORD_DATA_ERROR);
         }
         OrderInfo orderInfo = orderInfos.get(0);

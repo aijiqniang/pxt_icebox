@@ -1,12 +1,12 @@
 package com.szeastroc.icebox.newprocess.consumer.utils;
 
+import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ImageUploadUtil;
-import com.szeastroc.customer.client.constant.RegisterConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.ExcelConstant;
 import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
 import com.szeastroc.icebox.newprocess.enums.ExportRecordTypeEnum;
-import com.szeastroc.visit.client.FeignExportRecordsClient;
+import com.szeastroc.transfer.client.constant.RegisterConstant;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.CellStyle;

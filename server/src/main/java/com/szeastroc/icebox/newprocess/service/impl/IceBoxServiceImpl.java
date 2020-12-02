@@ -3040,15 +3040,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         .last("limit 1"));
                 if (iceBox != null && IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
 
-                    iceBox.setOldAssetId(iceBox.getAssetId());
-                    iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
                     iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBoxDao.updateById(iceBox);
-                    IceBoxExtend iceBoxExtend = new IceBoxExtend();
-                    iceBoxExtend.setId(iceBox.getId());
-                    iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
-                    iceBoxExtendDao.updateById(iceBoxExtend);
 
                     OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
                     oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
@@ -3287,6 +3281,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                         log.info("查到的冰柜信息---》【{}】，扩展信息---》【{}】，通知---》【{}】", JSON.toJSONString(iceBox), JSON.toJSONString(iceBoxExtend), JSON.toJSONString(oldIceBoxSignNotice));
                     }
+                    iceBox.setOldAssetId(iceBox.getAssetId());
+                    iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBox.setUpdatedTime(new Date());
+                    iceBoxDao.updateById(iceBox);
+
+                    iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBoxExtendDao.updateById(iceBoxExtend);
+
                     IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                             .eq(IcePutApply::getStoreSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()).last("limit 1"));
                     if (icePutApply != null) {

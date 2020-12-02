@@ -10,12 +10,11 @@ import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.vo.SimpleStoreVo;
 import com.szeastroc.customer.common.vo.SubordinateInfoVo;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
-import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 import com.szeastroc.icebox.newprocess.vo.StoreVO;
@@ -55,13 +54,12 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
     @Autowired
     private IceExamineService iceExamineService;
     @Autowired
-    private IcePutApplyService icePutApplyService;
-    @Autowired
     FeignStoreClient feignStoreClient;
     @Resource
-    private IceBoxDao iceBoxDao;
+    private IceBoxService iceBoxService;
     @Autowired
     private FeignVisitInfoClient feignVisitInfoClient;
+
 
     @Override
     public List<InspectionReportVO> report(Integer deptId) {
@@ -74,9 +72,9 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
 
     public InspectionReportVO getByUserId(Integer userId) {
         int inspectionCount = iceExamineService.getInspectionBoxes(userId).size();
-        int putCount = icePutApplyService.getPutCount(userId);
+        int putCount = iceBoxService.getPutCount(userId);
 
-        int lostCount = icePutApplyService.getLostCount(userId);
+        int lostCount = iceBoxService.getLostCount(userId);
         String percent = "-";
         if (0 != putCount) {
             percent = NumberUtil.formatPercent((float) inspectionCount / putCount - lostCount, 2);
@@ -99,7 +97,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
     }
 
     public List<StoreVO> getStoreByUserId(Integer userId) {
-        List<Integer> putBoxIds = icePutApplyService.getPutBoxIds(userId);
+        List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
         List<IceExamine> inspectionBoxes = iceExamineService.getInspectionBoxes(userId);
         Set<Integer> idSet = new HashSet<>();
         if (CollectionUtils.isEmpty(inspectionBoxes)) {
@@ -114,7 +112,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         }
         LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
         wrapper.in(IceBox::getId, idSet).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1);
-        List<IceBox> iceBoxes = iceBoxDao.selectList(wrapper);
+        List<IceBox> iceBoxes = iceBoxService.list(wrapper);
         if(CollectionUtils.isEmpty(iceBoxes)){
             return Lists.newArrayList();
         }

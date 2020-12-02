@@ -30,6 +30,7 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
+import com.szeastroc.customer.client.FeignSupplierRelateUserClient;
 import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
 import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
 import com.szeastroc.customer.common.vo.SimpleStoreVo;
@@ -226,6 +227,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceBoxService iceBoxService;
     @Autowired
     private IcePutOrderService icePutOrderService;
+
+    @Autowired
+    private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -4738,6 +4742,52 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         jsonObject.put("resourceStr", resourceStr); // 来源入口
         jsonObject.put(IceBoxConstant.methodName, MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
         return jsonObject;
+    }
+
+    @Override
+    public int getPutCount(Integer userId) {
+        return this.getPutBoxIds(userId).size();
+    }
+
+    @Override
+    public int getLostCount(Integer userId) {
+        List<Integer> putBoxIds = this.getPutBoxIds(userId);
+        if(CollectionUtils.isEmpty(putBoxIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getStatus,3);
+        iceBoxWrapper.in(IceBox::getId, putBoxIds);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+    @Override
+    public List<Integer> getPutBoxIds(Integer userId) {
+        List<String> numbers = FeignResponseUtil.getFeignData(feignSupplierRelateUserClient.getMainCustomerNumber(userId));
+        if(CollectionUtils.isEmpty(numbers)){
+            return Lists.newArrayList();
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).in(IceBox::getPutStoreNumber,numbers);
+        return iceBoxDao.selectList(iceBoxWrapper).stream().map(IceBox::getId).collect(Collectors.toList());
+    }
+
+    @Override
+    public int getLostCountByDeptId(Integer deptId) {
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+
+    @Override
+    public int getLostCountByDeptIds(List<Integer> deptIds) {
+        if(com.baomidou.mybatisplus.core.toolkit.CollectionUtils.isEmpty(deptIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).in(IceBox::getDeptId,deptIds).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
     }
 
 }

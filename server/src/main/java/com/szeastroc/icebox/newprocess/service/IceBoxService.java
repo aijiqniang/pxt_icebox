@@ -120,7 +120,25 @@ public interface IceBoxService extends IService<IceBox> {
     JSONObject setAssetReportJson(IceBox iceBox,String resourceStr);
 
 
+    /**
+     * 冰柜投放数量
+     * @param userId
+     * @return
+     */
+    int getPutCount(Integer userId);
 
+    List<Integer> getPutBoxIds(Integer userId);
+
+    /**
+     * 冰柜遗失数量
+     * @param userId
+     * @return
+     */
+    int getLostCount(Integer userId);
+
+    int getLostCountByDeptId(Integer deptId);
+
+    int getLostCountByDeptIds(List<Integer> deptIds);
 }
 
 

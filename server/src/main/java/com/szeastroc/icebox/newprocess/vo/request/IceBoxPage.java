@@ -28,5 +28,6 @@ public class IceBoxPage extends Page {
     private int export = 0; // 此次操作是否是导出的开关, 0-不导出;1-导出;
     private Integer exportRecordId; // 下载列表的id
     private List<Integer> deptIdList;
+    private Integer putStatus; // 投放状态
 
 }

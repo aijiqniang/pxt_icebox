@@ -13,6 +13,9 @@
             <if test="status!=null">
                 and b.status=#{status}
             </if>
+            <if test="putStatus!=null">
+                and b.put_status=#{putStatus}
+            </if>
             <if test="supplierIdList.size>0">
                 and b.put_status=0 and b.supplier_id in
                 <foreach item="item" index="index" collection="supplierIdList" open="("
@@ -55,6 +58,9 @@
             </if>
             <if test="status!=null">
                 and b.status=#{status}
+            </if>
+            <if test="putStatus!=null">
+                and b.put_status=#{putStatus}
             </if>
             <if test="supplierIdList!=null and supplierIdList.size>0">
                 and b.put_status=0 and b.supplier_id in

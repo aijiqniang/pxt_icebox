@@ -2057,6 +2057,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
             Map<String, Object> map = new HashMap<>(32);
             map.put("statusStr", IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 设备状态
+            map.put("putStatusStr",PutStatus.convertEnum(iceBox.getPutStatus()).getDesc());
             String deptStr = null;
             if (deptMap != null) {
                 deptStr = deptMap.get(iceBox.getDeptId()); // 营销区域
@@ -3501,6 +3502,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         param.put("putStoreNumberList", iceBoxPage.getPutStoreNumberList());
         param.put("assetId", iceBoxPage.getAssetId());
         param.put("status", iceBoxPage.getStatus());
+        param.put("putStatus", iceBoxPage.getPutStatus());
         param.put("belongObj", iceBoxPage.getBelongObj());
 
         List<IceBox> iceBoxList = iceBoxDao.exportExcel(param);
@@ -3602,7 +3604,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 IceModel iceModel = modelMap.get(iceBox.getModelId());
                 iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号
                 iceBoxExcelVo.setDepositMoney(iceBox.getDepositMoney().toString()); // 押金收取金额
-                iceBoxExcelVo.setPutStatusStr(PutStatus.convertEnum(iceBox.getPutStatus()).getDesc()); // 冰柜状态
+                iceBoxExcelVo.setIceStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 冰柜状态
+                 iceBoxExcelVo.setPutStatusStr(PutStatus.convertEnum(iceBox.getPutStatus()).getDesc()); // 投放投放状态
                 iceBoxExcelVo.setLastPutTimeStr(iceBoxExtend.getLastPutTime() == null ? null : new DateTime(iceBoxExtend.getLastPutTime()).toString("yyyy-MM-dd HH:mm:ss")); // 投放日期
                 iceBoxExcelVo.setLastExamineTimeStr(iceBoxExtend.getLastExamineTime() == null ? null : new DateTime(iceBoxExtend.getLastExamineTime()).toString("yyyy-MM-dd HH:mm:ss")); // 最后一次巡检时间
                 iceBoxExcelVo.setRemark(iceBox.getRemark()); // 冰柜备注

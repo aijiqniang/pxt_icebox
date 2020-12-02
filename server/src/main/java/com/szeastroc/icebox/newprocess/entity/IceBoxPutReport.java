@@ -112,6 +112,10 @@ public class IceBoxPutReport {
      */
     private String iceBoxAssetId;
     /**
+     *冰柜id
+     */
+    private Integer iceBoxId;
+    /**
      *免押类型：1-不免押，2-免押
      */
     private Integer freeType;

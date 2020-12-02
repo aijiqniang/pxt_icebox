@@ -224,6 +224,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     //发送mq消息,同步申请数据到报表
                     CompletableFuture.runAsync(() -> {
                         IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                        report.setIceBoxId(iceBox.getId());
                         report.setIceBoxAssetId(iceBox.getAssetId());
                         report.setApplyNumber(applyRelatePutStoreModel.getApplyNumber());
                         report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
@@ -312,6 +313,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
             IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+            report.setIceBoxId(iceBox.getId());
             report.setIceBoxAssetId(iceBox.getAssetId());
             report.setApplyNumber(icePutOrder.getApplyNumber());
             report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
@@ -454,6 +456,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
                 IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                report.setIceBoxId(iceBox.getId());
                 report.setIceBoxAssetId(iceBox.getAssetId());
                 report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                 report.setApplyNumber(icePutOrder.getApplyNumber());

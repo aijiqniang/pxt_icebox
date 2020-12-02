@@ -15,4 +15,9 @@ public class IceBoxConstant {
 
     public final static String ICE_BOX="iceBox"; // 上传到腾讯云桶中的文件前缀
 
+    /**
+     * 虚拟资产编号
+     */
+    public final static String virtual_asset_id = "00000000000";
+
 }

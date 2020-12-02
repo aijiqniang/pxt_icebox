@@ -1556,7 +1556,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
         if (iceBoxExtend != null) {
-            boxVo.setAssetId(iceBoxExtend.getAssetId());
             if (iceBoxExtend.getLastPutTime() != null) {
                 boxVo.setLastPutTimeStr(dateFormat.format(iceBoxExtend.getLastPutTime()));
             }
@@ -1614,7 +1613,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         IceBoxDetailVo iceBoxDetailVo = IceBoxDetailVo.builder()
                 .id(id)
-                .assetId(iceBoxExtend.getAssetId())
+                .assetId(iceBox.getAssetId())
                 .chestModel(iceModel.getChestModel())
                 .chestName(iceModel.getChestName())
                 .depositMoney(iceBox.getDepositMoney())
@@ -2950,6 +2949,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         .last("limit 1"));
                 if (iceBox != null && IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
 
+                    iceBox.setOldAssetId(iceBox.getAssetId());
+                    iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
                     iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBoxDao.updateById(iceBox);
@@ -3226,6 +3227,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         }
                     }
                     IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                    report.setIceBoxId(iceBox.getId());
                     report.setIceBoxAssetId(iceBox.getAssetId());
                     report.setApplyNumber(iceBoxExtend.getLastApplyNumber());
                     report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
@@ -3385,6 +3387,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
             IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+            report.setIceBoxId(iceBox.getId());
             report.setIceBoxAssetId(iceBox.getAssetId());
             report.setIceBoxModelId(iceBox.getModelId());
             report.setSupplierId(iceBox.getSupplierId());

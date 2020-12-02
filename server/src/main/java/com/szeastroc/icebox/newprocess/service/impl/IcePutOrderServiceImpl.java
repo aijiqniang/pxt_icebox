@@ -2,13 +2,18 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Maps;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.customer.client.FeignSupplierClient;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
@@ -19,7 +24,9 @@ import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.*;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
@@ -29,7 +36,6 @@ import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.util.wechatpay.WeiXinService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -47,11 +53,10 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @_(@Autowired))
-public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOrder> implements IcePutOrderService{
+public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOrder> implements IcePutOrderService {
 
     private final WeiXinConfig weiXinConfig;
     private final WeiXinService weiXinService;
-
     private final IceBoxDao iceBoxDao;
     private final IcePutApplyDao icePutApplyDao;
     private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
@@ -59,47 +64,43 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final IceBoxExtendDao iceBoxExtendDao;
     private final PutStoreRelateModelDao putStoreRelateModelDao;
     private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
-    private final IcePutPactRecordDao icePutPactRecordDao;
     private final IceTransferRecordDao iceTransferRecordDao;
     private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
     private final RabbitTemplate rabbitTemplate;
-
     @Autowired
-    private IcePutOrderService icePutOrderService;
-
+    private IceBoxService iceBoxService;
 
     @Override
-    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     public OrderPayResponse applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
 
         // 获取投放申请数据及对应冰柜的申请
         IceBox iceBox = iceBoxDao.selectById(clientInfoRequest.getIceChestId());
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(clientInfoRequest.getIceChestId());
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
-        if(icePutApply == null){
+        if (icePutApply == null) {
             throw new ImproperOptionException("该冰柜不存在申请单");
         }
-
         IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                 .eq(IcePutApplyRelateBox::getApplyNumber, icePutApply.getApplyNumber())
                 .eq(IcePutApplyRelateBox::getBoxId, clientInfoRequest.getIceChestId()));
 
-        if(icePutApplyRelateBox.getFreeType().equals(FreePayTypeEnum.IS_FREE.getType())){
+        if (icePutApplyRelateBox.getFreeType().equals(FreePayTypeEnum.IS_FREE.getType())) {
 //            throw new ImproperOptionException("不免押流程的申请存在免押冰柜");
             icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
             icePutApplyDao.updateById(icePutApply);
             //旧冰柜更新通知状态
-            if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+            if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
                 OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
                         .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
                         .eq(OldIceBoxSignNotice::getApplyNumber, icePutApplyRelateBox.getApplyNumber()));
-                if(oldIceBoxSignNotice != null){
+                if (oldIceBoxSignNotice != null) {
                     oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
                     oldIceBoxSignNotice.setUpdateTime(new Date());
                     oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                 }
             }
-            return icePutOrderService.createByFree(clientInfoRequest, iceBox);
+            OrderPayResponse payResponse = createByFree(clientInfoRequest, iceBox);
+            return payResponse;
         }
 
         // 判断是否存在订单
@@ -110,7 +111,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 .eq(IcePutOrder::getApplyNumber, icePutApply.getApplyNumber())
                 .eq(IcePutOrder::getChestId, clientInfoRequest.getIceChestId()));
 
-        if(Objects.isNull(icePutOrder)) {
+        if (Objects.isNull(icePutOrder)) {
             icePutOrder = createByUnFree(clientInfoRequest, iceBox, icePutApply.getApplyNumber());
         }
         // 查询订单是否已超时
@@ -120,9 +121,9 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         //属于自己, 返回订单信息, 重新调起旧订单
         Map<String, String> datas = new HashMap<>();
-        if(OrderSourceEnums.OTOC.getType().equals(clientInfoRequest.getOrderSource())){
+        if (OrderSourceEnums.OTOC.getType().equals(clientInfoRequest.getOrderSource())) {
             datas.put("appId", weiXinConfig.getAppId());
-        }else {
+        } else {
             datas.put("appId", weiXinConfig.getDmsappId());
         }
 //        datas.put("appId", weiXinConfig.getAppId());
@@ -131,11 +132,12 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         datas.put("package", "prepay_id=" + icePutOrder.getPrayId());
         datas.put("signType", "MD5");
         String sign = WXPayUtil.generateSignature(datas, weiXinConfig.getSecret());
-        return new OrderPayResponse(FreePayTypeEnum.UN_FREE.getType(), datas.get("appId"),
+        OrderPayResponse orderPayResponse = new OrderPayResponse(FreePayTypeEnum.UN_FREE.getType(), datas.get("appId"),
                 datas.get("timeStamp"), datas.get("nonceStr"), datas.get("package"), datas.get("signType"), sign, icePutOrder.getOrderNum());
+        return orderPayResponse;
     }
 
-    private IcePutOrder createByUnFree(ClientInfoRequest clientInfoRequest, IceBox iceBox, String  applyNumber){
+    private IcePutOrder createByUnFree(ClientInfoRequest clientInfoRequest, IceBox iceBox, String applyNumber) {
         /**
          * 创建订单信息
          */
@@ -189,6 +191,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //修改冰柜信息的投放状态
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         iceBoxDao.updateById(iceBox);
+        //todo 这里冰柜改为已投放
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
         wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
@@ -196,26 +199,26 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
         wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
         List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
-        if(CollectionUtil.isNotEmpty(relateModelList)){
-            for(PutStoreRelateModel relateModel:relateModelList){
+        if (CollectionUtil.isNotEmpty(relateModelList)) {
+            for (PutStoreRelateModel relateModel : relateModelList) {
                 ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
-                log.info("处理不需要审批的冰柜信息,applyRelatePutStoreModel---》【{}】",JSON.toJSONString(applyRelatePutStoreModel));
-                if(applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())){
-                    relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+                log.info("处理不需要审批的冰柜信息,applyRelatePutStoreModel---》【{}】", JSON.toJSONString(applyRelatePutStoreModel));
+                if (applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())) {
+                    relateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                     relateModel.setUpdateTime(new Date());
                     putStoreRelateModelDao.updateById(relateModel);
                     IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
-                    if(transferRecord != null){
+                    if (transferRecord != null) {
                         transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());
                         transferRecord.setUpdateTime(new Date());
                         iceTransferRecordDao.updateById(transferRecord);
                     }
                     //旧冰柜更新通知状态
-                    if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+                    if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
                         OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
                                 .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
                                 .eq(OldIceBoxSignNotice::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
-                        if(oldIceBoxSignNotice != null){
+                        if (oldIceBoxSignNotice != null) {
                             oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
                             oldIceBoxSignNotice.setUpdateTime(new Date());
                             oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
@@ -236,34 +239,39 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             }
         }
         OrderPayResponse orderPayResponse = new OrderPayResponse(FreePayTypeEnum.IS_FREE.getType());
+
+        JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"createByFree");
+        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
         return orderPayResponse;
     }
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     @Override
-    public void notifyOrderInfo(OrderPayBack orderPayBack) {
+    public JSONObject notifyOrderInfo(OrderPayBack orderPayBack) {
         //根据订单号查询订单
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery().eq(IcePutOrder::getOrderNum, orderPayBack.getOutTradeNo()));
-        if(Objects.isNull(icePutOrder)){
+        if (Objects.isNull(icePutOrder)) {
             log.info("异常:订单成功回调,丢失订单数据 -> {}", JSON.toJSONString(orderPayBack));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         //判断是否订单完成, 完成则无需修改
-        if(icePutOrder.getStatus().equals(OrderStatus.IS_FINISH.getStatus())){
-            return;
+        if (icePutOrder.getStatus().equals(OrderStatus.IS_FINISH.getStatus())) {
+            return null;
         }
 
         //查询对应冰柜信息
         IceBox iceBox = iceBoxDao.selectById(icePutOrder.getChestId());
-        if(Objects.isNull(iceBox)){
+        if (Objects.isNull(iceBox)) {
             log.info("异常:订单成功回调,丢失冰柜信息-> {}", JSON.toJSONString(icePutOrder));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         updateInfoWhenFinishPay(orderPayBack, icePutOrder, iceBox);
-
+        JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"notifyOrderInfo");
+        return jsonObject;
     }
 
     private void updateInfoWhenFinishPay(OrderPayBack orderPayBack, IcePutOrder icePutOrder, IceBox iceBox) {
+
         //修改订单
         icePutOrder.setStatus(OrderStatus.IS_FINISH.getStatus());
         icePutOrder.setTransactionId(orderPayBack.getTransactionId());
@@ -276,7 +284,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         //修改投放记录, 申请投放记录现在是汇总信息
         //查询对应冰柜投放记录信息
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, icePutOrder.getApplyNumber()));
-        if(icePutApply == null){
+        if (icePutApply == null) {
             log.info("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(icePutOrder));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
@@ -291,20 +299,20 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
         wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
         List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
-        if(CollectionUtil.isNotEmpty(relateModelList)){
+        if (CollectionUtil.isNotEmpty(relateModelList)) {
             PutStoreRelateModel relateModel = relateModelList.get(0);
-            relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+            relateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
             relateModel.setUpdateTime(new Date());
             putStoreRelateModelDao.updateById(relateModel);
         }
         iceBoxDao.updateById(iceBox);
-
+        //todo 这里冰柜改为已投放
         //旧冰柜更新通知状态
-        if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+        if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
             OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
                     .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
                     .eq(OldIceBoxSignNotice::getApplyNumber, icePutOrder.getApplyNumber()));
-            if(oldIceBoxSignNotice != null){
+            if (oldIceBoxSignNotice != null) {
                 oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
                 oldIceBoxSignNotice.setUpdateTime(new Date());
                 oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
@@ -322,45 +330,43 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         }, ExecutorServiceFactory.getInstance());
 
         IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutApply.getApplyNumber()));
-        if(transferRecord != null){
+        if (transferRecord != null) {
             transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());
             transferRecord.setUpdateTime(new Date());
             iceTransferRecordDao.updateById(transferRecord);
         }
-
     }
 
     @Override
-    public boolean getPayStatus(String orderNumber) throws Exception {
+    public Boolean getPayStatus(String orderNumber) throws Exception {
         boolean flag = false;
-
         //查询数据库中对应订单状态
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery().eq(IcePutOrder::getOrderNum, orderNumber));
-        if(Objects.isNull(icePutOrder)){
+        if (Objects.isNull(icePutOrder)) {
             log.info("异常:主动查询订单状态,丢失订单数据 -> {}", JSON.toJSONString(orderNumber));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 
         //查询对应冰柜信息
         IceBox iceBox = iceBoxDao.selectById(icePutOrder.getChestId());
-        if(Objects.isNull(iceBox)){
+        if (Objects.isNull(iceBox)) {
             log.info("异常:主动查询订单状态,丢失冰柜信息-> {}", JSON.toJSONString(icePutOrder));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         //查询对应冰柜投放记录信息
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, icePutOrder.getApplyNumber()));
-        if(Objects.isNull(icePutApply)){
+        if (Objects.isNull(icePutApply)) {
             log.info("异常:订单成功回调,丢失冰柜投放记录信息-> {}", JSON.toJSONString(icePutOrder));
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
 
         //如果订单已完成, 则直接返回完成
-        if(icePutOrder.getStatus().equals(OrderStatus.IS_FINISH.getStatus())){
+        if (icePutOrder.getStatus().equals(OrderStatus.IS_FINISH.getStatus())) {
             return true;
         }
 
         //如果订单已取消, 抛出异常
-        if(icePutOrder.getStatus().equals(OrderStatus.IS_CANCEL.getStatus())){
+        if (icePutOrder.getStatus().equals(OrderStatus.IS_CANCEL.getStatus())) {
             throw new NormalOptionException(ResultEnum.ORDER_IS_CANCEL_AND_RETRY_NEW_ORDER.getCode(), ResultEnum.ORDER_IS_CANCEL_AND_RETRY_NEW_ORDER.getMessage());
         }
 
@@ -395,16 +401,16 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         log.info("回调数据 -> {}", JSON.toJSONString(orderPayBack));
 
         //修改订单
-        if("SUCCESS".equals(orderPayBack.getReturnCode()) && "SUCCESS".equals(orderPayBack.getTradeState()) && "SUCCESS".equals(orderPayBack.getResultCode())) {
+        if ("SUCCESS".equals(orderPayBack.getReturnCode()) && "SUCCESS".equals(orderPayBack.getTradeState()) && "SUCCESS".equals(orderPayBack.getResultCode())) {
             icePutOrder.setStatus(OrderStatus.IS_FINISH.getStatus());
             flag = true;
         }
         icePutOrder.setTransactionId(orderPayBack.getTransactionId());
         DateTimeFormatter format = DateTimeFormat.forPattern("yyyyMMddHHmmss");
-        if(orderPayBack.getTimeEnd() != null) {
+        if (orderPayBack.getTimeEnd() != null) {
             icePutOrder.setPayTime(DateTime.parse(orderPayBack.getTimeEnd(), format).toDate());
         }
-        if(orderPayBack.getTotalFee() != null) {
+        if (orderPayBack.getTotalFee() != null) {
             MathContext mc = new MathContext(2, RoundingMode.HALF_DOWN);
             icePutOrder.setPayMoney(new BigDecimal(orderPayBack.getTotalFee()).divide(new BigDecimal(100), mc));
         }
@@ -413,19 +419,17 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         icePutOrderDao.updateById(icePutOrder);
 
-        if(flag){
+        if (flag) {
             //修改冰柜信息的投放状态
             iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
             iceBoxDao.updateById(iceBox);
-//            //修改冰柜投放信息
-//            iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
-//            iceBoxDao.updateById(iceBox);
+            //todo 这里冰柜改为已投放
 
             ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, icePutOrder.getApplyNumber()));
-            if(applyRelatePutStoreModel != null){
+            if (applyRelatePutStoreModel != null) {
                 PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(applyRelatePutStoreModel.getStoreRelateModelId());
-                if(relateModel != null){
-                    relateModel.setPutStatus( PutStatus.FINISH_PUT.getStatus());
+                if (relateModel != null) {
+                    relateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                     relateModel.setUpdateTime(new Date());
                     putStoreRelateModelDao.updateById(relateModel);
                 }
@@ -436,18 +440,18 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             icePutApplyDao.updateById(icePutApply);
 
             IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutOrder.getApplyNumber()));
-            if(transferRecord != null){
+            if (transferRecord != null) {
                 transferRecord.setRecordStatus(RecordStatus.SEND_ING.getStatus());
                 transferRecord.setUpdateTime(new Date());
                 iceTransferRecordDao.updateById(transferRecord);
             }
 
             //旧冰柜更新通知状态
-            if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())){
+            if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
                 OldIceBoxSignNotice oldIceBoxSignNotice = oldIceBoxSignNoticeDao.selectOne(Wrappers.<OldIceBoxSignNotice>lambdaQuery().eq(OldIceBoxSignNotice::getIceBoxId, iceBox.getId())
                         .eq(OldIceBoxSignNotice::getPutStoreNumber, iceBox.getPutStoreNumber())
                         .eq(OldIceBoxSignNotice::getApplyNumber, icePutOrder.getApplyNumber()));
-                if(oldIceBoxSignNotice != null){
+                if (oldIceBoxSignNotice != null) {
                     oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
                     oldIceBoxSignNotice.setUpdateTime(new Date());
                     oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
@@ -476,6 +480,10 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 //                relateModel.setUpdateTime(new Date());
 //                putStoreRelateModelDao.updateById(relateModel);
 //            }
+
+            // 新的 冰柜状态/投放状态
+            JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"getPayStatus");
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
         }
 
         return flag;

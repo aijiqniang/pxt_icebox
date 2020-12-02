@@ -31,30 +31,92 @@ import com.szeastroc.customer.client.FeignCusLabelClient;
 import com.szeastroc.customer.client.FeignStoreClient;
 import com.szeastroc.customer.client.FeignSupplierClient;
 import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
-import com.szeastroc.customer.common.vo.*;
+import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
+import com.szeastroc.customer.common.vo.SimpleStoreVo;
+import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
+import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
+import com.szeastroc.icebox.enums.ExamineStatusEnum;
+import com.szeastroc.icebox.enums.FreePayTypeEnum;
+import com.szeastroc.icebox.enums.IceBoxStatus;
+import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
-import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
-import com.szeastroc.icebox.newprocess.dao.*;
-import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.dao.ApplyRelatePutStoreModelDao;
+import com.szeastroc.icebox.newprocess.dao.IceBackApplyDao;
+import com.szeastroc.icebox.newprocess.dao.IceBackApplyRelateBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxChangeHistoryDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxExamineExceptionReportDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxTransferHistoryDao;
+import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
+import com.szeastroc.icebox.newprocess.dao.IceModelDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutApplyRelateBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutOrderDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutPactRecordDao;
+import com.szeastroc.icebox.newprocess.dao.IceTransferRecordDao;
+import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
+import com.szeastroc.icebox.newprocess.dao.PutStoreRelateModelDao;
+import com.szeastroc.icebox.newprocess.entity.ApplyRelatePutStoreModel;
+import com.szeastroc.icebox.newprocess.entity.IceBackApply;
+import com.szeastroc.icebox.newprocess.entity.IceBackApplyRelateBox;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IceBoxChangeHistory;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
+import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
+import com.szeastroc.icebox.newprocess.entity.IceBoxTransferHistory;
+import com.szeastroc.icebox.newprocess.entity.IceExamine;
+import com.szeastroc.icebox.newprocess.entity.IceModel;
+import com.szeastroc.icebox.newprocess.entity.IcePutApply;
+import com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox;
+import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
+import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
+import com.szeastroc.icebox.newprocess.entity.IceTransferRecord;
+import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
+import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
+import com.szeastroc.icebox.newprocess.enums.CommonIsCheckEnum;
+import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.ExamineExceptionStatusEnums;
+import com.szeastroc.icebox.newprocess.enums.ExamineLastApprovalEnum;
+import com.szeastroc.icebox.newprocess.enums.ExamineNodeStatusEnum;
+import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
+import com.szeastroc.icebox.newprocess.enums.ExamineTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
+import com.szeastroc.icebox.newprocess.enums.OldIceBoxSignNoticeStatusEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
-import com.szeastroc.icebox.newprocess.enums.*;
+import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
+import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.newprocess.vo.*;
+import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
+import com.szeastroc.icebox.newprocess.vo.ImportIceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import com.szeastroc.icebox.vo.IceBoxRequest;
@@ -62,11 +124,21 @@ import com.szeastroc.icebox.vo.IceBoxTransferHistoryVo;
 import com.szeastroc.user.client.*;
 import com.szeastroc.user.common.session.MatchRuleVo;
 import com.szeastroc.user.common.session.UserManageVo;
-import com.szeastroc.user.common.vo.*;
+import com.szeastroc.user.common.vo.AddressVo;
+import com.szeastroc.user.common.vo.CommonIdsVo;
+import com.szeastroc.user.common.vo.SessionDeptInfoVo;
+import com.szeastroc.user.common.vo.SessionUserInfoVo;
+import com.szeastroc.user.common.vo.SimpleUserInfoVo;
+import com.szeastroc.user.common.vo.SysRuleIceDetailVo;
 import com.szeastroc.visit.client.FeignBacklogClient;
 import com.szeastroc.visit.client.FeignExamineClient;
 import com.szeastroc.visit.client.FeignExportRecordsClient;
-import com.szeastroc.visit.common.*;
+import com.szeastroc.visit.common.IceBoxPutModel;
+import com.szeastroc.visit.common.IceBoxTransferModel;
+import com.szeastroc.visit.common.RequestExamineVo;
+import com.szeastroc.visit.common.SessionExamineCreateVo;
+import com.szeastroc.visit.common.SessionExamineVo;
+import com.szeastroc.visit.common.SessionVisitExamineBacklog;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +152,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -87,7 +161,18 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -104,11 +189,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final String DQFZJ = "大区副总监";
 
     private final IceBoxDao iceBoxDao;
-    @Autowired
-    private IceBoxService iceBoxService;
-    @Autowired
-    private IcePutOrderService icePutOrderService;
-
     private final IceBoxExtendDao iceBoxExtendDao;
     private final IceModelDao iceModelDao;
     private final FeignDeptClient feignDeptClient;
@@ -142,7 +222,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
     private final IceBoxPutReportDao iceBoxPutReportDao;
     private final FeignDeptRuleClient feignDeptRuleClient;
-
+    @Autowired
+    private IceBoxService iceBoxService;
+    @Autowired
+    private IcePutOrderService icePutOrderService;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -1930,11 +2013,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPage.setDeptIdList(deptIdList);
         // 处理请求数据
         if (dealIceBoxPage(iceBoxPage)) {
-            return null;
+            return new Page();
         }
         List<IceBox> iceBoxList = iceBoxDao.findPage(iceBoxPage);
         if (CollectionUtils.isEmpty(iceBoxList)) {
-            return null;
+            return new Page();
         }
         List<Integer> deptIds = iceBoxList.stream().map(IceBox::getDeptId).collect(Collectors.toList());
         // 营销区域对应得部门  服务处->大区->事业部
@@ -2404,7 +2487,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     @Override
-    public void importByEasyExcel(MultipartFile mfile) throws Exception {
+    public List<JSONObject> importByEasyExcel(MultipartFile mfile) throws Exception {
 
         /**
          * @Date: 2020/5/20 9:19 xiao
@@ -2427,7 +2510,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<String, SubordinateInfoVo> supplierNumberMap = Maps.newHashMap(); // 存储经销商编号和id
 
         int importSize = importDataList.size();
-        //List<String> message = Lists.newArrayList();
+        List<JSONObject> lists = Lists.newArrayList();
+
         for (ImportIceBoxVo boxVo : importDataList) {
 
             Integer serialNumber = boxVo.getSerialNumber(); // 序号
@@ -2507,20 +2591,23 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Integer modelId = iceModelMap.get(modelStr); // 设备型号
 
 
-            // 经销商id
-            Integer supplierId = null;
+            Integer supplierId = null;  // 经销商id
+            String suppName = null; // 经销商名称
             SubordinateInfoVo subordinateInfoVo = supplierNumberMap.get(supplierNumber);
             if (subordinateInfoVo != null && subordinateInfoVo.getSupplierId() != null) {
                 supplierId = subordinateInfoVo.getSupplierId();
+                suppName = subordinateInfoVo.getName();
             } else {
                 // 去数据库查询
                 SubordinateInfoVo infoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(supplierNumber));
                 if (infoVo == null) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商编号不存在");
                 }
+                suppName = infoVo.getName();
                 supplierId = infoVo.getSupplierId();
                 supplierNumberMap.put(supplierNumber, infoVo);
             }
+
             // 鉴于服务处就是对应经销商的服务处,所以直接用经销商的
             Integer deptId = supplierNumberMap.get(supplierNumber).getMarketAreaId(); // 所属服务处
             if (iceBox == null) {
@@ -2574,8 +2661,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:冰柜控制器ID、蓝牙设备ID、蓝牙设备地址、冰箱二维码链接不唯一");
                 }
             }
+
+            JSONObject jsonObject = setAssetReportJson(iceBox,"importByEasyExcel");
+            lists.add(jsonObject);
         }
         log.info("importExcel 处理数据结束-->{}", importSize);
+        return lists;
     }
 
     @Override
@@ -2954,7 +3045,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBoxDao.updateById(iceBox);
-
                     OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
                     oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
                     oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
@@ -2994,7 +3084,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                             iceBox.setUpdatedTime(new Date());
                             iceBoxDao.updateById(iceBox);
-
                             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
                             iceBoxExtend.setLastApplyNumber(icePutApply.getApplyNumber());
                             iceBoxExtend.setLastPutTime(icePutApply.getCreatedTime());
@@ -4123,6 +4212,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 正常的冰柜改为异常的冰柜时 不能变更使用客户
             throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
         }
+
+        boolean boo = false;
         if (modifyCustomer && null != modifyCustomerType) {
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
             String customerNumber = iceBoxManagerVo.getCustomerNumber();
@@ -4219,6 +4310,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                //todo 这里冰柜改为已投放
+                boo = true;
             }
         } else {
             iceBox.setPutStoreNumber(oldIceBox.getPutStoreNumber());
@@ -4226,6 +4319,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxDao.update(iceBox, updateWrapper);
         iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, iceBox.getAssetId()));
         convertToIceBoxChangeHistory(oldIceBox, iceBox, iceBoxChangeHistory, userManageVo);
+
+        if (boo) {
+            JSONObject jsonObject = setAssetReportJson(iceBox,"changeIcebox");
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                }
+            });
+        }
     }
 
     @Override
@@ -4628,4 +4731,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         return iceBoxVoList;
     }
+
+    @Override
+    public JSONObject setAssetReportJson(IceBox iceBox, String resourceStr) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("suppId", iceBox.getSupplierId());
+        jsonObject.put("modelId", iceBox.getModelId());
+        jsonObject.put("deptId", iceBox.getDeptId());
+        jsonObject.put("resourceStr", resourceStr); // 来源入口
+        jsonObject.put(IceBoxConstant.methodName, MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
+        return jsonObject;
+    }
+
 }

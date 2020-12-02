@@ -1,12 +1,17 @@
 package com.szeastroc.icebox.newprocess.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
-import com.szeastroc.icebox.newprocess.vo.*;
+import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
@@ -53,7 +58,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     IPage readExamine(IceExaminePage iceExaminePage);
 
-    void importByEasyExcel(MultipartFile mfile) throws Exception;
+    List<JSONObject> importByEasyExcel(MultipartFile mfile) throws Exception;
 
     List<IceBox> getIceBoxList(String pxtNumber);
 
@@ -80,7 +85,7 @@ public interface IceBoxService extends IService<IceBox> {
     void autoAddLabel();
 
 
-    void exportExcel(IceBoxPage iceBoxPage)throws Exception;
+    void exportExcel(IceBoxPage iceBoxPage) throws Exception;
 
     void cancelApplyByNumber(IceBoxVo iceBoxVo);
 
@@ -111,6 +116,11 @@ public interface IceBoxService extends IService<IceBox> {
     List<Map<String, String>> findIceBoxsModelBySupplierId(Integer supplierId);
 
     List<IceBoxVo> findIceBoxsBySupplierIdAndModelId(Integer supplierId, Integer modelId);
+
+    JSONObject setAssetReportJson(IceBox iceBox,String resourceStr);
+
+
+
 }
 
 

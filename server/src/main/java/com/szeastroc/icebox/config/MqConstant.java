@@ -10,6 +10,13 @@ public interface MqConstant {
     String directExchange = "pxt_mq_exchange";
     String directQueue = "icebox_export_excel_queue";
     String directRoutingKey = "icebox_export_excel_routing_key";
+    /**
+     * @Date: 2020/10/19 14:14 xiao
+     *  冰柜资产
+     * 报表中使用的 queue 和  routingKey
+     */
+    String ICEBOX_ASSETS_REPORT_QUEUE = "icebox_assets_report_queue";
+    String ICEBOX_ASSETS_REPORT_ROUTING_KEY = "icebox_assets_report_routing_key";
 
     /**
      * 冰柜投放报表

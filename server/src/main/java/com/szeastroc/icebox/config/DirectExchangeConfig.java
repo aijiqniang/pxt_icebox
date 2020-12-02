@@ -94,6 +94,24 @@ public class DirectExchangeConfig {
         return factory;
     }
 
+    /**
+     * @Date: 2020/10/19 14:13 xiao
+     *  报表使用的消息队列
+     */
+    // 定义交队列
+    @Bean
+    public Queue directQueueReport() {
+        Queue queue = new Queue(MqConstant.ICEBOX_ASSETS_REPORT_QUEUE);
+        return queue;
+    }
+
+    // 定义队列跟交换机的绑定关系
+    @Bean
+    public Binding bindingExchangeReport() {
+        Binding binding = BindingBuilder.bind(directQueueReport()).to(directExchange()).with(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY);
+        return binding;
+    }
+
     @Bean(name = "iceExportExcelContainer")
     public SimpleRabbitListenerContainerFactory iceExportExcelContainer(){
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();

@@ -4,9 +4,11 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -27,10 +29,12 @@ import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
+import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
@@ -51,6 +55,7 @@ import com.szeastroc.visit.common.SessionExamineCreateVo;
 import com.szeastroc.visit.common.SessionExamineVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,6 +101,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
+    @Autowired
+    private IcePutApplyService icePutApplyService;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -1446,6 +1453,46 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //        return null;
 //    }
 
+
+    @Override
+    public List<IceExamine> getInspectionBoxes(List<Integer> userIds) {
+        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+        if(CollectionUtils.isEmpty(userIds)){
+            return Lists.newArrayList();
+        }
+        wrapper.eq(IceExamine::getExaminStatus,2)
+                .in(IceExamine::getCreateBy,userIds)
+                .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
+                .groupBy(IceExamine::getIceBoxId);
+        return iceExamineDao.selectList(wrapper);
+    }
+
+    @Override
+    public List<IceExamine> getInspectionBoxes(Integer userId) {
+        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+        wrapper.eq(IceExamine::getExaminStatus,2)
+                .eq(IceExamine::getCreateBy,userId)
+                .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
+                .groupBy(IceExamine::getIceBoxId);
+        return iceExamineDao.selectList(wrapper);
+    }
+
+    @Override
+    public Integer getNoInspectionBoxes(Integer putCount, Integer userId) {
+        List<Integer> boxIds = icePutApplyService.getOwnerBoxIds(userId);
+        if(CollectionUtils.isEmpty(boxIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
+        wrapper.eq(IceExamine::getExaminStatus,2)
+                .eq(IceExamine::getCreateBy,userId)
+                .in(IceExamine::getIceBoxId,boxIds)
+                .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
+                .groupBy(IceExamine::getIceBoxId);
+        int size = iceExamineDao.selectList(wrapper).size();
+        return putCount-size;
+    }
+
     @Override
     public IceExamineVo findExamineByNumber(String examineNumber) {
         IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getExamineNumber,examineNumber));
@@ -1518,6 +1565,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }
             if(StringUtils.isEmpty(iceExamine.getExamineNumber())){
                 String examineNumber = UUID.randomUUID().toString().replace("-", "");
+                iceExamine.setExamineNumber(examineNumber);
+                iceExamineDao.updateById(iceExamine);
                 report.setExamineNumber(examineNumber);
                 report.setStatus(ExamineExceptionStatusEnums.is_repaired.getStatus());
             }
@@ -1587,7 +1636,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                 report.setSubmitterPosion(userInfoVo.getPosion());
             }
             report.setSubmitTime(iceExamine.getCreateTime());
-            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(iceExamine.getExamineNumber()));
+            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(report.getExamineNumber()));
             if(CollectionUtil.isNotEmpty(visitExamineNodeVos)){
                 for(SessionExamineVo.VisitExamineNodeVo examineNodeVo:visitExamineNodeVos){
                     if(examineNodeVo.getExamineStatus().equals(1)){

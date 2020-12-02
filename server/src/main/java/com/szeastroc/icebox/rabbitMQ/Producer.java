@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.rabbitMQ;
 
+
 /**
  * @Author xiao
  * @Date create in 2020/6/12 17:33

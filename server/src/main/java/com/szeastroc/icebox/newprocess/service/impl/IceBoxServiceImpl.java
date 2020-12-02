@@ -3281,13 +3281,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                         log.info("查到的冰柜信息---》【{}】，扩展信息---》【{}】，通知---》【{}】", JSON.toJSONString(iceBox), JSON.toJSONString(iceBoxExtend), JSON.toJSONString(oldIceBoxSignNotice));
                     }
-                    iceBox.setOldAssetId(iceBox.getAssetId());
-                    iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
-                    iceBox.setUpdatedTime(new Date());
-                    iceBoxDao.updateById(iceBox);
+                    if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                        iceBox.setOldAssetId(iceBox.getAssetId());
+                        iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                        iceBox.setUpdatedTime(new Date());
+                        iceBoxDao.updateById(iceBox);
 
-                    iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
-                    iceBoxExtendDao.updateById(iceBoxExtend);
+                        iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                        iceBoxExtendDao.updateById(iceBoxExtend);
+                    }
 
                     IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                             .eq(IcePutApply::getStoreSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()).last("limit 1"));

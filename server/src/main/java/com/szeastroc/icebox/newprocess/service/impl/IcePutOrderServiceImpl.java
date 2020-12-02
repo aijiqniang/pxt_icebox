@@ -99,14 +99,15 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     oldIceBoxSignNotice.setUpdateTime(new Date());
                     oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                 }
+                if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                    iceBox.setOldAssetId(iceBox.getAssetId());
+                    iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBox.setUpdatedTime(new Date());
+                    iceBoxDao.updateById(iceBox);
 
-                iceBox.setOldAssetId(iceBox.getAssetId());
-                iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
-                iceBox.setUpdatedTime(new Date());
-                iceBoxDao.updateById(iceBox);
-
-                iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
-                iceBoxExtendDao.updateById(iceBoxExtend);
+                    iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBoxExtendDao.updateById(iceBoxExtend);
+                }
             }
             OrderPayResponse payResponse = createByFree(clientInfoRequest, iceBox);
             return payResponse;
@@ -232,15 +233,18 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                             oldIceBoxSignNotice.setUpdateTime(new Date());
                             oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                         }
-                        iceBox.setOldAssetId(iceBox.getAssetId());
-                        iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
-                        iceBox.setUpdatedTime(new Date());
-                        iceBoxDao.updateById(iceBox);
+                        if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                            iceBox.setOldAssetId(iceBox.getAssetId());
+                            iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                            iceBox.setUpdatedTime(new Date());
+                            iceBoxDao.updateById(iceBox);
 
-                        IceBoxExtend iceBoxExtend = new IceBoxExtend();
-                        iceBoxExtend.setId(iceBox.getId());
-                        iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
-                        iceBoxExtendDao.updateById(iceBoxExtend);
+                            IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                            iceBoxExtend.setId(iceBox.getId());
+                            iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                            iceBoxExtendDao.updateById(iceBoxExtend);
+                        }
+
                     }
                     //发送mq消息,同步申请数据到报表
                     CompletableFuture.runAsync(() -> {
@@ -335,15 +339,18 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 oldIceBoxSignNotice.setUpdateTime(new Date());
                 oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
             }
-            iceBox.setOldAssetId(iceBox.getAssetId());
-            iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
-            iceBox.setUpdatedTime(new Date());
-            iceBoxDao.updateById(iceBox);
+            if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                iceBox.setOldAssetId(iceBox.getAssetId());
+                iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                iceBox.setUpdatedTime(new Date());
+                iceBoxDao.updateById(iceBox);
 
-            IceBoxExtend iceBoxExtend = new IceBoxExtend();
-            iceBoxExtend.setId(iceBox.getId());
-            iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
-            iceBoxExtendDao.updateById(iceBoxExtend);
+                IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                iceBoxExtend.setId(iceBox.getId());
+                iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                iceBoxExtendDao.updateById(iceBoxExtend);
+            }
+
         }
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
@@ -483,15 +490,18 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     oldIceBoxSignNotice.setUpdateTime(new Date());
                     oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                 }
-                iceBox.setOldAssetId(iceBox.getAssetId());
-                iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
-                iceBox.setUpdatedTime(new Date());
-                iceBoxDao.updateById(iceBox);
+                if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                    iceBox.setOldAssetId(iceBox.getAssetId());
+                    iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBox.setUpdatedTime(new Date());
+                    iceBoxDao.updateById(iceBox);
 
-                IceBoxExtend iceBoxExtend = new IceBoxExtend();
-                iceBoxExtend.setId(iceBox.getId());
-                iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
-                iceBoxExtendDao.updateById(iceBoxExtend);
+                    IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                    iceBoxExtend.setId(iceBox.getId());
+                    iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBoxExtendDao.updateById(iceBoxExtend);
+                }
+
             }
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {

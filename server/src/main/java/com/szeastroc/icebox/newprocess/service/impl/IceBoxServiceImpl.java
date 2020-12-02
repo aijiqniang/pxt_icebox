@@ -3045,6 +3045,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBoxDao.updateById(iceBox);
+                    IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                    iceBoxExtend.setId(iceBox.getId());
+                    iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBoxExtendDao.updateById(iceBoxExtend);
+
                     OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
                     oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
                     oldIceBoxSignNotice.setIceBoxId(iceBox.getId());

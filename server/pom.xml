@@ -102,8 +102,6 @@
         <dependency>
             <groupId>com.szeastroc</groupId>
             <artifactId>common-feign</artifactId>
-            <version>0.0.1</version>
-            <scope>compile</scope>
         </dependency>
 
     </dependencies>

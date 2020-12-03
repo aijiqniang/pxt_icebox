@@ -291,7 +291,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         icePutApplyDao.updateById(icePutApply);
 
         //修改冰柜投放信息
-//        iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+        iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate().set(IceBox::getPutStatus,PutStatus.FINISH_PUT.getStatus()).eq(IceBox::getId,iceBox.getId()));
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());

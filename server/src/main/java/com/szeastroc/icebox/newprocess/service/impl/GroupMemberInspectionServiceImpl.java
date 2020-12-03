@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -104,13 +105,8 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         if (CollectionUtils.isEmpty(inspectionBoxes)) {
             idSet = new HashSet<>(putBoxIds);
         } else {
-            for (Integer putBoxId : putBoxIds) {
-                for (IceExamine inspectionBox : inspectionBoxes) {
-                    if (!putBoxId.equals(inspectionBox.getIceBoxId())) {
-                        idSet.add(putBoxId);
-                    }
-                }
-            }
+            putBoxIds.removeAll(inspectionBoxes.stream().map(IceExamine::getIceBoxId).collect(Collectors.toList()));
+            idSet = new HashSet<>(putBoxIds);
 
         }
         if (CollectionUtils.isEmpty(idSet)) {
@@ -128,23 +124,28 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         }
         //门店
         List<SimpleStoreVo> stores = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumbers(storeNumbers));
-        List<StoreVO> vos = stores.stream().map(one -> {
-            StoreVO storeVO = new StoreVO();
-            storeVO.setCustomerNumber(one.getStoreNumber());
-            storeVO.setStoreName(one.getStoreName());
-            String day = FeignResponseUtil.getFeignData(feignVisitInfoClient.getStoreWeekIndex(one.getStoreNumber()));
-            storeVO.setDay(day);
-            return storeVO;
-        }).collect(Collectors.toList());
+        List<StoreVO> vos = new ArrayList<>();
+        if(Objects.nonNull(stores)){
+            vos = stores.stream().map(one -> {
+                StoreVO storeVO = new StoreVO();
+                storeVO.setCustomerNumber(one.getStoreNumber());
+                storeVO.setStoreName(one.getStoreName());
+                String day = FeignResponseUtil.getFeignData(feignVisitInfoClient.getStoreWeekIndex(one.getStoreNumber()));
+                storeVO.setDay(day);
+                return storeVO;
+            }).collect(Collectors.toList());
+        }
         //配送商
         Map<String, SubordinateInfoVo> suppliers = FeignResponseUtil.getFeignData(feignSupplierClient.getCustomersByNumberList(storeNumbers));
-        for (SubordinateInfoVo supplier : suppliers.values()) {
-            StoreVO storeVO = new StoreVO();
-            storeVO.setCustomerNumber(supplier.getNumber());
-            storeVO.setStoreName(supplier.getName());
-            String day = FeignResponseUtil.getFeignData(feignVisitInfoClient.getStoreWeekIndex(supplier.getNumber()));
-            storeVO.setDay(day);
-            vos.add(storeVO);
+        if(Objects.nonNull(suppliers)&&!suppliers.isEmpty()) {
+            for (SubordinateInfoVo supplier : suppliers.values()) {
+                StoreVO storeVO = new StoreVO();
+                storeVO.setCustomerNumber(supplier.getNumber());
+                storeVO.setStoreName(supplier.getName());
+                String day = FeignResponseUtil.getFeignData(feignVisitInfoClient.getStoreWeekIndex(supplier.getNumber()));
+                storeVO.setDay(day);
+                vos.add(storeVO);
+            }
         }
         return vos;
     }

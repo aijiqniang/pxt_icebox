@@ -94,11 +94,6 @@
             <artifactId>common-bean</artifactId>
             <version>1.0.0</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.szeastroc</groupId>
-            <artifactId>transfer-client</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.szeastroc</groupId>
             <artifactId>common-feign</artifactId>

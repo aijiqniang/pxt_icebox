@@ -90,7 +90,7 @@ public class RedisLockUtil {
                 }
             });
         } catch (Exception e) {
-            log.error("get redis error, key : {}", key);
+            log.info("get redis error, key : {}", key);
         }
         return obj != null ? obj.toString() : null;
     }
@@ -108,7 +108,7 @@ public class RedisLockUtil {
                 }
             });
         } catch (Exception e) {
-            log.error("get redis error, key : {}", key);
+            log.info("get redis error, key : {}", key);
         }
         return obj != null ? obj.toString() : null;
     }
@@ -126,7 +126,7 @@ public class RedisLockUtil {
                 }
             });
         } catch (Exception e) {
-            log.error("setNX redis error, key : {}", key);
+            log.info("setNX redis error, key : {}", key);
         }
         return obj != null ? (Boolean) obj : false;
     }
@@ -144,7 +144,7 @@ public class RedisLockUtil {
                 }
             });
         } catch (Exception e) {
-            log.error("setNX redis error, key : {}", key);
+            log.info("setNX redis error, key : {}", key);
         }
         return obj != null ? (String) obj : null;
     }

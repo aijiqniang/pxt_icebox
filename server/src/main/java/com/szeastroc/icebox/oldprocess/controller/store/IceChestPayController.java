@@ -3,20 +3,18 @@ package com.szeastroc.icebox.oldprocess.controller.store;
 import com.alibaba.fastjson.JSON;
 import com.szeastroc.common.annotation.IgnoreResponseAdvice;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
-import com.szeastroc.customer.client.FeignStoreClient;
-import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
-import com.szeastroc.icebox.oldprocess.entity.MarketArea;
 import com.szeastroc.icebox.oldprocess.service.IceChestPutRecordService;
-import com.szeastroc.icebox.oldprocess.service.MarketAreaService;
 import com.szeastroc.icebox.oldprocess.service.OrderInfoService;
-import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
+import com.szeastroc.icebox.util.CommonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,8 +37,6 @@ public class IceChestPayController {
     private IceChestPutRecordService iceChestPutRecordService;
     @Autowired
     private OrderInfoService orderInfoService;
-    @Autowired
-    private MarketAreaService marketAreaService;
     @Autowired
     private FeignStoreClient feignStoreClient;
 
@@ -79,12 +75,12 @@ public class IceChestPayController {
         try {
             log.info("数据: {}", JSON.toJSONString(clientInfoRequest));
             if (!clientInfoRequest.validate()) {
-                log.error("applyPayIceChest传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+                log.info("applyPayIceChest传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
                 throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
             }
             StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
             if(storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null){
-                log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+                log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
                 throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
             }
             clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea()+"");
@@ -98,7 +94,7 @@ public class IceChestPayController {
             throw new NormalOptionException(e.getCode(), e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            log.error("异常applyPayIceChest -> {}, {}", JSON.toJSON(clientInfoRequest), e.getMessage());
+            log.info("异常applyPayIceChest -> {}, {}", JSON.toJSON(clientInfoRequest), e.getMessage());
             throw new ImproperOptionException(e.getMessage());
         }
 
@@ -146,7 +142,7 @@ public class IceChestPayController {
             throw new NormalOptionException(e.getCode(), e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            log.error("异常getOrderPayStatus -> {}, {}", orderNumber, e.getMessage());
+            log.info("异常getOrderPayStatus -> {}, {}", orderNumber, e.getMessage());
             throw new ImproperOptionException(e.getMessage());
         }
 

@@ -1,19 +1,14 @@
 package com.szeastroc.icebox.sync;
 
+import com.szeastroc.common.entity.customer.enums.SupplierTypeEnum;
+import com.szeastroc.common.entity.customer.vo.RequestCustomerVo;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.customer.client.FeignStoreClient;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.enums.SupplierTypeEnum;
-import com.szeastroc.customer.common.vo.RequestCustomerVo;
-import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
-import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
-import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.service.IceModelService;
 import com.szeastroc.icebox.oldprocess.entity.ClientInfo;
 import com.szeastroc.icebox.oldprocess.service.ClientInfoService;
-import com.szeastroc.icebox.oldprocess.service.IceChestInfoService;
-import com.szeastroc.icebox.oldprocess.service.IceChestPutRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,19 +21,9 @@ import java.util.Map;
 public class CommonConvert {
 
     @Autowired
-    private IceChestInfoService iceChestInfoService;
-    @Autowired
-    private IceBoxService iceBoxService;
-    @Autowired
-    private IceBoxExtendService iceBoxExtendService;
-    @Autowired
-    private IceModelService iceModelService;
-    @Autowired
     private FeignSupplierClient feignSupplierClient;
     @Autowired
     private ClientInfoService clientInfoService;
-    @Autowired
-    private IceChestPutRecordService iceChestPutRecordService;
     @Autowired
     private FeignStoreClient feignStoreClient;
 
@@ -51,7 +36,7 @@ public class CommonConvert {
         ClientInfo clientInfo = clientInfoService.getById(clientId);
         SubordinateInfoVo subordinateInfoVo = getSuppilerVoByClientNumber(clientInfo.getClientNumber());
         if(subordinateInfoVo.getId() == null){
-            log.error("未找到匹配的经销商clientId -> clientId: [{}]", clientId);
+            log.info("未找到匹配的经销商clientId -> clientId: [{}]", clientId);
             throw new Exception("数据不正确, 停止同步");
         }
         return subordinateInfoVo.getId();
@@ -80,7 +65,7 @@ public class CommonConvert {
         ClientInfo clientInfo = clientInfoService.getById(clientId);
         SubordinateInfoVo subordinateInfoVo = getSuppilerVoByClientNumber(clientInfo.getClientNumber());
         if(subordinateInfoVo.getMarketAreaId() == null){
-            log.error("未找到匹配的经销商clientId -> clientId: [{}]", clientId);
+            log.info("未找到匹配的经销商clientId -> clientId: [{}]", clientId);
             throw new Exception("数据不正确, 停止同步");
         }
         return subordinateInfoVo.getMarketAreaId();
@@ -97,7 +82,7 @@ public class CommonConvert {
         // 调用customer服务接口, 获取门店Vo
         StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getDtoVoByPxtId(clientInfo.getClientNumber()));
         if(storeInfoDtoVo == null){
-            log.error("未找到匹配的门店 -> pxtId: [{}]", clientInfo.getClientNumber());
+            log.info("未找到匹配的门店 -> pxtId: [{}]", clientInfo.getClientNumber());
             throw new Exception("数据不正确, 停止同步");
         }
         return storeInfoDtoVo.getStoreNumber();

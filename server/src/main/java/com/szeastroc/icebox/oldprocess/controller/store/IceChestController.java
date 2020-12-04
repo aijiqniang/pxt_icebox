@@ -4,15 +4,17 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.annotation.IgnoreResponseAdvice;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
-import com.szeastroc.customer.client.FeignStoreClient;
-import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
 import com.szeastroc.icebox.oldprocess.entity.ClientInfo;
 import com.szeastroc.icebox.oldprocess.entity.PactRecord;
-import com.szeastroc.icebox.oldprocess.service.*;
+import com.szeastroc.icebox.oldprocess.service.ClientInfoService;
+import com.szeastroc.icebox.oldprocess.service.IceChestInfoService;
+import com.szeastroc.icebox.oldprocess.service.PactRecordService;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.IceChestResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -130,12 +132,12 @@ public class IceChestController {
     @PostMapping("/createPactRecord")
     public CommonResponse<String> createPactRecord(@RequestBody ClientInfoRequest clientInfoRequest) throws ImproperOptionException {
         if (!clientInfoRequest.validate()) {
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(clientInfoRequest.getClientNumber()));
         if(storeInfoDtoVo == null || storeInfoDtoVo.getMarketArea() == null){
-            log.error("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
+            log.info("createPactRecord传入参数错误 -> {}", JSON.toJSON(clientInfoRequest));
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
         clientInfoRequest.setMarketAreaId(storeInfoDtoVo.getMarketArea()+"");

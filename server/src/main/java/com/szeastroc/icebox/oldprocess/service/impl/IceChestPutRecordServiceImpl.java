@@ -10,39 +10,45 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Maps;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
+import com.szeastroc.common.entity.customer.vo.SimpleStoreVo;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
+import com.szeastroc.common.entity.user.vo.DeptNameRequest;
+import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
 import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignStoreRelateMemberClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.user.FeignCacheClient;
+import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.Streams;
 import com.szeastroc.common.vo.CommonResponse;
-import com.szeastroc.customer.client.FeignStoreClient;
-import com.szeastroc.customer.client.FeignStoreRelateMemberClient;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.MemberInfoVo;
-import com.szeastroc.customer.common.vo.SimpleStoreVo;
-import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
-import com.szeastroc.icebox.newprocess.dao.*;
-import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.enums.*;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutApplyRelateBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutOrderDao;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IcePutApply;
+import com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox;
+import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.oldprocess.dao.*;
 import com.szeastroc.icebox.oldprocess.entity.*;
-import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.oldprocess.service.IceChestPutRecordService;
+import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
+import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
+import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
+import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
 import com.szeastroc.icebox.oldprocess.vo.report.IceDepositReport;
 import com.szeastroc.icebox.util.CommonUtil;
 import com.szeastroc.icebox.util.wechatpay.WXPayUtil;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import com.szeastroc.icebox.util.wechatpay.WeiXinService;
-import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
-import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
-import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
-import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
-import com.szeastroc.user.client.FeignCacheClient;
-import com.szeastroc.user.client.FeignDeptClient;
-import com.szeastroc.user.common.vo.DeptNameRequest;
-import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -83,13 +89,9 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
     @Autowired
     private IceBoxDao iceBoxDao;
     @Autowired
-    private IceBoxExtendDao iceBoxExtendDao;
-    @Autowired
     private IcePutApplyDao icePutApplyDao;
     @Autowired
     private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
-    @Autowired
-    private IceModelDao iceModelDao;
     @Autowired
     private IcePutOrderDao icePutOrderDao;
     @Autowired
@@ -126,7 +128,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
                 .eq(IceChestPutRecord::getRecordStatus, RecordStatus.SEND_ING.getStatus()));
         if (CollectionUtils.isNotEmpty(iceChestPutRecords) && iceChestPutRecords.size() > 1) {
             //数据错误: 不存在对应单个冰柜
-            log.error("数据错误:冰柜投放发出记录存在多条 -> {}", JSON.toJSONString(iceChestPutRecords));
+            log.info("数据错误:冰柜投放发出记录存在多条 -> {}", JSON.toJSONString(iceChestPutRecords));
             throw new ImproperOptionException(Constants.ErrorMsg.RECORD_DATA_ERROR);
         }
 
@@ -167,7 +169,7 @@ public class IceChestPutRecordServiceImpl extends ServiceImpl<IceChestPutRecordD
         }
         if (CollectionUtils.isEmpty(orderInfos) || orderInfos.size() > 1) {
             //数据错误: 不存在对应投放的单个订单
-            log.error("数据错误:投放对应订单记录不存在或存在多条 -> 订单: {} | 投放: {}", JSON.toJSONString(orderInfos), JSON.toJSON(iceChestPutRecord));
+            log.info("数据错误:投放对应订单记录不存在或存在多条 -> 订单: {} | 投放: {}", JSON.toJSONString(orderInfos), JSON.toJSON(iceChestPutRecord));
             throw new ImproperOptionException(Constants.ErrorMsg.RECORD_DATA_ERROR);
         }
         OrderInfo orderInfo = orderInfos.get(0);

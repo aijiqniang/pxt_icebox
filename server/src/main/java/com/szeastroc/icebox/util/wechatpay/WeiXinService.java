@@ -70,7 +70,7 @@ public class WeiXinService {
 			if ("SUCCESS".equals(payMap.get("return_code"))) {
 				return payMap.get("prepay_id");
 			} else {
-				log.error("错误:微信统一下单接口 -> {}, {}, {}, {}", result, money, orderNumber, openid);
+				log.info("错误:微信统一下单接口 -> {}, {}, {}, {}", result, money, orderNumber, openid);
 				throw new ImproperOptionException("创建微信订单失败");
 			}
 		} catch (Exception e) {
@@ -92,7 +92,7 @@ public class WeiXinService {
 			if ("SUCCESS".equals(payMap.get("return_code"))) {
 				return payMap.get("prepay_id");
 			} else {
-				log.error("错误:微信关闭订单接口 -> {}, {}", result, orderNumber);
+				log.info("错误:微信关闭订单接口 -> {}, {}", result, orderNumber);
 				throw new ImproperOptionException("微信关闭订单失败");
 			}
 		} catch (Exception e) {

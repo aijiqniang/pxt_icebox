@@ -80,7 +80,7 @@ public class IceChestInfoImportThread implements Runnable{
 				}
 			}catch(Exception e){
 				errorMsg = "导入异常";
-				log.error("导入冰箱异常,冰箱数据:"+ JSON.toJSONString(iceChestInfo));
+				log.info("导入冰箱异常,冰箱数据:"+ JSON.toJSONString(iceChestInfo));
 				e.printStackTrace();
 			}
 			//新增异常数据`

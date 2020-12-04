@@ -8,8 +8,6 @@
     <artifactId>icebox</artifactId>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>common</module>
-        <module>client</module>
         <module>server</module>
     </modules>
     <name>icebox</name>
@@ -22,23 +20,9 @@
         <spring-cloud.version>Hoxton.SR9</spring-cloud.version>
         <!-- 公共jar -->
         <pxt.common>0.4.0</pxt.common>
-        <pxt.common.db>0.4.3</pxt.common.db>
-        <!-- user服务 -->
-        <user.common.version>1.2.6</user.common.version>
-        <user.client.version>1.2.6</user.client.version>
-        <!-- customer服务 -->
-        <customer.common.version>1.2.8</customer.common.version>
-        <customer.client.version>1.2.8</customer.client.version>
-        <!-- visit -->
-        <visit.common.version>1.2.5</visit.common.version>
-        <visit.client.version>1.2.5</visit.client.version>
-
-        <!-- icebox服务 -->
-        <icebox.common.version>1.2.0</icebox.common.version>
-        <icebox.client.version>1.2.0</icebox.client.version>
-        <!-- transfer服务 -->
-        <transfer.common.version>0.1.0</transfer.common.version>
-        <transfer.client.version>0.1.0</transfer.client.version>
+        <pxt.common.db>0.4.6</pxt.common.db>
+        <!-- feign服务 -->
+        <common.feign.version>0.0.2</common.feign.version>
     </properties>
 
     <parent>
@@ -71,69 +55,10 @@
                 <version>${pxt.common.db}</version>
             </dependency>
 
-            <!-- nexus本地jar管理 - user服务 -->
             <dependency>
                 <groupId>com.szeastroc</groupId>
-                <artifactId>user-common</artifactId>
-                <version>${user.common.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>user-client</artifactId>
-                <version>${user.client.version}</version>
-            </dependency>
-
-            <!-- nexus本地jar管理 - customer服务 -->
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>customer-common</artifactId>
-                <version>${customer.common.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>customer-client</artifactId>
-                <version>${customer.client.version}</version>
-            </dependency>
-
-            <!-- nexus本地jar管理 - icebox服务 -->
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>icebox-common</artifactId>
-                <version>${icebox.common.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>icebox-client</artifactId>
-                <version>${icebox.client.version}</version>
-            </dependency>
-
-            <!-- nexus本地jar管理 - transfer服务 -->
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>transfer-common</artifactId>
-                <version>${transfer.common.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>transfer-client</artifactId>
-                <version>${transfer.client.version}</version>
-            </dependency>
-
-            <!-- nexus本地jar管理 - visit服务 -->
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>visit-common</artifactId>
-                <version>${visit.common.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.szeastroc</groupId>
-                <artifactId>visit-client</artifactId>
-                <version>${visit.client.version}</version>
+                <artifactId>common-feign</artifactId>
+                <version>${common.feign.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -2,12 +2,12 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.szeastroc.common.entity.customer.dto.CustomerLabelDetailDto;
+import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
+import com.szeastroc.common.feign.customer.FeignCusLabelClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.customer.client.FeignCusLabelClient;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.dto.CustomerLabelDetailDto;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -38,14 +38,13 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
     private final FeignCusLabelClient feignCusLabelClient;
     private final IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
     private final IceBoxDao iceBoxDao;
-    private final PutStoreRelateModelDao putStoreRelateModelDao;
-    private final ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
     private final IceTransferRecordDao iceTransferRecordDao;
 
     @Override
     public void createPactRecord(ClientInfoRequest clientInfoRequest) {
         // 通过冰柜找到申请投放的门店
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(clientInfoRequest.getIceChestId());
+
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
         IceBox iceBox = iceBoxDao.selectById(clientInfoRequest.getIceChestId());

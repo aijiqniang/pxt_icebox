@@ -3,10 +3,10 @@ package com.szeastroc.icebox.util;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
+import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.common.utils.SpringContextUtil;
 import com.szeastroc.icebox.constant.IceBoxConstant;
-import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -108,8 +108,8 @@ public class NewExcelUtil<T> {
             // 更新下载列表中的数据
             feignExportRecordsClient.updateExportRecord(imgUrl, 1, exportRecordsId);
         } catch (Exception e) {
-            log.error("报表导出excel错误", e);
-            log.error("报表导出excel错误,exportRecordsId-->[{}]", exportRecordsId);
+            log.info("报表导出excel错误", e);
+            log.info("报表导出excel错误,exportRecordsId-->[{}]", exportRecordsId);
         } finally {
             // 删除临时目录
             if (StringUtils.isNotBlank(xlsxPath)) {
@@ -137,8 +137,8 @@ public class NewExcelUtil<T> {
             // 更新下载列表中的数据
             feignExportRecordsClient.updateExportRecord(imgUrl, 1, exportRecordsId);
         } catch (Exception e) {
-            log.error("报表导出excel错误", e);
-            log.error("报表导出excel错误,exportRecordsId-->[{}]", exportRecordsId);
+            log.info("报表导出excel错误", e);
+            log.info("报表导出excel错误,exportRecordsId-->[{}]", exportRecordsId);
         } finally {
             // 删除临时目录
             if (StringUtils.isNotBlank(xlsxPath)) {

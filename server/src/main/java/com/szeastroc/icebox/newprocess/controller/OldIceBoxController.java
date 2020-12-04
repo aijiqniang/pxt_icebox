@@ -7,34 +7,43 @@ import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.WorkbookUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.SimpleSupplierInfoVo;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.exception.ImproperOptionException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
-import com.szeastroc.customer.client.FeignStoreClient;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.SimpleSupplierInfoVo;
-import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
+import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceModelDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.OldIceBoxOpt;
 import com.szeastroc.icebox.newprocess.vo.OldIceBoxImportVo;
+import com.szeastroc.icebox.util.NewExcelUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -42,20 +51,17 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("oldIceBox")
+@RequestMapping("/oldIceBox")
+@RequiredArgsConstructor(onConstructor = @_(@Autowired))
 public class OldIceBoxController {
-    @Autowired
-    private FeignStoreClient feignStoreClient;
-    @Autowired
-    private IceBoxDao iceBoxDao;
-    @Autowired
-    private IceBoxExtendDao iceBoxExtendDao;
-    @Autowired
-    private IceModelDao iceModelDao;
-    @Autowired
-    private FeignSupplierClient feignSupplierClient;
-    @Resource
-    private OldIceBoxOpt oldIceBoxOpt;
+    private final FeignStoreClient feignStoreClient;
+    private final IceBoxDao iceBoxDao;
+    private final IceBoxExtendDao iceBoxExtendDao;
+    private final IceModelDao iceModelDao;
+    private final IceBoxService iceBoxService;
+    private final FeignSupplierClient feignSupplierClient;
+    private final OldIceBoxOpt oldIceBoxOpt;
+    private final RabbitTemplate rabbitTemplate;
 
     @RequestMapping("/import")
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -177,6 +183,17 @@ public class OldIceBoxController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+
+    /**
+     * 查询已投放未重新签收的旧冰柜发送签收通知
+     */
+    @RequestMapping("dealOldIceBoxNotice")
+    public CommonResponse<List<IceBox>> dealOldIceBoxNotice() {
+        iceBoxService.dealOldIceBoxNotice();
+        return new CommonResponse(Constants.API_CODE_SUCCESS, null);
+    }
+
+
     /**
      * 针对旧冰柜需要更新旧冰柜信息需求
      *
@@ -187,11 +204,40 @@ public class OldIceBoxController {
      */
     @RequestMapping("/importOrUpdate")
     public CommonResponse<Void> importOrUpdate(@RequestParam("excelFile") MultipartFile file) throws IOException, ImproperOptionException {
+
         log.info("开始读取数据");
         List<OldIceBoxImportVo> oldIceBoxImportVoList = EasyExcel.read(file.getInputStream()).head(OldIceBoxImportVo.class).sheet().doReadSync();
         if (CollectionUtil.isNotEmpty(oldIceBoxImportVoList)) {
-            oldIceBoxOpt.opt(oldIceBoxImportVoList);
+            List<JSONObject> lists = oldIceBoxOpt.opt(oldIceBoxImportVoList);
+
+            /**
+             * @Date: 2020/10/19 14:50 xiao
+             *  将报表中导入数据库中的数据异步更新到报表中
+             */
+            if (CollectionUtils.isNotEmpty(lists)) {
+                ExecutorServiceFactory.getInstance().execute(() -> {
+                    for (JSONObject jsonObject : lists) {
+                        // 发送mq消息
+                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                    }
+                });
+            }
         }
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+
+    @GetMapping("/getImportExcel")
+    public void getImportExcel(HttpServletResponse response) throws Exception {
+        response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+        String fileName = "旧冰柜导入模板";
+        String titleName = "旧冰柜导入模板";
+        String[] columnName = {"事业部", "大区", "服务处", "所属经销商编号", "所属经销商名称", "冰柜编号", "冰柜名称", "品牌", "冰柜型号", "冰柜规格", "押金金额", "现投放门店编号", "现投放门店名称", "冰柜状态", "导入类型"};
+        NewExcelUtil<OldIceBoxImportVo> excelUtil = new NewExcelUtil<>();
+        List<OldIceBoxImportVo> oldIceBoxImportVoList = new ArrayList<OldIceBoxImportVo>();
+        oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("新增").build());
+        oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("退仓").build());
+        oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("报废").build());
+        excelUtil.oldExportExcel(fileName, titleName, columnName, oldIceBoxImportVoList, response);
     }
 }

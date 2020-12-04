@@ -1,8 +1,6 @@
 package com.szeastroc.icebox.newprocess.vo;
 
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -105,4 +103,14 @@ public class IceBoxDetailVo {
     private IceExamineVo lastExamine;
 
 
+
+    /**
+     * 冰柜类型：0-旧冰柜，1-新冰柜
+     */
+    private Integer iceBoxType;
+
+    /**
+     * 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
+     */
+    private Integer status;
 }

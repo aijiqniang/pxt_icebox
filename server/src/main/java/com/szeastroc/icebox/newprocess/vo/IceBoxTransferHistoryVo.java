@@ -1,7 +1,7 @@
 package com.szeastroc.icebox.newprocess.vo;
 
+import com.szeastroc.common.entity.visit.SessionExamineVo;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.visit.common.SessionExamineVo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,30 +1,11 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
-import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
-import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
-import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
-import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
-import com.szeastroc.user.client.FeignDeptClient;
-import com.szeastroc.user.client.FeignUserClient;
-import com.szeastroc.user.common.session.UserManageVo;
-import com.szeastroc.user.common.vo.SimpleUserRelateDeptVo;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * @ClassName: InspectionServiceImpl

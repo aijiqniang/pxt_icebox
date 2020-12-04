@@ -10,15 +10,29 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
+import com.szeastroc.common.entity.user.session.MatchRuleVo;
+import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
+import com.szeastroc.common.entity.user.vo.SessionUserInfoVo;
+import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
+import com.szeastroc.common.entity.user.vo.SysRuleIceDetailVo;
+import com.szeastroc.common.entity.visit.IceBoxExamineModel;
+import com.szeastroc.common.entity.visit.SessionExamineCreateVo;
+import com.szeastroc.common.entity.visit.SessionExamineVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.user.FeignCacheClient;
+import com.szeastroc.common.feign.user.FeignDeptClient;
+import com.szeastroc.common.feign.user.FeignDeptRuleClient;
+import com.szeastroc.common.feign.user.FeignUserClient;
+import com.szeastroc.common.feign.visit.FeignBacklogClient;
+import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.commondb.config.redis.JedisClient;
-import com.szeastroc.customer.client.FeignStoreClient;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.StoreInfoDtoVo;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
@@ -29,30 +43,22 @@ import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
-import com.szeastroc.icebox.newprocess.enums.*;
+import com.szeastroc.icebox.newprocess.enums.CommonIsCheckEnum;
+import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.ExamineEnums;
+import com.szeastroc.icebox.newprocess.enums.ExamineExceptionStatusEnums;
+import com.szeastroc.icebox.newprocess.enums.ExamineLastApprovalEnum;
+import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
+import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
-import com.szeastroc.user.client.FeignCacheClient;
-import com.szeastroc.user.client.FeignDeptClient;
-import com.szeastroc.user.client.FeignDeptRuleClient;
-import com.szeastroc.user.client.FeignUserClient;
-import com.szeastroc.user.common.session.MatchRuleVo;
-import com.szeastroc.user.common.vo.SessionDeptInfoVo;
-import com.szeastroc.user.common.vo.SessionUserInfoVo;
-import com.szeastroc.user.common.vo.SimpleUserInfoVo;
-import com.szeastroc.user.common.vo.SysRuleIceDetailVo;
-import com.szeastroc.visit.client.FeignBacklogClient;
-import com.szeastroc.visit.client.FeignExamineClient;
-import com.szeastroc.visit.common.IceBoxExamineModel;
-import com.szeastroc.visit.common.SessionExamineCreateVo;
-import com.szeastroc.visit.common.SessionExamineVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -63,7 +69,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -1460,8 +1474,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(CollectionUtils.isEmpty(userIds)){
             return Lists.newArrayList();
         }
-        wrapper.eq(IceExamine::getExaminStatus,2)
-                .in(IceExamine::getCreateBy,userIds)
+        wrapper.in(IceExamine::getCreateBy,userIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);
         return iceExamineDao.selectList(wrapper);
@@ -1470,8 +1483,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     @Override
     public List<IceExamine> getInspectionBoxes(Integer userId) {
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.eq(IceExamine::getExaminStatus,2)
-                .eq(IceExamine::getCreateBy,userId)
+        wrapper.eq(IceExamine::getCreateBy,userId)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);
         return iceExamineDao.selectList(wrapper);
@@ -1484,8 +1496,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             return 0;
         }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.eq(IceExamine::getExaminStatus,2)
-                .eq(IceExamine::getCreateBy,userId)
+        wrapper.eq(IceExamine::getCreateBy,userId)
                 .in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);

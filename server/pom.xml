@@ -84,19 +84,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.szeastroc</groupId>
-            <artifactId>icebox-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.szeastroc</groupId>
-            <artifactId>user-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.szeastroc</groupId>
-            <artifactId>customer-client</artifactId>
-        </dependency>
-        <dependency>
             <groupId>dom4j</groupId>
             <artifactId>dom4j</artifactId>
             <version>1.6</version>
@@ -107,14 +94,9 @@
             <artifactId>common-bean</artifactId>
             <version>1.0.0</version>
         </dependency>
-
         <dependency>
             <groupId>com.szeastroc</groupId>
-            <artifactId>transfer-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.szeastroc</groupId>
-            <artifactId>visit-client</artifactId>
+            <artifactId>common-feign</artifactId>
         </dependency>
 
     </dependencies>

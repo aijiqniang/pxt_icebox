@@ -3,12 +3,12 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.SessionStoreInfoVo;
+import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
 import com.szeastroc.common.exception.ImproperOptionException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.customer.client.FeignStoreClient;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.SessionStoreInfoVo;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
@@ -51,9 +51,6 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
 
     @Resource
     private FeignSupplierClient feignSupplierClient;
-
-    @Resource
-    private IcePutApplyDao icePutApplyDao;
 
 
     @Override

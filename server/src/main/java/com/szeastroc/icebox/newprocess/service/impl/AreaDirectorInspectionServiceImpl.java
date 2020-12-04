@@ -4,6 +4,8 @@ import cn.hutool.core.util.NumberUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
+import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
+import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
@@ -13,14 +15,11 @@ import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
-import com.szeastroc.user.client.FeignDeptClient;
-import com.szeastroc.user.common.vo.SessionDeptInfoVo;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.text.DecimalFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 

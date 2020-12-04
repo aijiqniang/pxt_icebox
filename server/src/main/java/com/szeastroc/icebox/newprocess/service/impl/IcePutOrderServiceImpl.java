@@ -6,14 +6,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.google.common.collect.Maps;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
-import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
@@ -22,12 +18,32 @@ import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
-import com.szeastroc.icebox.newprocess.dao.*;
-import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.*;
+import com.szeastroc.icebox.newprocess.dao.ApplyRelatePutStoreModelDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutApplyRelateBoxDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutOrderDao;
+import com.szeastroc.icebox.newprocess.dao.IceTransferRecordDao;
+import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
+import com.szeastroc.icebox.newprocess.dao.PutStoreRelateModelDao;
+import com.szeastroc.icebox.newprocess.entity.ApplyRelatePutStoreModel;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
+import com.szeastroc.icebox.newprocess.entity.IcePutApply;
+import com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox;
+import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
+import com.szeastroc.icebox.newprocess.entity.IceTransferRecord;
+import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
+import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
+import com.szeastroc.icebox.newprocess.enums.OldIceBoxSignNoticeStatusEnums;
+import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.RecordStatus;
+import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.newprocess.vo.IceBoxAssetReportVo;
 import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayBack;
 import com.szeastroc.icebox.oldprocess.vo.OrderPayResponse;
@@ -48,7 +64,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -315,6 +335,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         //修改冰柜投放信息
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+        iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate().set(IceBox::getPutStatus,PutStatus.FINISH_PUT.getStatus()).eq(IceBox::getId,iceBox.getId()));
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
         wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
@@ -327,7 +348,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             relateModel.setUpdateTime(new Date());
             putStoreRelateModelDao.updateById(relateModel);
         }
-        iceBoxDao.updateById(iceBox);
+//        iceBoxDao.updateById(iceBox);
         //todo 这里冰柜改为已投放
         //旧冰柜更新通知状态
         if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {

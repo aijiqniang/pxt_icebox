@@ -1,12 +1,11 @@
 package com.szeastroc.icebox.newprocess.consumer.utils;
 
+import com.szeastroc.common.constant.RegisterConstant;
+import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ImageUploadUtil;
-import com.szeastroc.customer.client.constant.RegisterConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.ExcelConstant;
 import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
 import com.szeastroc.icebox.newprocess.enums.ExportRecordTypeEnum;
-import com.szeastroc.visit.client.FeignExportRecordsClient;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -200,7 +199,7 @@ public class PoiUtil {
         log.info("xlsx文件已写入磁盘 [{}]", xlsxPath);
         // 上传到对象存储
         @Cleanup InputStream fileInputStream = new FileInputStream(xlsxPath);
-        String uploadPath = imageUploadUtil.wechatUpload(fileInputStream, RegisterConstant.REGISTER_NAME, "xlsx");
+        String uploadPath = imageUploadUtil.wechatUpload(fileInputStream, RegisterConstant.ICEBOX_REGISTER_NAME, "xlsx");
         log.info("文件下载地址 [{}]", uploadPath);
         // 删除临时文件
         CompletableFuture.runAsync(() -> {
@@ -252,7 +251,7 @@ public class PoiUtil {
         log.info("xlsx文件已写入磁盘 [{}]", xlsxPath);
         // 上传到对象存储
         @Cleanup InputStream fileInputStream = new FileInputStream(xlsxPath);
-        String uploadPath = imageUploadUtil.wechatUpload(fileInputStream, RegisterConstant.REGISTER_NAME, "xlsx");
+        String uploadPath = imageUploadUtil.wechatUpload(fileInputStream, RegisterConstant.ICEBOX_REGISTER_NAME, "xlsx");
         log.info("文件下载地址 [{}]", uploadPath);
         // 删除临时文件
         CompletableFuture.runAsync(() -> {
@@ -305,7 +304,7 @@ public class PoiUtil {
         log.info("xlsx文件已写入磁盘 [{}]", xlsxPath);
         // 上传到对象存储
         @Cleanup InputStream fileInputStream = new FileInputStream(xlsxPath);
-        String uploadPath = imageUploadUtil.wechatUpload(fileInputStream, RegisterConstant.REGISTER_NAME, "xlsx");
+        String uploadPath = imageUploadUtil.wechatUpload(fileInputStream, RegisterConstant.ICEBOX_REGISTER_NAME, "xlsx");
         log.info("文件下载地址 [{}]", uploadPath);
         // 删除临时文件
         CompletableFuture.runAsync(() -> {
@@ -381,7 +380,7 @@ public class PoiUtil {
         log.info("xlsx文件已写入磁盘 [{}]", xlsxPath);
         // 上传到对象存储
         @Cleanup InputStream fileInputStream = new FileInputStream(xlsxPath);
-        String uploadPath = imageUploadUtil.wechatUpload(fileInputStream, RegisterConstant.REGISTER_NAME, "xlsx");
+        String uploadPath = imageUploadUtil.wechatUpload(fileInputStream, RegisterConstant.ICEBOX_REGISTER_NAME, "xlsx");
         log.info("文件下载地址 [{}]", uploadPath);
         // 删除临时文件
         if(null!=exportRecordsDao){

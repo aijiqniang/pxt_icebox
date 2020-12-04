@@ -1,7 +1,7 @@
 package com.szeastroc.icebox.newprocess.vo;
 
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.szeastroc.visit.common.SessionExamineVo;
+import com.szeastroc.common.entity.visit.SessionExamineVo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

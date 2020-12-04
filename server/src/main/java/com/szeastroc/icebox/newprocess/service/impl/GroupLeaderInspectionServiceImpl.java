@@ -1,12 +1,11 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import com.google.common.collect.Lists;
+import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
-import com.szeastroc.icebox.newprocess.vo.StoreVO;
-import com.szeastroc.user.client.FeignUserClient;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

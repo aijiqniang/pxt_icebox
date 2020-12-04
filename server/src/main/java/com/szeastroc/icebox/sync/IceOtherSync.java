@@ -2,9 +2,9 @@ package com.szeastroc.icebox.sync;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
+import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.customer.client.FeignSupplierClient;
-import com.szeastroc.customer.common.vo.SubordinateInfoVo;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.entity.*;

@@ -15,12 +15,11 @@ import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignVisitInfoClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
-import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 import com.szeastroc.icebox.newprocess.vo.StoreVO;
@@ -55,13 +54,12 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
     @Autowired
     private IceExamineService iceExamineService;
     @Autowired
-    private IcePutApplyService icePutApplyService;
-    @Autowired
     FeignStoreClient feignStoreClient;
     @Resource
-    private IceBoxDao iceBoxDao;
+    private IceBoxService iceBoxService;
     @Autowired
     private FeignVisitInfoClient feignVisitInfoClient;
+
 
     @Override
     public List<InspectionReportVO> report(Integer deptId) {
@@ -74,9 +72,9 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
 
     public InspectionReportVO getByUserId(Integer userId) {
         int inspectionCount = iceExamineService.getInspectionBoxes(userId).size();
-        int putCount = icePutApplyService.getPutCount(userId);
+        int putCount = iceBoxService.getPutCount(userId);
 
-        int lostCount = icePutApplyService.getLostCount(userId);
+        int lostCount = iceBoxService.getLostCount(userId);
         String percent = "-";
         if (0 != putCount) {
             percent = NumberUtil.formatPercent((float) inspectionCount / putCount - lostCount, 2);
@@ -99,7 +97,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
     }
 
     public List<StoreVO> getStoreByUserId(Integer userId) {
-        List<Integer> putBoxIds = icePutApplyService.getPutBoxIds(userId);
+        List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
         List<IceExamine> inspectionBoxes = iceExamineService.getInspectionBoxes(userId);
         Set<Integer> idSet = new HashSet<>();
         if (CollectionUtils.isEmpty(inspectionBoxes)) {
@@ -114,7 +112,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         }
         LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
         wrapper.in(IceBox::getId, idSet).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1);
-        List<IceBox> iceBoxes = iceBoxDao.selectList(wrapper);
+        List<IceBox> iceBoxes = iceBoxService.list(wrapper);
         if(CollectionUtils.isEmpty(iceBoxes)){
             return Lists.newArrayList();
         }
@@ -126,7 +124,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         List<SimpleStoreVo> stores = FeignResponseUtil.getFeignData(feignStoreClient.getSimpleStoreByNumbers(storeNumbers));
         List<StoreVO> vos = new ArrayList<>();
         if(Objects.nonNull(stores)){
-            vos = stores.stream().map(one -> {
+             vos = stores.stream().map(one -> {
                 StoreVO storeVO = new StoreVO();
                 storeVO.setCustomerNumber(one.getStoreNumber());
                 storeVO.setStoreName(one.getStoreName());
@@ -137,7 +135,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         }
         //配送商
         Map<String, SubordinateInfoVo> suppliers = FeignResponseUtil.getFeignData(feignSupplierClient.getCustomersByNumberList(storeNumbers));
-        if(Objects.nonNull(suppliers)&&!suppliers.isEmpty()) {
+        if(Objects.nonNull(suppliers)&&!suppliers.isEmpty()){
             for (SubordinateInfoVo supplier : suppliers.values()) {
                 StoreVO storeVO = new StoreVO();
                 storeVO.setCustomerNumber(supplier.getNumber());

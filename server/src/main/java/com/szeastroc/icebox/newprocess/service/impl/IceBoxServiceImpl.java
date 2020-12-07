@@ -48,6 +48,7 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignCusLabelClient;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.customer.FeignSupplierRelateUserClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignDeptRuleClient;
@@ -230,6 +231,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceBoxService iceBoxService;
     @Autowired
     private IcePutOrderService icePutOrderService;
+
+    @Autowired
+    private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -1476,6 +1480,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (CollectionUtil.isEmpty(sessionExamineVos)) {
             for (String applyNumber : putStoreModelByApplyNumberMap.keySet()) {
                 List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = putStoreModelByApplyNumberMap.get(applyNumber);
+                if(CollectionUtil.isEmpty(applyRelatePutStoreModels)){
+                    continue;
+                }
                 Map<String, Integer> countMap = new HashMap<>();
                 for (ApplyRelatePutStoreModel storeModel : applyRelatePutStoreModels) {
                     PutStoreRelateModel relateModel = relateModelMap.get(storeModel.getStoreRelateModelId());
@@ -1486,16 +1493,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         countMap.put(relateModel.getModelId() + "_" + relateModel.getSupplierId(), Integer.sum(value, 1));
                     }
                 }
-                for (String key : countMap.keySet()) {
-                    String[] arr = key.split("_");
-                    Integer modelId = Integer.decode(arr[0]);
-                    Integer supplierId = Integer.decode(arr[1]);
-                    PutStoreRelateModel relateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getModelId, modelId)
-                            .eq(PutStoreRelateModel::getSupplierId, supplierId)
-                            .eq(PutStoreRelateModel::getPutStoreNumber, putStoreNumber)
-                            .eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus())
-                            .last("limit 1"));
+                List<Integer> storeRelateModelIds = applyRelatePutStoreModels.stream().map(x -> x.getStoreRelateModelId()).collect(Collectors.toList());
+                List<PutStoreRelateModel> relateModels = putStoreRelateModelDao.selectBatchIds(storeRelateModelIds);
+                if(CollectionUtil.isEmpty(relateModels)){
+                    continue;
+                }
+                List<String> existList = new ArrayList<>();
+                for (PutStoreRelateModel relateModel : relateModels) {
 
+                    Integer modelId = relateModel.getModelId();
+                    Integer supplierId = relateModel.getSupplierId();
+                    String key = modelId + "_" + supplierId;
+                    if(existList.contains(key)){
+                        continue;
+                    }
                     IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, modelId)
                             .eq(IceBox::getSupplierId, supplierId)
                             .last("limit 1"));
@@ -1518,6 +1529,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         boxVo.setSupplierName(supplierInfoVo.getName());
                     }
                     iceBoxVos.add(boxVo);
+
+                    existList.add(key);
                 }
             }
         } else {
@@ -4733,6 +4746,52 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         jsonObject.put("resourceStr", resourceStr); // 来源入口
         jsonObject.put(IceBoxConstant.methodName, MethodNameOfMQ.CREATE_ICE_BOX_ASSETS_REPORT);
         return jsonObject;
+    }
+
+    @Override
+    public int getPutCount(Integer userId) {
+        return this.getPutBoxIds(userId).size();
+    }
+
+    @Override
+    public int getLostCount(Integer userId) {
+        List<Integer> putBoxIds = this.getPutBoxIds(userId);
+        if(CollectionUtils.isEmpty(putBoxIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getStatus,3);
+        iceBoxWrapper.in(IceBox::getId, putBoxIds);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+    @Override
+    public List<Integer> getPutBoxIds(Integer userId) {
+        List<String> numbers = FeignResponseUtil.getFeignData(feignSupplierRelateUserClient.getMainCustomerNumber(userId));
+        if(CollectionUtils.isEmpty(numbers)){
+            return Lists.newArrayList();
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).in(IceBox::getPutStoreNumber,numbers);
+        return iceBoxDao.selectList(iceBoxWrapper).stream().map(IceBox::getId).collect(Collectors.toList());
+    }
+
+    @Override
+    public int getLostCountByDeptId(Integer deptId) {
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+
+    @Override
+    public int getLostCountByDeptIds(List<Integer> deptIds) {
+        if(com.baomidou.mybatisplus.core.toolkit.CollectionUtils.isEmpty(deptIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).in(IceBox::getDeptId,deptIds).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
     }
 
 }

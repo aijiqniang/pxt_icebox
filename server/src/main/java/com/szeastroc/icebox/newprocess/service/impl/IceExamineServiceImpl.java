@@ -53,6 +53,7 @@ import com.szeastroc.icebox.newprocess.enums.ExamineLastApprovalEnum;
 import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
@@ -116,7 +117,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     @Autowired
     private IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
     @Autowired
-    private IcePutApplyService icePutApplyService;
+    private IceBoxService iceBoxService;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -1469,21 +1470,32 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
 
     @Override
-    public List<IceExamine> getInspectionBoxes(List<Integer> userIds) {
+    public Integer getInspectionCount(List<Integer> userIds) {
+        List<Integer> boxIds = new ArrayList<>();
+        for (Integer userId : userIds) {
+            List<Integer> list = iceBoxService.getPutBoxIds(userId);
+            boxIds.addAll(list);
+        }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
         if(CollectionUtils.isEmpty(userIds)){
-            return Lists.newArrayList();
+            return 0;
         }
-        wrapper.in(IceExamine::getCreateBy,userIds)
+        wrapper.eq(IceExamine::getExaminStatus,2)
+                .in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);
-        return iceExamineDao.selectList(wrapper);
+        return iceExamineDao.selectCount(wrapper);
     }
 
     @Override
     public List<IceExamine> getInspectionBoxes(Integer userId) {
+        List<Integer> boxIds = iceBoxService.getPutBoxIds(userId);
+        if(CollectionUtils.isEmpty(boxIds)){
+            return Lists.newArrayList();
+        }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.eq(IceExamine::getCreateBy,userId)
+        wrapper.eq(IceExamine::getExaminStatus,2)
+                .in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);
         return iceExamineDao.selectList(wrapper);
@@ -1491,12 +1503,13 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
     @Override
     public Integer getNoInspectionBoxes(Integer putCount, Integer userId) {
-        List<Integer> boxIds = icePutApplyService.getOwnerBoxIds(userId);
+        List<Integer> boxIds = iceBoxService.getPutBoxIds(userId);
         if(CollectionUtils.isEmpty(boxIds)){
             return 0;
         }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.eq(IceExamine::getCreateBy,userId)
+        wrapper.eq(IceExamine::getExaminStatus,2)
+                .eq(IceExamine::getCreateBy,userId)
                 .in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);

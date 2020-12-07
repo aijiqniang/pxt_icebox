@@ -12,7 +12,7 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
 import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportService;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
-import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 import org.joda.time.DateTime;
@@ -39,7 +39,7 @@ public class AreaDirectorInspectionServiceImpl implements InspectionService, Ini
     @Autowired
     private IceBoxExamineExceptionReportService iceBoxExamineExceptionReportService;
     @Autowired
-    private IcePutApplyService icePutApplyService;
+    private IceBoxService iceBoxService;
 
     @Override
     public List<InspectionReportVO> report(Integer deptId) {
@@ -61,7 +61,7 @@ public class AreaDirectorInspectionServiceImpl implements InspectionService, Ini
             exceptionReportWrapper.le(IceBoxExamineExceptionReport::getSubmitTime, lastDay + " 23:59:59");
             Integer inspectionCount = iceBoxExamineExceptionReportService.selectByExportCount(exceptionReportWrapper);
             List<SessionDeptInfoVo> groups = FeignResponseUtil.getFeignData(feignDeptClient.findNormalChildDeptInfosByParentId(id));
-            int lostCount = icePutApplyService.getLostCountByDeptIds(groups.stream().map(SessionDeptInfoVo::getId).collect(Collectors.toList()));
+            int lostCount = iceBoxService.getLostCountByDeptIds(groups.stream().map(SessionDeptInfoVo::getId).collect(Collectors.toList()));
             String percent = "-";
             if(0!=putCount){
                 percent = NumberUtil.formatPercent((float) inspectionCount / putCount-lostCount, 2);

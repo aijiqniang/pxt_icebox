@@ -7,10 +7,9 @@ import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
-import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
-import com.szeastroc.icebox.newprocess.service.PutStoreRelateModelService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,9 +32,7 @@ public class ServiceManagerInspectionServiceImpl implements InspectionService, I
     @Autowired
     private IceExamineService iceExamineService;
     @Autowired
-    private PutStoreRelateModelService putStoreRelateModelService;
-    @Autowired
-    private IcePutApplyService icePutApplyService;
+    private IceBoxService iceBoxService;
 
     @Override
     public List<InspectionReportVO> report(Integer deptId) {
@@ -43,17 +40,25 @@ public class ServiceManagerInspectionServiceImpl implements InspectionService, I
         List<SessionDeptInfoVo> childDepts = FeignResponseUtil.getFeignData(feignDeptClient.findNormalChildDeptInfosByParentId(deptId));
         for (SessionDeptInfoVo childDept : childDepts) {
             List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.getUserIdsByDeptInfoId(childDept.getId()));
-            Integer inspectionCount = iceExamineService.getInspectionBoxes(userIds).size();
-            Integer putCount = putStoreRelateModelService.getCurrentMonthPutCount(userIds);
-            Integer lostCount =icePutApplyService.getLostCountByDeptId(childDept.getId());
-            String percent = "-";
-            if(0!=putCount){
-                percent = NumberUtil.formatPercent((float) inspectionCount / putCount-lostCount, 2);
+            Integer allInspectionCount = 0;
+            Integer allPutCount = 0;
+            for (Integer userId : userIds) {
+
+                int inspectionCount = iceExamineService.getInspectionBoxes(userId).size();
+                int putCount = iceBoxService.getPutCount(userId);
+
+                allInspectionCount += inspectionCount;
+                allPutCount+=putCount;
             }
-            Integer noInspectionCount = putCount-inspectionCount;
+            int lostCount =iceBoxService.getLostCountByDeptId(childDept.getId());
+            String percent = "-";
+            if(0!=allPutCount){
+                percent = NumberUtil.formatPercent((float) allInspectionCount / allPutCount-lostCount, 2);
+            }
+            Integer noInspectionCount = allPutCount-allInspectionCount;
             InspectionReportVO vo = InspectionReportVO.builder()
-                    .inspection(inspectionCount)
-                    .putCount(putCount)
+                    .inspection(allInspectionCount)
+                    .putCount(allPutCount)
                     .rate(percent)
                     .noInspection(noInspectionCount)
                     .deptName(childDept.getName())

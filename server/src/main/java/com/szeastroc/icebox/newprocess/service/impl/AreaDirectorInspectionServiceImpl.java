@@ -53,8 +53,6 @@ public class AreaDirectorInspectionServiceImpl implements InspectionService, Ini
             exceptionReportWrapper.eq(IceBoxExamineExceptionReport::getServiceDeptId, id);
             String firstDay = new DateTime().dayOfMonth().withMinimumValue().toString("yyyy-MM-dd");
             String lastDay = new DateTime().dayOfMonth().withMaximumValue().toString("yyyy-MM-dd");
-            wrapper.ge(IceBoxPutReport::getSubmitTime, firstDay + " 00:00:00");
-            wrapper.le(IceBoxPutReport::getSubmitTime, lastDay + " 23:59:59");
             Integer putCount = iceBoxPutReportService.selectByExportCount(wrapper);
 
             exceptionReportWrapper.ge(IceBoxExamineExceptionReport::getSubmitTime, firstDay + " 00:00:00");

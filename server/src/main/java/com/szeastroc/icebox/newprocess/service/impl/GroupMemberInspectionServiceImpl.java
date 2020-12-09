@@ -71,10 +71,10 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
 
 
     public InspectionReportVO getByUserId(Integer userId) {
-        int inspectionCount = iceExamineService.getInspectionBoxes(userId).size();
-        int putCount = iceBoxService.getPutCount(userId);
-
-        int lostCount = iceBoxService.getLostCount(userId);
+        List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
+        int inspectionCount = iceExamineService.getInspectionBoxes(putBoxIds,userId).size();
+        int putCount = putBoxIds.size();
+        int lostCount = iceBoxService.getLostCount(userId,putBoxIds);
         String percent = "-";
         if (0 != putCount) {
             percent = NumberUtil.formatPercent((float) inspectionCount / putCount - lostCount, 2);
@@ -98,7 +98,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
 
     public List<StoreVO> getStoreByUserId(Integer userId) {
         List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
-        List<IceExamine> inspectionBoxes = iceExamineService.getInspectionBoxes(userId);
+        List<IceExamine> inspectionBoxes = iceExamineService.getInspectionBoxes(putBoxIds,userId);
         Set<Integer> idSet = new HashSet<>();
         if (CollectionUtils.isEmpty(inspectionBoxes)) {
             idSet = new HashSet<>(putBoxIds);

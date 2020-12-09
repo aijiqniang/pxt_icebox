@@ -20,7 +20,7 @@ public interface IceExamineService extends IService<IceExamine>{
 
     Integer getInspectionCount(List<Integer> userIds);
 
-    List<IceExamine> getInspectionBoxes(Integer userId);
+    List<IceExamine> getInspectionBoxes(List<Integer> boxIds,Integer userId);
 
     Integer getNoInspectionBoxes(Integer putCount, Integer userId);
 

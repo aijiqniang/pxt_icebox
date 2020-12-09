@@ -1488,8 +1488,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     }
 
     @Override
-    public List<IceExamine> getInspectionBoxes(Integer userId) {
-        List<Integer> boxIds = iceBoxService.getPutBoxIds(userId);
+    public List<IceExamine> getInspectionBoxes(List<Integer> boxIds,Integer userId) {
         if(CollectionUtils.isEmpty(boxIds)){
             return Lists.newArrayList();
         }

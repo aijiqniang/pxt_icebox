@@ -43,9 +43,9 @@ public class ServiceManagerInspectionServiceImpl implements InspectionService, I
             Integer allInspectionCount = 0;
             Integer allPutCount = 0;
             for (Integer userId : userIds) {
-
-                int inspectionCount = iceExamineService.getInspectionBoxes(userId).size();
-                int putCount = iceBoxService.getPutCount(userId);
+                List<Integer> boxIds = iceBoxService.getPutBoxIds(userId);
+                int inspectionCount = iceExamineService.getInspectionBoxes(boxIds,userId).size();
+                int putCount = boxIds.size();
 
                 allInspectionCount += inspectionCount;
                 allPutCount+=putCount;

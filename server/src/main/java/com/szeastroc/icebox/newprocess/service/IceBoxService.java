@@ -134,7 +134,7 @@ public interface IceBoxService extends IService<IceBox> {
      * @param userId
      * @return
      */
-    int getLostCount(Integer userId);
+    int getLostCount(Integer userId,List<Integer> putBoxIds);
 
     int getLostCountByDeptId(Integer deptId);
 

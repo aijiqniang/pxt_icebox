@@ -4754,8 +4754,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    public int getLostCount(Integer userId) {
-        List<Integer> putBoxIds = this.getPutBoxIds(userId);
+    public int getLostCount(Integer userId,List<Integer> putBoxIds) {
         if(CollectionUtils.isEmpty(putBoxIds)){
             return 0;
         }

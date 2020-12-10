@@ -2209,6 +2209,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<String, Object> map = new HashMap<>(32);
         map.put("iceBoxId", iceBox.getId()); // 设备编号 --东鹏资产id
         map.put("assetId", iceBoxExtend.getAssetId()); // 设备编号 --东鹏资产id
+        map.put("oldAssetId", iceBox.getOldAssetId()); // 原资产编号
         map.put("chestName", iceBox.getChestName()); // 名称
         map.put("modelId", iceBox.getModelId()); // 型号Id
         IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getId, iceBox.getModelId()).last(" limit 1"));

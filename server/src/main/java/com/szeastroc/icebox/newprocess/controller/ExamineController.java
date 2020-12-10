@@ -82,9 +82,9 @@ public class ExamineController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,map);
     }
 
-    @RequestMapping("/dealIceExamineCheck")
+    @RequestMapping("/updateExamineStatus")
     @MonitorAnnotation
-    public CommonResponse<Void> dealIceExamineCheck(String redisKey, Integer status,Integer updateBy) {
+    public CommonResponse<Void> updateExamineStatus(String redisKey, Integer status,Integer updateBy) {
         if (redisKey == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }

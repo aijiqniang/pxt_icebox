@@ -92,7 +92,7 @@ public class ExamineController {
 
         iceExamineService.dealIceExamineCheck(iceExamineCheckVo.getRedisKey(),iceExamineCheckVo.getStatus(),iceExamineCheckVo.getUpdateBy());
 
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,new IceExamineCheckVo());
     }
 
     @RequestMapping("/findExamineByNumber")

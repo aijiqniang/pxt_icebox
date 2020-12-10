@@ -85,14 +85,14 @@ public class ExamineController {
 
     @RequestMapping("/updateExamineStatus")
     @MonitorAnnotation
-    public CommonResponse<Void> updateExamineStatus(@RequestBody IceExamineCheckVo iceExamineCheckVo) {
+    public CommonResponse<IceExamineCheckVo> updateExamineStatus(@RequestBody IceExamineCheckVo iceExamineCheckVo) {
         if (StringUtils.isEmpty(iceExamineCheckVo.getRedisKey())) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
         iceExamineService.dealIceExamineCheck(iceExamineCheckVo.getRedisKey(),iceExamineCheckVo.getStatus(),iceExamineCheckVo.getUpdateBy());
 
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
     @RequestMapping("/findExamineByNumber")

@@ -67,9 +67,14 @@ public class IceBoxExcelVo {
     @ColumnWidth(50)
     @ExcelProperty(value = "客户状态")
     private String statusStr; // 客户状态
+
+
     @ColumnWidth(50)
     @ExcelProperty(value = "冰柜状态")
-    private String putStatusStr; // 冰柜状态
+    private String iceStatusStr; // 冰柜状态
+    @ColumnWidth(50)
+    @ExcelProperty(value = "冰柜投放状态")
+    private String putStatusStr; // 冰柜投放状态
     @ColumnWidth(50)
     @ExcelProperty(value = "负责业务员姓名")
     private String realName; // 负责业务员姓名

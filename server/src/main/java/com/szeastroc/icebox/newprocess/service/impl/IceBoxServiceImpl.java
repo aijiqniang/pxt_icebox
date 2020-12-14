@@ -3615,8 +3615,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExcelVo.setRealName(storeMap.get("realName")); // 负责业务员姓名
                 }
 
-                iceBoxExcelVo.setAssetId(iceBoxExtend.getAssetId()); // 设备编号-->东鹏资产id
-                iceBoxExcelVo.setOldAssetId(iceBox.getOldAssetId()); // 原资产编号
+                iceBoxExcelVo.setAssetId(iceBox.getAssetId());
+                Integer iceBoxType = iceBox.getIceBoxType(); // 旧冰柜得特殊处理
+                if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBoxType)){
+                    iceBoxExcelVo.setXiuGaiAssetId(iceBox.getAssetId());  // 资产编号(修改)
+                    iceBoxExcelVo.setAssetId(iceBox.getOldAssetId()); // 资产编号
+                }
                 IceModel iceModel = modelMap.get(iceBox.getModelId());
                 iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号
                 iceBoxExcelVo.setDepositMoney(iceBox.getDepositMoney().toString()); // 押金收取金额

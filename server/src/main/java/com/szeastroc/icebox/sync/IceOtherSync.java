@@ -267,50 +267,50 @@ public class IceOtherSync {
 //            }
 //        });
 
-//        Page<IceBox> page = new Page<>();
-//        page.setSearchCount(false);
-//        page.setSize(500);
-//        List<IceBox> iceBoxes = new ArrayList<>();
-//        while (true){
-//            IPage<IceBox> iceBoxIPage = iceBoxDao.selectPage(page, Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, 0));
-//            iceBoxes = iceBoxIPage.getRecords();
-//            if(CollectionUtils.isEmpty(iceBoxes)){
-//                break;
-//            }
-//            page.setCurrent(page.getCurrent()+1);
-//            for (IceBox iceBox : iceBoxes) {
-//                executor.execute(()->{
-//                    String putStoreNumber = iceBox.getPutStoreNumber();
-//                    String value = redisTemplate.opsForValue().get("pxt_ice_box_dept_" + putStoreNumber);
-//                    if(StringUtils.isNotBlank(value)){
-//                        iceBox.setDeptId(Integer.valueOf(value));
-//                        iceBoxDao.updateById(iceBox);
-//                    }else{
-//                        SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(putStoreNumber));
-//                        Integer marketAreaId = null;
-//                        if(Objects.nonNull(supplier)){
-//                            marketAreaId = supplier.getMarketAreaId();
-//                        }else{
-//                            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(putStoreNumber));
-//                            if(Objects.nonNull(store)){
-//                                marketAreaId = store.getMarketArea();
-//                            }
-//                        }
-//                        Optional.ofNullable(marketAreaId).ifPresent(i->{
-//                            SessionDeptInfoVo dept = FeignResponseUtil.getFeignData(feignDeptClient.findSessionDeptById(i));
-//                            Integer deptType = dept.getDeptType();
-//                            if(DeptTypeEnum.SERVICE.getType().equals(deptType)){
-//                                iceBox.setDeptId(i);
-//                            }else if (DeptTypeEnum.GROUP.getType().equals(deptType)){
-//                                iceBox.setDeptId(dept.getParentId());
-//                            }
-//                            iceBoxDao.updateById(iceBox);
-//                            redisTemplate.opsForValue().set("pxt_ice_box_dept_"+putStoreNumber,String.valueOf(iceBox.getDeptId()),30,TimeUnit.MINUTES);
-//                        });
-//                    }
-//                });
-//            }
-//        }
+        Page<IceBox> page = new Page<>();
+        page.setSearchCount(false);
+        page.setSize(500);
+        List<IceBox> iceBoxes = new ArrayList<>();
+        while (true){
+            IPage<IceBox> iceBoxIPage = iceBoxDao.selectPage(page, Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, 0));
+            iceBoxes = iceBoxIPage.getRecords();
+            if(CollectionUtils.isEmpty(iceBoxes)){
+                break;
+            }
+            page.setCurrent(page.getCurrent()+1);
+            for (IceBox iceBox : iceBoxes) {
+                executor.execute(()->{
+                    String putStoreNumber = iceBox.getPutStoreNumber();
+                    String value = redisTemplate.opsForValue().get("pxt_ice_box_dept_" + putStoreNumber);
+                    if(StringUtils.isNotBlank(value)){
+                        iceBox.setDeptId(Integer.valueOf(value));
+                        iceBoxDao.updateById(iceBox);
+                    }else{
+                        SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(putStoreNumber));
+                        Integer marketAreaId = null;
+                        if(Objects.nonNull(supplier)){
+                            marketAreaId = supplier.getMarketAreaId();
+                        }else{
+                            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(putStoreNumber));
+                            if(Objects.nonNull(store)){
+                                marketAreaId = store.getMarketArea();
+                            }
+                        }
+                        Optional.ofNullable(marketAreaId).ifPresent(i->{
+                            SessionDeptInfoVo dept = FeignResponseUtil.getFeignData(feignDeptClient.findSessionDeptById(i));
+                            Integer deptType = dept.getDeptType();
+                            if(DeptTypeEnum.SERVICE.getType().equals(deptType)){
+                                iceBox.setDeptId(i);
+                            }else if (DeptTypeEnum.GROUP.getType().equals(deptType)){
+                                iceBox.setDeptId(dept.getParentId());
+                            }
+                            iceBoxDao.updateById(iceBox);
+                            redisTemplate.opsForValue().set("pxt_ice_box_dept_"+putStoreNumber,String.valueOf(iceBox.getDeptId()),30,TimeUnit.MINUTES);
+                        });
+                    }
+                });
+            }
+        }
 
         Page<IceBoxExamineExceptionReport> reportPage = new Page<>();
         reportPage.setSearchCount(false);

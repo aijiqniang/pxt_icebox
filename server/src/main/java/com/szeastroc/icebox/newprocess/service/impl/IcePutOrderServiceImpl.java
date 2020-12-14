@@ -11,6 +11,7 @@ import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
@@ -117,6 +118,15 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     oldIceBoxSignNotice.setStatus(OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus());
                     oldIceBoxSignNotice.setUpdateTime(new Date());
                     oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
+                }
+                if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                    iceBox.setOldAssetId(iceBox.getAssetId());
+                    iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBox.setUpdatedTime(new Date());
+                    iceBoxDao.updateById(iceBox);
+
+                    iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBoxExtendDao.updateById(iceBoxExtend);
                 }
             }
             OrderPayResponse payResponse = createByFree(clientInfoRequest, iceBox);
@@ -243,10 +253,23 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                             oldIceBoxSignNotice.setUpdateTime(new Date());
                             oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                         }
+                        if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                            iceBox.setOldAssetId(iceBox.getAssetId());
+                            iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                            iceBox.setUpdatedTime(new Date());
+                            iceBoxDao.updateById(iceBox);
+
+                            IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                            iceBoxExtend.setId(iceBox.getId());
+                            iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                            iceBoxExtendDao.updateById(iceBoxExtend);
+                        }
+
                     }
                     //发送mq消息,同步申请数据到报表
                     CompletableFuture.runAsync(() -> {
                         IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                        report.setIceBoxId(iceBox.getId());
                         report.setIceBoxAssetId(iceBox.getAssetId());
                         report.setApplyNumber(applyRelatePutStoreModel.getApplyNumber());
                         report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
@@ -337,10 +360,23 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 oldIceBoxSignNotice.setUpdateTime(new Date());
                 oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
             }
+            if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                iceBox.setOldAssetId(iceBox.getAssetId());
+                iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                iceBox.setUpdatedTime(new Date());
+                iceBoxDao.updateById(iceBox);
+
+                IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                iceBoxExtend.setId(iceBox.getId());
+                iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                iceBoxExtendDao.updateById(iceBoxExtend);
+            }
+
         }
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
             IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+            report.setIceBoxId(iceBox.getId());
             report.setIceBoxAssetId(iceBox.getAssetId());
             report.setApplyNumber(icePutOrder.getApplyNumber());
             report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
@@ -475,10 +511,23 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                     oldIceBoxSignNotice.setUpdateTime(new Date());
                     oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                 }
+                if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                    iceBox.setOldAssetId(iceBox.getAssetId());
+                    iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBox.setUpdatedTime(new Date());
+                    iceBoxDao.updateById(iceBox);
+
+                    IceBoxExtend iceBoxExtend = new IceBoxExtend();
+                    iceBoxExtend.setId(iceBox.getId());
+                    iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                    iceBoxExtendDao.updateById(iceBoxExtend);
+                }
+
             }
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
                 IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                report.setIceBoxId(iceBox.getId());
                 report.setIceBoxAssetId(iceBox.getAssetId());
                 report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                 report.setApplyNumber(icePutOrder.getApplyNumber());

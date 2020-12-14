@@ -1643,7 +1643,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
         if (iceBoxExtend != null) {
-            boxVo.setAssetId(iceBoxExtend.getAssetId());
             if (iceBoxExtend.getLastPutTime() != null) {
                 boxVo.setLastPutTimeStr(dateFormat.format(iceBoxExtend.getLastPutTime()));
             }
@@ -1701,7 +1700,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         IceBoxDetailVo iceBoxDetailVo = IceBoxDetailVo.builder()
                 .id(id)
-                .assetId(iceBoxExtend.getAssetId())
+                .assetId(iceBox.getAssetId())
                 .chestModel(iceModel.getChestModel())
                 .chestName(iceModel.getChestName())
                 .depositMoney(iceBox.getDepositMoney())
@@ -2210,6 +2209,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<String, Object> map = new HashMap<>(32);
         map.put("iceBoxId", iceBox.getId()); // 设备编号 --东鹏资产id
         map.put("assetId", iceBoxExtend.getAssetId()); // 设备编号 --东鹏资产id
+        map.put("oldAssetId", iceBox.getOldAssetId()); // 原资产编号
         map.put("chestName", iceBox.getChestName()); // 名称
         map.put("modelId", iceBox.getModelId()); // 型号Id
         IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getId, iceBox.getModelId()).last(" limit 1"));
@@ -3048,6 +3048,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
                     iceBoxDao.updateById(iceBox);
+
                     OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
                     oldIceBoxSignNotice.setApplyNumber(iceBoxRequest.getApplyNumber());
                     oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
@@ -3285,6 +3286,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                         log.info("查到的冰柜信息---》【{}】，扩展信息---》【{}】，通知---》【{}】", JSON.toJSONString(iceBox), JSON.toJSONString(iceBoxExtend), JSON.toJSONString(oldIceBoxSignNotice));
                     }
+                    if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                        iceBox.setOldAssetId(iceBox.getAssetId());
+                        iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
+                        iceBox.setUpdatedTime(new Date());
+                        iceBoxDao.updateById(iceBox);
+
+                        iceBoxExtend.setAssetId(IceBoxConstant.virtual_asset_id);
+                        iceBoxExtendDao.updateById(iceBoxExtend);
+                    }
+
                     IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                             .eq(IcePutApply::getStoreSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()).last("limit 1"));
                     if (icePutApply != null) {
@@ -3319,6 +3330,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         }
                     }
                     IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+                    report.setIceBoxId(iceBox.getId());
                     report.setIceBoxAssetId(iceBox.getAssetId());
                     report.setApplyNumber(iceBoxExtend.getLastApplyNumber());
                     report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
@@ -3478,6 +3490,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
             IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+            report.setIceBoxId(iceBox.getId());
             report.setIceBoxAssetId(iceBox.getAssetId());
             report.setIceBoxModelId(iceBox.getModelId());
             report.setSupplierId(iceBox.getSupplierId());
@@ -3603,6 +3616,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
 
                 iceBoxExcelVo.setAssetId(iceBoxExtend.getAssetId()); // 设备编号-->东鹏资产id
+                iceBoxExcelVo.setOldAssetId(iceBox.getOldAssetId()); // 原资产编号
                 IceModel iceModel = modelMap.get(iceBox.getModelId());
                 iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号
                 iceBoxExcelVo.setDepositMoney(iceBox.getDepositMoney().toString()); // 押金收取金额

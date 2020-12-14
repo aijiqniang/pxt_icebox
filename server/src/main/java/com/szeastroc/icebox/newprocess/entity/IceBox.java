@@ -140,6 +140,12 @@ public class IceBox {
     @TableField(value = "ice_box_type")
     private Integer iceBoxType;
 
+    /**
+     * 东鹏旧资产id
+     */
+    @TableField(value = "old_asset_id")
+    private String oldAssetId;
+
     public static IceBoxBuilder builder() {
         return new IceBoxBuilder();
     }

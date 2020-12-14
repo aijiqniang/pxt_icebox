@@ -36,10 +36,10 @@ public class IceBoxExcelVo {
     private String suppName; // 所属经销商名称
     @ColumnWidth(50)
     @ExcelProperty(value = "资产编号")
-    private String assetId; // 资产编号
+    private String oldAssetId; // 资产编号
     @ColumnWidth(50)
     @ExcelProperty(value = "资产编号(修改)")
-    private String oldAssetId; // 资产编号(修改)
+    private String assetId; // 资产编号(修改)
     @ColumnWidth(50)
     @ExcelProperty(value = "冰柜型号")
     private String chestModel; // 冰柜型号

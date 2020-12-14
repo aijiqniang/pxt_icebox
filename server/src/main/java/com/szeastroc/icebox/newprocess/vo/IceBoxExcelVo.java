@@ -35,8 +35,11 @@ public class IceBoxExcelVo {
     @ExcelProperty(value = "所属经销商名称")
     private String suppName; // 所属经销商名称
     @ColumnWidth(50)
-    @ExcelProperty(value = "冰柜编号")
-    private String assetId; // 冰柜编号
+    @ExcelProperty(value = "资产编号")
+    private String assetId; // 资产编号
+    @ColumnWidth(50)
+    @ExcelProperty(value = "资产编号(修改)")
+    private String oldAssetId; // 资产编号(修改)
     @ColumnWidth(50)
     @ExcelProperty(value = "冰柜型号")
     private String chestModel; // 冰柜型号
@@ -64,9 +67,14 @@ public class IceBoxExcelVo {
     @ColumnWidth(50)
     @ExcelProperty(value = "客户状态")
     private String statusStr; // 客户状态
+
+
     @ColumnWidth(50)
     @ExcelProperty(value = "冰柜状态")
-    private String putStatusStr; // 冰柜状态
+    private String iceStatusStr; // 冰柜状态
+    @ColumnWidth(50)
+    @ExcelProperty(value = "冰柜投放状态")
+    private String putStatusStr; // 冰柜投放状态
     @ColumnWidth(50)
     @ExcelProperty(value = "负责业务员姓名")
     private String realName; // 负责业务员姓名

@@ -146,7 +146,7 @@ public class IceBoxPutReportConsumer {
     private void updateReport(IceBoxPutReportMsg reportMsg) {
         if(StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
             if(PutStatus.FINISH_PUT.getStatus().equals(reportMsg.getPutStatus())){
-                IceBoxPutReport putReport = iceBoxPutReportService.getOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxAssetId, reportMsg.getIceBoxAssetId())
+                IceBoxPutReport putReport = iceBoxPutReportService.getOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxId, reportMsg.getIceBoxId())
                         .eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber())
                         .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                 if(putReport != null){

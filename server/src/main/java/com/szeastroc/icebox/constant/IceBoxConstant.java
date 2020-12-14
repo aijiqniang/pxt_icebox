@@ -17,4 +17,9 @@ public class IceBoxConstant {
 
     public final static String methodName="methodName";
 
+    /**
+     * 虚拟资产编号
+     */
+    public final static String virtual_asset_id = "00000000000";
+
 }

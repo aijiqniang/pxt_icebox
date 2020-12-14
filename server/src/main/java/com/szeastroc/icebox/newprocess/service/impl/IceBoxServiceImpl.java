@@ -3616,6 +3616,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
 
                 iceBoxExcelVo.setAssetId(iceBoxExtend.getAssetId()); // 设备编号-->东鹏资产id
+                iceBoxExcelVo.setOldAssetId(iceBox.getOldAssetId()); // 原资产编号
                 IceModel iceModel = modelMap.get(iceBox.getModelId());
                 iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号
                 iceBoxExcelVo.setDepositMoney(iceBox.getDepositMoney().toString()); // 押金收取金额

@@ -4793,4 +4793,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         return iceBoxDao.selectCount(iceBoxWrapper);
     }
 
+    @Override
+    public int getPutCountByDeptId(Integer deptId) {
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId);
+        return  iceBoxDao.selectCount(iceBoxWrapper);
+    }
 }

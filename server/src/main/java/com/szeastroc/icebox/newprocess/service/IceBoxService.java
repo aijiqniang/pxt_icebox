@@ -139,6 +139,8 @@ public interface IceBoxService extends IService<IceBox> {
     int getLostCountByDeptId(Integer deptId);
 
     int getLostCountByDeptIds(List<Integer> deptIds);
+
+    int getPutCountByDeptId(Integer deptId);
 }
 
 

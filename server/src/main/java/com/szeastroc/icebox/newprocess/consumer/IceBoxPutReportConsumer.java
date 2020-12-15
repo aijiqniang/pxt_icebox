@@ -1,14 +1,23 @@
 package com.szeastroc.icebox.newprocess.consumer;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.entity.user.vo.AddressVo;
+import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignStoreRelateMemberClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
+import com.szeastroc.common.feign.user.FeignXcxBaseClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.redis.impl.UserRedisServiceImpl;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.icebox.config.MqConstant;
@@ -32,6 +41,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,7 +56,14 @@ public class IceBoxPutReportConsumer {
     private FeignExportRecordsClient feignExportRecordsClient;
     @Autowired
     private FeignUserClient feignUserClient;
-//    @RabbitHandler
+    @Autowired
+    private FeignStoreClient feignStoreClient;
+    @Autowired
+    private FeignStoreRelateMemberClient feignStoreRelateMemberClient;
+    @Autowired
+    private UserRedisServiceImpl userRedisService;
+
+//  @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
     public void task(IceBoxPutReportMsg reportMsg) throws Exception {
         if(OperateTypeEnum.INSERT.getType().equals(reportMsg.getOperateType())){
@@ -67,8 +84,10 @@ public class IceBoxPutReportConsumer {
         Integer count = iceBoxPutReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
         log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
-        String[] columnName = {"事业部","大区","服务处", "流程编号", "所属经销商编号", "所属经销商名称", "提交人","提交日期", "投放客户编号", "投放客户名称","投放客户类型", "冰柜型号","冰柜编号", "是否免押", "押金金额", "审核人员",
-                "审核日期", "投放状态"};
+        String[] columnName = {"事业部","大区","服务处","省","市","区县", "流程编号"
+                , "所属经销商编号", "所属经销商名称", "提交人","提交人电话","提交日期"
+                , "投放客户编号", "投放客户名称","投放客户类型","客户地址","联系人","联系人电话"
+                , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期", "投放状态"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -116,26 +135,56 @@ public class IceBoxPutReportConsumer {
                             log.warn("当前检索条件下的分销订单导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
                             for (int i = startRowCount; i <= endRowCount; i++) {
                                 SXSSFRow eachDataRow = eachSheet.createRow(i);
+                                StoreInfoDtoVo storeInfoDtoVo = null;
+                                MemberInfoVo memberInfoVo = null;
+                                SimpleUserInfoVo submit = null;
+                                SimpleUserInfoVo exaine = null;
+                                AddressVo addressVo = null;
                                 if ((i - startRowCount) < excelVoList.size()) {
                                     IceBoxPutReportExcelVo excelVo = excelVoList.get(i - startRowCount);
+                                    storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(excelVo.getPutCustomerNumber()));
+                                    memberInfoVo = FeignResponseUtil.getFeignData(feignStoreRelateMemberClient.getShopKeeperByStoreNumber(excelVo.getPutCustomerNumber()));
+                                    submit = userRedisService.getUserById(excelVo.getSubmitterId());
+                                    exaine = userRedisService.getUserById(excelVo.getExamineUserId());
+
                                     eachDataRow.createCell(0).setCellValue(excelVo.getBusinessDeptName());
                                     eachDataRow.createCell(1).setCellValue(excelVo.getRegionDeptName());
                                     eachDataRow.createCell(2).setCellValue(excelVo.getServiceDeptName());
-                                    eachDataRow.createCell(3).setCellValue(excelVo.getApplyNumber());
-                                    eachDataRow.createCell(4).setCellValue(excelVo.getSupplierNumber());
-                                    eachDataRow.createCell(5).setCellValue(excelVo.getSupplierName());
-                                    eachDataRow.createCell(6).setCellValue(excelVo.getSubmitterName());
-                                    eachDataRow.createCell(7).setCellValue(excelVo.getSubmitTime());
-                                    eachDataRow.createCell(8).setCellValue(excelVo.getPutCustomerNumber());
-                                    eachDataRow.createCell(9).setCellValue(excelVo.getPutCustomerName());
-                                    eachDataRow.createCell(10).setCellValue(excelVo.getPutCustomerType());
-                                    eachDataRow.createCell(11).setCellValue(excelVo.getIceBoxModelName());
-                                    eachDataRow.createCell(12).setCellValue(excelVo.getIceBoxAssetId());
-                                    eachDataRow.createCell(13).setCellValue(excelVo.getFreeType());
-                                    eachDataRow.createCell(14).setCellValue(excelVo.getDepositMoney()+"");
-                                    eachDataRow.createCell(15).setCellValue(excelVo.getExamineUserName());
-                                    eachDataRow.createCell(16).setCellValue(excelVo.getExamineTime());
-                                    eachDataRow.createCell(17).setCellValue(excelVo.getPutStatus());
+                                    if(Objects.nonNull(storeInfoDtoVo)){
+                                        eachDataRow.createCell(3).setCellValue(storeInfoDtoVo.getProvinceName());
+                                        eachDataRow.createCell(4).setCellValue(storeInfoDtoVo.getCityName());
+                                        eachDataRow.createCell(5).setCellValue(storeInfoDtoVo.getDistrictName());
+                                    }
+
+                                    eachDataRow.createCell(6).setCellValue(excelVo.getApplyNumber());
+                                    eachDataRow.createCell(7).setCellValue(excelVo.getSupplierNumber());
+                                    eachDataRow.createCell(8).setCellValue(excelVo.getSupplierName());
+                                    eachDataRow.createCell(9).setCellValue(excelVo.getSubmitterName());
+                                    if(Objects.nonNull(submit)){
+                                        eachDataRow.createCell(10).setCellValue(submit.getMobile());
+                                    }
+                                    eachDataRow.createCell(11).setCellValue(excelVo.getSubmitTime());
+                                    eachDataRow.createCell(12).setCellValue(excelVo.getPutCustomerNumber());
+                                    eachDataRow.createCell(13).setCellValue(excelVo.getPutCustomerName());
+                                    eachDataRow.createCell(14).setCellValue(excelVo.getPutCustomerType());
+
+                                    if(Objects.nonNull(storeInfoDtoVo)){
+                                    eachDataRow.createCell(15).setCellValue(storeInfoDtoVo.getAddress());
+                                    }
+                                    if(Objects.nonNull(memberInfoVo)){
+                                        eachDataRow.createCell(16).setCellValue(memberInfoVo.getName());
+                                        eachDataRow.createCell(17).setCellValue(memberInfoVo.getMobile());
+                                    }
+                                    eachDataRow.createCell(18).setCellValue(excelVo.getIceBoxModelName());
+                                    eachDataRow.createCell(19).setCellValue(excelVo.getIceBoxAssetId());
+                                    eachDataRow.createCell(20).setCellValue(excelVo.getFreeType());
+                                    eachDataRow.createCell(21).setCellValue(excelVo.getDepositMoney()+"");
+                                    eachDataRow.createCell(22).setCellValue(excelVo.getExamineUserName());
+                                    if(Objects.nonNull(exaine)){
+                                        eachDataRow.createCell(23).setCellValue(exaine.getPosion());
+                                    }
+                                    eachDataRow.createCell(24).setCellValue(excelVo.getExamineTime());
+                                    eachDataRow.createCell(25).setCellValue(excelVo.getPutStatus());
                                 }
                             }
                         }

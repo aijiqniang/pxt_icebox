@@ -97,4 +97,14 @@ public class IceBoxPutReportExcelVo {
      */
     private String putStatus;
 
+    /**
+     *审核人id
+     */
+    private Integer examineUserId;
+
+    /**
+     *提交人id
+     */
+    private Integer submitterId;
+
 }

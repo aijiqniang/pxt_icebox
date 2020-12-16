@@ -107,4 +107,16 @@ public class IceBoxPutReportExcelVo {
      */
     private Integer submitterId;
 
+    private String provinceName;
+    private String cityName;
+    private String districtName;
+
+    private String customerAddress;
+
+    private String submitterMobile;
+
+    private String linkmanName;
+    private String linkmanMobile;
+
+    private String examineUserPosion;
 }

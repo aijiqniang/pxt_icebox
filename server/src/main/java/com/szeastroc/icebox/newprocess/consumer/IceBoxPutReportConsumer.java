@@ -100,9 +100,47 @@ public class IceBoxPutReportConsumer {
                     IPage<IceBoxPutReport> putReportIPage = iceBoxPutReportService.page(page,wrapper);
                     List<IceBoxPutReport> billInfos = putReportIPage.getRecords();
                     if (CollectionUtil.isNotEmpty(billInfos)) {
+                        StoreInfoDtoVo storeInfoDtoVo;
+                        MemberInfoVo memberInfoVo ;
+                        SimpleUserInfoVo submit ;
+                        SimpleUserInfoVo exaine ;
                         for(IceBoxPutReport report:billInfos){
                             IceBoxPutReportExcelVo excelVo = new IceBoxPutReportExcelVo();
                             BeanUtils.copyProperties(report,excelVo);
+
+                            long storeStart = System.currentTimeMillis();
+                            storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(excelVo.getPutCustomerNumber()));
+                            long storeEnd = System.currentTimeMillis();
+                            log.info("----feignStoreClient.getByStoreNumber cost time:{}ms",storeEnd-storeStart);
+
+                            memberInfoVo = FeignResponseUtil.getFeignData(feignStoreRelateMemberClient.getShopKeeperByStoreNumber(excelVo.getPutCustomerNumber()));
+                            long memberEnd = System.currentTimeMillis();
+                            log.info("----feignStoreRelateMemberClient.getShopKeeperByStoreNumber cost time:{}ms",memberEnd-storeStart);
+
+                            submit = userRedisService.getUserById(excelVo.getSubmitterId());
+                            long submitEnd = System.currentTimeMillis();
+                            log.info("----userRedisService.getUserById cost time:{}ms",submitEnd-memberEnd);
+
+                            exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(excelVo.getExamineUserId()));
+                            long exaineEnd = System.currentTimeMillis();
+                            log.info("----feignUserClient.findUserById cost time:{}ms",exaineEnd-submitEnd);
+
+                            if(Objects.nonNull(storeInfoDtoVo)){
+                                excelVo.setProvinceName(storeInfoDtoVo.getProvinceName());
+                                excelVo.setCityName(storeInfoDtoVo.getCityName());
+                                excelVo.setDistrictName(storeInfoDtoVo.getDistrictName());
+                                excelVo.setCustomerAddress(storeInfoDtoVo.getAddress());
+                            }
+                            if(Objects.nonNull(submit)){
+                                excelVo.setSubmitterMobile(submit.getMobile());
+                            }
+                            if(Objects.nonNull(memberInfoVo)){
+                                excelVo.setLinkmanName(memberInfoVo.getName());
+                                excelVo.setLinkmanMobile(memberInfoVo.getMobile());
+                            }
+                            if(Objects.nonNull(exaine)){
+                                excelVo.setExamineUserPosion(exaine.getPosion());
+                            }
 
                             if(report.getSubmitTime() != null){
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
@@ -135,53 +173,34 @@ public class IceBoxPutReportConsumer {
                             log.warn("当前检索条件下的分销订单导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
                             for (int i = startRowCount; i <= endRowCount; i++) {
                                 SXSSFRow eachDataRow = eachSheet.createRow(i);
-                                StoreInfoDtoVo storeInfoDtoVo;
-                                MemberInfoVo memberInfoVo ;
-                                SimpleUserInfoVo submit ;
-                                SimpleUserInfoVo exaine ;
                                 if ((i - startRowCount) < excelVoList.size()) {
                                     IceBoxPutReportExcelVo excelVo = excelVoList.get(i - startRowCount);
-                                    storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(excelVo.getPutCustomerNumber()));
-                                    memberInfoVo = FeignResponseUtil.getFeignData(feignStoreRelateMemberClient.getShopKeeperByStoreNumber(excelVo.getPutCustomerNumber()));
-                                    submit = userRedisService.getUserById(excelVo.getSubmitterId());
-                                    exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(excelVo.getExamineUserId()));
 
                                     eachDataRow.createCell(0).setCellValue(excelVo.getBusinessDeptName());
                                     eachDataRow.createCell(1).setCellValue(excelVo.getRegionDeptName());
                                     eachDataRow.createCell(2).setCellValue(excelVo.getServiceDeptName());
-                                    if(Objects.nonNull(storeInfoDtoVo)){
-                                        eachDataRow.createCell(3).setCellValue(storeInfoDtoVo.getProvinceName());
-                                        eachDataRow.createCell(4).setCellValue(storeInfoDtoVo.getCityName());
-                                        eachDataRow.createCell(5).setCellValue(storeInfoDtoVo.getDistrictName());
-                                    }
+                                    eachDataRow.createCell(3).setCellValue(excelVo.getProvinceName());
+                                    eachDataRow.createCell(4).setCellValue(excelVo.getCityName());
+                                    eachDataRow.createCell(5).setCellValue(excelVo.getDistrictName());
 
                                     eachDataRow.createCell(6).setCellValue(excelVo.getApplyNumber());
                                     eachDataRow.createCell(7).setCellValue(excelVo.getSupplierNumber());
                                     eachDataRow.createCell(8).setCellValue(excelVo.getSupplierName());
                                     eachDataRow.createCell(9).setCellValue(excelVo.getSubmitterName());
-                                    if(Objects.nonNull(submit)){
-                                        eachDataRow.createCell(10).setCellValue(submit.getMobile());
-                                    }
+                                    eachDataRow.createCell(10).setCellValue(excelVo.getSubmitterMobile());
                                     eachDataRow.createCell(11).setCellValue(excelVo.getSubmitTime());
                                     eachDataRow.createCell(12).setCellValue(excelVo.getPutCustomerNumber());
                                     eachDataRow.createCell(13).setCellValue(excelVo.getPutCustomerName());
                                     eachDataRow.createCell(14).setCellValue(excelVo.getPutCustomerType());
-
-                                    if(Objects.nonNull(storeInfoDtoVo)){
-                                    eachDataRow.createCell(15).setCellValue(storeInfoDtoVo.getAddress());
-                                    }
-                                    if(Objects.nonNull(memberInfoVo)){
-                                        eachDataRow.createCell(16).setCellValue(memberInfoVo.getName());
-                                        eachDataRow.createCell(17).setCellValue(memberInfoVo.getMobile());
-                                    }
+                                    eachDataRow.createCell(15).setCellValue(excelVo.getCustomerAddress());
+                                    eachDataRow.createCell(16).setCellValue(excelVo.getLinkmanName());
+                                    eachDataRow.createCell(17).setCellValue(excelVo.getLinkmanMobile());
                                     eachDataRow.createCell(18).setCellValue(excelVo.getIceBoxModelName());
                                     eachDataRow.createCell(19).setCellValue(excelVo.getIceBoxAssetId());
                                     eachDataRow.createCell(20).setCellValue(excelVo.getFreeType());
                                     eachDataRow.createCell(21).setCellValue(excelVo.getDepositMoney()+"");
                                     eachDataRow.createCell(22).setCellValue(excelVo.getExamineUserName());
-                                    if(Objects.nonNull(exaine)){
-                                        eachDataRow.createCell(23).setCellValue(exaine.getPosion());
-                                    }
+                                    eachDataRow.createCell(23).setCellValue(excelVo.getExamineUserPosion());
                                     eachDataRow.createCell(24).setCellValue(excelVo.getExamineTime());
                                     eachDataRow.createCell(25).setCellValue(excelVo.getPutStatus());
                                 }

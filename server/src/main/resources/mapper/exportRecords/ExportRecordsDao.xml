@@ -28,6 +28,6 @@
         SELECT member_number FROM pxt_base.t_cus_store_relate_member WHERE store_number=#{storeNumber} and shop_keeper = 0 limit 1
     </select>
     <select id="selectStoreKeeperForReport" parameterType="string" resultType="com.szeastroc.common.entity.customer.vo.MemberInfoVo">
-        SELECT `name`,mobile FROM pxt_base.t_cus_member_info WHERE a.member_number=#{memberNumber}
+        SELECT `name`,mobile FROM pxt_base.t_cus_member_info WHERE member_number=#{memberNumber}
     </select>
 </mapper>

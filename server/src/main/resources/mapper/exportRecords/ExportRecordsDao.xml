@@ -21,13 +21,13 @@
         UPDATE `t_export_records` SET `type`=1, `net_path` = #{netPath}, `end_request_time` = #{endRequestTime} WHERE `serial_num` = #{serialNum};
     </update>
     <select id="selectStoreForReport" parameterType="string" resultType="com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo">
-        select province_name provinceName,city_name cityName,district_name districtName,address from t_cus_store_info
+        select province_name provinceName,city_name cityName,district_name districtName,address from pxt_base.t_cus_store_info
         where store_number =#{storeNumber}
     </select>
     <select id="selectStoreKeeperNumberForReport" parameterType="string" resultType="string">
-        SELECT member_number FROM t_cus_store_relate_member WHERE store_number=#{storeNumber} and shop_keeper = 0 limit 1
+        SELECT member_number FROM pxt_base.t_cus_store_relate_member WHERE store_number=#{storeNumber} and shop_keeper = 0 limit 1
     </select>
     <select id="selectStoreKeeperForReport" parameterType="string" resultType="com.szeastroc.common.entity.customer.vo.MemberInfoVo">
-        SELECT `name`,mobile FROM t_cus_member_info WHERE a.member_number=#{memberNumber}
+        SELECT `name`,mobile FROM pxt_base.t_cus_member_info WHERE a.member_number=#{memberNumber}
     </select>
 </mapper>

@@ -135,17 +135,16 @@ public class IceBoxPutReportConsumer {
                             log.warn("当前检索条件下的分销订单导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
                             for (int i = startRowCount; i <= endRowCount; i++) {
                                 SXSSFRow eachDataRow = eachSheet.createRow(i);
-                                StoreInfoDtoVo storeInfoDtoVo = null;
-                                MemberInfoVo memberInfoVo = null;
-                                SimpleUserInfoVo submit = null;
-                                SimpleUserInfoVo exaine = null;
-                                AddressVo addressVo = null;
+                                StoreInfoDtoVo storeInfoDtoVo;
+                                MemberInfoVo memberInfoVo ;
+                                SimpleUserInfoVo submit ;
+                                SimpleUserInfoVo exaine ;
                                 if ((i - startRowCount) < excelVoList.size()) {
                                     IceBoxPutReportExcelVo excelVo = excelVoList.get(i - startRowCount);
                                     storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(excelVo.getPutCustomerNumber()));
                                     memberInfoVo = FeignResponseUtil.getFeignData(feignStoreRelateMemberClient.getShopKeeperByStoreNumber(excelVo.getPutCustomerNumber()));
                                     submit = userRedisService.getUserById(excelVo.getSubmitterId());
-                                    exaine = userRedisService.getUserById(excelVo.getExamineUserId());
+                                    exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(excelVo.getExamineUserId()));
 
                                     eachDataRow.createCell(0).setCellValue(excelVo.getBusinessDeptName());
                                     eachDataRow.createCell(1).setCellValue(excelVo.getRegionDeptName());

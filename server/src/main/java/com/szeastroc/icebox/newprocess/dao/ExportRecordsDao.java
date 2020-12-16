@@ -3,6 +3,8 @@ package com.szeastroc.icebox.newprocess.dao;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.icebox.newprocess.entity.ExportRecords;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import org.apache.ibatis.annotations.Param;
@@ -25,5 +27,11 @@ public interface ExportRecordsDao extends BaseMapper<ExportRecords> {
                              @Param("type") Integer type, @Param("requestTime") Date requestTime);
 
     void updateExportRecords(@Param("serialNum") String serialNum, @Param("netPath") String netPath, @Param("endRequestTime") Date endRequestTime);
+
+    StoreInfoDtoVo selectStoreForReport(@Param("storeNumber")String storeNumber);
+
+    String selectStoreKeeperNumberForReport(@Param("storeNumber")String storeNumber);
+
+    MemberInfoVo selectStoreKeeperForReport(@Param("memberNumber")String memberNumber);
 
 }

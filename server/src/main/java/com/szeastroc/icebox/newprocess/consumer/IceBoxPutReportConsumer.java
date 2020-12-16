@@ -25,6 +25,7 @@ import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
+import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
@@ -62,6 +63,8 @@ public class IceBoxPutReportConsumer {
     private FeignStoreRelateMemberClient feignStoreRelateMemberClient;
     @Autowired
     private UserRedisServiceImpl userRedisService;
+    @Autowired
+    private ExportRecordsDao exportRecordsDao;
 
 //  @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
@@ -101,30 +104,26 @@ public class IceBoxPutReportConsumer {
                     List<IceBoxPutReport> billInfos = putReportIPage.getRecords();
                     if (CollectionUtil.isNotEmpty(billInfos)) {
                         StoreInfoDtoVo storeInfoDtoVo;
-                        MemberInfoVo memberInfoVo ;
                         SimpleUserInfoVo submit ;
                         SimpleUserInfoVo exaine ;
+                        MemberInfoVo memberInfoVo = null ;
                         for(IceBoxPutReport report:billInfos){
                             IceBoxPutReportExcelVo excelVo = new IceBoxPutReportExcelVo();
                             BeanUtils.copyProperties(report,excelVo);
 
                             long storeStart = System.currentTimeMillis();
-                            storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(excelVo.getPutCustomerNumber()));
+                            storeInfoDtoVo = exportRecordsDao.selectStoreForReport(report.getPutCustomerNumber());
                             long storeEnd = System.currentTimeMillis();
-                            log.info("----feignStoreClient.getByStoreNumber cost time:{}ms",storeEnd-storeStart);
+                            log.info("----exportRecordsDao.selectStoreForReport cost time:{}ms",storeEnd-storeStart);
 
-                            memberInfoVo = FeignResponseUtil.getFeignData(feignStoreRelateMemberClient.getShopKeeperByStoreNumber(excelVo.getPutCustomerNumber()));
-                            long memberEnd = System.currentTimeMillis();
-                            log.info("----feignStoreRelateMemberClient.getShopKeeperByStoreNumber cost time:{}ms",memberEnd-storeStart);
-
+                            String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+                            if(StrUtil.isNotEmpty(memberNumber)){
+                                memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                                long memberEnd = System.currentTimeMillis();
+                                log.info("----exportRecordsDao.selectStoreKeeperForReport cost time:{}ms",memberEnd-storeStart);
+                            }
                             submit = userRedisService.getUserById(excelVo.getSubmitterId());
-                            long submitEnd = System.currentTimeMillis();
-                            log.info("----userRedisService.getUserById cost time:{}ms",submitEnd-memberEnd);
-
                             exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(excelVo.getExamineUserId()));
-                            long exaineEnd = System.currentTimeMillis();
-                            log.info("----feignUserClient.findUserById cost time:{}ms",exaineEnd-submitEnd);
-
                             if(Objects.nonNull(storeInfoDtoVo)){
                                 excelVo.setProvinceName(storeInfoDtoVo.getProvinceName());
                                 excelVo.setCityName(storeInfoDtoVo.getCityName());

@@ -140,4 +140,16 @@ public class IceBoxPutReport {
      */
     private Integer putStatus;
 
+    private String provinceName;
+    private String cityName;
+    private String districtName;
+
+    private String customerAddress;
+
+    private String submitterMobile;
+
+    private String linkmanName;
+    private String linkmanMobile;
+
+    private String examineUserPosion;
 }

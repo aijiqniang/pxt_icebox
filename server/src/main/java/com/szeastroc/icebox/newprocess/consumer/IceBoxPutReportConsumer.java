@@ -110,37 +110,6 @@ public class IceBoxPutReportConsumer {
                         for(IceBoxPutReport report:billInfos){
                             IceBoxPutReportExcelVo excelVo = new IceBoxPutReportExcelVo();
                             BeanUtils.copyProperties(report,excelVo);
-
-                            long storeStart = System.currentTimeMillis();
-                            storeInfoDtoVo = exportRecordsDao.selectStoreForReport(report.getPutCustomerNumber());
-                            long storeEnd = System.currentTimeMillis();
-                            log.info("----exportRecordsDao.selectStoreForReport cost time:{}ms",storeEnd-storeStart);
-
-                            String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
-                            if(StrUtil.isNotEmpty(memberNumber)){
-                                memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
-                                long memberEnd = System.currentTimeMillis();
-                                log.info("----exportRecordsDao.selectStoreKeeperForReport cost time:{}ms",memberEnd-storeStart);
-                            }
-                            submit = userRedisService.getUserById(excelVo.getSubmitterId());
-                            exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(excelVo.getExamineUserId()));
-                            if(Objects.nonNull(storeInfoDtoVo)){
-                                excelVo.setProvinceName(storeInfoDtoVo.getProvinceName());
-                                excelVo.setCityName(storeInfoDtoVo.getCityName());
-                                excelVo.setDistrictName(storeInfoDtoVo.getDistrictName());
-                                excelVo.setCustomerAddress(storeInfoDtoVo.getAddress());
-                            }
-                            if(Objects.nonNull(submit)){
-                                excelVo.setSubmitterMobile(submit.getMobile());
-                            }
-                            if(Objects.nonNull(memberInfoVo)){
-                                excelVo.setLinkmanName(memberInfoVo.getName());
-                                excelVo.setLinkmanMobile(memberInfoVo.getMobile());
-                            }
-                            if(Objects.nonNull(exaine)){
-                                excelVo.setExamineUserPosion(exaine.getPosion());
-                            }
-
                             if(report.getSubmitTime() != null){
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
                             }

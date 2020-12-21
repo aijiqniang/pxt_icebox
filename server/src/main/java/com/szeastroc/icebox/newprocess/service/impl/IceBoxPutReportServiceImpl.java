@@ -1,12 +1,16 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
@@ -22,6 +26,7 @@ import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.redis.impl.UserRedisServiceImpl;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
@@ -35,16 +40,19 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, IceBoxPutReport> implements IceBoxPutReportService {
 
@@ -74,6 +82,10 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
     private FeignStoreClient feignStoreClient;
     @Autowired
     private FeignExamineClient feignExamineClient ;
+    @Autowired
+    private ExportRecordsDao exportRecordsDao;
+    @Autowired
+    private UserRedisServiceImpl userRedisService;
 
     @Override
     public IPage<IceBoxPutReport> findByPage(IceBoxPutReportMsg reportMsg) {
@@ -247,11 +259,16 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 if(putSupplier != null){
                     report.setPutCustomerType(putSupplier.getSupplierType());
                     report.setPutCustomerName(putSupplier.getName());
+
                 }
             }else {
                 StoreInfoDtoVo putStore = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(relateModel.getPutStoreNumber()));
                 if(putStore != null){
+                    report.setProvinceName(putStore.getProvinceName());
+                    report.setCityName(putStore.getCityName());
+                    report.setDistrictName(putStore.getDistrictName());
                     report.setPutCustomerName(putStore.getStoreName());
+                    report.setCustomerAddress(putStore.getAddress());
                 }
             }
 
@@ -259,10 +276,15 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             report.setExamineUserId(relateModel.getUpdateBy());
             report.setExamineUserName(relateModel.getUpdateByName());
             report.setExamineTime(relateModel.getUpdateTime());
+            SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(relateModel.getUpdateBy()));
+            if (Objects.nonNull(exaine)){
+                report.setExamineUserPosion(exaine.getPosion());
+            }
             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(relateModel.getCreateBy()));
             report.setSubmitterId(relateModel.getCreateBy());
             if (userInfoVo != null) {
                 report.setSubmitterName(userInfoVo.getRealname());
+                report.setSubmitterMobile(userInfoVo.getMobile());
             }
             report.setSubmitTime(new Date());
             if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
@@ -282,6 +304,16 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                     }
                 }
             }
+
+            String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+            if(StrUtil.isNotEmpty(memberNumber)){
+                MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                if(Objects.nonNull(memberInfoVo)){
+                    report.setLinkmanMobile(memberInfoVo.getMobile());
+                    report.setLinkmanName(memberInfoVo.getName());
+                }
+            }
+
             IceBoxPutReport putReport = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxAssetId, report.getIceBoxAssetId())
                     .eq(IceBoxPutReport::getApplyNumber, report.getApplyNumber()));
             if(putReport == null){
@@ -352,6 +384,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 SessionUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignCacheClient.getForUserInfoVo(relateModel.getCreateBy()));
                 if(userInfoVo != null){
                     putReport.setSubmitterName(userInfoVo.getRealname());
+                    putReport.setSubmitterMobile(userInfoVo.getMobile());
                 }
             }
             putReport.setPutCustomerNumber(relateModel.getPutStoreNumber());
@@ -379,7 +412,11 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 putReport.setPutCustomerType(SupplierTypeEnum.IS_STORE.getType());
                 StoreInfoDtoVo storeInfo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(relateModel.getPutStoreNumber()));
                 if(storeInfo != null){
+                    putReport.setProvinceName(storeInfo.getProvinceName());
+                    putReport.setCityName(storeInfo.getCityName());
+                    putReport.setDistrictName(storeInfo.getDistrictName());
                     putReport.setPutCustomerName(storeInfo.getStoreName());
+                    putReport.setCustomerAddress(storeInfo.getAddress());
                     headquartersDeptId = storeInfo.getHeadquartersDeptId();
                     headquartersDeptName = storeInfo.getHeadquartersDeptName();
                     businessDeptId = storeInfo.getBusinessDeptId();
@@ -432,6 +469,15 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 putReport.setIceBoxModelName(iceBox.getModelName());
                 putReport.setDepositMoney(iceBox.getDepositMoney());
             }
+            String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(putReport.getPutCustomerNumber());
+            if(StrUtil.isNotEmpty(memberNumber)){
+                MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                if(Objects.nonNull(memberInfoVo)){
+                    putReport.setLinkmanMobile(memberInfoVo.getMobile());
+                    putReport.setLinkmanName(memberInfoVo.getName());
+                }
+            }
+
             List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(storeModel.getApplyNumber()));
             if(CollectionUtil.isNotEmpty(visitExamineNodeVos)){
                 for(SessionExamineVo.VisitExamineNodeVo examineNodeVo:visitExamineNodeVos){
@@ -440,12 +486,68 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                         SimpleUserInfoVo userInfo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(examineNodeVo.getUserId()));
                         if(userInfo != null){
                             putReport.setExamineUserName(userInfo.getRealname());
+                            putReport.setExamineUserPosion(userInfo.getPosion());
                         }
                         putReport.setExamineTime(examineNodeVo.getUpdateTime());
                     }
                 }
             }
             iceBoxPutReportDao.insert(putReport);
+        }
+    }
+
+    final Integer BATCH_PAGE_SIZE = 1000;
+
+    @Override
+    public void repairIceBoxColumns() {
+        LambdaQueryWrapper<IceBoxPutReport> wrapper = new LambdaQueryWrapper<IceBoxPutReport>()
+                .eq(IceBoxPutReport::getLinkmanMobile, "").eq(IceBoxPutReport::getSubmitterMobile,"");
+        Integer count = iceBoxPutReportDao.selectCount(wrapper);
+        if (count < 1) {
+            log.info("repairIceBoxColumns end , count < 1 ");
+        }
+
+        Integer totalCount = new BigDecimal(count).divide(new BigDecimal(BATCH_PAGE_SIZE), 0, BigDecimal.ROUND_UP).intValue();
+        for (int j = 1; j <= totalCount; j++) {
+            int currentPage = j;
+            int pageSize = BATCH_PAGE_SIZE;
+
+            Page<IceBoxPutReport> page = new Page<>();
+            page.setCurrent(currentPage);
+            page.setSize(pageSize);
+
+            List<IceBoxPutReport> list = iceBoxPutReportDao.selectPage(page, wrapper).getRecords();
+            if (CollectionUtil.isNotEmpty(list)) {
+                Integer completeCount = 0;
+                for (IceBoxPutReport report : list) {
+                    StoreInfoDtoVo storeInfoDtoVo = exportRecordsDao.selectStoreForReport(report.getPutCustomerNumber());
+                    String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+                    if(StrUtil.isNotEmpty(memberNumber)){
+                        MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                        if(Objects.nonNull(memberInfoVo)){
+                            report.setLinkmanName(memberInfoVo.getName());
+                            report.setLinkmanMobile(memberInfoVo.getMobile());
+                        }
+                    }
+                    SimpleUserInfoVo submit = userRedisService.getUserById(report.getSubmitterId());
+                    SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(report.getExamineUserId()));
+                    if(Objects.nonNull(storeInfoDtoVo)){
+                        report.setProvinceName(storeInfoDtoVo.getProvinceName());
+                        report.setCityName(storeInfoDtoVo.getCityName());
+                        report.setDistrictName(storeInfoDtoVo.getDistrictName());
+                        report.setCustomerAddress(storeInfoDtoVo.getAddress());
+                    }
+                    if(Objects.nonNull(submit)){
+                        report.setSubmitterMobile(submit.getMobile());
+                    }
+                    if(Objects.nonNull(exaine)){
+                        report.setExamineUserPosion(exaine.getPosion());
+                    }
+                    iceBoxPutReportDao.updateById(report);
+                    completeCount++;
+                    log.info("repairIceBoxColumns reportId:{} complete , completeCount:{} ",report.getId(),completeCount);
+                }
+            }
         }
     }
 }

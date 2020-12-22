@@ -9,19 +9,17 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum SupplierTypeEnum {
+public enum IceBackStatusEnum {
 
-    IS_DEALER(1, "经销商"),
-    IS_RESELLER(2, "分销商"),
-    IS_POSTMAN(3, "邮差"),
-    IS_WHOLESALER(4, "批发商"),
-    IS_STORE(5,"门店");
+    BACK_ING(1, "退还中"),
+    BACK_SUCCESS(2, "已退还"),
+    BACK_REJECT(3, "已驳回");
 
     private Integer type;
     private String desc;
 
     public static String getDesc(Integer type) {
-        for (SupplierTypeEnum supplierTypeEnum : SupplierTypeEnum.values()) {
+        for (IceBackStatusEnum supplierTypeEnum : IceBackStatusEnum.values()) {
             if (supplierTypeEnum.getType().equals(type)) {
                 return supplierTypeEnum.getDesc();
             }

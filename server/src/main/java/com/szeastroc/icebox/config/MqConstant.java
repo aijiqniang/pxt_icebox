@@ -32,4 +32,10 @@ public interface MqConstant {
     /*****************************  直连模式的参数   *************************************/
 
 
+    /**
+     * 冰柜退还报表
+     */
+    String iceBackApplyReportQueue = "ice_back_apply_report_queue";
+    String iceBackApplyReportKey = "ice_back_apply_report_routing_key";
+
 }

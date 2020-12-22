@@ -3,9 +3,15 @@ package com.szeastroc.icebox.sync;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
+import com.szeastroc.common.entity.user.vo.SessionUserInfoVo;
+import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
+import com.szeastroc.common.entity.visit.SessionExamineVo;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.user.FeignUserClient;
+import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.enums.OrderStatus;
+import com.szeastroc.icebox.newprocess.dao.IceBackApplyRelateBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.service.*;
@@ -20,8 +26,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -55,6 +63,14 @@ public class IceOtherSync {
     private FeignSupplierClient feignSupplierClient;
     @Autowired
     private IceBoxDao iceBoxDao;
+    @Autowired
+    private IceBackApplyRelateBoxService iceBackApplyRelateBoxService;
+    @Autowired
+    private IceBackApplyReportService iceBackApplyReportService;
+    @Autowired
+    FeignExamineClient feignExamineClient;
+    @Autowired
+    FeignUserClient feignUserClient;
 
     /**
      * 同步投放订单
@@ -232,5 +248,34 @@ public class IceOtherSync {
             }
         });
         log.info("更新部门信息结束");
+    }
+
+    public void syncIceBackApplyReport() {
+        List<IceBackApply> list = iceBackApplyService.list(Wrappers.<IceBackApply>lambdaQuery().gt(IceBackApply::getId, 4));
+        for (IceBackApply iceBackApply : list) {
+            String applyNumber = iceBackApply.getApplyNumber();
+            IceBackApplyRelateBox one = iceBackApplyRelateBoxService.getOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
+            IceBox iceBox = iceBoxDao.selectById(one.getBoxId());
+            IceBackApplyReport backApplyReport = iceBackOrderService.generateBackReport(iceBox, applyNumber, iceBackApply.getBackStoreNumber(), one.getFreeType());
+            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.readId(one.getBackSupplierId()));
+            backApplyReport.setDealerName(supplier.getName());
+            backApplyReport.setDealerNumber(supplier.getNumber());
+            backApplyReport.setExamineStatus(iceBackApply.getExamineStatus());
+            backApplyReport.setExamineId(iceBackApply.getExamineId());
+            backApplyReport.setCheckDate(iceBackApply.getUpdatedTime());
+            SessionUserInfoVo checkPerson = FeignResponseUtil.getFeignData(feignExamineClient.findLastCheckPerson(iceBackApply.getExamineId()));
+            if(Objects.nonNull(checkPerson)){
+                backApplyReport.setCheckOfficeName(checkPerson.getOfficeName());
+                backApplyReport.setCheckPerson(checkPerson.getRealname());
+                backApplyReport.setCheckPersonId(checkPerson.getId());
+            }
+            if(1==backApplyReport.getFreeType()){
+                IceBackOrder iceBackOrder = iceBackOrderService.getOne(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getApplyNumber, applyNumber));
+                backApplyReport.setDepositMoney(iceBackOrder.getAmount());
+            }
+            backApplyReport.setCreatedTime(iceBackApply.getCreatedTime());
+            backApplyReport.setBackDate(iceBackApply.getCreatedTime());
+            iceBackApplyReportService.updateById(backApplyReport);
+        }
     }
 }

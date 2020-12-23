@@ -64,6 +64,7 @@ public class IceBoxPutReportController {
         try {
             iceBoxPutReportService.repairIceBoxColumns();
         }catch (Exception e){
+            log.error(e.getMessage(),e);
             return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
         }
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);

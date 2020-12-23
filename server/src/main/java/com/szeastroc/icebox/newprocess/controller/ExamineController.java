@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.annotation.MonitorAnnotation;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.icebox.vo.IceExamineCheckVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
@@ -82,16 +83,16 @@ public class ExamineController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,map);
     }
 
-    @RequestMapping("/dealIceExamineCheck")
+    @RequestMapping("/updateExamineStatus")
     @MonitorAnnotation
-    public CommonResponse<Void> dealIceExamineCheck(String redisKey, Integer status,Integer updateBy) {
-        if (redisKey == null) {
+    public CommonResponse<IceExamineCheckVo> updateExamineStatus(@RequestBody IceExamineCheckVo iceExamineCheckVo) {
+        if (StringUtils.isEmpty(iceExamineCheckVo.getRedisKey())) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
-        iceExamineService.dealIceExamineCheck(redisKey,status,updateBy);
+        iceExamineService.dealIceExamineCheck(iceExamineCheckVo.getRedisKey(),iceExamineCheckVo.getStatus(),iceExamineCheckVo.getUpdateBy());
 
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,new IceExamineCheckVo());
     }
 
     @RequestMapping("/findExamineByNumber")

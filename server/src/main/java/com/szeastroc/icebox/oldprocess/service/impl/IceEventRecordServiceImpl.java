@@ -4,9 +4,10 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.exception.DongPengException;
 import com.szeastroc.commondb.config.redis.JedisClient;
+import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.oldprocess.dao.IceChestInfoDao;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
-import com.szeastroc.icebox.oldprocess.entity.IceChestInfo;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import com.szeastroc.icebox.oldprocess.service.IceEventRecordService;
 import com.szeastroc.icebox.oldprocess.vo.HisenseDTO;
@@ -39,49 +40,54 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
     private JedisClient jedisClient;
 
     private static final Integer EVENT_PUSH_TIME = 30;
+    @Resource
+    private IceBoxExtendDao iceBoxExtendDao;
 
 
     /**
      * 冰箱数据推送业务处理
-     * @author island
+     *
      * @param hisenseDTO :
      * @return void
+     * @author island
      * @since 2019/5/24
      */
     @Override
     @Transactional(value = "transactionManager")
-    public void EventPush(HisenseDTO hisenseDTO){
+    public void EventPush(HisenseDTO hisenseDTO) {
         // 同一台设备+同一个事件时间+同一个事件类型
-        if(StringUtils.isBlank(jedisClient.get(hisenseDTO.getOccurrenceTime().getTime()+hisenseDTO.getControlId()+ hisenseDTO.getType()))){
-            jedisClient.set(hisenseDTO.getOccurrenceTime().getTime()+hisenseDTO.getControlId()+hisenseDTO.getType(),hisenseDTO.getControlId(),EVENT_PUSH_TIME, TimeUnit.SECONDS);
+        if (StringUtils.isBlank(jedisClient.get(hisenseDTO.getOccurrenceTime().getTime() + hisenseDTO.getControlId() + hisenseDTO.getType()))) {
+            jedisClient.set(hisenseDTO.getOccurrenceTime().getTime() + hisenseDTO.getControlId() + hisenseDTO.getType(), hisenseDTO.getControlId(), EVENT_PUSH_TIME, TimeUnit.SECONDS);
             //查询是否有对应冰箱数据
-            IceChestInfo iceChestInfo = iceChestInfoDao.selectOne(Wrappers.<IceChestInfo>lambdaQuery().eq(IceChestInfo::getExternalId, hisenseDTO.getControlId()));
-            if(null == iceChestInfo){
+            IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getExternalId, hisenseDTO.getControlId()));
+
+            if (null == iceBoxExtend) {
                 throw new DongPengException("无效设备信息");
             }
-            Map<String,Object> map = new HashMap<>();
-            map.put("occurrence_time",hisenseDTO.getOccurrenceTime());
-            map.put("asset_id",iceChestInfo.getAssetId());
-            map.put("type",hisenseDTO.getType());
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("occurrence_time", hisenseDTO.getOccurrenceTime());
+            map.put("asset_id", iceBoxExtend.getAssetId());
+            map.put("type", hisenseDTO.getType());
             List<IceEventRecord> list = iceEventRecordDao.selectByMap(map);
-            if(null != list && list.size() > 0){
+            if (null != list && list.size() > 0) {
                 return;
             }
             // 新增记录
             IceEventRecord iceEventRecord = new IceEventRecord();
-            iceEventRecord.setAssetId(iceChestInfo.getAssetId());
+            iceEventRecord.setAssetId(iceBoxExtend.getAssetId());
             iceEventRecord.setCreateTime(new Date());
-            BeanUtils.copyProperties(hisenseDTO,iceEventRecord);
+            BeanUtils.copyProperties(hisenseDTO, iceEventRecord);
             iceEventRecordDao.insert(iceEventRecord);
             //增加冰箱次数
-            IceChestInfo iceChestInfo1 = new IceChestInfo();
-            iceChestInfo1.setId(iceChestInfo.getId());
-            Integer openTotal = iceChestInfo.getOpenTotal();
-            if(null == openTotal){
+            IceBoxExtend updateIceBoxExtend = new IceBoxExtend();
+            updateIceBoxExtend.setId(iceBoxExtend.getId());
+            Integer openTotal = iceBoxExtend.getOpenTotal();
+            if (null == openTotal) {
                 openTotal = 0;
             }
-            iceChestInfo1.setOpenTotal(openTotal + hisenseDTO.getOpenCloseCount());
-            iceChestInfoDao.updateById(iceChestInfo1);
+            updateIceBoxExtend.setOpenTotal(openTotal + hisenseDTO.getOpenCloseCount());
+            iceBoxExtendDao.updateById(updateIceBoxExtend);
         }
     }
 

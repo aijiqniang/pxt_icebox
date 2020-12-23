@@ -496,7 +496,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
         }
     }
 
-    final Integer BATCH_PAGE_SIZE = 1000;
+    final Integer BATCH_PAGE_SIZE = 30000;
 
     @Override
     public void repairIceBoxColumns() {

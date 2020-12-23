@@ -55,4 +55,18 @@ public class IceBoxPutReportController {
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 
+    /**
+     * 修复历史数据的新增字段
+     * @return
+     */
+    @RequestMapping("repairIceBoxColumns")
+    public CommonResponse<Void> repairIceBoxColumns(){
+        try {
+            iceBoxPutReportService.repairIceBoxColumns();
+        }catch (Exception e){
+            return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
+        }
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
 }

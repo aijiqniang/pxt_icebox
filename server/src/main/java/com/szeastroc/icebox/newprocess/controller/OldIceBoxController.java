@@ -238,6 +238,7 @@ public class OldIceBoxController {
         oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("新增").build());
         oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("退仓").build());
         oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("报废").build());
+        oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("遗失").build());
         excelUtil.oldExportExcel(fileName, titleName, columnName, oldIceBoxImportVoList, response);
     }
 }

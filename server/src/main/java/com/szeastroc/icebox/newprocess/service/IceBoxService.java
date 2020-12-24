@@ -119,7 +119,11 @@ public interface IceBoxService extends IService<IceBox> {
 
     JSONObject setAssetReportJson(IceBox iceBox,String resourceStr);
 
-
+    /**
+     * 客户变更，推送签收信息
+     * @param iceBox
+     */
+    void changeCustomer(IceBox iceBox);
 
 }
 

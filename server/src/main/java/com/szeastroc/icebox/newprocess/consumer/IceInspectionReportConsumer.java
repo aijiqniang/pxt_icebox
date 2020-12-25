@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.newprocess.consumer;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
 import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
@@ -73,10 +74,16 @@ public class IceInspectionReportConsumer {
                 break;
             case 6:
                 decreasePutCount(reportMsg);
+                break;
+            case 7:
+                updateDept(reportMsg);
+                break;
             default:
                 break;
         }
     }
+
+
 
     private void buildReport(Integer userId){
         Integer deptId = FeignResponseUtil.getFeignData(feignDeptClient.getMainDeptByUserId(userId));
@@ -252,5 +259,48 @@ public class IceInspectionReportConsumer {
         LambdaQueryWrapper<IceInspectionReport> wrapper = new LambdaQueryWrapper<IceInspectionReport>()
                 .eq(IceInspectionReport::getUserId, reportMsg.getUserId()).eq(IceInspectionReport::getInspectionDate, new DateTime().toString("yyyy-MM"));
         iceInspectionReportService.remove(wrapper);
+    }
+
+    /**
+     * 更新人员部门
+     * @param reportMsg
+     */
+    private void updateDept(IceInspectionReportMsg reportMsg) {
+        LambdaQueryWrapper<IceInspectionReport> wrapper = Wrappers.<IceInspectionReport>lambdaQuery();
+        wrapper.eq(IceInspectionReport::getUserId,reportMsg.getUserId()).eq(IceInspectionReport::getInspectionDate,new DateTime().toString("yyyy-MM"));
+        IceInspectionReport one = iceInspectionReportService.getOne(wrapper);
+        if(Objects.isNull(one)){
+            return;
+        }
+        Integer deptId = FeignResponseUtil.getFeignData(feignDeptClient.getMainDeptByUserId(reportMsg.getUserId()));
+        if(Objects.isNull(deptId)){
+            return;
+        }
+        Map<Integer, SessionDeptInfoVo> deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(deptId));
+        SessionDeptInfoVo headquarter = deptMap.get(5);
+        SessionDeptInfoVo business = deptMap.get(4);
+        if(!DeptTypeEnum.BUSINESS_UNIT.getType().equals(business.getDeptType())){
+            business = null;
+            headquarter = deptMap.get(4);
+        }
+        SessionDeptInfoVo region = deptMap.get(3);
+        SessionDeptInfoVo service = deptMap.get(2);
+        SessionDeptInfoVo group = deptMap.get(1);
+        if(Objects.nonNull(headquarter)){
+            one.setHeadquartersDeptId(headquarter.getId()).setHeadquartersDeptName(headquarter.getName());
+        }
+        if(Objects.nonNull(business)){
+            one.setBusinessDeptId(business.getId()).setBusinessDeptName(business.getName());
+        }
+        if(Objects.nonNull(region)){
+            one.setRegionDeptId(region.getId()).setRegionDeptName(region.getName());
+        }
+        if(Objects.nonNull(service)){
+            one.setServiceDeptId(service.getId()).setServiceDeptName(service.getName());
+        }
+        if(Objects.nonNull(group)){
+            one.setGroupDeptId(group.getId()).setGroupDeptName(group.getName());
+        }
+        iceInspectionReportService.updateById(one);
     }
 }

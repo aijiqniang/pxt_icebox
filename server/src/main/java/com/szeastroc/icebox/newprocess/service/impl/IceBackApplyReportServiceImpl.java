@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.user.session.UserManageVo;
+import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
+import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
@@ -19,11 +21,14 @@ import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBackApplyReportMsg;
 import com.szeastroc.icebox.newprocess.dao.IceBackApplyReportDao;
 import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
+import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +49,8 @@ public class IceBackApplyReportServiceImpl extends ServiceImpl<IceBackApplyRepor
     private FeignExportRecordsClient feignExportRecordsClient;
     @Autowired
     private RabbitTemplate rabbitTemplate;
+    @Autowired
+    FeignCacheClient feignCacheClient;
 
     @Override
     public IPage<IceBackApplyReport> findByPage(IceBackApplyReportMsg reportMsg) {
@@ -131,5 +138,62 @@ public class IceBackApplyReportServiceImpl extends ServiceImpl<IceBackApplyRepor
     @Override
     public Integer selectByExportCount(LambdaQueryWrapper<IceBackApplyReport> wrapper) {
          return this.count(wrapper);
+    }
+
+
+    @Override
+    public void updateDept(Integer boxId,Integer deptId) {
+        LambdaQueryWrapper<IceBackApplyReport> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(IceBackApplyReport::getBoxId,boxId);
+        IceBackApplyReport report = this.baseMapper.selectOne(wrapper);
+        if(Objects.nonNull(report)){
+            Map<Integer, SessionDeptInfoVo> deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(deptId));
+            Integer groupId = null;
+            String groupName = null;
+            Integer serviceId = null;
+            String serviceName = null;
+            Integer regionId = null;
+            String regionName = null;
+            Integer businessId = null;
+            String businessName = null;
+            Integer headquartersId = null;
+            String headquartersName = null;
+            SessionDeptInfoVo group = deptMap.get(1);
+            if(Objects.nonNull(group)){
+                groupId = group.getId();
+                groupName = group.getName();
+            }
+            SessionDeptInfoVo service = deptMap.get(2);
+            if(Objects.nonNull(service)){
+                serviceId = service.getId();
+                serviceName = service.getName();
+            }
+            SessionDeptInfoVo region = deptMap.get(3);
+            if(Objects.nonNull(region)){
+                regionId = region.getId();
+                regionName = region.getName();
+            }
+            SessionDeptInfoVo business = deptMap.get(4);
+            SessionDeptInfoVo headquarters = deptMap.get(5);
+            if(!DeptTypeEnum.BUSINESS_UNIT.getType().equals(business.getDeptType())){
+                business = null;
+                headquarters = deptMap.get(4);
+            }
+            if(Objects.nonNull(business)){
+                businessId = business.getId();
+                businessName = business.getName();
+            }
+
+            if(Objects.nonNull(headquarters)){
+                headquartersId = headquarters.getId();
+                headquartersName = headquarters.getName();
+            }
+            report.setGroupDeptId(groupId).setGroupDeptName(groupName)
+            .setServiceDeptId(serviceId).setServiceDeptName(serviceName)
+            .setRegionDeptId(regionId).setRegionDeptName(regionName)
+            .setBusinessDeptId(businessId).setBusinessDeptName(businessName)
+            .setHeadquartersDeptId(headquartersId).setHeadquartersDeptName(headquartersName);
+            this.baseMapper.updateById(report);
+        }
     }
 }

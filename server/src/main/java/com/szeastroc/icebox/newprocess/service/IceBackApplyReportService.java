@@ -22,4 +22,6 @@ public interface IceBackApplyReportService extends IService<IceBackApplyReport> 
     Integer selectByExportCount(LambdaQueryWrapper<IceBackApplyReport> wrapper);
 
     LambdaQueryWrapper<IceBackApplyReport> fillWrapper(IceBackApplyReportMsg reportMsg);
+
+    void updateDept(Integer boxId,Integer deptId);
 }

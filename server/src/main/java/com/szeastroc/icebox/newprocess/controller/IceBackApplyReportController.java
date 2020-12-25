@@ -12,6 +12,7 @@ import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -40,5 +41,11 @@ public class IceBackApplyReportController {
     @RequestMapping("sendExportMsg")
     public CommonResponse<IceBackApplyReport> sendExportMsg(@RequestBody IceBackApplyReportMsg reportMsg){
         return iceBackApplyReportService.sendExportMsg(reportMsg);
+    }
+
+    @RequestMapping("updateDept")
+    public CommonResponse<Void> updateDept(@RequestParam Integer boxId,@RequestParam Integer deptId){
+        iceBackApplyReportService.updateDept(boxId,deptId);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
     }
 }

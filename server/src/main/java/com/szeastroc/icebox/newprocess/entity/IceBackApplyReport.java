@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.Accessors;
 import org.springframework.cloud.client.HostInfoEnvironmentPostProcessor;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ import java.util.Date;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Accessors(chain = true)
 @TableName(value = "t_ice_back_apply_report")
 public class IceBackApplyReport {
     @TableId(value = "id", type = IdType.AUTO)

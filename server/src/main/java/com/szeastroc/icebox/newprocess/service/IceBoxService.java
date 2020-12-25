@@ -118,8 +118,6 @@ public interface IceBoxService extends IService<IceBox> {
     List<IceBoxVo> findIceBoxsBySupplierIdAndModelId(Integer supplierId, Integer modelId);
 
     JSONObject setAssetReportJson(IceBox iceBox,String resourceStr);
-
-
     /**
      * 冰柜投放数量
      * @param userId
@@ -131,10 +129,11 @@ public interface IceBoxService extends IService<IceBox> {
 
     /**
      * 冰柜遗失数量
-     * @param userId
      * @return
      */
-    int getLostCount(Integer userId,List<Integer> putBoxIds);
+    int getLostScrapCount(List<Integer> putBoxIds);
+
+    int getLostScrapCount(Integer userId);
 
     int getLostCountByDeptId(Integer deptId);
 

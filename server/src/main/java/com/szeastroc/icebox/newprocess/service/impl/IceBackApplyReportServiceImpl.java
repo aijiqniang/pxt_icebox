@@ -17,11 +17,8 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBackApplyReportMsg;
-import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.IceBackApplyReportDao;
 import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
-import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
-import com.szeastroc.icebox.newprocess.enums.IceBoxReprotTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,10 +79,10 @@ public class IceBackApplyReportServiceImpl extends ServiceImpl<IceBackApplyRepor
             wrapper.eq(IceBackApplyReport::getDealerNumber,reportMsg.getDealerNumber());
         }
         if(StringUtils.isNotEmpty(reportMsg.getBackCustomerName())){
-            wrapper.like(IceBackApplyReport::getBackCustomerName,reportMsg.getBackCustomerName());
+            wrapper.like(IceBackApplyReport::getCustomerName,reportMsg.getBackCustomerName());
         }
         if(StringUtils.isNotEmpty(reportMsg.getBackCustomerNumber())){
-            wrapper.eq(IceBackApplyReport::getBackCustomerNumber,reportMsg.getBackCustomerNumber());
+            wrapper.eq(IceBackApplyReport::getCustomerNumber,reportMsg.getBackCustomerNumber());
         }
         if(StringUtils.isNotEmpty(reportMsg.getStartTime())){
             wrapper.ge(IceBackApplyReport::getCreatedTime,reportMsg.getStartTime());

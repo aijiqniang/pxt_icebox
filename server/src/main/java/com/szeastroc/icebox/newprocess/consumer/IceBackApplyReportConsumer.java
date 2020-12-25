@@ -1,38 +1,26 @@
 package com.szeastroc.icebox.newprocess.consumer;
 
 import cn.hutool.core.collection.CollectionUtil;
-import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.icebox.config.MqConstant;
-import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBackApplyReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
 import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
 import com.szeastroc.icebox.newprocess.enums.IceBackStatusEnum;
-import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
-import com.szeastroc.icebox.newprocess.vo.IceBackApplyReportExcelVo;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -55,8 +43,8 @@ public class IceBackApplyReportConsumer {
         LambdaQueryWrapper<IceBackApplyReport> wrapper = iceBackApplyReportService.fillWrapper(reportMsg);
         Integer count = iceBackApplyReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
         // 列
-        String[] columnName = {"事业部", "大区", "服务处", "流程编号", "所属经销商编号", "所属经销商名称", "退还客户编号", "退还客户名称", "退还客户类型", "退还日期", "冰柜型号", "冰柜编号", "是否免押"
-                , "押金金额", "审核人员", "审核人职务", "审核日期", "退还状态"};
+        String[] columnName = {"事业部", "大区", "服务处", "流程编号", "所属经销商编号", "所属经销商名称", "退还客户编号", "退还客户名称", "退还客户类型","客户联系人","联系人电话","省","市","区县",
+                "退还客户地址", "退还日期", "冰柜型号", "冰柜编号", "是否免押", "押金金额", "审核人员", "审核人职务", "审核日期","业务员","业务员电话", "退还状态"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -78,18 +66,26 @@ public class IceBackApplyReportConsumer {
                                 eachDataRow.createCell(3).setCellValue(report.getApplyNumber());
                                 eachDataRow.createCell(4).setCellValue(report.getDealerNumber());
                                 eachDataRow.createCell(5).setCellValue(report.getDealerName());
-                                eachDataRow.createCell(6).setCellValue(report.getBackCustomerNumber());
-                                eachDataRow.createCell(7).setCellValue(report.getBackCustomerName());
-                                eachDataRow.createCell(8).setCellValue(SupplierTypeEnum.getDesc(report.getBackCustomerType()));
-                                eachDataRow.createCell(9).setCellValue(dateFormat.format(report.getBackDate()));
-                                eachDataRow.createCell(10).setCellValue(report.getModelName());
-                                eachDataRow.createCell(11).setCellValue(report.getAssetId());
-                                eachDataRow.createCell(12).setCellValue(1==report.getFreeType()?"否":"是");
-                                eachDataRow.createCell(13).setCellValue(report.getDepositMoney() + "");
-                                eachDataRow.createCell(14).setCellValue(report.getCheckPerson());
-                                eachDataRow.createCell(15).setCellValue(report.getCheckOfficeName());
-                                eachDataRow.createCell(16).setCellValue(dateFormat.format(report.getCheckDate()));
-                                eachDataRow.createCell(17).setCellValue(IceBackStatusEnum.getDesc(report.getExamineStatus()));
+                                eachDataRow.createCell(6).setCellValue(report.getCustomerNumber());
+                                eachDataRow.createCell(7).setCellValue(report.getCustomerName());
+                                eachDataRow.createCell(8).setCellValue(SupplierTypeEnum.getDesc(report.getCustomerType()));
+                                eachDataRow.createCell(9).setCellValue(report.getLinkMan());
+                                eachDataRow.createCell(10).setCellValue(report.getLinkMobile());
+                                eachDataRow.createCell(11).setCellValue(report.getProvince());
+                                eachDataRow.createCell(12).setCellValue(report.getCity());
+                                eachDataRow.createCell(13).setCellValue(report.getArea());
+                                eachDataRow.createCell(14).setCellValue(report.getCustomerAddress());
+                                eachDataRow.createCell(15).setCellValue(dateFormat.format(report.getBackDate()));
+                                eachDataRow.createCell(16).setCellValue(report.getModelName());
+                                eachDataRow.createCell(17).setCellValue(report.getAssetId());
+                                eachDataRow.createCell(18).setCellValue(1==report.getFreeType()?"否":"是");
+                                eachDataRow.createCell(19).setCellValue(report.getDepositMoney() + "");
+                                eachDataRow.createCell(20).setCellValue(report.getCheckPerson());
+                                eachDataRow.createCell(21).setCellValue(report.getCheckOfficeName());
+                                eachDataRow.createCell(22).setCellValue(dateFormat.format(report.getCheckDate()));
+                                eachDataRow.createCell(23).setCellValue(report.getSubmitterName());
+                                eachDataRow.createCell(24).setCellValue(report.getSubmitterMobile());
+                                eachDataRow.createCell(25).setCellValue(IceBackStatusEnum.getDesc(report.getExamineStatus()));
                             }
                         }
                     }

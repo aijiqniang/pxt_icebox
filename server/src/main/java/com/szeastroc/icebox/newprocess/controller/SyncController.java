@@ -86,4 +86,17 @@ public class SyncController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+
+
+    @GetMapping("/syncIceInspectionReport")
+    public CommonResponse<Void> syncIceInspectionReport() {
+        try {
+            iceOtherSync.syncIceInspectionReport();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+
 }

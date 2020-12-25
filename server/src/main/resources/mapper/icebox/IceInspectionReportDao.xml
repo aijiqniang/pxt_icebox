@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceInspectionReportDao">
+
+    <select id="getGroupReports" resultType="com.szeastroc.icebox.newprocess.vo.InspectionReportVO">
+        select sum(put_count) as putCount,sum(inspection_count) inspection,sum(put_count) - sum(inspection_count)-sum(lost_scrap_count) as noInspection,
+               group_dept_id as deptId,group_dept_name as deptName
+        from t_ice_inspection_report
+        where service_dept_id = #{deptId} and group_dept_id is not null group by group_dept_id
+    </select>
+    <select id="getServiceReports" resultType="com.szeastroc.icebox.newprocess.vo.InspectionReportVO">
+        select sum(put_count) as putCount,sum(inspection_count) inspection,sum(put_count) - sum(inspection_count)-sum(lost_scrap_count) as noInspection,
+               service_dept_id as deptId,service_dept_name as deptName
+        from t_ice_inspection_report
+        where region_dept_id = #{deptId}  group by service_dept_id
+    </select>
+
+
+</mapper>

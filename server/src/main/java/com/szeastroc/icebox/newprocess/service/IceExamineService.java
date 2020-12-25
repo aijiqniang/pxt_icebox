@@ -18,9 +18,8 @@ public interface IceExamineService extends IService<IceExamine>{
 
     IceExamineVo findOneExamine(IceExamineRequest iceExamineRequest);
 
-    Integer getInspectionCount(List<Integer> userIds);
 
-    List<IceExamine> getInspectionBoxes(List<Integer> boxIds,Integer userId);
+    List<IceExamine> getInspectionBoxes(List<Integer> boxIds);
 
     Integer getNoInspectionBoxes(Integer putCount, Integer userId);
 

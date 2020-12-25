@@ -36,6 +36,7 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
+import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExamineExceptionReportDao;
@@ -55,7 +56,6 @@ import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
-import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExamineRequest;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
@@ -267,6 +267,12 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             }
             log.info("发送巡检信息到巡检报表——》【{}】",JSON.toJSONString(report));
             rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, report);
+
+            //巡检报表添加投放数据
+            IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+            reportMsg.setOperateType(2);
+            reportMsg.setBoxId(iceExamine.getIceBoxId());
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
         } catch (Exception e) {
             log.info("捕获的buildReportAndSendMq异常信息-->[{}],具体信息-->[{}]",JSON.toJSONString(e), e.getMessage());
         }
@@ -1469,26 +1475,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //    }
 
 
-    @Override
-    public Integer getInspectionCount(List<Integer> userIds) {
-        List<Integer> boxIds = new ArrayList<>();
-        for (Integer userId : userIds) {
-            List<Integer> list = iceBoxService.getPutBoxIds(userId);
-            boxIds.addAll(list);
-        }
-        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        if(CollectionUtils.isEmpty(userIds)){
-            return 0;
-        }
-        wrapper.eq(IceExamine::getExaminStatus,2)
-                .in(IceExamine::getIceBoxId,boxIds)
-                .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
-                .groupBy(IceExamine::getIceBoxId);
-        return iceExamineDao.selectCount(wrapper);
-    }
 
     @Override
-    public List<IceExamine> getInspectionBoxes(List<Integer> boxIds,Integer userId) {
+    public List<IceExamine> getInspectionBoxes(List<Integer> boxIds) {
         if(CollectionUtils.isEmpty(boxIds)){
             return Lists.newArrayList();
         }
@@ -1508,11 +1497,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
         wrapper.eq(IceExamine::getExaminStatus,2)
-                .eq(IceExamine::getCreateBy,userId)
                 .in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);
-        int size = iceExamineDao.selectList(wrapper).size();
+        int size = iceExamineDao.selectCount(wrapper);
         return putCount-size;
     }
 

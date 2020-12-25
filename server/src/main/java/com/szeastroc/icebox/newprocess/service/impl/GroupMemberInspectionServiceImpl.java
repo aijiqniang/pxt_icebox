@@ -1,6 +1,5 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
-import cn.hutool.core.util.NumberUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -8,7 +7,6 @@ import com.google.common.collect.Lists;
 import com.szeastroc.common.entity.customer.vo.SimpleStoreVo;
 import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
-import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
@@ -17,12 +15,15 @@ import com.szeastroc.common.feign.visit.FeignVisitInfoClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
+import com.szeastroc.icebox.newprocess.entity.IceInspectionReport;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
+import com.szeastroc.icebox.newprocess.service.IceInspectionReportService;
 import com.szeastroc.icebox.newprocess.service.InspectionService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 import com.szeastroc.icebox.newprocess.vo.StoreVO;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -44,9 +45,6 @@ import java.util.stream.Collectors;
  **/
 @Service
 public class GroupMemberInspectionServiceImpl implements InspectionService, InitializingBean {
-
-    @Autowired
-    private FeignUserClient feignUserClient;
     @Autowired
     FeignSupplierClient feignSupplierClient;
     @Autowired
@@ -59,6 +57,10 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
     private IceBoxService iceBoxService;
     @Autowired
     private FeignVisitInfoClient feignVisitInfoClient;
+    @Autowired
+    private IceInspectionReportService iceInspectionReportService;
+    @Autowired
+    FeignUserClient feignUserClient;
 
 
     @Override
@@ -69,26 +71,11 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         return list;
     }
 
-
     public InspectionReportVO getByUserId(Integer userId) {
-        List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
-        int inspectionCount = iceExamineService.getInspectionBoxes(putBoxIds,userId).size();
-        int putCount = putBoxIds.size();
-        int lostCount = iceBoxService.getLostCount(userId,putBoxIds);
-        String percent = "-";
-        if (0 != putCount) {
-            percent = NumberUtil.formatPercent((float) inspectionCount / putCount - lostCount, 2);
-        }
-        Integer noInspectionCount = iceExamineService.getNoInspectionBoxes(putCount, userId);
-        SimpleUserInfoVo user = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(userId));
-        return InspectionReportVO.builder()
-                .inspection(inspectionCount)
-                .putCount(putCount)
-                .rate(percent)
-                .noInspection(noInspectionCount)
-                .name(user.getRealname())
-                .userId(userId)
-                .build();
+        LambdaQueryWrapper<IceInspectionReport> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(IceInspectionReport::getUserId,userId).eq(IceInspectionReport::getInspectionDate,new DateTime().toString("yyyy-MM"));
+        IceInspectionReport one = iceInspectionReportService.getOne(wrapper);
+        return one.convertInspectionReportVO();
     }
 
     @Override
@@ -98,7 +85,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
 
     public List<StoreVO> getStoreByUserId(Integer userId) {
         List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
-        List<IceExamine> inspectionBoxes = iceExamineService.getInspectionBoxes(putBoxIds,userId);
+        List<IceExamine> inspectionBoxes = iceExamineService.getInspectionBoxes(putBoxIds);
         Set<Integer> idSet = new HashSet<>();
         if (CollectionUtils.isEmpty(inspectionBoxes)) {
             idSet = new HashSet<>(putBoxIds);

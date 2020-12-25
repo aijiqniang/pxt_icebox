@@ -38,4 +38,11 @@ public interface MqConstant {
     String iceBackApplyReportQueue = "ice_back_apply_report_queue";
     String iceBackApplyReportKey = "ice_back_apply_report_routing_key";
 
+
+    /**
+     * 冰柜退还报表
+     */
+    String iceInspectionReportQueue = "ice_inspection_report_queue";
+    String iceInspectionReportKey = "ice_inspection_report_routing_key";
+
 }

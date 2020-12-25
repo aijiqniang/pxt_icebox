@@ -10,6 +10,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.BaseDistrictVO;
+import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
 import com.szeastroc.common.entity.customer.vo.SessionStoreInfoVo;
 import com.szeastroc.common.entity.customer.vo.SimpleSupplierInfoVo;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
@@ -32,7 +34,9 @@ import com.szeastroc.common.entity.visit.enums.NoticeTypeEnum;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignCusLabelClient;
+import com.szeastroc.common.feign.customer.FeignDistrictClient;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignStoreRelateMemberClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.transfer.FeignTransferClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
@@ -47,9 +51,11 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.enums.*;
+import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.BackType;
+import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
@@ -125,6 +131,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final DirectProducer directProducer;
     private final FeignCacheClient feignCacheClient;
     private final IceBackApplyReportService iceBackApplyReportService;
+    private final FeignStoreRelateMemberClient feignStoreRelateMemberClient;
+    private final FeignDistrictClient feignDistrictClient;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -133,7 +141,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         // 校验是否可申请退还
         validateTakeBack(iceBoxId);
 
-        // TODO 由崔梦阳实现退还逻辑
 
 //        IceBackOrder selectIceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery()
 //                .eq(IceBackOrder::getBoxId, iceBoxId)
@@ -309,6 +316,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         backApplyReport.setCheckPerson(checkPerson.getRealname());
         backApplyReport.setCheckPersonId(checkPersonId);
         backApplyReport.setCheckOfficeName(checkPerson.getPosion());
+        SimpleUserInfoVo submitter = FeignResponseUtil.getFeignData(feignUserClient.findUserById(simpleIceBoxDetailVo.getUserId()));
+        backApplyReport.setSubmitterName(submitter.getRealname());
+        backApplyReport.setSubmitterMobile(submitter.getMobile());
+        backApplyReport.setSubmitterId(simpleIceBoxDetailVo.getUserId());
         SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.readId(simpleIceBoxDetailVo.getNewSupplierId()));
         backApplyReport.setDealerName(supplier.getName());
         backApplyReport.setDealerNumber(supplier.getNumber());
@@ -352,6 +363,12 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                     public void afterCommit() {
                         // 发送mq消息
                         rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                        // 冰柜退还 减少巡检报表投放数量
+                        IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                        reportMsg.setOperateType(6);
+                        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
+                        reportMsg.setBoxId(iceBackApplyRelateBox.getBoxId());
+                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
                     }
                 });
             }
@@ -371,7 +388,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         String result = "";
 
-        // // TODO: 2020/4/28  需要倒序
+        // //  2020/4/28  需要倒序
 
         IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, iceBoxId).orderByDesc(IceBackApplyRelateBox::getCreateTime).last("limit 1"));
 
@@ -984,29 +1001,72 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             regionName = region.getName();
         }
         SessionDeptInfoVo business = deptMap.get(4);
+        SessionDeptInfoVo headquarters = deptMap.get(5);
+        if(!DeptTypeEnum.BUSINESS_UNIT.getType().equals(business.getDeptType())){
+            business = null;
+            headquarters = deptMap.get(4);
+        }
         if(Objects.nonNull(business)){
             businessId = business.getId();
             businessName = business.getName();
         }
-        SessionDeptInfoVo headquarters = deptMap.get(5);
+
         if(Objects.nonNull(headquarters)){
             headquartersId = headquarters.getId();
             headquartersName = headquarters.getName();
         }
-        String customerName = "";
-        Integer customerType=0;
+        String customerName;
+        Integer customerType;
+        String customerAddress;
         SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(putStoreNumber));
+        String linkMan;
+        String linkMobile;
+        String province="";
+        String city="";
+        String area="";
         if(Objects.nonNull(supplierInfoSessionVo)){
             customerName = supplierInfoSessionVo.getName();
             customerType = supplierInfoSessionVo.getSupplierType();
+            customerAddress = supplierInfoSessionVo.getAddress();
+            linkMan = supplierInfoSessionVo.getLinkMan();
+            linkMobile = supplierInfoSessionVo.getLinkManMobile();
+            BaseDistrictVO provinceDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getProvinceCode()));
+            if(Objects.nonNull(provinceDistrict)){
+                province= provinceDistrict.getName();
+            }
+            BaseDistrictVO cityDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getCityCode()));
+            if(Objects.nonNull(cityDistrict)){
+                city= cityDistrict.getName();
+            }
+            BaseDistrictVO areaDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getRegionCode()));
+            if(Objects.nonNull(areaDistrict)){
+                area= areaDistrict.getName();
+            }
         }else{
             StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(putStoreNumber));
             customerName = store.getStoreName();
+            customerAddress = store.getAddress();
             customerType = 5;
+            MemberInfoVo member = FeignResponseUtil.getFeignData(feignStoreRelateMemberClient.getShopKeeper(putStoreNumber));
+            linkMan = member.getName();
+            linkMobile = member.getMobile();
+            BaseDistrictVO provinceDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(store.getProvinceCode()));
+            if(Objects.nonNull(provinceDistrict)){
+                province= provinceDistrict.getName();
+            }
+            BaseDistrictVO cityDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(store.getCityCode()));
+            if(Objects.nonNull(cityDistrict)){
+                city= cityDistrict.getName();
+            }
+            BaseDistrictVO areaDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(store.getDistrictCode()));
+            if(Objects.nonNull(areaDistrict)){
+                area= areaDistrict.getName();
+            }
         }
         IceBackApplyReport report = IceBackApplyReport.builder()
                 .applyNumber(applyNumber)
-                .backCustomerName(customerName).backCustomerNumber(putStoreNumber).backCustomerType(customerType)
+                .customerName(customerName).customerNumber(putStoreNumber).customerType(customerType).customerAddress(customerAddress)
+                .linkMan(linkMan).linkMobile(linkMobile)
                 .assetId(iceBox.getAssetId())
                 .boxId(iceBox.getId()).freeType(freeType)
                 .modelId(iceBox.getModelId()).modelName(iceBox.getModelName())
@@ -1015,7 +1075,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .businessDeptId(businessId).businessDeptName(businessName)
                 .regionDeptId(regionId).regionDeptName(regionName)
                 .headquartersDeptId(headquartersId).headquartersDeptName(headquartersName)
-                .backDate(new Date())
+                .backDate(new Date()).province(province).city(city).area(area)
                 .build();
         iceBackApplyReportService.save(report);
         return report;

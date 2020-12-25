@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.cloud.client.HostInfoEnvironmentPostProcessor;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -80,15 +81,27 @@ public class IceBackApplyReport {
     /**
      * 退还客户编号
      */
-    private String backCustomerNumber;
+    private String customerNumber;
     /**
      * 退还客户名称
      */
-    private String backCustomerName;
+    private String customerName;
+    /**
+     * 客户地址
+     */
+    private String customerAddress;
     /**
      * 退还客户类型
      */
-    private Integer backCustomerType;
+    private Integer customerType;
+    /**
+     * 客户联系人
+     */
+    private String linkMan;
+    /**
+     * 客户联系电话
+     */
+    private String linkMobile;
     /**
      * 退还日期
      */
@@ -139,6 +152,24 @@ public class IceBackApplyReport {
      * 押金
      */
     private BigDecimal depositMoney;
+    /**
+     * 提交人id
+     */
+    private Integer submitterId;
+    /**
+     * 提交人名称
+     */
+    private String submitterName;
+    /**
+     * 提交人电话
+     */
+    private String submitterMobile;
+
+    private String province;
+
+    private String city;
+
+    private String area;
     /**
      * 创建时间
      */

@@ -146,6 +146,13 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
                 if (null != selectIceBox) {
                     iceBox.setId(selectIceBox.getId());
+                    if (StringUtils.isNotBlank(storeNumber)) {
+                        String oldPutStoreNumber = selectIceBox.getPutStoreNumber();
+                        if ((null == oldPutStoreNumber || "0".equals(oldPutStoreNumber)) || (!oldPutStoreNumber.equals(storeNumber))) {
+                            // 未投放 变成投放
+                            iceBoxService.changeCustomer(iceBox);
+                        }
+                    }
                     iceBoxDao.updateById(iceBox);
                 } else {
                     iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());

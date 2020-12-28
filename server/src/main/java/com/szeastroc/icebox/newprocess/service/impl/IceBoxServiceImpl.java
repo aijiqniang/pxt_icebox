@@ -140,6 +140,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
@@ -3155,7 +3156,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             }
                             iceBoxPutReportDao.updateById(report);
                         }
-                        icePutOrderService.createByFree(null, iceBox);
+                        ClientInfoRequest clientInfoRequest = new ClientInfoRequest();
+                        clientInfoRequest.setExamineRemark(iceBoxRequest.getExamineRemark());
+                        icePutOrderService.createByFree(clientInfoRequest, iceBox);
                     }
                 }
             }
@@ -3179,6 +3182,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
+                    report.setExamineRemark(iceBoxRequest.getExamineRemark());
                     iceBoxPutReportDao.updateById(report);
                 }
             }

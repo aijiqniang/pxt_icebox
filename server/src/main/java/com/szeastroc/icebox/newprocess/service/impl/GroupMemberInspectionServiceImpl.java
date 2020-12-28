@@ -75,6 +75,9 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
         LambdaQueryWrapper<IceInspectionReport> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(IceInspectionReport::getUserId,userId).eq(IceInspectionReport::getInspectionDate,new DateTime().toString("yyyy-MM"));
         IceInspectionReport one = iceInspectionReportService.getOne(wrapper);
+        if(Objects.isNull(one)){
+            return null;
+        }
         return one.convertInspectionReportVO();
     }
 

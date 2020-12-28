@@ -268,7 +268,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             log.info("发送巡检信息到巡检报表——》【{}】",JSON.toJSONString(report));
             rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, report);
 
-            //巡检报表添加投放数据
+            //巡检报表添加巡检数据
             IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
             reportMsg.setOperateType(2);
             reportMsg.setBoxId(iceExamine.getIceBoxId());
@@ -1663,5 +1663,12 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             iceBoxExamineExceptionReportDao.insert(report);
         }
 
+    }
+
+    @Override
+    public int getExamineCount(Integer boxId) {
+        LambdaQueryWrapper<IceExamine> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(IceExamine::getIceBoxId,boxId).apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'");
+        return this.baseMapper.selectCount(wrapper);
     }
 }

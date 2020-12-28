@@ -30,4 +30,6 @@ public interface IceExamineService extends IService<IceExamine>{
     IceExamineVo findExamineByNumber(String examineNumber);
 
     void syncExamineDataToReport(List<Integer> ids);
+
+    int getExamineCount(Integer boxId);
 }

@@ -172,6 +172,8 @@ public class IceBackApplyReport {
     private String city;
 
     private String area;
+
+    private String reason;
     /**
      * 创建时间
      */

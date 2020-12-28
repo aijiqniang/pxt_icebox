@@ -340,7 +340,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         backApplyReport.setCheckPerson(checkPerson.getRealname());
         backApplyReport.setCheckOfficeName(checkPerson.getPosion());
         backApplyReport.setCheckDate(new Date());
-
+        backApplyReport.setReason(iceBoxRequest.getReason());
         if (status == 0) {
             // 审批中
             IceBackApply iceBackApply = new IceBackApply();

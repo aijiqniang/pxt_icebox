@@ -60,6 +60,7 @@ import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.common.utils.Streams;
+import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
@@ -4721,6 +4722,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 // 创建免押类型投放
                 // 处理申请冰柜流程数据
                 // 创建申请流程
+                // 同步到【投放报表】
                 Integer optUserId = userManageVo.getSessionUserInfoVo().getId();
                 applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
                 IcePutApply icePutApply = IcePutApply.builder()
@@ -4768,10 +4770,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     relateBox.setModelId(iceBox.getModelId());
                     icePutApplyRelateBoxDao.insert(relateBox);
                 }
+
+                saveIceBoxPutReport(iceBox, applyNumber, newPutStoreNumber); // 同步到冰柜投放报表
                 isPush = true;
             } else if (PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) {
                 // 已投放的门店变更  查询是否有投放流程相关的数据 然后变更数据
                 // 查询是否存在了 投放相关的流程数据 (可能会没有)
+                // 修改【投放报表】
                 IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, iceBox.getId()));
                 String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
                 applyNumber = lastApplyNumber;
@@ -4793,12 +4798,30 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         applyRelatePutStoreModelDao.update(null, Wrappers.<ApplyRelatePutStoreModel>lambdaUpdate()
                                 .eq(ApplyRelatePutStoreModel::getId, applyRelatePutStoreModel.getId())
                                 .set(ApplyRelatePutStoreModel::getFreeType, FreePayTypeEnum.IS_FREE.getType()));
+
+                        // 修改【投放报表】
+                        //获取门店信息
+                        IceBoxCustomerVo iceBoxCustomerVo = this.getIceBoxCustomerVo(newPutStoreNumber);
+                        iceBoxPutReportDao.update(null, Wrappers.<IceBoxPutReport>lambdaUpdate()
+                                .eq(IceBoxPutReport::getApplyNumber, lastApplyNumber)
+                                .set(IceBoxPutReport::getFreeType, FreePayTypeEnum.IS_FREE.getType())
+                                .set(IceBoxPutReport::getPutCustomerNumber, newPutStoreNumber)
+                                .set(IceBoxPutReport::getPutCustomerName, iceBoxCustomerVo.getCustomerName())
+                                .set(IceBoxPutReport::getPutCustomerType, iceBoxCustomerVo.getSupplierType())
+                                .set(IceBoxPutReport::getSubmitterId, iceBoxCustomerVo.getMainSalesmanId())
+                                .set(IceBoxPutReport::getSubmitterName, iceBoxCustomerVo.getMainSalesmanName())
+                        );
                     }
                 }
                 isPush = true;
             }
             if (isPush) {
-                //推送签收信息
+                // 将旧商户的签收信息设置为【已签收】
+                oldIceBoxSignNoticeDao.update(null, Wrappers.<OldIceBoxSignNotice>lambdaUpdate()
+                        .eq(OldIceBoxSignNotice::getApplyNumber, applyNumber)
+                        .set(OldIceBoxSignNotice::getStatus, OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus()));
+
+                // 推送签收信息
                 OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
                 oldIceBoxSignNotice.setApplyNumber(applyNumber);
                 oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
@@ -4809,4 +4832,114 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
     }
+
+    /**
+     * 插入冰柜投放报表
+     * @param iceBox 冰柜信息
+     * @param applyNumber 申请流程ID
+     * @param putStoreNumber 投放客户编号
+     */
+    private void saveIceBoxPutReport(IceBox iceBox, String applyNumber, String putStoreNumber){
+        IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+        //获取客户信息信息
+        IceBoxCustomerVo iceBoxCustomerVo = this.getIceBoxCustomerVo(putStoreNumber);
+        report.setPutCustomerType(iceBoxCustomerVo.getSupplierType());
+        report.setSubmitterId(iceBoxCustomerVo.getMainSalesmanId());
+        report.setSubmitterName(iceBoxCustomerVo.getMainSalesmanName());
+        report.setPutCustomerNumber(putStoreNumber);
+        report.setPutCustomerName(iceBoxCustomerVo.getCustomerName());
+
+        //获取部门信息
+        Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(iceBoxCustomerVo.getMarketArea()));
+        SessionDeptInfoVo group = deptInfoVoMap.get(1);
+        if (group != null) {
+            report.setGroupDeptId(group.getId());
+            report.setGroupDeptName(group.getName());
+        }
+
+        SessionDeptInfoVo service = deptInfoVoMap.get(2);
+        if (service != null) {
+            report.setServiceDeptId(service.getId());
+            report.setServiceDeptName(service.getName());
+        }
+
+        SessionDeptInfoVo region = deptInfoVoMap.get(3);
+        if (region != null) {
+            report.setRegionDeptId(region.getId());
+            report.setRegionDeptName(region.getName());
+        }
+
+        SessionDeptInfoVo business = deptInfoVoMap.get(4);
+        if (business != null) {
+            report.setBusinessDeptId(business.getId());
+            report.setBusinessDeptName(business.getName());
+        }
+
+        SessionDeptInfoVo headquarters = deptInfoVoMap.get(5);
+        if (headquarters != null) {
+            report.setHeadquartersDeptId(headquarters.getId());
+            report.setHeadquartersDeptName(headquarters.getName());
+        }
+
+        report.setApplyNumber(applyNumber);
+        report.setFreeType(FreePayTypeEnum.IS_FREE.getType());
+        report.setIceBoxModelId(iceBox.getModelId());
+        report.setIceBoxModelName(iceBox.getModelName());
+        report.setIceBoxId(iceBox.getId());
+        report.setIceBoxAssetId(iceBox.getAssetId());
+        SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
+        report.setSupplierId(iceBox.getSupplierId());
+        if (supplier != null) {
+            report.setSupplierNumber(supplier.getNumber());
+            report.setSupplierName(supplier.getName());
+        }
+
+        report.setSubmitTime(new Date());
+        report.setOperateType(OperateTypeEnum.INSERT.getType());
+        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+    }
+
+    /**
+     * 获取客户信息
+     * @param putStoreNumber
+     * @return
+     */
+    private IceBoxCustomerVo getIceBoxCustomerVo(String putStoreNumber){
+        IceBoxCustomerVo iceBoxCustomerVo = new IceBoxCustomerVo();
+        Integer marketArea = null;
+        String customerName = "";
+        Integer supplierType = null;
+        Integer mainSaleManId = null;
+        String mainSaleManName = "";
+
+        //判断客户类型
+        StoreInfoDtoVo storeInfoDtoVo = feignStoreClient.getByStoreNumber(putStoreNumber).getData();
+        if (!Objects.isNull(storeInfoDtoVo)){
+            // 门店
+            marketArea = storeInfoDtoVo.getMarketArea();
+            customerName = storeInfoDtoVo.getStoreName();
+            supplierType = SupplierTypeEnum.IS_STORE.getType();
+            mainSaleManId = storeInfoDtoVo.getMainSaleManId();
+            mainSaleManName = storeInfoDtoVo.getMainSaleManName();
+        } else {
+            // 非门店
+            SubordinateInfoVo subordinateInfoVo = feignSupplierClient.findByNumber(putStoreNumber).getData();
+            marketArea = subordinateInfoVo.getMarketAreaId();
+            customerName = subordinateInfoVo.getName();
+            supplierType = subordinateInfoVo.getSupplierType();
+
+            mainSaleManId = feignSupplierClient.getMainSaleManId(putStoreNumber).getData();
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(mainSaleManId));
+            if (userInfoVo != null) {
+                mainSaleManName = userInfoVo.getRealname();
+            }
+        }
+        iceBoxCustomerVo.setCustomerName(customerName);
+        iceBoxCustomerVo.setMarketArea(marketArea);
+        iceBoxCustomerVo.setMainSalesmanId(mainSaleManId);
+        iceBoxCustomerVo.setMainSalesmanName(mainSaleManName);
+        iceBoxCustomerVo.setSupplierType(supplierType);
+        return iceBoxCustomerVo;
+    }
+
 }

@@ -351,11 +351,6 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             report.setOperateType(OperateTypeEnum.UPDATE.getType());
             rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
 
-            //巡检报表添加投放数据
-            IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-            reportMsg.setOperateType(1);
-            reportMsg.setBoxId(iceBox.getId());
-            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
         }, ExecutorServiceFactory.getInstance());
 
         IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, icePutApply.getApplyNumber()));
@@ -364,6 +359,11 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             transferRecord.setUpdateTime(new Date());
             iceTransferRecordDao.updateById(transferRecord);
         }
+        //巡检报表添加投放数据
+        IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+        reportMsg.setOperateType(1);
+        reportMsg.setBoxId(iceBox.getId());
+        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
     }
 
     @Override
@@ -493,11 +493,6 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 report.setOperateType(OperateTypeEnum.UPDATE.getType());
                 rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
 
-                //巡检报表添加投放数据
-                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                reportMsg.setOperateType(1);
-                reportMsg.setBoxId(iceBox.getId());
-                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
             }, ExecutorServiceFactory.getInstance());
 
 //            LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
@@ -516,6 +511,11 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             // 新的 冰柜状态/投放状态
             JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"getPayStatus");
             rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+            //巡检报表添加投放数据
+            IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+            reportMsg.setOperateType(1);
+            reportMsg.setBoxId(iceBox.getId());
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
         }
 
         return flag;

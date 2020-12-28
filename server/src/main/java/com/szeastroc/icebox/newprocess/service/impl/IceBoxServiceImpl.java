@@ -4210,10 +4210,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Integer newStatus = iceBox.getStatus();
         //判断报废 遗失 巡检报表增加报废遗失数量
         if(IceBoxEnums.StatusEnum.LOSE.equals(newStatus)||IceBoxEnums.StatusEnum.SCRAP.equals(newStatus)){
-            IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-            reportMsg.setOperateType(5);
-            reportMsg.setBoxId(iceBoxId);
-            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                    reportMsg.setOperateType(5);
+                    reportMsg.setBoxId(iceBoxId);
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                }
+            });
+
         }
         Integer oldStatus = oldIceBox.getStatus();
 

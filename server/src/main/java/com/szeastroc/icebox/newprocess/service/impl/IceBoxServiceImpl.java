@@ -2952,6 +2952,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     PutStoreRelateModel putStoreRelateModel = PutStoreRelateModel.builder()
                             .id(storeRelateModelId)
                             .examineStatus(ExamineStatus.DOING_EXAMINE.getStatus())
+                            .examineRemark(iceBoxRequest.getExamineRemark())
                             .updateTime(new Date())
                             .build();
                     putStoreRelateModelDao.updateById(putStoreRelateModel);
@@ -2990,6 +2991,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
+                    putReport.setExamineRemark(iceBoxRequest.getExamineRemark());
                     iceBoxPutReportDao.updateById(report);
                 }
             }
@@ -3012,6 +3014,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             .id(storeRelateModelId)
                             .putStatus(IceBoxStatus.NO_PUT.getStatus())
                             .examineStatus(ExamineStatus.REJECT_EXAMINE.getStatus())
+                            .examineRemark(iceBoxRequest.getExamineRemark())
                             .updateTime(new Date())
                             .build();
                     putStoreRelateModelDao.updateById(putStoreRelateModel);
@@ -3033,6 +3036,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
+                    putReport.setExamineRemark(iceBoxRequest.getExamineRemark());
                     iceBoxPutReportDao.updateById(report);
                 }
             }
@@ -3077,6 +3081,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
                 putStoreRelateModel.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
                 putStoreRelateModel.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
+                putStoreRelateModel.setExamineRemark(iceBoxRequest.getExamineRemark());
                 putStoreRelateModel.setUpdateTime(new Date());
                 putStoreRelateModelDao.updateById(putStoreRelateModel);
                 //旧冰柜发送签收通知
@@ -3143,6 +3148,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             report.setIceBoxAssetId(iceBox.getAssetId());
                             report.setExamineTime(new Date());
                             report.setExamineUserId(iceBoxRequest.getUpdateBy());
+                            report.setExamineRemark(iceBoxRequest.getExamineRemark());
                             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
                             if (userInfoVo != null) {
                                 report.setExamineUserName(userInfoVo.getRealname());

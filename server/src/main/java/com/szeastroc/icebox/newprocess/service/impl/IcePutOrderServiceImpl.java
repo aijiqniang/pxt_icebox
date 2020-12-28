@@ -60,6 +60,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -261,12 +263,16 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"createByFree");
         rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
-
-        //巡检报表添加投放数据
-        IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-        reportMsg.setOperateType(1);
-        reportMsg.setBoxId(iceBox.getId());
-        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCommit() {
+                //巡检报表添加投放数据
+                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                reportMsg.setOperateType(1);
+                reportMsg.setBoxId(iceBox.getId());
+                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+            }
+        });
         return orderPayResponse;
     }
 

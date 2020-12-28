@@ -68,7 +68,7 @@ public class IceBoxPutReportConsumer {
         log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
         String[] columnName = {"事业部","大区","服务处", "流程编号", "所属经销商编号", "所属经销商名称", "提交人","提交日期", "投放客户编号", "投放客户名称","投放客户类型", "冰柜型号","冰柜编号", "是否免押", "押金金额", "审核人员",
-                "审核日期", "投放状态"};
+                "审核日期","审批备注", "投放状态"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -135,7 +135,8 @@ public class IceBoxPutReportConsumer {
                                     eachDataRow.createCell(14).setCellValue(excelVo.getDepositMoney()+"");
                                     eachDataRow.createCell(15).setCellValue(excelVo.getExamineUserName());
                                     eachDataRow.createCell(16).setCellValue(excelVo.getExamineTime());
-                                    eachDataRow.createCell(17).setCellValue(excelVo.getPutStatus());
+                                    eachDataRow.createCell(17).setCellValue(excelVo.getExamineRemark());
+                                    eachDataRow.createCell(18).setCellValue(excelVo.getPutStatus());
                                 }
                             }
                         }

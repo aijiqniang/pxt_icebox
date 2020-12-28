@@ -223,7 +223,7 @@ public class IceInspectionReportConsumer {
      */
     private void increaseInspectionCount(IceInspectionReportMsg reportMsg) {
         int examineCount = iceExamineService.getExamineCount(reportMsg.getBoxId());
-        if(0==examineCount){
+        if(examineCount<=1){
             IceBox iceBox = iceBoxService.getById(reportMsg.getBoxId());
             String storeNumber = iceBox.getPutStoreNumber();
             Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(storeNumber));

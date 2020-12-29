@@ -1394,6 +1394,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         examineModel.setDisplayImage(iceExamineVo.getDisplayImage());
         examineModel.setExaminMsg(iceExamineVo.getExaminMsg());
         examineModel.setExteriorImage(iceExamineVo.getExteriorImage());
+        examineModel.setAssetImage(iceExamineVo.getAssetImage());
         examineModel.setIceBoxModel(isExist.getModelName());
         examineModel.setIceBoxName(isExist.getChestName());
         examineModel.setIceStatus(iceExamineVo.getIceStatus());

@@ -183,7 +183,7 @@ public class IceBoxExamineExceptionReportConsumer {
                             BeanUtils.copyProperties(report,excelVo);
                             IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getExamineNumber, report.getExamineNumber()));
                             if(iceExamine != null){
-                                excelVo.setImageUrl(iceExamine.getDisplayImage()+","+iceExamine.getExteriorImage());
+                                excelVo.setImageUrl(iceExamine.getDisplayImage()+","+iceExamine.getExteriorImage()+","+iceExamine.getAssetImage());
                                 excelVo.setExaminMsg(iceExamine.getExaminMsg());
                             }
                             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));

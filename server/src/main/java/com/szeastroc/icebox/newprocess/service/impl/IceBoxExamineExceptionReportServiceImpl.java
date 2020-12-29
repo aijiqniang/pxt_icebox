@@ -182,6 +182,7 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
 //                String exteriorImage = StringUtils.isEmpty(iceExamine.getExteriorImage())?"":iceExamine.getExteriorImage().replace("http","https");
                 examineVo.setDisplayImage(iceExamine.getDisplayImage());
                 examineVo.setExteriorImage(iceExamine.getExteriorImage());
+                examineVo.setAssetImage(iceExamine.getAssetImage());
                 examineVo.setExaminMsg(iceExamine.getExaminMsg());
             }
             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));

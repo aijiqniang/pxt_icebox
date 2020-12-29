@@ -68,6 +68,11 @@ public class IceExamineVo {
     private String displayImage;
 
     /**
+     * 资产编号照片的URL
+     */
+    private String assetImage;
+
+    /**
      * 创建人
      */
 

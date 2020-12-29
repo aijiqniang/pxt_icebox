@@ -93,6 +93,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     @Autowired
     private IceBoxService iceBoxService;
 
+    @Transactional
     @Override
     public OrderPayResponse applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
 
@@ -262,17 +263,22 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         OrderPayResponse orderPayResponse = new OrderPayResponse(FreePayTypeEnum.IS_FREE.getType());
 
         JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"createByFree");
-        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            @Override
-            public void afterCommit() {
-                //巡检报表添加投放数据
-                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                reportMsg.setOperateType(1);
-                reportMsg.setBoxId(iceBox.getId());
-                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
-            }
-        });
+
+        boolean actualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
+        if(actualTransactionActive){
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                    //巡检报表添加投放数据
+                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                    reportMsg.setOperateType(1);
+                    reportMsg.setBoxId(iceBox.getId());
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+
+                }
+            });
+        }
         return orderPayResponse;
     }
 

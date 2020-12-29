@@ -231,13 +231,17 @@ public class IceBoxExamineExceptionReportConsumer {
         if(reportMsg.getExamineUserId() != null){
             isExsit.setExamineUserId(reportMsg.getExamineUserId());
         }
-
         if(StringUtils.isNotEmpty(reportMsg.getExamineUserName())){
             isExsit.setExamineUserName(reportMsg.getExamineUserName());
         }
-
         if(reportMsg.getExamineTime() != null){
             isExsit.setExamineTime(reportMsg.getExamineTime());
+        }
+        if(reportMsg.getExamineUserOfficeName()!=null){
+            isExsit.setExamineUserOfficeName(reportMsg.getExamineUserOfficeName());
+        }
+        if(reportMsg.getExamineRemark()!=null){
+            isExsit.setExamineRemark(reportMsg.getExamineRemark());
         }
 
         iceBoxExamineExceptionReportService.updateById(isExsit);

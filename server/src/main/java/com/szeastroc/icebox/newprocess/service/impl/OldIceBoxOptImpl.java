@@ -28,6 +28,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
@@ -293,11 +295,25 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 //                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
                     iceBox.setStatus(IceBoxEnums.StatusEnum.SCRAP.getType());
                     iceBoxDao.updateById(iceBox);
-                    // 报废
-                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                    reportMsg.setOperateType(5);
-                    reportMsg.setBoxId(iceBox.getId());
-                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                    Integer boxId = iceBox.getId();
+                    if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                            @Override
+                            public void afterCommit() {
+                                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                                    @Override
+                                    public void afterCommit() {
+                                        //报废
+                                        IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                                        reportMsg.setOperateType(5);
+                                        reportMsg.setBoxId(boxId);
+                                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                                    }
+                                });
+                            }
+                        });
+                    }
+
                 } else {
                     // 新增冰柜至数据库
                     // 导入冰柜参数限制较多，需要多重校验
@@ -341,13 +357,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
-                    //报废
-                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                    reportMsg.setOperateType(5);
-                    reportMsg.setBoxId(iceBox.getId());
-                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
                 }
-
                 // 新的 冰柜状态/投放状态
                 JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜报废");
                 return jsonObject;
@@ -388,11 +398,24 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
                     iceBox.setStatus(IceBoxEnums.StatusEnum.LOSE.getType());
                     iceBoxDao.updateById(iceBox);
-                    //遗失
-                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                    reportMsg.setOperateType(5);
-                    reportMsg.setBoxId(iceBox.getId());
-                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                    Integer boxId = iceBox.getId();
+                    if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                            @Override
+                            public void afterCommit() {
+                                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                                    @Override
+                                    public void afterCommit() {
+                                        //报废
+                                        IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                                        reportMsg.setOperateType(5);
+                                        reportMsg.setBoxId(boxId);
+                                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                                    }
+                                });
+                            }
+                        });
+                    }
                 } else {
                     // 新增冰柜至数据库
                     // 导入冰柜参数限制较多，需要多重校验
@@ -435,11 +458,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
-                    //遗失
-                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                    reportMsg.setOperateType(5);
-                    reportMsg.setBoxId(iceBox.getId());
-                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
                 }
 
                 // 新的 冰柜状态/投放状态

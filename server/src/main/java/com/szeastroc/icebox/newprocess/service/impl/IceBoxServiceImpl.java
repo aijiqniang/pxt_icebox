@@ -2953,10 +2953,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     PutStoreRelateModel putStoreRelateModel = PutStoreRelateModel.builder()
                             .id(storeRelateModelId)
                             .examineStatus(ExamineStatus.DOING_EXAMINE.getStatus())
-                            .examineRemark(iceBoxRequest.getExamineRemark())
                             .updateTime(new Date())
                             .build();
-                    putStoreRelateModelDao.updateById(putStoreRelateModel);
+                    putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                            .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                            .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 }
             }
 
@@ -2992,8 +2993,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
-                    putReport.setExamineRemark(iceBoxRequest.getExamineRemark());
-                    iceBoxPutReportDao.updateById(report);
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 }
             }
         }
@@ -3015,10 +3017,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             .id(storeRelateModelId)
                             .putStatus(IceBoxStatus.NO_PUT.getStatus())
                             .examineStatus(ExamineStatus.REJECT_EXAMINE.getStatus())
-                            .examineRemark(iceBoxRequest.getExamineRemark())
                             .updateTime(new Date())
                             .build();
-                    putStoreRelateModelDao.updateById(putStoreRelateModel);
+                    putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                            .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                            .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 }
             }
 
@@ -3037,8 +3040,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
-                    putReport.setExamineRemark(iceBoxRequest.getExamineRemark());
-                    iceBoxPutReportDao.updateById(report);
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 }
             }
             //发送mq消息,同步申请数据到报表
@@ -3082,9 +3086,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
                 putStoreRelateModel.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
                 putStoreRelateModel.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
-                putStoreRelateModel.setExamineRemark(iceBoxRequest.getExamineRemark());
                 putStoreRelateModel.setUpdateTime(new Date());
-                putStoreRelateModelDao.updateById(putStoreRelateModel);
+                putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                        .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                        .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 //旧冰柜发送签收通知
                 IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, putStoreRelateModel.getModelId())
                         .eq(IceBox::getSupplierId, putStoreRelateModel.getSupplierId())
@@ -3149,16 +3154,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             report.setIceBoxAssetId(iceBox.getAssetId());
                             report.setExamineTime(new Date());
                             report.setExamineUserId(iceBoxRequest.getUpdateBy());
-                            report.setExamineRemark(iceBoxRequest.getExamineRemark());
                             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
                             if (userInfoVo != null) {
                                 report.setExamineUserName(userInfoVo.getRealname());
                             }
-                            iceBoxPutReportDao.updateById(report);
+                            iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                                    .eq(IceBoxPutReport::getId,report.getId())
+                                    .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark()));
                         }
-                        ClientInfoRequest clientInfoRequest = new ClientInfoRequest();
-                        clientInfoRequest.setExamineRemark(iceBoxRequest.getExamineRemark());
-                        icePutOrderService.createByFree(clientInfoRequest, iceBox);
+                        icePutOrderService.createByFree(null, iceBox);
                     }
                 }
             }
@@ -3183,7 +3187,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
                     report.setExamineRemark(iceBoxRequest.getExamineRemark());
-                    iceBoxPutReportDao.updateById(report);
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 }
             }
             //发送mq消息,同步申请数据到报表

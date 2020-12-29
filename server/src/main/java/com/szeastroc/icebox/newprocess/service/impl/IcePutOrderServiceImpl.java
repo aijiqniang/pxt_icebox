@@ -221,9 +221,6 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 log.info("处理不需要审批的冰柜信息,applyRelatePutStoreModel---》【{}】", JSON.toJSONString(applyRelatePutStoreModel));
                 if (applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())) {
                     relateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
-                    if(StringUtils.isNotEmpty(clientInfoRequest.getExamineRemark())){
-                        relateModel.setExamineRemark(clientInfoRequest.getExamineRemark());
-                    }
                     relateModel.setUpdateTime(new Date());
                     putStoreRelateModelDao.updateById(relateModel);
                     IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
@@ -266,9 +263,6 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                             .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                     if(putReport != null){
                         putReport.setPutStatus(reportMsg.getPutStatus());
-                        if(StringUtils.isNotEmpty(clientInfoRequest.getExamineRemark())){
-                            putReport.setExamineRemark(clientInfoRequest.getExamineRemark());
-                        }
                         iceBoxPutReportDao.updateById(putReport);
                     }
                     //发送mq消息,同步申请数据到报表

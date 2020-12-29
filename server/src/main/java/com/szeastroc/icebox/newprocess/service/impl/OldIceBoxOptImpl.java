@@ -300,16 +300,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                             @Override
                             public void afterCommit() {
-                                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                                    @Override
-                                    public void afterCommit() {
-                                        //报废
-                                        IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                                        reportMsg.setOperateType(5);
-                                        reportMsg.setBoxId(boxId);
-                                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
-                                    }
-                                });
+                                //报废
+                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                                reportMsg.setOperateType(5);
+                                reportMsg.setBoxId(boxId);
+                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
                             }
                         });
                     }
@@ -403,16 +398,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                             @Override
                             public void afterCommit() {
-                                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                                    @Override
-                                    public void afterCommit() {
-                                        //报废
-                                        IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                                        reportMsg.setOperateType(5);
-                                        reportMsg.setBoxId(boxId);
-                                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
-                                    }
-                                });
+                                //报废
+                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                                reportMsg.setOperateType(5);
+                                reportMsg.setBoxId(boxId);
+                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
                             }
                         });
                     }

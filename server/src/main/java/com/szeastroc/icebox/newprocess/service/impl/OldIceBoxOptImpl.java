@@ -393,19 +393,19 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
                     iceBox.setStatus(IceBoxEnums.StatusEnum.LOSE.getType());
                     iceBoxDao.updateById(iceBox);
-                    Integer boxId = iceBox.getId();
-                    if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
-                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                            @Override
-                            public void afterCommit() {
-                                //报废
-                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                                reportMsg.setOperateType(5);
-                                reportMsg.setBoxId(boxId);
-                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
-                            }
-                        });
-                    }
+//                    Integer boxId = iceBox.getId();
+//                    if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
+//                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+//                            @Override
+//                            public void afterCommit() {
+//                                //报废
+//                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+//                                reportMsg.setOperateType(5);
+//                                reportMsg.setBoxId(boxId);
+//                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+//                            }
+//                        });
+//                    }
                 } else {
                     // 新增冰柜至数据库
                     // 导入冰柜参数限制较多，需要多重校验

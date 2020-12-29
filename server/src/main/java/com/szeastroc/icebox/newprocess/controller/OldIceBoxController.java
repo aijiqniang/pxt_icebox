@@ -203,7 +203,7 @@ public class OldIceBoxController {
      * @throws ImproperOptionException
      */
     @RequestMapping("/importOrUpdate")
-    public CommonResponse<Void> importOrUpdate(@RequestParam("file") MultipartFile file) throws IOException, ImproperOptionException {
+    public CommonResponse<Void> importOrUpdate(@RequestParam("excelFile") MultipartFile file) throws IOException, ImproperOptionException {
 
         log.info("开始读取数据");
         List<OldIceBoxImportVo> oldIceBoxImportVoList = EasyExcel.read(file.getInputStream()).head(OldIceBoxImportVo.class).sheet().doReadSync();

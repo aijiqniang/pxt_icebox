@@ -4775,8 +4775,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             return 0;
         }
         LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
-        iceBoxWrapper.between(IceBox::getStatus,IceBoxEnums.StatusEnum.SCRAP,IceBoxEnums.StatusEnum.LOSE);
-        iceBoxWrapper.in(IceBox::getId, putBoxIds);
+        iceBoxWrapper.in(IceBox::getStatus,IceBoxEnums.StatusEnum.SCRAP.getType(),IceBoxEnums.StatusEnum.LOSE.getType())
+                .in(IceBox::getId, putBoxIds);
         return iceBoxDao.selectCount(iceBoxWrapper);
     }
 

@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -35,6 +36,7 @@ import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 public class OldIceBoxOptImpl implements OldIceBoxOpt {
@@ -53,7 +55,9 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
     @Autowired
     private IceBoxService iceBoxService;
     @Autowired
-    RabbitTemplate rabbitTemplate;
+    private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
 
     @Override
@@ -74,7 +78,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             if (item == null) {
                 continue;
             }
-            JSONObject jsonObject = item.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao, iceBoxService,rabbitTemplate);
+            JSONObject jsonObject = item.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao, iceBoxService,rabbitTemplate,feignStoreClient);
             lists.add(jsonObject);
         }
         return lists;
@@ -87,7 +91,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate) {
+                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient) {
                 // 导入冰柜参数限制较多，需要多重校验
                 IceBox iceBox = new IceBox();
                 IceBoxExtend iceBoxExtend = new IceBoxExtend();
@@ -182,7 +186,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate) {
+                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient) {
 
                 // 退仓需要指定经销商
                 // 资产编号
@@ -207,7 +211,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 服务处信息查询有误，请核对服务处名称");
                 }
                 IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId));
-
+                String storeNumber = iceBox.getPutStoreNumber();
                 if (null != iceBox) {
                     Integer oldStatus = iceBox.getPutStatus();
                     // 更新冰柜状态及经销商信息
@@ -221,11 +225,18 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                             @Override
                             public void afterCommit() {
-                                //报废
-                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                                reportMsg.setOperateType(6);
-                                reportMsg.setBoxId(boxId);
-                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                                Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(storeNumber));
+                                if (Objects.isNull(userId)) {
+                                    userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(storeNumber));
+                                }
+                                if(Objects.nonNull(userId)){
+                                    //退仓
+                                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                                    reportMsg.setOperateType(6);
+                                    reportMsg.setUserId(userId);
+                                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                                }
+
                             }
                         });
                     }
@@ -278,7 +289,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate
+                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient
             ) {
 
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
@@ -381,7 +392,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate) {
+                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient) {
 
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
                 String assetId = oldIceBoxImportVo.getAssetId();
@@ -494,7 +505,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
         abstract public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao,
                                              IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient,
                                              FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                             IceBoxService iceBoxService,RabbitTemplate rabbitTemplate);
+                                             IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient);
 
     }
 

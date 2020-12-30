@@ -363,12 +363,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                     public void afterCommit() {
                         // 发送mq消息
                         rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
-                        // 冰柜退还 减少巡检报表投放数量
-                        IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                        reportMsg.setOperateType(6);
-                        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
-                        reportMsg.setBoxId(iceBackApplyRelateBox.getBoxId());
-                        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
                     }
                 });
             }
@@ -798,6 +792,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         Integer iceBoxId = iceBackApplyRelateBox.getBoxId();
         IceBox iceBox = iceBoxDao.selectById(iceBoxId);
+        String storeNumber = iceBox.getPutStoreNumber();
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
 
@@ -891,6 +886,20 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         log.info("转账服务返回的数据-->[{}]", JSON.toJSONString(transferReponse, true));
 
         JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"doTransfer");
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCommit() {
+            // 冰柜退还 减少巡检报表投放数量
+            Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(storeNumber));
+            if (Objects.isNull(userId)) {
+                userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(storeNumber));
+            }
+            IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+            reportMsg.setOperateType(6);
+            reportMsg.setUserId(userId);
+                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+            }
+        });
         return jsonObject;
     }
 

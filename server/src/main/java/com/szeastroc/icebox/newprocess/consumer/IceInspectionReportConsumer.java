@@ -142,18 +142,13 @@ public class IceInspectionReportConsumer {
      * @param reportMsg
      */
     private void decreasePutCount(IceInspectionReportMsg reportMsg) {
-        IceBox iceBox = iceBoxService.getById(reportMsg.getBoxId());
-        String storeNumber = iceBox.getPutStoreNumber();
-        Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(storeNumber));
-        if (Objects.isNull(userId)) {
-            userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(storeNumber));
-        }
-        if (Objects.nonNull(userId)) {
-            IceInspectionReport currentMonthReport = iceInspectionReportService.getCurrentMonthReport(userId);
-            if (Objects.nonNull(currentMonthReport)) {
-                currentMonthReport.setPutCount(currentMonthReport.getPutCount() - 1);
-                iceInspectionReportService.updateById(currentMonthReport);
-            }
+        IceInspectionReport currentMonthReport = iceInspectionReportService.getCurrentMonthReport(reportMsg.getUserId());
+        if (Objects.nonNull(currentMonthReport)) {
+            List<Integer> putBoxIds = iceBoxService.getPutBoxIds(reportMsg.getUserId());
+            currentMonthReport.setPutCount(putBoxIds.size());
+            int lostScrapCount = iceBoxService.getLostScrapCount(putBoxIds);
+            currentMonthReport.setLostScrapCount(lostScrapCount);
+            iceInspectionReportService.updateById(currentMonthReport);
         }
     }
 

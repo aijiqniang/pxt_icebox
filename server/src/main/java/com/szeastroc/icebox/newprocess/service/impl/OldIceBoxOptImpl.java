@@ -204,12 +204,26 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId));
 
                 if (null != iceBox) {
+                    Integer oldStatus = iceBox.getPutStatus();
                     // 更新冰柜状态及经销商信息
                     iceBox.setDeptId(serviceDeptId);
                     iceBox.setSupplierId(subordinateInfoVo.getSupplierId());
                     iceBox.setPutStoreNumber("0");
                     iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
                     iceBoxDao.updateById(iceBox);
+                    Integer boxId = iceBox.getId();
+                    if(PutStatus.FINISH_PUT.getStatus().equals(oldStatus)){
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                            @Override
+                            public void afterCommit() {
+                                //报废
+                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                                reportMsg.setOperateType(6);
+                                reportMsg.setBoxId(boxId);
+                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                            }
+                        });
+                    }
                 } else {
                     // 新增冰柜至数据库
                     // 导入冰柜参数限制较多，需要多重校验
@@ -295,19 +309,19 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 //                    iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
                     iceBox.setStatus(IceBoxEnums.StatusEnum.SCRAP.getType());
                     iceBoxDao.updateById(iceBox);
-//                    Integer boxId = iceBox.getId();
-//                    if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
-//                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-//                            @Override
-//                            public void afterCommit() {
-//                                //报废
-//                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-//                                reportMsg.setOperateType(5);
-//                                reportMsg.setBoxId(boxId);
-//                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
-//                            }
-//                        });
-//                    }
+                    Integer boxId = iceBox.getId();
+                    if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                            @Override
+                            public void afterCommit() {
+                                //报废
+                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                                reportMsg.setOperateType(5);
+                                reportMsg.setBoxId(boxId);
+                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                            }
+                        });
+                    }
 
                 } else {
                     // 新增冰柜至数据库
@@ -393,19 +407,19 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
                     iceBox.setStatus(IceBoxEnums.StatusEnum.LOSE.getType());
                     iceBoxDao.updateById(iceBox);
-//                    Integer boxId = iceBox.getId();
-//                    if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
-//                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-//                            @Override
-//                            public void afterCommit() {
-//                                //报废
-//                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-//                                reportMsg.setOperateType(5);
-//                                reportMsg.setBoxId(boxId);
-//                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
-//                            }
-//                        });
-//                    }
+                    Integer boxId = iceBox.getId();
+                    if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                            @Override
+                            public void afterCommit() {
+                                //报废
+                                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                                reportMsg.setOperateType(5);
+                                reportMsg.setBoxId(boxId);
+                                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                            }
+                        });
+                    }
                 } else {
                     // 新增冰柜至数据库
                     // 导入冰柜参数限制较多，需要多重校验

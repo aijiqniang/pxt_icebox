@@ -163,13 +163,18 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
                 // 新的 冰柜状态/投放状态
                 JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜入库");
-                if(iceBox.getPutStatus().equals(PutStatus.FINISH_PUT.getStatus())){
-                    //巡检报表添加投放数据
-                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                    reportMsg.setOperateType(1);
-                    reportMsg.setBoxId(iceBox.getId());
-                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
-                }
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                      @Override
+                      public void afterCommit() {
+                          if (iceBox.getPutStatus().equals(PutStatus.FINISH_PUT.getStatus())) {
+                              //巡检报表添加投放数据
+                              IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                              reportMsg.setOperateType(1);
+                              reportMsg.setBoxId(iceBox.getId());
+                              rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey, reportMsg);
+                          }
+                      }
+                });
                 return jsonObject;
             }
         },

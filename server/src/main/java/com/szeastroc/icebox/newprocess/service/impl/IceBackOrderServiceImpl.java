@@ -1030,27 +1030,21 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(putStoreNumber));
         String linkMan;
         String linkMobile;
-        String province="";
-        String city="";
-        String area="";
+        String province=null;
+        String city=null;
+        String area=null;
+        String provinceCode = null;
+        String cityCode = null;
+        String districtCode = null;
         if(Objects.nonNull(supplierInfoSessionVo)){
             customerName = supplierInfoSessionVo.getName();
             customerType = supplierInfoSessionVo.getSupplierType();
             customerAddress = supplierInfoSessionVo.getAddress();
             linkMan = supplierInfoSessionVo.getLinkMan();
             linkMobile = supplierInfoSessionVo.getLinkManMobile();
-            BaseDistrictVO provinceDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getProvinceCode()));
-            if(Objects.nonNull(provinceDistrict)){
-                province= provinceDistrict.getName();
-            }
-            BaseDistrictVO cityDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getCityCode()));
-            if(Objects.nonNull(cityDistrict)){
-                city= cityDistrict.getName();
-            }
-            BaseDistrictVO areaDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getRegionCode()));
-            if(Objects.nonNull(areaDistrict)){
-                area= areaDistrict.getName();
-            }
+            provinceCode = supplierInfoSessionVo.getProvinceCode();
+            cityCode = supplierInfoSessionVo.getCityCode();
+            districtCode = supplierInfoSessionVo.getRegionCode();
         }else{
             StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(putStoreNumber));
             customerName = store.getStoreName();
@@ -1059,19 +1053,29 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             MemberInfoVo member = FeignResponseUtil.getFeignData(feignStoreRelateMemberClient.getShopKeeper(putStoreNumber));
             linkMan = member.getName();
             linkMobile = member.getMobile();
-            BaseDistrictVO provinceDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(store.getProvinceCode()));
+            provinceCode = store.getProvinceCode();
+            cityCode = store.getCityCode();
+            districtCode = store.getDistrictCode();
+        }
+        if(StringUtils.isNotBlank(provinceCode)){
+            BaseDistrictVO provinceDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getProvinceCode()));
             if(Objects.nonNull(provinceDistrict)){
                 province= provinceDistrict.getName();
             }
-            BaseDistrictVO cityDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(store.getCityCode()));
+        }
+        if(StringUtils.isNotBlank(cityCode)){
+            BaseDistrictVO cityDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getCityCode()));
             if(Objects.nonNull(cityDistrict)){
                 city= cityDistrict.getName();
             }
-            BaseDistrictVO areaDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(store.getDistrictCode()));
+        }
+        if(StringUtils.isNotBlank(districtCode)){
+            BaseDistrictVO areaDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getRegionCode()));
             if(Objects.nonNull(areaDistrict)){
                 area= areaDistrict.getName();
             }
         }
+
         IceBackApplyReport report = IceBackApplyReport.builder()
                 .applyNumber(applyNumber)
                 .customerName(customerName).customerNumber(putStoreNumber).customerType(customerType).customerAddress(customerAddress)

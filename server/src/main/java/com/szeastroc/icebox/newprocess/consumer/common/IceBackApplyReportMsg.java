@@ -56,11 +56,11 @@ public class IceBackApplyReportMsg extends Page implements Serializable {
     /**
      * 退回客户编号
      */
-    private String backCustomerNumber;
+    private String customerNumber;
     /**
      * 退回客户名称
      */
-    private String backCustomerName;
+    private String customerName;
     /**
      * 资产编号
      */

@@ -90,7 +90,7 @@ public class ExamineController {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
-        iceExamineService.dealIceExamineCheck(iceExamineCheckVo.getRedisKey(),iceExamineCheckVo.getStatus(),iceExamineCheckVo.getUpdateBy());
+        iceExamineService.dealIceExamineCheck(iceExamineCheckVo.getRedisKey(),iceExamineCheckVo.getStatus(),iceExamineCheckVo.getUpdateBy(),iceExamineCheckVo.getExamineRemark());
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,new IceExamineCheckVo());
     }

@@ -85,11 +85,11 @@ public class IceBackApplyReportServiceImpl extends ServiceImpl<IceBackApplyRepor
         if(StringUtils.isNotEmpty(reportMsg.getDealerNumber())){
             wrapper.eq(IceBackApplyReport::getDealerNumber,reportMsg.getDealerNumber());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getBackCustomerName())){
-            wrapper.like(IceBackApplyReport::getCustomerName,reportMsg.getBackCustomerName());
+        if(StringUtils.isNotEmpty(reportMsg.getCustomerName())){
+            wrapper.like(IceBackApplyReport::getCustomerName,reportMsg.getCustomerName());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getBackCustomerNumber())){
-            wrapper.eq(IceBackApplyReport::getCustomerNumber,reportMsg.getBackCustomerNumber());
+        if(StringUtils.isNotEmpty(reportMsg.getCustomerNumber())){
+            wrapper.eq(IceBackApplyReport::getCustomerNumber,reportMsg.getCustomerNumber());
         }
         if(StringUtils.isNotEmpty(reportMsg.getStartTime())){
             wrapper.ge(IceBackApplyReport::getCreatedTime,reportMsg.getStartTime());

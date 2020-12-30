@@ -173,7 +173,8 @@ public class IceInspectionReportConsumer {
         if (Objects.nonNull(userId)) {
             IceInspectionReport currentMonthReport = iceInspectionReportService.getCurrentMonthReport(userId);
             if (Objects.nonNull(currentMonthReport)) {
-                currentMonthReport.setPutCount(currentMonthReport.getPutCount() + 1);
+                List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
+                currentMonthReport.setPutCount(putBoxIds.size());
                 iceInspectionReportService.updateById(currentMonthReport);
             }else{
                 currentMonthReport = new IceInspectionReport();
@@ -256,7 +257,7 @@ public class IceInspectionReportConsumer {
         if(Objects.nonNull(userId)){
             IceInspectionReport currentMonthReport = iceInspectionReportService.getCurrentMonthReport(userId);
             if (Objects.nonNull(currentMonthReport)) {
-                int lostScrapCount = iceBoxService.getLostScrapCount(reportMsg.getUserId());
+                int lostScrapCount = iceBoxService.getLostScrapCount(userId);
                 currentMonthReport.setLostScrapCount(lostScrapCount);
                 iceInspectionReportService.updateById(currentMonthReport);
             }

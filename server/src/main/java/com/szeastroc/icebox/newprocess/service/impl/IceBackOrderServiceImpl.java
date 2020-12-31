@@ -805,9 +805,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBox.setPutStoreNumber("0");
         iceBox.setSupplierId(iceBackApplyRelateBox.getBackSupplierId());
         iceBoxDao.updateById(iceBox);
+        JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"doTransfer");
 //         免押时, 不校验订单, 直接跳过
         if (FreePayTypeEnum.IS_FREE.getType().equals(icePutApplyRelateBox.getFreeType())) {
-            return null;
+            return jsonObject;
         }
 
         // 非免押，但是不退押金，直接跳过
@@ -846,7 +847,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         log.info("转账服务返回的数据-->[{}]", JSON.toJSONString(transferReponse, true));
 
-        JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"doTransfer");
         return jsonObject;
     }
 

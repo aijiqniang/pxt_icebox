@@ -60,7 +60,6 @@ import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.common.utils.Streams;
-import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
@@ -4720,10 +4719,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 // 创建免押类型投放
                 // 处理申请冰柜流程数据
                 // 创建申请流程
-                newApplyNumber = createIcePutData(iceBox, newPutStoreNumber);
+                newApplyNumber = iceBoxService.createIcePutData(iceBox, newPutStoreNumber);
 
                 // 同步到【投放报表】
-                saveIceBoxPutReport(iceBox, newApplyNumber, newPutStoreNumber);
+                iceBoxService.saveIceBoxPutReport(iceBox, newApplyNumber, newPutStoreNumber);
                 isPush = true;
             } else if (PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) {
                 // 已投放的门店变更，把之前的关联关系去掉, 然后创建投放相关数据 TODO
@@ -4812,7 +4811,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
      * 创建投放相关数据
      * @param iceBox
      */
-    private String createIcePutData(IceBox iceBox, String newPutStoreNumber){
+    @Override
+    public String createIcePutData(IceBox iceBox, String newPutStoreNumber){
         UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
         // 冰柜未投放  直接投放至门店，需要创建投放相关数据 方便退还
         // 创建免押类型投放
@@ -4876,7 +4876,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
      * @param applyNumber 申请流程ID
      * @param putStoreNumber 投放客户编号
      */
-    private void saveIceBoxPutReport(IceBox iceBox, String applyNumber, String putStoreNumber){
+    @Override
+    public void saveIceBoxPutReport(IceBox iceBox, String applyNumber, String putStoreNumber){
         IceBoxPutReportMsg report = new IceBoxPutReportMsg();
         //获取客户信息信息
         IceBoxCustomerVo iceBoxCustomerVo = this.getIceBoxCustomerVo(putStoreNumber);
@@ -4941,7 +4942,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
      * @param putStoreNumber
      * @return
      */
-    private IceBoxCustomerVo getIceBoxCustomerVo(String putStoreNumber){
+    @Override
+    public IceBoxCustomerVo getIceBoxCustomerVo(String putStoreNumber){
         IceBoxCustomerVo iceBoxCustomerVo = new IceBoxCustomerVo();
         Integer marketArea = null;
         String customerName = "";
@@ -4977,6 +4979,18 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxCustomerVo.setMainSalesmanName(mainSaleManName);
         iceBoxCustomerVo.setSupplierType(supplierType);
         return iceBoxCustomerVo;
+    }
+
+    @Override
+    public void createOldIceBoxSignNotice(IceBox iceBox, String applyNumber, String storeNumber) {
+        // 推送签收信息
+        OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+        oldIceBoxSignNotice.setApplyNumber(applyNumber);
+        oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
+        oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
+        oldIceBoxSignNotice.setPutStoreNumber(storeNumber);
+        oldIceBoxSignNotice.setCreateTime(new Date());
+        oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
     }
 
 }

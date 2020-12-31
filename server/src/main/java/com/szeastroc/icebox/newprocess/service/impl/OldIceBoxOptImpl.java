@@ -12,9 +12,11 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceModelDao;
+import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
+import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -47,6 +50,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
     private IceModelDao iceModelDao;
     @Autowired
     private IceBoxService iceBoxService;
+    @Resource
+    private OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
 
 
     @Override
@@ -159,9 +164,13 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
+                    // 创建投放相关数据并同步到【投放报表】
+                    String newApplyNumber = iceBoxService.createIcePutData(iceBox, storeNumber);
+                    iceBoxService.saveIceBoxPutReport(iceBox, newApplyNumber, storeNumber);
+                    iceBoxService.createOldIceBoxSignNotice(iceBox, newApplyNumber, storeNumber);
                 }
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜入库");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜入库");
                 return jsonObject;
             }
         },
@@ -241,7 +250,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜退回经销商");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜退回经销商");
                 return jsonObject;
             }
         },
@@ -328,7 +337,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜报废");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜报废");
                 return jsonObject;
             }
         },
@@ -408,7 +417,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜遗失");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜遗失");
                 return jsonObject;
             }
         };

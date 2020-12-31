@@ -9,11 +9,7 @@ import com.szeastroc.common.entity.icebox.vo.IceBoxTransferHistoryVo;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
-import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
@@ -108,7 +104,7 @@ public interface IceBoxService extends IService<IceBox> {
     void test();
 
 
-    void changeAssetId(Integer iceBoxId,String assetId,boolean reconfirm );
+    void changeAssetId(Integer iceBoxId, String assetId, boolean reconfirm);
 
 
     IceBoxStatusVo checkIceBoxById(Integer id, String pxtNumber);
@@ -117,14 +113,22 @@ public interface IceBoxService extends IService<IceBox> {
 
     List<IceBoxVo> findIceBoxsBySupplierIdAndModelId(Integer supplierId, Integer modelId);
 
-    JSONObject setAssetReportJson(IceBox iceBox,String resourceStr);
+    JSONObject setAssetReportJson(IceBox iceBox, String resourceStr);
 
     /**
      * 客户变更，推送签收信息
+     *
      * @param iceBox
      */
     void changeCustomer(IceBox iceBox);
 
+    String createIcePutData(IceBox iceBox, String newPutStoreNumber);
+
+    void saveIceBoxPutReport(IceBox iceBox, String applyNumber, String putStoreNumber);
+
+    IceBoxCustomerVo getIceBoxCustomerVo(String putStoreNumber);
+
+    void createOldIceBoxSignNotice(IceBox iceBox, String applyNumber,String storeNumber);
 }
 
 

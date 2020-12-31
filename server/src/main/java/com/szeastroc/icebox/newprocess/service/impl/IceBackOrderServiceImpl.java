@@ -1058,19 +1058,19 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             districtCode = store.getDistrictCode();
         }
         if(StringUtils.isNotBlank(provinceCode)){
-            BaseDistrictVO provinceDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getProvinceCode()));
+            BaseDistrictVO provinceDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(provinceCode));
             if(Objects.nonNull(provinceDistrict)){
                 province= provinceDistrict.getName();
             }
         }
         if(StringUtils.isNotBlank(cityCode)){
-            BaseDistrictVO cityDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getCityCode()));
+            BaseDistrictVO cityDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(cityCode));
             if(Objects.nonNull(cityDistrict)){
                 city= cityDistrict.getName();
             }
         }
         if(StringUtils.isNotBlank(districtCode)){
-            BaseDistrictVO areaDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(supplierInfoSessionVo.getRegionCode()));
+            BaseDistrictVO areaDistrict = FeignResponseUtil.getFeignData(feignDistrictClient.getByCode(districtCode));
             if(Objects.nonNull(areaDistrict)){
                 area= areaDistrict.getName();
             }

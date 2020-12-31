@@ -341,23 +341,22 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         Integer checkPersonId = iceBoxRequest.getUpdateBy();
         SimpleUserInfoVo checkPerson = FeignResponseUtil.getFeignData(feignUserClient.findUserById(checkPersonId));
         IceBackApplyReport backApplyReport = iceBackApplyReportService.getOne(Wrappers.<IceBackApplyReport>lambdaQuery().eq(IceBackApplyReport::getApplyNumber, applyNumber));
-        backApplyReport.setCheckPersonId(checkPersonId);
-        backApplyReport.setCheckPerson(checkPerson.getRealname());
-        backApplyReport.setCheckOfficeName(checkPerson.getPosion());
-        backApplyReport.setCheckDate(new Date());
-        backApplyReport.setReason(iceBoxRequest.getReason());
         if (status == 0) {
             // 审批中
             IceBackApply iceBackApply = new IceBackApply();
             iceBackApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
             iceBackApplyDao.update(iceBackApply, Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
-            backApplyReport.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
+            if(Objects.nonNull(backApplyReport)){
+                backApplyReport.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
+            }
         } else if (status == 1) {
             //批准
             JSONObject jsonObject = doTransfer(applyNumber);
             IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
             iceBackApply.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
-            backApplyReport.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
+            if(Objects.nonNull(backApplyReport)){
+                backApplyReport.setExamineStatus(ExamineStatusEnum.IS_PASS.getStatus());
+            }
             iceBackApplyDao.updateById(iceBackApply);
             CompletableFuture.runAsync(() ->
                     feignCusLabelClient.manualExpired(9999, iceBackApply.getBackStoreNumber()), ExecutorServiceFactory.getInstance());
@@ -375,11 +374,19 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             // 驳回
             IceBackApply iceBackApply = new IceBackApply();
             iceBackApply.setExamineStatus(ExamineStatusEnum.UN_PASS.getStatus());
-            backApplyReport.setExamineStatus(ExamineStatusEnum.UN_PASS.getStatus());
+            if(Objects.nonNull(backApplyReport)){
+                backApplyReport.setExamineStatus(ExamineStatusEnum.UN_PASS.getStatus());
+            }
             iceBackApplyDao.update(iceBackApply, Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
         }
-
-        iceBackApplyReportService.updateById(backApplyReport);
+        if(Objects.nonNull(backApplyReport)){
+            backApplyReport.setCheckPersonId(checkPersonId);
+            backApplyReport.setCheckPerson(checkPerson.getRealname());
+            backApplyReport.setCheckOfficeName(checkPerson.getPosion());
+            backApplyReport.setCheckDate(new Date());
+            backApplyReport.setReason(iceBoxRequest.getReason());
+            iceBackApplyReportService.updateById(backApplyReport);
+        }
     }
 
     @Override

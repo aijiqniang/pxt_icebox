@@ -296,7 +296,9 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         if (icePutOrder != null) {
             IceBackOrder iceBackOrder = iceBackOrderDao.selectOne(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getBoxId, simpleIceBoxDetailVo.getId()).eq(IceBackOrder::getApplyNumber, applyNumber));
             iceBackOrder.setAmount(backType.equals(BackType.BACK_MONEY.getType()) ? icePutOrder.getPayMoney() : BigDecimal.ZERO);
-            backApplyReport.setDepositMoney(backType.equals(BackType.BACK_MONEY.getType()) ? icePutOrder.getPayMoney() : BigDecimal.ZERO);
+            if(Objects.nonNull(backApplyReport)){
+                backApplyReport.setDepositMoney(backType.equals(BackType.BACK_MONEY.getType()) ? icePutOrder.getPayMoney() : BigDecimal.ZERO);
+            }
             iceBackOrderDao.updateById(iceBackOrder);
         }
         iceBackApplyRelateBox.setBackSupplierId(simpleIceBoxDetailVo.getNewSupplierId());
@@ -309,22 +311,25 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBackApply.setCreatedBy(simpleIceBoxDetailVo.getUserId());
         iceBackApply.setExamineId(examineId);
         iceBackApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
-        backApplyReport.setExamineId(examineId);
-        backApplyReport.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
-        Integer checkPersonId = userIds.get(0);
-        SimpleUserInfoVo checkPerson = FeignResponseUtil.getFeignData(feignUserClient.findUserById(checkPersonId));
-        backApplyReport.setCheckPerson(checkPerson.getRealname());
-        backApplyReport.setCheckPersonId(checkPersonId);
-        backApplyReport.setCheckOfficeName(checkPerson.getPosion());
-        SimpleUserInfoVo submitter = FeignResponseUtil.getFeignData(feignUserClient.findUserById(simpleIceBoxDetailVo.getUserId()));
-        backApplyReport.setSubmitterName(submitter.getRealname());
-        backApplyReport.setSubmitterMobile(submitter.getMobile());
-        backApplyReport.setSubmitterId(simpleIceBoxDetailVo.getUserId());
-        SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.readId(simpleIceBoxDetailVo.getNewSupplierId()));
-        backApplyReport.setDealerName(supplier.getName());
-        backApplyReport.setDealerNumber(supplier.getNumber());
+        if(Objects.nonNull(backApplyReport)){
+            backApplyReport.setExamineId(examineId);
+            backApplyReport.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
+            Integer checkPersonId = userIds.get(0);
+            SimpleUserInfoVo checkPerson = FeignResponseUtil.getFeignData(feignUserClient.findUserById(checkPersonId));
+            backApplyReport.setCheckPerson(checkPerson.getRealname());
+            backApplyReport.setCheckPersonId(checkPersonId);
+            backApplyReport.setCheckOfficeName(checkPerson.getPosion());
+            SimpleUserInfoVo submitter = FeignResponseUtil.getFeignData(feignUserClient.findUserById(simpleIceBoxDetailVo.getUserId()));
+            backApplyReport.setSubmitterName(submitter.getRealname());
+            backApplyReport.setSubmitterMobile(submitter.getMobile());
+            backApplyReport.setSubmitterId(simpleIceBoxDetailVo.getUserId());
+            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.readId(simpleIceBoxDetailVo.getNewSupplierId()));
+            backApplyReport.setDealerName(supplier.getName());
+            backApplyReport.setDealerNumber(supplier.getNumber());
+            iceBackApplyReportService.updateById(backApplyReport);
+        }
         iceBackApplyDao.updateById(iceBackApply);
-        iceBackApplyReportService.updateById(backApplyReport);
+
     }
 
     @Override

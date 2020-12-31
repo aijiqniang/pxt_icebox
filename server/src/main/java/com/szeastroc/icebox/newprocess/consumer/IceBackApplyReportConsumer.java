@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -75,14 +76,14 @@ public class IceBackApplyReportConsumer {
                                 eachDataRow.createCell(12).setCellValue(report.getCity());
                                 eachDataRow.createCell(13).setCellValue(report.getArea());
                                 eachDataRow.createCell(14).setCellValue(report.getCustomerAddress());
-                                eachDataRow.createCell(15).setCellValue(dateFormat.format(report.getBackDate()));
+                                eachDataRow.createCell(15).setCellValue(Objects.nonNull(report.getBackDate())?dateFormat.format(report.getBackDate()):"");
                                 eachDataRow.createCell(16).setCellValue(report.getModelName());
                                 eachDataRow.createCell(17).setCellValue(report.getAssetId());
                                 eachDataRow.createCell(18).setCellValue(1==report.getFreeType()?"否":"是");
                                 eachDataRow.createCell(19).setCellValue(report.getDepositMoney() + "");
                                 eachDataRow.createCell(20).setCellValue(report.getCheckPerson());
                                 eachDataRow.createCell(21).setCellValue(report.getCheckOfficeName());
-                                eachDataRow.createCell(22).setCellValue(dateFormat.format(report.getCheckDate()));
+                                eachDataRow.createCell(22).setCellValue(Objects.nonNull(report.getCheckDate())?dateFormat.format(report.getCheckDate()):"");
                                 eachDataRow.createCell(23).setCellValue(report.getSubmitterName());
                                 eachDataRow.createCell(24).setCellValue(report.getSubmitterMobile());
                                 eachDataRow.createCell(25).setCellValue(IceBackStatusEnum.getDesc(report.getExamineStatus()));

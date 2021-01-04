@@ -813,7 +813,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         // 非免押，但是不退押金，直接跳过
         if (BackType.BACK_WITHOUT_MONEY.getType() == iceBackApplyRelateBox.getBackType()) {
-            return null;
+            return jsonObject;
         }
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
                 .eq(IcePutOrder::getApplyNumber, icePutApply.getApplyNumber())

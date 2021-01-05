@@ -152,4 +152,9 @@ public class IceBoxPutReport {
     private String linkmanMobile;
 
     private String examineUserPosion;
+
+    /**
+     * 拜访频率
+     */
+    private Integer visitType;
 }

@@ -30,4 +30,7 @@
     <select id="selectStoreKeeperForReport" parameterType="string" resultType="com.szeastroc.common.entity.customer.vo.MemberInfoVo">
         SELECT `name`,mobile FROM pxt_base.t_cus_member_info WHERE member_number=#{memberNumber}
     </select>
+    <select id="selectVisitTypeForReport" parameterType="string" resultType="java.lang.Integer">
+        SELECT cycle_type FROM pxt_base.t_visit_cycle_visiting WHERE customer_number=#{memberNumber}
+    </select>
 </mapper>

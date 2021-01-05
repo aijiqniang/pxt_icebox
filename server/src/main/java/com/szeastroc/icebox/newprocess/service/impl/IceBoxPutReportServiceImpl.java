@@ -286,6 +286,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 report.setSubmitterName(userInfoVo.getRealname());
                 report.setSubmitterMobile(userInfoVo.getMobile());
             }
+            report.setVisitType(exportRecordsDao.selectVisitTypeForReport(relateModel.getPutStoreNumber()));
             report.setSubmitTime(new Date());
             if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
                 List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
@@ -387,6 +388,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                     putReport.setSubmitterMobile(userInfoVo.getMobile());
                 }
             }
+
             putReport.setPutCustomerNumber(relateModel.getPutStoreNumber());
             Integer headquartersDeptId = null;
 
@@ -455,6 +457,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             putReport.setServiceDeptName(serviceDeptName);
             putReport.setGroupDeptId(groupDeptId);
             putReport.setGroupDeptName(groupDeptName);
+            putReport.setVisitType(exportRecordsDao.selectVisitTypeForReport(relateModel.getPutStoreNumber()));
 
             putReport.setSupplierId(relateModel.getSupplierId());
             SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(relateModel.getSupplierId()));
@@ -546,6 +549,37 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                     iceBoxPutReportDao.updateById(report);
                     completeCount++;
                     log.info("repairIceBoxColumns reportId:{} complete , completeCount:{} ",report.getId(),completeCount);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void repairIceBoxCycleType() {
+        LambdaQueryWrapper<IceBoxPutReport> wrapper = new LambdaQueryWrapper<IceBoxPutReport>()
+                .eq(IceBoxPutReport::getVisitType, 0);
+        Integer count = iceBoxPutReportDao.selectCount(wrapper);
+        if (count < 1) {
+            log.info("repairIceBoxCycleType end , count < 1 ");
+        }
+
+        Integer totalCount = new BigDecimal(count).divide(new BigDecimal(BATCH_PAGE_SIZE), 0, BigDecimal.ROUND_UP).intValue();
+        for (int j = 1; j <= totalCount; j++) {
+            int currentPage = j;
+            int pageSize = BATCH_PAGE_SIZE;
+
+            Page<IceBoxPutReport> page = new Page<>();
+            page.setCurrent(currentPage);
+            page.setSize(pageSize);
+
+            List<IceBoxPutReport> list = iceBoxPutReportDao.selectPage(page, wrapper).getRecords();
+            if (CollectionUtil.isNotEmpty(list)) {
+                Integer completeCount = 0;
+                for (IceBoxPutReport report : list) {
+
+                    iceBoxPutReportDao.updateById(report);
+                    completeCount++;
+                    log.info("repairIceBoxCycleType reportId:{} complete , completeCount:{} ",report.getId(),completeCount);
                 }
             }
         }

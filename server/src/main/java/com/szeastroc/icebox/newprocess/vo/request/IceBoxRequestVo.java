@@ -75,4 +75,8 @@ public class IceBoxRequestVo {
      */
     private String searchContent;
 
+    /**
+     * 备注
+     */
+    private String applyPit;
 }

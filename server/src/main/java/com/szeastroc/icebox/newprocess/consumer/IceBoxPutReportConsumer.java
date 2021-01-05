@@ -29,6 +29,7 @@ import com.szeastroc.icebox.newprocess.dao.ExportRecordsDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportExcelVo;
 import lombok.extern.slf4j.Slf4j;
@@ -103,10 +104,6 @@ public class IceBoxPutReportConsumer {
                     IPage<IceBoxPutReport> putReportIPage = iceBoxPutReportService.page(page,wrapper);
                     List<IceBoxPutReport> billInfos = putReportIPage.getRecords();
                     if (CollectionUtil.isNotEmpty(billInfos)) {
-                        StoreInfoDtoVo storeInfoDtoVo;
-                        SimpleUserInfoVo submit ;
-                        SimpleUserInfoVo exaine ;
-                        MemberInfoVo memberInfoVo = null ;
                         for(IceBoxPutReport report:billInfos){
                             IceBoxPutReportExcelVo excelVo = new IceBoxPutReportExcelVo();
                             BeanUtils.copyProperties(report,excelVo);
@@ -134,6 +131,7 @@ public class IceBoxPutReportConsumer {
                             if(PutStatus.NO_PASS.getStatus().equals(report.getPutStatus())){
                                 excelVo.setPutStatus("已驳回");
                             }
+                            excelVo.setVisitTypeName(VisitCycleEnum.getDescByCode(report.getVisitType()));
                             excelVoList.add(excelVo);
                         }
                         excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxPutReportExcelVo::getApplyNumber)).collect(Collectors.toList());

@@ -23,6 +23,8 @@ public interface IceBoxPutReportService extends IService<IceBoxPutReport> {
     void syncPutDataToReport(List<Integer> ids);
 
     void repairIceBoxColumns();
+
+    void repairIceBoxCycleType();
 }
 
 

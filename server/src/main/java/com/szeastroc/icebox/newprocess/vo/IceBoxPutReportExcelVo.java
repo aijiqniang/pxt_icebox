@@ -119,4 +119,6 @@ public class IceBoxPutReportExcelVo {
     private String linkmanMobile;
 
     private String examineUserPosion;
+
+    private String visitTypeName;
 }

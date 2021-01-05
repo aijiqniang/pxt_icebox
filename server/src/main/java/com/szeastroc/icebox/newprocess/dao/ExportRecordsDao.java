@@ -34,4 +34,6 @@ public interface ExportRecordsDao extends BaseMapper<ExportRecords> {
 
     MemberInfoVo selectStoreKeeperForReport(@Param("memberNumber")String memberNumber);
 
+    Integer selectVisitTypeForReport(@Param("memberNumber")String memberNumber);
+
 }

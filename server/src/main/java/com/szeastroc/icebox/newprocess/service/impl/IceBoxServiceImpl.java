@@ -341,6 +341,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .putStoreNumber(iceBoxRequestVo.getStoreNumber())
                 .userId(iceBoxRequestVo.getUserId())
                 .createdBy(iceBoxRequestVo.getUserId())
+                .applyPit(iceBoxRequestVo.getApplyPit())
                 .build();
         icePutApplyDao.insert(icePutApply);
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
@@ -2762,6 +2763,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .putStoreNumber(iceBoxRequestVo.getStoreNumber())
                 .userId(iceBoxRequestVo.getUserId())
                 .createdBy(iceBoxRequestVo.getUserId())
+                .applyPit(iceBoxRequestVo.getApplyPit())
                 .build();
         icePutApplyDao.insert(icePutApply);
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();

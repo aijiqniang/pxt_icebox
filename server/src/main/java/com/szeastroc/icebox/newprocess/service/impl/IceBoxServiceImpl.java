@@ -67,29 +67,13 @@ import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
+import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
-import com.szeastroc.icebox.newprocess.dao.ApplyRelatePutStoreModelDao;
-import com.szeastroc.icebox.newprocess.dao.IceBackApplyDao;
-import com.szeastroc.icebox.newprocess.dao.IceBackApplyRelateBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxChangeHistoryDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExamineExceptionReportDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxTransferHistoryDao;
-import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
-import com.szeastroc.icebox.newprocess.dao.IceModelDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutApplyRelateBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutOrderDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutPactRecordDao;
-import com.szeastroc.icebox.newprocess.dao.IceTransferRecordDao;
-import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
-import com.szeastroc.icebox.newprocess.dao.PutStoreRelateModelDao;
+import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.ApplyRelatePutStoreModel;
 import com.szeastroc.icebox.newprocess.entity.IceBackApply;
 import com.szeastroc.icebox.newprocess.entity.IceBackApplyRelateBox;
@@ -108,20 +92,9 @@ import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
 import com.szeastroc.icebox.newprocess.entity.IceTransferRecord;
 import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
-import com.szeastroc.icebox.newprocess.enums.CommonIsCheckEnum;
-import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.ExamineExceptionStatusEnums;
-import com.szeastroc.icebox.newprocess.enums.ExamineLastApprovalEnum;
-import com.szeastroc.icebox.newprocess.enums.ExamineNodeStatusEnum;
-import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
-import com.szeastroc.icebox.newprocess.enums.ExamineTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
-import com.szeastroc.icebox.newprocess.enums.OldIceBoxSignNoticeStatusEnums;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
-import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
-import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.newprocess.vo.*;
@@ -231,6 +204,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Autowired
     private IcePutOrderService icePutOrderService;
 
+<<<<<<< Updated upstream
+=======
+    @Autowired
+    private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
+    @Autowired
+    private ExportRecordsDao exportRecordsDao;
+
+>>>>>>> Stashed changes
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
 
@@ -344,6 +325,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .applyPit(iceBoxRequestVo.getApplyPit())
                 .build();
         icePutApplyDao.insert(icePutApply);
+        iceBoxRequestVo.setVisitTypeName(VisitCycleEnum.getDescByCode(exportRecordsDao.selectVisitTypeForReport(iceBoxRequestVo.getStoreNumber())));
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
         BigDecimal totalMoney = new BigDecimal(0);
         //查询冰柜投放规则
@@ -1312,6 +1294,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPutModel.setIceBoxModelList(iceBoxModels);
         iceBoxPutModel.setApplyStoreNumber(iceBoxRequestVo.getStoreNumber());
         iceBoxPutModel.setApplyStoreName(iceBoxRequestVo.getStoreName());
+        iceBoxPutModel.setApplyPit(iceBoxRequestVo.getApplyPit());
+        iceBoxPutModel.setVisitTypeName(iceBoxRequestVo.getVisitTypeName());
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
                 .code(applyNumber)
                 .relateCode(applyNumber)
@@ -3222,6 +3206,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 } else {
                     boxVo.setIceStatus(iceBox.getStatus());
                 }
+                //门店拜访频率
+                boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(exportRecordsDao.selectVisitTypeForReport(requestVo.getStoreNumber())));
                 iceBoxVos.add(boxVo);
             }
         }
@@ -3276,6 +3262,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         boxVo.setLinkmanMobile(simpleSupplierInfoVo.getLinkManMobile());
                     }
                     iceBoxCountMap.put(iceBox.getModelId(), 1);
+                    //门店拜访频率
+                    boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(exportRecordsDao.selectVisitTypeForReport(requestVo.getStoreNumber())));
                     iceBoxVoList.add(boxVo);
                 }
                 if (CollectionUtil.isNotEmpty(iceBoxVoList)) {

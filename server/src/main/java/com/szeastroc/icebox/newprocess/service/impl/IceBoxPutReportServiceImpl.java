@@ -576,7 +576,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             if (CollectionUtil.isNotEmpty(list)) {
                 Integer completeCount = 0;
                 for (IceBoxPutReport report : list) {
-
+                    report.setVisitType(exportRecordsDao.selectVisitTypeForReport(report.getPutCustomerNumber()));
                     iceBoxPutReportDao.updateById(report);
                     completeCount++;
                     log.info("repairIceBoxCycleType reportId:{} complete , completeCount:{} ",report.getId(),completeCount);

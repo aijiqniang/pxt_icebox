@@ -79,4 +79,9 @@ public class IceBoxRequestVo {
      * 备注
      */
     private String applyPit;
+
+    /**
+     * 拜访类型
+     */
+    private String visitTypeName;
 }

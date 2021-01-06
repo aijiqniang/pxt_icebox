@@ -3140,6 +3140,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 .eq(IceBoxPutReport::getSupplierId, iceBox.getSupplierId())
                                 .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                         if (report != null) {
+                            report.setIceBoxId(iceBox.getId());
                             report.setIceBoxAssetId(iceBox.getAssetId());
                             report.setExamineTime(new Date());
                             report.setExamineUserId(iceBoxRequest.getUpdateBy());
@@ -3385,6 +3386,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             .eq(IceBoxPutReport::getSupplierId, iceBox.getSupplierId())
                             .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                     if (report != null) {
+                        report.setIceBoxId(iceBox.getId());
                         report.setIceBoxAssetId(iceBox.getAssetId());
                         iceBoxPutReportDao.updateById(report);
                     }
@@ -3585,6 +3587,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .eq(IceBoxPutReport::getSupplierId, reportMsg.getSupplierId())
                 .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
         if(report != null){
+            report.setIceBoxId(reportMsg.getIceBoxId());
             report.setIceBoxAssetId(reportMsg.getIceBoxAssetId());
             iceBoxPutReportDao.updateById(report);
         }

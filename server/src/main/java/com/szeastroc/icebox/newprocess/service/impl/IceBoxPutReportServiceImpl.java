@@ -276,6 +276,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                         IceBoxPutReport putReport = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxAssetId, box.getAssetId())
                                 .eq(IceBoxPutReport::getApplyNumber, relateBox.getApplyNumber()));
                         if(putReport == null){
+                            report.setIceBoxId(box.getId());
                             report.setIceBoxAssetId(box.getAssetId());
                             break;
                         }
@@ -338,6 +339,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                                 IceBoxPutReport isExistPutReport = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxAssetId, iceBox.getAssetId())
                                         .eq(IceBoxPutReport::getApplyNumber, storeModel.getApplyNumber()));
                                 if(isExistPutReport == null){
+                                    putReport.setIceBoxId(iceBox.getId());
                                     putReport.setIceBoxAssetId(iceBox.getAssetId());
                                     break;
                                 }

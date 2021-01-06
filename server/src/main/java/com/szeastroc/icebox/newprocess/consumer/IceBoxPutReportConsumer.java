@@ -159,6 +159,7 @@ public class IceBoxPutReportConsumer {
                         .eq(IceBoxPutReport::getSupplierId, reportMsg.getSupplierId())
                         .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                 if(report != null){
+                    report.setIceBoxId(reportMsg.getIceBoxId());
                     report.setIceBoxAssetId(reportMsg.getIceBoxAssetId());
                     iceBoxPutReportService.updateById(report);
                 }

@@ -163,6 +163,9 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
         if(reportMsg.getStatus() != null){
             wrapper.eq(IceBoxExamineExceptionReport::getStatus,reportMsg.getStatus());
         }
+        if(reportMsg.getToOaType() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getToOaType,reportMsg.getToOaType());
+        }
         if(StringUtils.isNotEmpty(reportMsg.getToOaNumber())){
             wrapper.eq(IceBoxExamineExceptionReport::getToOaNumber,reportMsg.getToOaNumber());
         }

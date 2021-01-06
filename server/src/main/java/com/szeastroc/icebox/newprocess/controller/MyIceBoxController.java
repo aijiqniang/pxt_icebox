@@ -272,8 +272,8 @@ public class MyIceBoxController {
      * @return
      */
     @RequestMapping("dealTransferCheck")
-    public CommonResponse<Void> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo){
+    public CommonResponse<IceBoxTransferHistoryVo> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo){
         iceBoxService.dealTransferCheck(historyVo);
-        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,new IceBoxTransferHistoryVo());
     }
 }

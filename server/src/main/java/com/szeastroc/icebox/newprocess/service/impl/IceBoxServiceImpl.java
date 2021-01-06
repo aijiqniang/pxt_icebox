@@ -48,6 +48,7 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignCusLabelClient;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.customer.FeignSupplierRelateUserClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignDeptRuleClient;
@@ -203,15 +204,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceBoxService iceBoxService;
     @Autowired
     private IcePutOrderService icePutOrderService;
-
-<<<<<<< Updated upstream
-=======
     @Autowired
     private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
     @Autowired
     private ExportRecordsDao exportRecordsDao;
 
->>>>>>> Stashed changes
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
 
@@ -2750,6 +2747,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .applyPit(iceBoxRequestVo.getApplyPit())
                 .build();
         icePutApplyDao.insert(icePutApply);
+        iceBoxRequestVo.setVisitTypeName(VisitCycleEnum.getDescByCode(exportRecordsDao.selectVisitTypeForReport(iceBoxRequestVo.getStoreNumber())));
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
         BigDecimal totalMoney = new BigDecimal(0);
         Date now = new Date();

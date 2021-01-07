@@ -132,6 +132,10 @@ public class IceBoxPutReport {
      */
     private String examineUserName;
     /**
+     *审核备注
+     */
+    private String examineRemark;
+    /**
      *审核时间
      */
     private Date examineTime;

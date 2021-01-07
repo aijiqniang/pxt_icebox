@@ -183,11 +183,12 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
                 examineVo.setDisplayImage(iceExamine.getDisplayImage());
                 examineVo.setExteriorImage(iceExamine.getExteriorImage());
                 examineVo.setExaminMsg(iceExamine.getExaminMsg());
+                examineVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceExamine.getIceStatus()));
             }
-            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
-            if(iceBox != null){
-                examineVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus()));
-            }
+//            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
+//            if(iceBox != null){
+//                examineVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus()));
+//            }
             return examineVo;
         });
         return examineVoIPage;

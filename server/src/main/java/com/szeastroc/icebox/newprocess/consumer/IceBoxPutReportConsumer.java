@@ -59,15 +59,14 @@ public class IceBoxPutReportConsumer {
     @Autowired
     private FeignUserClient feignUserClient;
     @Autowired
-    private FeignStoreClient feignStoreClient;
-    @Autowired
     private FeignStoreRelateMemberClient feignStoreRelateMemberClient;
     @Autowired
     private UserRedisServiceImpl userRedisService;
     @Autowired
     private ExportRecordsDao exportRecordsDao;
-
-//  @RabbitHandler
+    @Autowired
+    private FeignStoreClient feignStoreClient;
+//    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
     public void task(IceBoxPutReportMsg reportMsg) throws Exception {
         if(OperateTypeEnum.INSERT.getType().equals(reportMsg.getOperateType())){
@@ -92,7 +91,6 @@ public class IceBoxPutReportConsumer {
                 , "所属经销商编号", "所属经销商名称", "提交人","提交人电话","提交日期"
                 , "投放客户编号", "投放客户名称","投放客户类型","客户地址","联系人","联系人电话"
                 , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期", "投放状态"};
-        
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -214,6 +212,38 @@ public class IceBoxPutReportConsumer {
     private void saveReport(IceBoxPutReportMsg reportMsg) {
         IceBoxPutReport report = new IceBoxPutReport();
         BeanUtils.copyProperties(reportMsg,report);
+        if(StrUtil.isNotEmpty(report.getPutCustomerNumber())){
+            StoreInfoDtoVo putStore = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(report.getPutCustomerNumber()));
+            if(putStore != null){
+                report.setProvinceName(putStore.getProvinceName());
+                report.setCityName(putStore.getCityName());
+                report.setDistrictName(putStore.getDistrictName());
+                report.setPutCustomerName(putStore.getStoreName());
+                report.setCustomerAddress(putStore.getAddress());
+            }
+            String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+            if(StrUtil.isNotEmpty(memberNumber)){
+                MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                if(Objects.nonNull(memberInfoVo)){
+                    report.setLinkmanMobile(memberInfoVo.getMobile());
+                    report.setLinkmanName(memberInfoVo.getName());
+                }
+            }
+            report.setVisitType(exportRecordsDao.selectVisitTypeForReport(report.getPutCustomerNumber()));
+        }
+        if(Objects.nonNull(report.getExamineUserId())){
+            SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(report.getExamineUserId()));
+            if (Objects.nonNull(exaine)){
+                report.setExamineUserPosion(exaine.getPosion());
+            }
+        }
+        if(Objects.nonNull(report.getSubmitterId())){
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(report.getSubmitterId()));
+            if (userInfoVo != null) {
+                report.setSubmitterName(userInfoVo.getRealname());
+                report.setSubmitterMobile(userInfoVo.getMobile());
+            }
+        }
         iceBoxPutReportService.save(report);
     }
 

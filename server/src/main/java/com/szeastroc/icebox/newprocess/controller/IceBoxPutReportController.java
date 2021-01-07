@@ -70,4 +70,19 @@ public class IceBoxPutReportController {
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 
+    /**
+     * 修复历史数据的新增字段
+     * @return
+     */
+    @RequestMapping("repairIceBoxCycleType")
+    public CommonResponse<Void> repairIceBoxCycleType(){
+        try {
+            iceBoxPutReportService.repairIceBoxCycleType();
+        }catch (Exception e){
+            log.error(e.getMessage(),e);
+            return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
+        }
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
 }

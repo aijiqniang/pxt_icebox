@@ -3143,7 +3143,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
 
         if (ruleIceDetailVo == null || ruleIceDetailVo.getIsSign()) {
-
+            String examineUserPosion = "";
             IceBoxPutReportMsg reportMsg = new IceBoxPutReportMsg();
             reportMsg.setApplyNumber(iceBoxRequest.getApplyNumber());
             reportMsg.setExamineTime(new Date());
@@ -3151,16 +3151,21 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
             if (userInfoVo != null) {
                 reportMsg.setExamineUserName(userInfoVo.getRealname());
+                examineUserPosion = userInfoVo.getPosion();
             }
             reportMsg.setPutStatus(PutStatus.DO_PUT.getStatus());
 
             List<IceBoxPutReport> reportList = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber()));
-            if(CollectionUtil.isNotEmpty(reportList)){
-                for (IceBoxPutReport putReport:reportList){
+            if (CollectionUtil.isNotEmpty(reportList)) {
+                for (IceBoxPutReport putReport : reportList) {
                     IceBoxPutReport report = new IceBoxPutReport();
-                    BeanUtils.copyProperties(reportMsg,report);
+                    BeanUtils.copyProperties(reportMsg, report);
                     report.setId(putReport.getId());
-                    iceBoxPutReportDao.updateById(report);
+                    report.setExamineRemark(iceBoxRequest.getExamineRemark());
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
+                            .set(IceBoxPutReport::getExamineUserPosion,examineUserPosion));
                 }
             }
             //发送mq消息,同步申请数据到报表

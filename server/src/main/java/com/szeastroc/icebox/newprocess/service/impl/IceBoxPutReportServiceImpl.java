@@ -40,6 +40,7 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
+import com.szeastroc.icebox.util.JudgeCustomerUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -525,23 +526,37 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             if (CollectionUtil.isNotEmpty(list)) {
                 Integer completeCount = 0;
                 for (IceBoxPutReport report : list) {
-                    StoreInfoDtoVo storeInfoDtoVo = exportRecordsDao.selectStoreForReport(report.getPutCustomerNumber());
-                    String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
-                    if(StrUtil.isNotEmpty(memberNumber)){
-                        MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
-                        if(Objects.nonNull(memberInfoVo)){
-                            report.setLinkmanName(memberInfoVo.getName());
-                            report.setLinkmanMobile(memberInfoVo.getMobile());
+                    if(JudgeCustomerUtils.isStoreType(report.getPutCustomerNumber())){
+                        StoreInfoDtoVo putStore = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(report.getPutCustomerNumber()));
+                        if(putStore != null){
+                            report.setProvinceName(putStore.getProvinceName());
+                            report.setCityName(putStore.getCityName());
+                            report.setDistrictName(putStore.getDistrictName());
+                            report.setPutCustomerName(putStore.getStoreName());
+                            report.setCustomerAddress(putStore.getAddress());
+                        }
+                        String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+                        if(StrUtil.isNotEmpty(memberNumber)){
+                            MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                            if(Objects.nonNull(memberInfoVo)){
+                                report.setLinkmanMobile(memberInfoVo.getMobile());
+                                report.setLinkmanName(memberInfoVo.getName());
+                            }
+                        }
+                    }else{
+                        SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(report.getPutCustomerNumber()));
+                        if(Objects.nonNull(supplierInfoSessionVo)){
+                            report.setProvinceName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getProvinceId()));
+                            report.setCityName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getCityId()));
+                            report.setDistrictName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getRegionId()));
+                            report.setPutCustomerName(supplierInfoSessionVo.getName());
+                            report.setCustomerAddress(supplierInfoSessionVo.getAddress());
+                            report.setLinkmanMobile(supplierInfoSessionVo.getLinkManMobile());
+                            report.setLinkmanName(supplierInfoSessionVo.getLinkMan());
                         }
                     }
                     SimpleUserInfoVo submit = userRedisService.getUserById(report.getSubmitterId());
                     SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(report.getExamineUserId()));
-                    if(Objects.nonNull(storeInfoDtoVo)){
-                        report.setProvinceName(storeInfoDtoVo.getProvinceName());
-                        report.setCityName(storeInfoDtoVo.getCityName());
-                        report.setDistrictName(storeInfoDtoVo.getDistrictName());
-                        report.setCustomerAddress(storeInfoDtoVo.getAddress());
-                    }
                     if(Objects.nonNull(submit)){
                         report.setSubmitterMobile(submit.getMobile());
                     }

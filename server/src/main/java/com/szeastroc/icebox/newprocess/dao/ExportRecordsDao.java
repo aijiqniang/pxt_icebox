@@ -36,4 +36,6 @@ public interface ExportRecordsDao extends BaseMapper<ExportRecords> {
 
     Integer selectVisitTypeForReport(@Param("memberNumber")String memberNumber);
 
+    String selectDistrictNameForReport(@Param("districtId")Integer districtId);
+
 }

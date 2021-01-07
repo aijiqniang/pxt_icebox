@@ -33,4 +33,7 @@
     <select id="selectVisitTypeForReport" parameterType="string" resultType="java.lang.Integer">
         SELECT cycle_type FROM pxt_base.t_visit_cycle_visiting WHERE customer_number=#{memberNumber}
     </select>
+    <select id="selectDistrictNameForReport" parameterType="java.lang.Integer" resultType="java.lang.String">
+        SELECT name FROM pxt_base.t_base_district WHERE id=#{districtId}
+    </select>
 </mapper>

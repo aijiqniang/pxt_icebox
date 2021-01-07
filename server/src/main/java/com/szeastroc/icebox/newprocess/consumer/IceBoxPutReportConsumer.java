@@ -10,10 +10,12 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.user.vo.AddressVo;
 import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignStoreRelateMemberClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.user.FeignXcxBaseClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
@@ -32,6 +34,7 @@ import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportExcelVo;
+import com.szeastroc.icebox.util.JudgeCustomerUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -66,6 +69,8 @@ public class IceBoxPutReportConsumer {
     private ExportRecordsDao exportRecordsDao;
     @Autowired
     private FeignStoreClient feignStoreClient;
+    @Autowired
+    private FeignSupplierClient feignSupplierClient;
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
     public void task(IceBoxPutReportMsg reportMsg) throws Exception {
@@ -232,24 +237,37 @@ public class IceBoxPutReportConsumer {
         IceBoxPutReport report = new IceBoxPutReport();
         BeanUtils.copyProperties(reportMsg,report);
         if(StrUtil.isNotEmpty(report.getPutCustomerNumber())){
-            StoreInfoDtoVo putStore = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(report.getPutCustomerNumber()));
-            if(putStore != null){
-                report.setProvinceName(putStore.getProvinceName());
-                report.setCityName(putStore.getCityName());
-                report.setDistrictName(putStore.getDistrictName());
-                report.setPutCustomerName(putStore.getStoreName());
-                report.setCustomerAddress(putStore.getAddress());
-            }
-            String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
-            if(StrUtil.isNotEmpty(memberNumber)){
-                MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
-                if(Objects.nonNull(memberInfoVo)){
-                    report.setLinkmanMobile(memberInfoVo.getMobile());
-                    report.setLinkmanName(memberInfoVo.getName());
+            if(JudgeCustomerUtils.isStoreType(report.getPutCustomerNumber())){
+                StoreInfoDtoVo putStore = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(report.getPutCustomerNumber()));
+                if(putStore != null){
+                    report.setProvinceName(putStore.getProvinceName());
+                    report.setCityName(putStore.getCityName());
+                    report.setDistrictName(putStore.getDistrictName());
+                    report.setPutCustomerName(putStore.getStoreName());
+                    report.setCustomerAddress(putStore.getAddress());
+                }
+                String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+                if(StrUtil.isNotEmpty(memberNumber)){
+                    MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                    if(Objects.nonNull(memberInfoVo)){
+                        report.setLinkmanMobile(memberInfoVo.getMobile());
+                        report.setLinkmanName(memberInfoVo.getName());
+                    }
+                }
+            }else{
+                SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(report.getPutCustomerNumber()));
+                if(Objects.nonNull(supplierInfoSessionVo)){
+                    report.setProvinceName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getProvinceId()));
+                    report.setCityName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getCityId()));
+                    report.setDistrictName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getRegionId()));
+                    report.setPutCustomerName(supplierInfoSessionVo.getName());
+                    report.setCustomerAddress(supplierInfoSessionVo.getAddress());
+                    report.setLinkmanMobile(supplierInfoSessionVo.getLinkManMobile());
+                    report.setLinkmanName(supplierInfoSessionVo.getLinkMan());
                 }
             }
-            report.setVisitType(exportRecordsDao.selectVisitTypeForReport(report.getPutCustomerNumber()));
         }
+        report.setVisitType(exportRecordsDao.selectVisitTypeForReport(report.getPutCustomerNumber()));
         if(Objects.nonNull(report.getExamineUserId())){
             SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(report.getExamineUserId()));
             if (Objects.nonNull(exaine)){

@@ -3132,6 +3132,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
                             if (userInfoVo != null) {
                                 report.setExamineUserName(userInfoVo.getRealname());
+                                report.setExamineUserPosion(userInfoVo.getPosion());
                             }
                             iceBoxPutReportDao.updateById(report);
                         }
@@ -3783,6 +3784,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     putReport.setExamineUserId(iceBoxVo.getUserId());
                     putReport.setExamineUserName(iceBoxVo.getUserName());
                     putReport.setExamineTime(new Date());
+                    SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(relateModel.getUpdateBy()));
+                    if (Objects.nonNull(exaine)){
+                        putReport.setExamineUserPosion(exaine.getPosion());
+                    }
                     iceBoxPutReportDao.update(putReport,
                             Wrappers.<IceBoxPutReport>lambdaUpdate().eq(IceBoxPutReport::getId,putReport.getId())
                                     .set(IceBoxPutReport::getIceBoxAssetId,null)

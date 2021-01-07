@@ -183,6 +183,12 @@ public class IceBoxPutReportConsumer {
                         .eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber())
                         .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                 if(putReport != null){
+                    if(Objects.nonNull(putReport.getExamineUserId())){
+                        SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(putReport.getExamineUserId()));
+                        if (Objects.nonNull(exaine)){
+                            putReport.setExamineUserPosion(exaine.getPosion());
+                        }
+                    }
                     putReport.setPutStatus(reportMsg.getPutStatus());
                     iceBoxPutReportService.updateById(putReport);
                 }
@@ -192,6 +198,12 @@ public class IceBoxPutReportConsumer {
                         .eq(IceBoxPutReport::getSupplierId, reportMsg.getSupplierId())
                         .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                 if(report != null){
+                    if(Objects.nonNull(report.getExamineUserId())){
+                        SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(report.getExamineUserId()));
+                        if (Objects.nonNull(exaine)){
+                            report.setExamineUserPosion(exaine.getPosion());
+                        }
+                    }
                     report.setIceBoxId(reportMsg.getIceBoxId());
                     report.setIceBoxAssetId(reportMsg.getIceBoxAssetId());
                     iceBoxPutReportService.updateById(report);
@@ -204,6 +216,12 @@ public class IceBoxPutReportConsumer {
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
+                    if(Objects.nonNull(report.getExamineUserId())){
+                        SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(report.getExamineUserId()));
+                        if (Objects.nonNull(exaine)){
+                            report.setExamineUserPosion(exaine.getPosion());
+                        }
+                    }
                     iceBoxPutReportService.updateById(report);
                 }
             }

@@ -2963,9 +2963,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             reportMsg.setApplyNumber(iceBoxRequest.getApplyNumber());
             reportMsg.setExamineTime(new Date());
             reportMsg.setExamineUserId(iceBoxRequest.getUpdateBy());
+            String examinePosion = "";
             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
             if (userInfoVo != null) {
                 reportMsg.setExamineUserName(userInfoVo.getRealname());
+                examinePosion = userInfoVo.getPosion();
             }
             reportMsg.setPutStatus(PutStatus.DO_PUT.getStatus());
 
@@ -2975,7 +2977,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
-                    iceBoxPutReportDao.updateById(report);
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
+                            .set(IceBoxPutReport::getExamineUserPosion,examinePosion));
                 }
             }
         }
@@ -3007,9 +3012,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             reportMsg.setApplyNumber(iceBoxRequest.getApplyNumber());
             reportMsg.setExamineTime(new Date());
             reportMsg.setExamineUserId(iceBoxRequest.getUpdateBy());
+            String examinePosion = "";
             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
             if (userInfoVo != null) {
                 reportMsg.setExamineUserName(userInfoVo.getRealname());
+                examinePosion = userInfoVo.getPosion();
             }
             reportMsg.setPutStatus(PutStatus.NO_PASS.getStatus());
             List<IceBoxPutReport> reportList = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber()));
@@ -3018,7 +3025,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
+<<<<<<< Updated upstream
                     iceBoxPutReportDao.updateById(report);
+=======
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
+                            .set(IceBoxPutReport::getExamineUserPosion,examinePosion));
+>>>>>>> Stashed changes
                 }
             }
             //发送mq消息,同步申请数据到报表
@@ -3134,7 +3148,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 report.setExamineUserName(userInfoVo.getRealname());
                                 report.setExamineUserPosion(userInfoVo.getPosion());
                             }
+<<<<<<< Updated upstream
                             iceBoxPutReportDao.updateById(report);
+=======
+                            iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                                    .eq(IceBoxPutReport::getId,report.getId())
+                                    .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
+                                    .set(IceBoxPutReport::getExamineUserPosion,report.getExamineUserPosion()));
+>>>>>>> Stashed changes
                         }
                         icePutOrderService.createByFree(null, iceBox);
                     }

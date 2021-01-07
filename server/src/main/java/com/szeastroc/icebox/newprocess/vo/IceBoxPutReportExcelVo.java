@@ -93,6 +93,10 @@ public class IceBoxPutReportExcelVo {
      */
     private String examineTime;
     /**
+     *审核备注
+     */
+    private String examineRemark;
+    /**
      *投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放
      */
     private String putStatus;

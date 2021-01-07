@@ -90,7 +90,7 @@ public class IceBoxPutReportConsumer {
         String[] columnName = {"事业部","大区","服务处","省","市","区县", "流程编号"
                 , "所属经销商编号", "所属经销商名称", "提交人","提交人电话","提交日期"
                 , "投放客户编号", "投放客户名称","投放客户类型","客户地址","联系人","联系人电话"
-                , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期", "投放状态"};
+                , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期","审批备注", "投放状态"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -167,7 +167,8 @@ public class IceBoxPutReportConsumer {
                                     eachDataRow.createCell(22).setCellValue(excelVo.getExamineUserName());
                                     eachDataRow.createCell(23).setCellValue(excelVo.getExamineUserPosion());
                                     eachDataRow.createCell(24).setCellValue(excelVo.getExamineTime());
-                                    eachDataRow.createCell(25).setCellValue(excelVo.getPutStatus());
+                                    eachDataRow.createCell(25).setCellValue(excelVo.getExamineRemark());
+                                    eachDataRow.createCell(26).setCellValue(excelVo.getPutStatus());
                                 }
                             }
                         }

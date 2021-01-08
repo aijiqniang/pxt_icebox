@@ -22,6 +22,9 @@ public interface IceBoxExamineExceptionReportService extends IService<IceBoxExam
     IPage<IceBoxExamineVo> findIceExamineByPage(IceBoxExamineExceptionReportMsg reportMsg);
 
     CommonResponse<IceBoxExamineExceptionReport> sendIceExamineExportMsg(IceBoxExamineExceptionReportMsg reportMsg);
+
+    void updateExamineUserOfficeName();
+
 }
 
 

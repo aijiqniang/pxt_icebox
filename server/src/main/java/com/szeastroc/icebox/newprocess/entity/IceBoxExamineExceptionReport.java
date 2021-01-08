@@ -136,10 +136,6 @@ public class IceBoxExamineExceptionReport {
      */
     private Date examineTime;
     /**
-     *  审批备注
-     */
-    private String examineRemark;
-    /**
      *  审批人职务
      */
     private String examineUserOfficeName;

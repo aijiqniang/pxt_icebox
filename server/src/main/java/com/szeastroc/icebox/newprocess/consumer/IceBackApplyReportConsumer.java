@@ -87,7 +87,7 @@ public class IceBackApplyReportConsumer {
                                 eachDataRow.createCell(23).setCellValue(report.getSubmitterName());
                                 eachDataRow.createCell(24).setCellValue(report.getSubmitterMobile());
                                 eachDataRow.createCell(25).setCellValue(IceBackStatusEnum.getDesc(report.getExamineStatus()));
-                                eachDataRow.createCell(25).setCellValue(report.getReason());
+                                eachDataRow.createCell(26).setCellValue(report.getReason());
                             }
                         }
                     }

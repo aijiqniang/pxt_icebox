@@ -45,6 +45,7 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.config.XcxConfig;
+import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
@@ -699,6 +700,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         // 校验: 冰柜表中数据
         if (Objects.isNull(iceBox) || Objects.isNull(iceBoxExtend)) {
             throw new NormalOptionException(ResultEnum.CANNOT_FIND_ICE_BOX.getCode(), ResultEnum.CANNOT_FIND_ICE_BOX.getMessage());
+        }
+        // 特殊编号冰柜不支持退还
+        if (IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+            throw new NormalOptionException(ResultEnum.CANNOT_REFUND_ICE_BOX.getCode(), ResultEnum.CANNOT_REFUND_ICE_BOX.getMessage());
         }
 
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery()

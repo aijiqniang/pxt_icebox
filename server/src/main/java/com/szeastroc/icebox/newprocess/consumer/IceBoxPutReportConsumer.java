@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.netflix.discovery.converters.Auto;
 import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
@@ -19,6 +20,7 @@ import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.user.FeignXcxBaseClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.redis.impl.UserRedisServiceImpl;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
@@ -66,11 +68,11 @@ public class IceBoxPutReportConsumer {
     @Autowired
     private UserRedisServiceImpl userRedisService;
     @Autowired
-    private ExportRecordsDao exportRecordsDao;
-    @Autowired
     private FeignStoreClient feignStoreClient;
     @Autowired
     private FeignSupplierClient feignSupplierClient;
+    @Autowired
+    private FeignIceboxQueryClient feignIceboxQueryClient;
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
     public void task(IceBoxPutReportMsg reportMsg) throws Exception {
@@ -246,9 +248,9 @@ public class IceBoxPutReportConsumer {
                     report.setPutCustomerName(putStore.getStoreName());
                     report.setCustomerAddress(putStore.getAddress());
                 }
-                String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+                String memberNumber = FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectStoreKeeperNumberForReport(report.getPutCustomerNumber()));
                 if(StrUtil.isNotEmpty(memberNumber)){
-                    MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                    MemberInfoVo memberInfoVo = FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectStoreKeeperForReport(memberNumber));
                     if(Objects.nonNull(memberInfoVo)){
                         report.setLinkmanMobile(memberInfoVo.getMobile());
                         report.setLinkmanName(memberInfoVo.getName());
@@ -257,9 +259,9 @@ public class IceBoxPutReportConsumer {
             }else{
                 SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(report.getPutCustomerNumber()));
                 if(Objects.nonNull(supplierInfoSessionVo)){
-                    report.setProvinceName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getProvinceId()));
-                    report.setCityName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getCityId()));
-                    report.setDistrictName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getRegionId()));
+                    report.setProvinceName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getProvinceId())));
+                    report.setCityName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getCityId())));
+                    report.setDistrictName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getRegionId())));
                     report.setPutCustomerName(supplierInfoSessionVo.getName());
                     report.setCustomerAddress(supplierInfoSessionVo.getAddress());
                     report.setLinkmanMobile(supplierInfoSessionVo.getLinkManMobile());
@@ -267,7 +269,7 @@ public class IceBoxPutReportConsumer {
                 }
             }
         }
-        report.setVisitType(exportRecordsDao.selectVisitTypeForReport(report.getPutCustomerNumber()));
+        report.setVisitType(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(report.getPutCustomerNumber())));
         if(Objects.nonNull(report.getExamineUserId())){
             SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(report.getExamineUserId()));
             if (Objects.nonNull(exaine)){

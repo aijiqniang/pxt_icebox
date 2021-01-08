@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.netflix.discovery.converters.Auto;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
@@ -26,6 +27,7 @@ import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.redis.impl.UserRedisServiceImpl;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -84,9 +86,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
     @Autowired
     private FeignExamineClient feignExamineClient ;
     @Autowired
-    private ExportRecordsDao exportRecordsDao;
-    @Autowired
     private UserRedisServiceImpl userRedisService;
+    @Autowired
+    private FeignIceboxQueryClient feignIceboxQueryClient;
 
     @Override
     public IPage<IceBoxPutReport> findByPage(IceBoxPutReportMsg reportMsg) {
@@ -287,7 +289,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 report.setSubmitterName(userInfoVo.getRealname());
                 report.setSubmitterMobile(userInfoVo.getMobile());
             }
-            report.setVisitType(exportRecordsDao.selectVisitTypeForReport(relateModel.getPutStoreNumber()));
+            report.setVisitType(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(relateModel.getPutStoreNumber())));
             report.setSubmitTime(new Date());
             if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
                 List<IcePutApplyRelateBox> icePutApplyRelateBoxes = icePutApplyRelateBoxDao.selectList(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
@@ -308,9 +310,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 }
             }
 
-            String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+            String memberNumber = FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectStoreKeeperNumberForReport(report.getPutCustomerNumber()));
             if(StrUtil.isNotEmpty(memberNumber)){
-                MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                MemberInfoVo memberInfoVo = FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectStoreKeeperForReport(memberNumber));
                 if(Objects.nonNull(memberInfoVo)){
                     report.setLinkmanMobile(memberInfoVo.getMobile());
                     report.setLinkmanName(memberInfoVo.getName());
@@ -460,7 +462,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             putReport.setServiceDeptName(serviceDeptName);
             putReport.setGroupDeptId(groupDeptId);
             putReport.setGroupDeptName(groupDeptName);
-            putReport.setVisitType(exportRecordsDao.selectVisitTypeForReport(relateModel.getPutStoreNumber()));
+            putReport.setVisitType(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(relateModel.getPutStoreNumber())));
 
             putReport.setSupplierId(relateModel.getSupplierId());
             SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(relateModel.getSupplierId()));
@@ -475,9 +477,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 putReport.setIceBoxModelName(iceBox.getModelName());
                 putReport.setDepositMoney(iceBox.getDepositMoney());
             }
-            String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(putReport.getPutCustomerNumber());
+            String memberNumber = FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectStoreKeeperNumberForReport(putReport.getPutCustomerNumber()));
             if(StrUtil.isNotEmpty(memberNumber)){
-                MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                MemberInfoVo memberInfoVo = FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectStoreKeeperForReport(memberNumber));
                 if(Objects.nonNull(memberInfoVo)){
                     putReport.setLinkmanMobile(memberInfoVo.getMobile());
                     putReport.setLinkmanName(memberInfoVo.getName());
@@ -535,9 +537,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                             report.setPutCustomerName(putStore.getStoreName());
                             report.setCustomerAddress(putStore.getAddress());
                         }
-                        String memberNumber = exportRecordsDao.selectStoreKeeperNumberForReport(report.getPutCustomerNumber());
+                        String memberNumber = FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectStoreKeeperNumberForReport(report.getPutCustomerNumber()));
                         if(StrUtil.isNotEmpty(memberNumber)){
-                            MemberInfoVo memberInfoVo = exportRecordsDao.selectStoreKeeperForReport(memberNumber);
+                            MemberInfoVo memberInfoVo = FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectStoreKeeperForReport(memberNumber));
                             if(Objects.nonNull(memberInfoVo)){
                                 report.setLinkmanMobile(memberInfoVo.getMobile());
                                 report.setLinkmanName(memberInfoVo.getName());
@@ -546,9 +548,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                     }else{
                         SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(report.getPutCustomerNumber()));
                         if(Objects.nonNull(supplierInfoSessionVo)){
-                            report.setProvinceName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getProvinceId()));
-                            report.setCityName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getCityId()));
-                            report.setDistrictName(exportRecordsDao.selectDistrictNameForReport(supplierInfoSessionVo.getRegionId()));
+                            report.setProvinceName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getProvinceId())));
+                            report.setCityName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getCityId())));
+                            report.setDistrictName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getRegionId())));
                             report.setPutCustomerName(supplierInfoSessionVo.getName());
                             report.setCustomerAddress(supplierInfoSessionVo.getAddress());
                             report.setLinkmanMobile(supplierInfoSessionVo.getLinkManMobile());
@@ -593,7 +595,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             if (CollectionUtil.isNotEmpty(list)) {
                 Integer completeCount = 0;
                 for (IceBoxPutReport report : list) {
-                    report.setVisitType(exportRecordsDao.selectVisitTypeForReport(report.getPutCustomerNumber()));
+                    report.setVisitType(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(report.getPutCustomerNumber())));
                     iceBoxPutReportDao.updateById(report);
                     completeCount++;
                     log.info("repairIceBoxCycleType reportId:{} complete , completeCount:{} ",report.getId(),completeCount);

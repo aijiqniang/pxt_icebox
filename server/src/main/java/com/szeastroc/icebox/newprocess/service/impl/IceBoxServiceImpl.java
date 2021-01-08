@@ -57,6 +57,7 @@ import com.szeastroc.common.feign.user.FeignXcxBaseClient;
 import com.szeastroc.common.feign.visit.FeignBacklogClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
@@ -207,7 +208,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Autowired
     private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
     @Autowired
-    private ExportRecordsDao exportRecordsDao;
+    private FeignIceboxQueryClient feignIceboxQueryClient;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -322,7 +323,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .applyPit(iceBoxRequestVo.getApplyPit())
                 .build();
         icePutApplyDao.insert(icePutApply);
-        iceBoxRequestVo.setVisitTypeName(VisitCycleEnum.getDescByCode(exportRecordsDao.selectVisitTypeForReport(iceBoxRequestVo.getStoreNumber())));
+        iceBoxRequestVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(iceBoxRequestVo.getStoreNumber()))));
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
         BigDecimal totalMoney = new BigDecimal(0);
         //查询冰柜投放规则
@@ -2747,7 +2748,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .applyPit(iceBoxRequestVo.getApplyPit())
                 .build();
         icePutApplyDao.insert(icePutApply);
-        iceBoxRequestVo.setVisitTypeName(VisitCycleEnum.getDescByCode(exportRecordsDao.selectVisitTypeForReport(iceBoxRequestVo.getStoreNumber())));
+        iceBoxRequestVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(iceBoxRequestVo.getStoreNumber()))));
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
         BigDecimal totalMoney = new BigDecimal(0);
         Date now = new Date();
@@ -3025,14 +3026,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     IceBoxPutReport report = new IceBoxPutReport();
                     BeanUtils.copyProperties(reportMsg,report);
                     report.setId(putReport.getId());
-<<<<<<< Updated upstream
-                    iceBoxPutReportDao.updateById(report);
-=======
                     iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
                             .eq(IceBoxPutReport::getId,putReport.getId())
                             .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
                             .set(IceBoxPutReport::getExamineUserPosion,examinePosion));
->>>>>>> Stashed changes
                 }
             }
             //发送mq消息,同步申请数据到报表
@@ -3148,14 +3145,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 report.setExamineUserName(userInfoVo.getRealname());
                                 report.setExamineUserPosion(userInfoVo.getPosion());
                             }
-<<<<<<< Updated upstream
-                            iceBoxPutReportDao.updateById(report);
-=======
                             iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
                                     .eq(IceBoxPutReport::getId,report.getId())
                                     .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
                                     .set(IceBoxPutReport::getExamineUserPosion,report.getExamineUserPosion()));
->>>>>>> Stashed changes
                         }
                         icePutOrderService.createByFree(null, iceBox);
                     }
@@ -3233,7 +3226,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     boxVo.setIceStatus(iceBox.getStatus());
                 }
                 //门店拜访频率
-                boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(exportRecordsDao.selectVisitTypeForReport(requestVo.getStoreNumber())));
+                boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(requestVo.getStoreNumber()))));
                 iceBoxVos.add(boxVo);
             }
         }
@@ -3289,7 +3282,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
                     iceBoxCountMap.put(iceBox.getModelId(), 1);
                     //门店拜访频率
-                    boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(exportRecordsDao.selectVisitTypeForReport(requestVo.getStoreNumber())));
+                    boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(requestVo.getStoreNumber()))));
                     iceBoxVoList.add(boxVo);
                 }
                 if (CollectionUtil.isNotEmpty(iceBoxVoList)) {

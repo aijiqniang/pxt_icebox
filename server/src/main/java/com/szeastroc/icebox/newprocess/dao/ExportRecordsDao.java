@@ -28,14 +28,4 @@ public interface ExportRecordsDao extends BaseMapper<ExportRecords> {
 
     void updateExportRecords(@Param("serialNum") String serialNum, @Param("netPath") String netPath, @Param("endRequestTime") Date endRequestTime);
 
-    StoreInfoDtoVo selectStoreForReport(@Param("storeNumber")String storeNumber);
-
-    String selectStoreKeeperNumberForReport(@Param("storeNumber")String storeNumber);
-
-    MemberInfoVo selectStoreKeeperForReport(@Param("memberNumber")String memberNumber);
-
-    Integer selectVisitTypeForReport(@Param("memberNumber")String memberNumber);
-
-    String selectDistrictNameForReport(@Param("districtId")Integer districtId);
-
 }

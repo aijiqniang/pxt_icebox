@@ -91,7 +91,11 @@ public class IceBoxManagerController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
-
+    /**
+     *  变更记录
+     * @param iceChangeHistoryPage
+     * @return
+     */
     @PostMapping("/findChangeHistory")
     public CommonResponse<IPage<IceBoxChangeHistory>> findChangeHistory(@RequestBody IceChangeHistoryPage iceChangeHistoryPage) {
         if (null == iceChangeHistoryPage || null == iceChangeHistoryPage.getIceBoxId()) {

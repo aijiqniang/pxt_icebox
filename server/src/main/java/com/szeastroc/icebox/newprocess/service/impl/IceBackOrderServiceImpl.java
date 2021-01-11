@@ -861,28 +861,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBox.setPutStoreNumber("0");
         iceBox.setSupplierId(iceBackApplyRelateBox.getBackSupplierId());
         iceBoxDao.updateById(iceBox);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            @Override
-            public void afterCommit() {
-                // 冰柜退还 减少巡检报表投放数量
-                Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(storeNumber));
-                if (Objects.isNull(userId)) {
-                    userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(storeNumber));
-                }
-                IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
-                reportMsg.setOperateType(6);
-                reportMsg.setUserId(userId);
-                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
-            }
-        });
+        JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"doTransfer");
 //         免押时, 不校验订单, 直接跳过
         if (FreePayTypeEnum.IS_FREE.getType().equals(icePutApplyRelateBox.getFreeType())) {
-            return null;
+            return jsonObject;
         }
 
         // 非免押，但是不退押金，直接跳过
         if (BackType.BACK_WITHOUT_MONEY.getType() == iceBackApplyRelateBox.getBackType()) {
-            return null;
+            return jsonObject;
         }
         IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
                 .eq(IcePutOrder::getApplyNumber, icePutApply.getApplyNumber())
@@ -916,7 +903,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         log.info("转账服务返回的数据-->[{}]", JSON.toJSONString(transferReponse, true));
 
-        JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"doTransfer");
         return jsonObject;
     }
 

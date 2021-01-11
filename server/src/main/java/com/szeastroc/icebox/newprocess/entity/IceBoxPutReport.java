@@ -132,6 +132,10 @@ public class IceBoxPutReport {
      */
     private String examineUserName;
     /**
+     *审核备注
+     */
+    private String examineRemark;
+    /**
      *审核时间
      */
     private Date examineTime;
@@ -140,4 +144,21 @@ public class IceBoxPutReport {
      */
     private Integer putStatus;
 
+    private String provinceName;
+    private String cityName;
+    private String districtName;
+
+    private String customerAddress;
+
+    private String submitterMobile;
+
+    private String linkmanName;
+    private String linkmanMobile;
+
+    private String examineUserPosion;
+
+    /**
+     * 拜访频率
+     */
+    private Integer visitType;
 }

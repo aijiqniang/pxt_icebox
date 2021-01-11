@@ -18,9 +18,8 @@ public interface IceExamineService extends IService<IceExamine>{
 
     IceExamineVo findOneExamine(IceExamineRequest iceExamineRequest);
 
-    List<IceExamine> getInspectionBoxes(List<Integer> userIds);
 
-    List<IceExamine> getInspectionBoxes(Integer userId);
+    List<IceExamine> getInspectionBoxes(List<Integer> boxIds);
 
     Integer getNoInspectionBoxes(Integer putCount, Integer userId);
 
@@ -31,4 +30,6 @@ public interface IceExamineService extends IService<IceExamine>{
     IceExamineVo findExamineByNumber(String examineNumber);
 
     void syncExamineDataToReport(List<Integer> ids);
+
+    int getExamineCount(Integer boxId);
 }

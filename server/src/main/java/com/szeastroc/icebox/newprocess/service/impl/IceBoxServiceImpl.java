@@ -48,6 +48,7 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignCusLabelClient;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.customer.FeignSupplierRelateUserClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignDeptRuleClient;
@@ -70,6 +71,7 @@ import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
+import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.ApplyRelatePutStoreModelDao;
@@ -124,7 +126,6 @@ import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
@@ -230,6 +231,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceBoxService iceBoxService;
     @Autowired
     private IcePutOrderService icePutOrderService;
+
+    @Autowired
+    private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -3750,7 +3754,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         @Cleanup InputStream in = new FileInputStream(xlsxFile);
         try {
             String frontName = new DateTime().toString("yyyy-MM-dd-HH-mm-ss");
-            // todo 上传临时文件到网络
             String imgUrl = imageUploadUtil.wechatUpload(in, IceBoxConstant.ICE_BOX, "BGDC" + frontName, "xlsx");
             // 更新下载列表中的数据
             feignExportRecordsClient.updateExportRecord(imgUrl, 1, iceBoxPage.getExportRecordId());
@@ -4332,6 +4335,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         LambdaUpdateWrapper<IceBox> updateWrapper = Wrappers.<IceBox>lambdaUpdate().eq(IceBox::getId, iceBoxId);
 
         Integer newStatus = iceBox.getStatus();
+        //判断报废 遗失 巡检报表增加报废遗失数量
+        if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())&&IceBoxEnums.StatusEnum.LOSE.equals(newStatus)||IceBoxEnums.StatusEnum.SCRAP.equals(newStatus)){
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                    reportMsg.setOperateType(5);
+                    reportMsg.setBoxId(iceBoxId);
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                }
+            });
+
+        }
         Integer oldStatus = oldIceBox.getStatus();
 
         boolean modifyCustomer = iceBoxManagerVo.isModifyCustomer();
@@ -4438,7 +4454,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
-                //todo 这里冰柜改为已投放
                 boo = true;
             }
         } else {
@@ -4454,6 +4469,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 @Override
                 public void afterCommit() {
                     rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                    //巡检报表添加投放数据
+                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                    reportMsg.setOperateType(1);
+                    reportMsg.setBoxId(iceBox.getId());
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
                 }
             });
         }
@@ -4871,4 +4891,61 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         return jsonObject;
     }
 
+    @Override
+    public int getPutCount(Integer userId) {
+        return this.getPutBoxIds(userId).size();
+    }
+
+    @Override
+    public int getLostScrapCount(List<Integer> putBoxIds) {
+        if(CollectionUtils.isEmpty(putBoxIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.in(IceBox::getStatus,IceBoxEnums.StatusEnum.SCRAP.getType(),IceBoxEnums.StatusEnum.LOSE.getType())
+                .in(IceBox::getId, putBoxIds);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+    @Override
+    public int getLostScrapCount(Integer userId) {
+        List<Integer> putBoxIds = getPutBoxIds(userId);
+        return getLostScrapCount(putBoxIds);
+    }
+
+    @Override
+    public List<Integer> getPutBoxIds(Integer userId) {
+        List<String> numbers = FeignResponseUtil.getFeignData(feignSupplierRelateUserClient.getMainCustomerNumber(userId));
+        if(CollectionUtils.isEmpty(numbers)){
+            return Lists.newArrayList();
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.select(IceBox::getId).eq(IceBox::getPutStatus,3).in(IceBox::getPutStoreNumber,numbers);
+        return iceBoxDao.selectList(iceBoxWrapper).stream().map(IceBox::getId).collect(Collectors.toList());
+    }
+
+    @Override
+    public int getLostCountByDeptId(Integer deptId) {
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+
+    @Override
+    public int getLostCountByDeptIds(List<Integer> deptIds) {
+        if(com.baomidou.mybatisplus.core.toolkit.CollectionUtils.isEmpty(deptIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).in(IceBox::getDeptId,deptIds).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+    @Override
+    public int getPutCountByDeptId(Integer deptId) {
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId);
+        return  iceBoxDao.selectCount(iceBoxWrapper);
+    }
 }

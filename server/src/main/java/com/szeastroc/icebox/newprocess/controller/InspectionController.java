@@ -1,8 +1,6 @@
-package com.szeastroc.icebox.newprocess;
+package com.szeastroc.icebox.newprocess.controller;
 
 import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.feign.user.FeignDeptClient;
-import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.factory.InspectionServiceFactory;
 import com.szeastroc.icebox.newprocess.service.impl.GroupMemberInspectionServiceImpl;
@@ -26,10 +24,6 @@ import java.util.List;
 public class InspectionController {
     @Autowired
     private GroupMemberInspectionServiceImpl groupMemberInspectionService;
-    @Autowired
-    private FeignUserClient feignUserClient;
-    @Autowired
-    private FeignDeptClient feignDeptClient;
 
     @RequestMapping("report")
     public CommonResponse<List<InspectionReportVO>> query(@RequestParam Integer deptId, @RequestParam Integer type) {
@@ -39,7 +33,7 @@ public class InspectionController {
     @RequestMapping("getStoreByUserId")
     public CommonResponse<List<StoreVO>> getStoreByUserId(@RequestParam Integer userId) {
         List<StoreVO> vos = groupMemberInspectionService.getStoreByUserId(userId);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,vos);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, vos);
     }
 
 }

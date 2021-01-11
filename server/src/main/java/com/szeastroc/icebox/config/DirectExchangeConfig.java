@@ -81,6 +81,37 @@ public class DirectExchangeConfig {
         return binding;
     }
 
+
+
+    // 定义冰柜异常报备队列
+    @Bean(name = "iceBackApplyReportQueue")
+    public Queue iceBackApplyReportQueue() {
+        Queue queue = new Queue(MqConstant.iceBackApplyReportQueue);
+        return queue;
+    }
+
+    // 定义队列跟交换机的绑定关系
+    @Bean
+    public Binding bindingIceBackApplyReportExchange() {
+        Binding binding = BindingBuilder.bind(iceBackApplyReportQueue()).to(directExchange()).with(MqConstant.iceBackApplyReportKey);
+        return binding;
+    }
+
+
+    // 定义冰柜异常报备队列
+    @Bean(name = "iceInspectionReportQueue")
+    public Queue iceInspectionReportQueue() {
+        Queue queue = new Queue(MqConstant.iceInspectionReportQueue);
+        return queue;
+    }
+
+    // 定义队列跟交换机的绑定关系
+    @Bean
+    public Binding bindingIceInspectionReportExchange() {
+        Binding binding = BindingBuilder.bind(iceInspectionReportQueue()).to(directExchange()).with(MqConstant.iceInspectionReportKey);
+        return binding;
+    }
+
     /**
      * DEATAIL_EXPORT
      * 队列消费配置

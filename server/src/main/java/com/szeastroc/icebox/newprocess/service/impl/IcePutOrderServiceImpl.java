@@ -9,7 +9,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
@@ -17,7 +16,7 @@ import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
-import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
+import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
@@ -44,6 +43,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -76,6 +77,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     @Autowired
     private IceBoxService iceBoxService;
 
+    @Transactional
     @Override
     public OrderPayResponse applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
 
@@ -281,7 +283,22 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         OrderPayResponse orderPayResponse = new OrderPayResponse(FreePayTypeEnum.IS_FREE.getType());
 
         JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"createByFree");
-        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+
+        boolean actualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
+        if(actualTransactionActive){
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                    //巡检报表添加投放数据
+                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                    reportMsg.setOperateType(1);
+                    reportMsg.setBoxId(iceBox.getId());
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+
+                }
+            });
+        }
         return orderPayResponse;
     }
 
@@ -401,6 +418,11 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             transferRecord.setUpdateTime(new Date());
             iceTransferRecordDao.updateById(transferRecord);
         }
+        //巡检报表添加投放数据
+        IceInspectionReportMsg msg = new IceInspectionReportMsg();
+        msg.setOperateType(1);
+        msg.setBoxId(iceBox.getId());
+        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,msg);
     }
 
     @Override
@@ -575,6 +597,11 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             // 新的 冰柜状态/投放状态
             JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"getPayStatus");
             rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+            //巡检报表添加投放数据
+            IceInspectionReportMsg msg = new IceInspectionReportMsg();
+            msg.setOperateType(1);
+            msg.setBoxId(iceBox.getId());
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,msg);
         }
 
         return flag;

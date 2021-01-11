@@ -1,27 +1,46 @@
 package com.szeastroc.icebox.sync;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.common.collect.Lists;
-import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
-import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
+import com.szeastroc.common.entity.user.vo.SessionUserInfoVo;
+import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
+import com.szeastroc.common.feign.user.FeignUserClient;
+import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
-import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.entity.IceBackApply;
+import com.szeastroc.icebox.newprocess.entity.IceBackApplyRelateBox;
+import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
+import com.szeastroc.icebox.newprocess.entity.IceBackOrder;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
+import com.szeastroc.icebox.newprocess.entity.IceInspectionReport;
+import com.szeastroc.icebox.newprocess.entity.IcePutApply;
+import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
+import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
 import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.service.*;
+import com.szeastroc.icebox.newprocess.service.IceBackApplyRelateBoxService;
+import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
+import com.szeastroc.icebox.newprocess.service.IceBackApplyService;
+import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
+import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
+import com.szeastroc.icebox.newprocess.service.IceExamineService;
+import com.szeastroc.icebox.newprocess.service.IceInspectionReportService;
+import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
+import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
+import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
 import com.szeastroc.icebox.oldprocess.entity.OrderInfo;
 import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import com.szeastroc.icebox.oldprocess.entity.WechatTransferOrder;
@@ -29,23 +48,14 @@ import com.szeastroc.icebox.oldprocess.service.OrderInfoService;
 import com.szeastroc.icebox.oldprocess.service.PactRecordService;
 import com.szeastroc.icebox.oldprocess.service.WechatTransferOrderService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.shiro.crypto.hash.Hash;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -80,15 +90,26 @@ public class IceOtherSync {
     @Autowired
     private IceBoxDao iceBoxDao;
     @Autowired
-    private FeignStoreClient feignStoreClient;
+    private IceBackApplyRelateBoxService iceBackApplyRelateBoxService;
+    @Autowired
+    private IceBackApplyReportService iceBackApplyReportService;
+    @Autowired
+    FeignExamineClient feignExamineClient;
+    @Autowired
+    FeignUserClient feignUserClient;
+
+    @Autowired
+    FeignStoreClient feignStoreClient;
+    @Autowired
+    private IceInspectionReportService iceInspectionReportService;
     @Autowired
     FeignDeptClient feignDeptClient;
     @Autowired
-    private IceBoxExamineExceptionReportService iceBoxExamineExceptionReportService;
+    FeignCacheClient feignCacheClient;
     @Autowired
-    private StringRedisTemplate redisTemplate;
+    IceExamineService iceExamineService;
     @Autowired
-    private FeignCacheClient feignCacheClient;
+    IceBoxService iceBoxService;
 
     /**
      * 同步投放订单
@@ -247,152 +268,128 @@ public class IceOtherSync {
         iceBoxExtendService.updateBatchById(updateIceBoxExtends);
     }
 
-    private ThreadPoolExecutor executor = new ThreadPoolExecutor(10,20,0, TimeUnit.SECONDS,new ArrayBlockingQueue<>(1000), Executors.defaultThreadFactory(),new ThreadPoolExecutor.CallerRunsPolicy());
-
+    
     public void syncIceBoxDept() {
         log.info("开始更新部门信息");
-//        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().isNotNull(IceBox::getSupplierId).groupBy(IceBox::getSupplierId));
-//
-//        List<Integer> collect = iceBoxes.stream().map(IceBox::getSupplierId).collect(Collectors.toList());
-//
-//        Map<Integer, SubordinateInfoVo> map = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(collect));
-//
-//        map.forEach((key,value) -> {
-//            log.info("key------>[{}]",key);
-//            Integer marketAreaId = value.getMarketAreaId();
-//            if (null != marketAreaId) {
-//                iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate()
-//                        .set(IceBox::getDeptId, marketAreaId)
-//                        .eq(IceBox::getSupplierId,key));
-//            }
-//        });
+        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().isNotNull(IceBox::getSupplierId).groupBy(IceBox::getSupplierId));
 
+        List<Integer> collect = iceBoxes.stream().map(IceBox::getSupplierId).collect(Collectors.toList());
+
+        Map<Integer, SubordinateInfoVo> map = FeignResponseUtil.getFeignData(feignSupplierClient.findByIds(collect));
+
+        map.forEach((key,value) -> {
+            log.info("key------>[{}]",key);
+            Integer marketAreaId = value.getMarketAreaId();
+            if (null != marketAreaId) {
+                iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate()
+                        .set(IceBox::getDeptId, marketAreaId)
+                        .eq(IceBox::getSupplierId,key));
+            }
+        });
+        log.info("更新部门信息结束");
+    }
+
+    public void syncIceBackApplyReport() {
+        List<IceBackApply> list = iceBackApplyService.list(Wrappers.<IceBackApply>lambdaQuery().gt(IceBackApply::getId, 4));
+        for (IceBackApply iceBackApply : list) {
+            String applyNumber = iceBackApply.getApplyNumber();
+            IceBackApplyRelateBox one = iceBackApplyRelateBoxService.getOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
+            IceBox iceBox = iceBoxDao.selectById(one.getBoxId());
+            IceBackApplyReport backApplyReport = iceBackOrderService.generateBackReport(iceBox, applyNumber, iceBackApply.getBackStoreNumber(), one.getFreeType());
+            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.readId(one.getBackSupplierId()));
+            backApplyReport.setDealerName(supplier.getName());
+            backApplyReport.setDealerNumber(supplier.getNumber());
+            backApplyReport.setExamineStatus(iceBackApply.getExamineStatus());
+            backApplyReport.setExamineId(iceBackApply.getExamineId());
+            backApplyReport.setCheckDate(iceBackApply.getUpdatedTime());
+            SessionUserInfoVo checkPerson = FeignResponseUtil.getFeignData(feignExamineClient.findLastCheckPerson(iceBackApply.getExamineId()));
+            if(Objects.nonNull(checkPerson)){
+                backApplyReport.setCheckOfficeName(checkPerson.getOfficeName());
+                backApplyReport.setCheckPerson(checkPerson.getRealname());
+                backApplyReport.setCheckPersonId(checkPerson.getId());
+            }
+            if(1==backApplyReport.getFreeType()){
+                IceBackOrder iceBackOrder = iceBackOrderService.getOne(Wrappers.<IceBackOrder>lambdaQuery().eq(IceBackOrder::getApplyNumber, applyNumber));
+                backApplyReport.setDepositMoney(iceBackOrder.getAmount());
+            }
+            backApplyReport.setCreatedTime(iceBackApply.getCreatedTime());
+            backApplyReport.setBackDate(iceBackApply.getCreatedTime());
+            SimpleUserInfoVo submitter = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBackApply.getCreatedBy()));
+            backApplyReport.setSubmitterMobile(submitter.getMobile());
+            backApplyReport.setSubmitterName(submitter.getRealname());
+            backApplyReport.setSubmitterId(submitter.getId());
+            iceBackApplyReportService.updateById(backApplyReport);
+        }
+    }
+
+    public void syncIceInspectionReport() {
         Page<IceBox> page = new Page<>();
-        page.setSearchCount(false);
-        page.setSize(500);
-        List<IceBox> iceBoxes = new ArrayList<>();
-        while (true){
-            IPage<IceBox> iceBoxIPage = iceBoxDao.selectPage(page, Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, 0));
-            iceBoxes = iceBoxIPage.getRecords();
-            if(CollectionUtils.isEmpty(iceBoxes)){
+        page.setSize(5000);
+        List<IceBox> list;
+        while(true){
+            IPage<IceBox> iceBoxIPage = iceBoxDao.selectPage(page, new LambdaQueryWrapper<IceBox>().isNotNull(IceBox::getPutStoreNumber));
+            list = iceBoxIPage.getRecords();
+            if(CollectionUtils.isEmpty(list)){
                 break;
             }
             page.setCurrent(page.getCurrent()+1);
-            for (IceBox iceBox : iceBoxes) {
-                executor.execute(()->{
-                    String putStoreNumber = iceBox.getPutStoreNumber();
-                    String value = redisTemplate.opsForValue().get("pxt_ice_box_dept_" + putStoreNumber);
-                    if(StringUtils.isNotBlank(value)){
-                        iceBox.setDeptId(Integer.valueOf(value));
-                        iceBoxDao.updateById(iceBox);
-                    }else{
-                        SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(putStoreNumber));
-                        Integer marketAreaId = null;
-                        if(Objects.nonNull(supplier)){
-                            marketAreaId = supplier.getMarketAreaId();
-                        }else{
-                            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(putStoreNumber));
-                            if(Objects.nonNull(store)){
-                                marketAreaId = store.getMarketArea();
-                            }
+            for (IceBox iceBox : list) {
+                String number = iceBox.getPutStoreNumber();
+                Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(number));
+                if(Objects.isNull(userId)){
+                    userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(number));
+                }
+                if(Objects.nonNull(userId)){
+                    IceInspectionReport currentMonthReport = iceInspectionReportService.getCurrentMonthReport(userId);
+                    if(Objects.isNull(currentMonthReport)){
+                        Integer deptId = FeignResponseUtil.getFeignData(feignDeptClient.getMainDeptByUserId(userId));
+                        if(Objects.isNull(deptId)){
+                            continue;
                         }
-                        Optional.ofNullable(marketAreaId).ifPresent(i->{
-                            SessionDeptInfoVo dept = FeignResponseUtil.getFeignData(feignDeptClient.findSessionDeptById(i));
-                            Integer deptType = dept.getDeptType();
-                            if(DeptTypeEnum.SERVICE.getType().equals(deptType)){
-                                iceBox.setDeptId(i);
-                            }else if (DeptTypeEnum.GROUP.getType().equals(deptType)){
-                                iceBox.setDeptId(dept.getParentId());
-                            }
-                            iceBoxDao.updateById(iceBox);
-                            redisTemplate.opsForValue().set("pxt_ice_box_dept_"+putStoreNumber,String.valueOf(iceBox.getDeptId()),30,TimeUnit.MINUTES);
-                        });
+                        SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(userId));
+                        currentMonthReport = new IceInspectionReport();
+                        currentMonthReport.setInspectionDate(new DateTime().toString("yyyy-MM"))
+                                .setUserId(userId)
+                                .setUserName(userInfoVo.getRealname());
+                        Map<Integer, SessionDeptInfoVo> deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(deptId));
+                        SessionDeptInfoVo headquarter = deptMap.get(5);
+                        SessionDeptInfoVo business = deptMap.get(4);
+                        if(!DeptTypeEnum.BUSINESS_UNIT.getType().equals(business.getDeptType())){
+                            business = null;
+                            headquarter = deptMap.get(4);
+                        }
+                        SessionDeptInfoVo region = deptMap.get(3);
+                        SessionDeptInfoVo service = deptMap.get(2);
+                        SessionDeptInfoVo group = deptMap.get(1);
+                        if(Objects.nonNull(headquarter)){
+                            currentMonthReport.setHeadquartersDeptId(headquarter.getId()).setHeadquartersDeptName(headquarter.getName());
+                        }
+                        if(Objects.nonNull(business)){
+                            currentMonthReport.setBusinessDeptId(business.getId()).setBusinessDeptName(business.getName());
+                        }
+                        if(Objects.nonNull(region)){
+                            currentMonthReport.setRegionDeptId(region.getId()).setRegionDeptName(region.getName());
+                        }
+                        if(Objects.nonNull(service)){
+                            currentMonthReport.setServiceDeptId(service.getId()).setServiceDeptName(service.getName());
+                        }
+                        if(Objects.nonNull(group)){
+                            currentMonthReport.setGroupDeptId(group.getId()).setGroupDeptName(group.getName());
+                        }
+                        iceInspectionReportService.save(currentMonthReport);
                     }
-                });
+                }
             }
         }
 
-        Page<IceBoxExamineExceptionReport> reportPage = new Page<>();
-        reportPage.setSearchCount(false);
-        reportPage.setSize(500);
-        List<IceBoxExamineExceptionReport> reports = new ArrayList<>();
-        while (true){
-            IPage<IceBoxExamineExceptionReport> reportIPage = iceBoxExamineExceptionReportService.page(reportPage, Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getSupplierId, 0));
-            reports = reportIPage.getRecords();
-            if(CollectionUtils.isEmpty(reports)){
-                break;
-            }
-            reportPage.setCurrent(reportPage.getCurrent()+1);
-            for (IceBoxExamineExceptionReport report : reports) {
-                executor.execute(()->{
-                    String putStoreNumber = report.getPutCustomerNumber();
-                    String s = redisTemplate.opsForValue().get("pxt_ice_box_level_dept_" + putStoreNumber);
-                    Map<Integer, SessionDeptInfoVo> deptInfoVoMap = new HashMap<>();
-                    if(StringUtils.isNotBlank(s)){
-                        deptInfoVoMap = JSON.parseObject(s,new TypeReference<HashMap<Integer, SessionDeptInfoVo>>(){});
-                    }else{
-                        String value = redisTemplate.opsForValue().get("pxt_ice_box_dept_" + putStoreNumber);
-                        if(StringUtils.isNotBlank(value)){
-                            deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(Integer.valueOf(value)));
-                            redisTemplate.opsForValue().set("pxt_ice_box_level_dept_"+putStoreNumber, JSONObject.toJSONString(deptInfoVoMap),30,TimeUnit.MINUTES);
-                        }else{
-                            SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(putStoreNumber));
-                            Integer marketAreaId = null;
-                            if(Objects.nonNull(supplier)){
-                                marketAreaId = supplier.getMarketAreaId();
-                            }else{
-                                StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(putStoreNumber));
-                                if(Objects.nonNull(store)){
-                                    marketAreaId = store.getMarketArea();
-                                }
-                            }
-                            if(Objects.nonNull(marketAreaId)){
-                                SessionDeptInfoVo dept = FeignResponseUtil.getFeignData(feignDeptClient.findSessionDeptById(marketAreaId));
-                                Integer deptType = dept.getDeptType();
-                                Integer deptId = 0;
-                                if(DeptTypeEnum.SERVICE.getType().equals(deptType)){
-                                    deptId = marketAreaId;
-                                }else if (DeptTypeEnum.GROUP.getType().equals(deptType)){
-                                    deptId = dept.getParentId();
-                                }
-                                redisTemplate.opsForValue().set("pxt_ice_box_dept_"+putStoreNumber,String.valueOf(deptId),30,TimeUnit.MINUTES);
-                                deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(Integer.valueOf(deptId)));
-                                redisTemplate.opsForValue().set("pxt_ice_box_level_dept_"+putStoreNumber, JSONObject.toJSONString(deptInfoVoMap),30,TimeUnit.MINUTES);
-                            }
-
-                        }
-                    }
-                    SessionDeptInfoVo group = deptInfoVoMap.get(1);
-                    if (group != null) {
-                        report.setGroupDeptId(group.getId());
-                        report.setGroupDeptName(group.getName());
-                    }
-                    SessionDeptInfoVo service = deptInfoVoMap.get(2);
-                    if (service != null) {
-                        report.setServiceDeptId(service.getId());
-                        report.setServiceDeptName(service.getName());
-                    }
-                    SessionDeptInfoVo region = deptInfoVoMap.get(3);
-                    if (region != null) {
-                        report.setRegionDeptId(region.getId());
-                        report.setRegionDeptName(region.getName());
-                    }
-
-                    SessionDeptInfoVo business = deptInfoVoMap.get(4);
-                    if (business != null) {
-                        report.setBusinessDeptId(business.getId());
-                        report.setBusinessDeptName(business.getName());
-                    }
-
-                    SessionDeptInfoVo headquarters = deptInfoVoMap.get(5);
-                    if (headquarters != null) {
-                        report.setHeadquartersDeptId(headquarters.getId());
-                        report.setHeadquartersDeptName(headquarters.getName());
-                    }
-                    iceBoxExamineExceptionReportService.updateById(report);
-                });
-            }
+        List<IceInspectionReport> reports = iceInspectionReportService.list();
+        for (IceInspectionReport report : reports) {
+            List<Integer> putBoxIds = iceBoxService.getPutBoxIds(report.getUserId());
+            Integer inspectionCount = iceExamineService.getInspectionBoxes(putBoxIds).size();
+            int lostCount = iceBoxService.getLostScrapCount(putBoxIds);
+            report.setInspectionCount(inspectionCount).setLostScrapCount(lostCount).setPutCount(putBoxIds.size());
+            iceInspectionReportService.updateById(report);
         }
-        log.info("更新部门信息结束");
+
     }
 }

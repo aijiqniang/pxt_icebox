@@ -109,6 +109,9 @@ public class IceBoxPutReportConsumer {
                             if(PutStatus.NO_PASS.getStatus().equals(report.getPutStatus())){
                                 excelVo.setPutStatus("已驳回");
                             }
+                            if(PutStatus.IS_CANCEL.getStatus().equals(report.getPutStatus())){
+                                excelVo.setPutStatus("已作废");
+                            }
                             excelVoList.add(excelVo);
                         }
                         excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxPutReportExcelVo::getApplyNumber)).collect(Collectors.toList());

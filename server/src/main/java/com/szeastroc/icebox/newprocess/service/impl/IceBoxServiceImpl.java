@@ -3951,6 +3951,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(historyVo.getReviewerId()));
             if (userInfoVo != null) {
                 history.setReviewerName(userInfoVo.getRealname());
+                history.setReviewerOfficeName(userInfoVo.getPosion());
             }
             history.setReviewerTime(new Date());
             iceBoxTransferHistoryDao.updateById(history);

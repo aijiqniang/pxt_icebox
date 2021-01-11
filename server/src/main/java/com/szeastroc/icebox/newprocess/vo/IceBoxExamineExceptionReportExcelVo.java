@@ -98,4 +98,13 @@ public class IceBoxExamineExceptionReportExcelVo {
      */
     private String toOaNumber;
 
+    /**
+     *审核人职务
+     */
+    private String examineUserOfficeName;
+    /**
+     *审核备注
+     */
+    private String examineRemark;
+
 }

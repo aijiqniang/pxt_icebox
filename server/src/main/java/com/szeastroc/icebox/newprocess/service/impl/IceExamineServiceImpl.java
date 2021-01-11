@@ -179,23 +179,26 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             if(iceExamine.getExaminStatus().equals(ExamineStatus.REJECT_EXAMINE.getStatus())){
                 examineExceptionStatus = ExamineExceptionStatusEnums.is_unpass.getStatus();
             }
-            buildReportAndSendMq(iceExamine,examineExceptionStatus,now, null);
+            buildReportAndSendMq(iceExamine,examineExceptionStatus,now, null,null);
         }, ExecutorServiceFactory.getInstance());
     }
 
-    private void buildReportAndSendMq(IceExamine iceExamine, Integer status, Date now, Integer updateBy) {
+    private void buildReportAndSendMq(IceExamine iceExamine, Integer status, Date now, Integer updateBy,String examineRemark) {
         try {
             IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportDao.selectOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, iceExamine.getExamineNumber()));
             IceBoxExamineExceptionReportMsg report = new IceBoxExamineExceptionReportMsg();
             if(isExsit != null){
                 if(updateBy != null){
-                    SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(updateBy));
+//                    SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(updateBy));
+                    SessionUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignCacheClient.getForUserInfoVo(updateBy));
                     report.setExamineUserId(updateBy);
                     report.setExamineTime(now);
                     if(userInfoVo != null){
                         report.setExamineUserName(userInfoVo.getRealname());
+                        report.setExamineUserOfficeName(userInfoVo.getOfficeName()); // 审核人职务
                     }
                 }
+                report.setExamineRemark(examineRemark);
                 report.setExamineNumber(iceExamine.getExamineNumber());
                 report.setStatus(status);
                 report.setOperateType(OperateTypeEnum.UPDATE.getType());
@@ -543,7 +546,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     }
 
     @Override
-    public void dealIceExamineCheck(String redisKey, Integer status, Integer updateBy) {
+    public void dealIceExamineCheck(String redisKey, Integer status, Integer updateBy,String examineRemark) {
         String str = jedisClient.get(redisKey);
         if(StringUtils.isBlank(str)){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "审批失败,找不到冰柜巡检信息！");
@@ -576,13 +579,13 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         if(status.equals(ExamineStatusEnum.IS_DEFAULT.getStatus())){
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
-                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_reporting.getStatus(),new Date(),updateBy);
+                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_reporting.getStatus(),new Date(),updateBy,examineRemark);
             }, ExecutorServiceFactory.getInstance());
         }
         if(status.equals(ExamineStatusEnum.IS_PASS.getStatus())){
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
-                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.allow_report.getStatus(),new Date(),updateBy);
+                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.allow_report.getStatus(),new Date(),updateBy,examineRemark);
             }, ExecutorServiceFactory.getInstance());
         }
         if(status.equals(ExamineStatusEnum.UN_PASS.getStatus())){
@@ -591,7 +594,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             iceBoxDao.updateById(iceBox);
             //发送mq消息,同步申请数据到报表
             CompletableFuture.runAsync(() -> {
-                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_unpass.getStatus(),new Date(), updateBy);
+                buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_unpass.getStatus(),new Date(), updateBy,examineRemark);
             }, ExecutorServiceFactory.getInstance());
         }
 //        IceExamine iceExamine = new IceExamine();

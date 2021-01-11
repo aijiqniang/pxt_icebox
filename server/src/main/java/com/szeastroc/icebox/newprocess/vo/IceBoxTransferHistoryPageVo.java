@@ -118,8 +118,14 @@ public class IceBoxTransferHistoryPageVo {
     private String reviewer;
 
     /**
+     * 审核人
+     */
+    @ExcelProperty(value = "审核人职务", index = 17)
+    private String reviewerOfficeName;
+
+    /**
      * 审核日期
      */
-    @ExcelProperty(value = "审核日期", index = 17)
+    @ExcelProperty(value = "审核日期", index = 18)
     private String reviewTimeStr;
 }

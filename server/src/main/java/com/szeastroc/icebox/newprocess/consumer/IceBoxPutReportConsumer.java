@@ -155,7 +155,6 @@ public class IceBoxPutReportConsumer {
                                     eachDataRow.createCell(3).setCellValue(excelVo.getProvinceName());
                                     eachDataRow.createCell(4).setCellValue(excelVo.getCityName());
                                     eachDataRow.createCell(5).setCellValue(excelVo.getDistrictName());
-
                                     eachDataRow.createCell(6).setCellValue(excelVo.getApplyNumber());
                                     eachDataRow.createCell(7).setCellValue(excelVo.getSupplierNumber());
                                     eachDataRow.createCell(8).setCellValue(excelVo.getSupplierName());

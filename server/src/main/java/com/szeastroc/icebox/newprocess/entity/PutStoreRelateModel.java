@@ -56,6 +56,12 @@ public class PutStoreRelateModel {
     private Integer examineStatus;
 
     /**
+     * 审批备注
+     */
+    @TableField(value = "examine_remark")
+    private String examineRemark;
+
+    /**
      * 业务员id
      */
     @TableField(value = "create_by")

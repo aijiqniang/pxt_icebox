@@ -115,6 +115,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
@@ -209,9 +210,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
     @Autowired
     private FeignIceboxQueryClient feignIceboxQueryClient;
-
-    @Autowired
-    private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -2943,7 +2941,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             .examineStatus(ExamineStatus.DOING_EXAMINE.getStatus())
                             .updateTime(new Date())
                             .build();
-                    putStoreRelateModelDao.updateById(putStoreRelateModel);
+                    putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                            .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                            .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 }
             }
 
@@ -3008,7 +3008,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             .examineStatus(ExamineStatus.REJECT_EXAMINE.getStatus())
                             .updateTime(new Date())
                             .build();
-                    putStoreRelateModelDao.updateById(putStoreRelateModel);
+                    putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                            .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                            .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 }
             }
 
@@ -3077,7 +3079,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 putStoreRelateModel.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
                 putStoreRelateModel.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
                 putStoreRelateModel.setUpdateTime(new Date());
-                putStoreRelateModelDao.updateById(putStoreRelateModel);
+                putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                        .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                        .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 //旧冰柜发送签收通知
                 IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, putStoreRelateModel.getModelId())
                         .eq(IceBox::getSupplierId, putStoreRelateModel.getSupplierId())
@@ -3953,6 +3957,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(historyVo.getReviewerId()));
             if (userInfoVo != null) {
                 history.setReviewerName(userInfoVo.getRealname());
+                history.setReviewerOfficeName(userInfoVo.getPosion());
             }
             history.setReviewerTime(new Date());
             iceBoxTransferHistoryDao.updateById(history);

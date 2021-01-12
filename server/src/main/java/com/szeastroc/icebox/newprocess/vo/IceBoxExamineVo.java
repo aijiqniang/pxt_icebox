@@ -83,6 +83,11 @@ public class IceBoxExamineVo {
      * 陈列照片的URL
      */
     private String displayImage;
+
+    /**
+     * 资产编号图片的URL
+     */
+    private String assetImage;
     /**
      * 巡检备注
      */

@@ -89,6 +89,12 @@ public class IcePutApply {
     @TableField(value = "update_time")
     private Date updateTime;
 
+    /**
+     * 备注
+     */
+    @TableField(value = "apply_pit")
+    private String applyPit;
+
     public static IcePutApplyBuilder builder() {
         return new IcePutApplyBuilder();
     }

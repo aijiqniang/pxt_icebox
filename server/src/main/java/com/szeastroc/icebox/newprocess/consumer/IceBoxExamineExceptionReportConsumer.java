@@ -55,25 +55,25 @@ public class IceBoxExamineExceptionReportConsumer {
     @Autowired
     private IceExamineDao iceExamineDao;
 
-//    @RabbitHandler
+    //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue)
     public void task(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
-        log.info("接收到的巡检信息到巡检报表——》【{}】",JSON.toJSONString(reportMsg));
-        if(OperateTypeEnum.INSERT.getType().equals(reportMsg.getOperateType())){
+        log.info("接收到的巡检信息到巡检报表——》【{}】", JSON.toJSONString(reportMsg));
+        if (OperateTypeEnum.INSERT.getType().equals(reportMsg.getOperateType())) {
             saveReport(reportMsg);
         }
-        if(OperateTypeEnum.UPDATE.getType().equals(reportMsg.getOperateType())){
+        if (OperateTypeEnum.UPDATE.getType().equals(reportMsg.getOperateType())) {
             updateReport(reportMsg);
         }
-        if(OperateTypeEnum.SELECT.getType().equals(reportMsg.getOperateType())){
+        if (OperateTypeEnum.SELECT.getType().equals(reportMsg.getOperateType())) {
             selectReport(reportMsg);
         }
     }
 
     private void selectReport(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
-        if(IceBoxReprotTypeEnum.EXCEPTION.getType().equals(reportMsg.getReportType())){
+        if (IceBoxReprotTypeEnum.EXCEPTION.getType().equals(reportMsg.getReportType())) {
             exportExceptionReport(reportMsg);
-        }else {
+        } else {
             exportExamineReport(reportMsg);
         }
 
@@ -85,39 +85,39 @@ public class IceBoxExamineExceptionReportConsumer {
         log.info("fxbill task... [{}]", JSON.toJSONString(reportMsg));
         long start = System.currentTimeMillis();
         Integer count = iceBoxExamineExceptionReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
-        log.warn("当前检索条件下的巡检异常记录总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
+        log.warn("当前检索条件下的巡检异常记录总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start, reportMsg.getOperateName());
         // 列
-        String[] columnName = {"事业部","大区","服务处","所属经销商编号", "所属经销商名称", "投放客户编号", "投放客户名称","投放客户类型","冰柜编号", "冰柜型号","押金金额","提报类型","提交人","提交日期",  "审核人员",
-                "审核日期", "状态", "提报时间","提报单号"};
+        String[] columnName = {"事业部", "大区", "服务处", "所属经销商编号", "所属经销商名称", "投放客户编号", "投放客户名称", "投放客户类型", "冰柜编号", "冰柜型号", "押金金额", "提报类型", "提交人", "提交日期", "审核人员",
+                "审核日期", "状态", "提报时间", "提报单号","审核人职务","审核备注"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
         PoiUtil.exportReportExcelToLocalPath(count, columnName, tmpPath, imageUploadUtil, feignExportRecordsClient, reportMsg.getRecordsId(),
-                (wb,eachSheet, startRowCount, endRowCount, currentPage, pageSize) -> {
+                (wb, eachSheet, startRowCount, endRowCount, currentPage, pageSize) -> {
                     List<IceBoxExamineExceptionReportExcelVo> excelVoList = new ArrayList<>();
                     Page<IceBoxExamineExceptionReport> page = new Page<>();
                     page.setCurrent(currentPage);
                     page.setSize(pageSize);
-                    IPage<IceBoxExamineExceptionReport> putReportIPage = iceBoxExamineExceptionReportService.page(page,wrapper);
+                    IPage<IceBoxExamineExceptionReport> putReportIPage = iceBoxExamineExceptionReportService.page(page, wrapper);
                     List<IceBoxExamineExceptionReport> billInfos = putReportIPage.getRecords();
                     if (CollectionUtil.isNotEmpty(billInfos)) {
-                        for(IceBoxExamineExceptionReport report:billInfos){
+                        for (IceBoxExamineExceptionReport report : billInfos) {
                             IceBoxExamineExceptionReportExcelVo excelVo = new IceBoxExamineExceptionReportExcelVo();
-                            BeanUtils.copyProperties(report,excelVo);
+                            BeanUtils.copyProperties(report, excelVo);
 
-                            if(report.getSubmitTime() != null){
+                            if (report.getSubmitTime() != null) {
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
                             }
-                            if(report.getExamineTime() != null){
+                            if (report.getExamineTime() != null) {
                                 excelVo.setExamineTime(dateFormat.format(report.getExamineTime()));
                             }
-                            if(SupplierTypeEnum.IS_STORE.getType().equals(report.getPutCustomerType())){
+                            if (SupplierTypeEnum.IS_STORE.getType().equals(report.getPutCustomerType())) {
                                 excelVo.setPutCustomerType(SupplierTypeEnum.IS_STORE.getDesc());
                             }
-                            if(SupplierTypeEnum.IS_POSTMAN.getType().equals(report.getPutCustomerType())){
+                            if (SupplierTypeEnum.IS_POSTMAN.getType().equals(report.getPutCustomerType())) {
                                 excelVo.setPutCustomerType(SupplierTypeEnum.IS_POSTMAN.getDesc());
                             }
-                            if(SupplierTypeEnum.IS_WHOLESALER.getType().equals(report.getPutCustomerType())){
+                            if (SupplierTypeEnum.IS_WHOLESALER.getType().equals(report.getPutCustomerType())) {
                                 excelVo.setPutCustomerType(SupplierTypeEnum.IS_WHOLESALER.getDesc());
                             }
                             excelVo.setToOaType(IceBoxEnums.StatusEnum.getDesc(report.getToOaType()));
@@ -125,8 +125,8 @@ public class IceBoxExamineExceptionReportConsumer {
                             excelVoList.add(excelVo);
                         }
 //                        excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxExamineExceptionReportExcelVo::)).collect(Collectors.toList());
-                        if(CollectionUtil.isNotEmpty(excelVoList)){
-                            log.warn("当前检索条件下的巡检异常记录导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
+                        if (CollectionUtil.isNotEmpty(excelVoList)) {
+                            log.warn("当前检索条件下的巡检异常记录导出总数据量为 [{}],操作人[{}]", excelVoList.size(), reportMsg.getOperateName());
                             for (int i = startRowCount; i <= endRowCount; i++) {
                                 SXSSFRow eachDataRow = eachSheet.createRow(i);
                                 if ((i - startRowCount) < excelVoList.size()) {
@@ -141,7 +141,7 @@ public class IceBoxExamineExceptionReportConsumer {
                                     eachDataRow.createCell(7).setCellValue(excelVo.getPutCustomerType());
                                     eachDataRow.createCell(8).setCellValue(excelVo.getIceBoxAssetId());
                                     eachDataRow.createCell(9).setCellValue(excelVo.getIceBoxModelName());
-                                    eachDataRow.createCell(10).setCellValue(excelVo.getDepositMoney()+"");
+                                    eachDataRow.createCell(10).setCellValue(excelVo.getDepositMoney() + "");
                                     eachDataRow.createCell(11).setCellValue(excelVo.getToOaType());
                                     eachDataRow.createCell(12).setCellValue(excelVo.getSubmitterName());
                                     eachDataRow.createCell(13).setCellValue(excelVo.getSubmitTime());
@@ -150,6 +150,8 @@ public class IceBoxExamineExceptionReportConsumer {
                                     eachDataRow.createCell(16).setCellValue(excelVo.getStatus());
                                     eachDataRow.createCell(17).setCellValue(excelVo.getToOaTime());
                                     eachDataRow.createCell(18).setCellValue(excelVo.getToOaNumber());
+                                    eachDataRow.createCell(19).setCellValue(excelVo.getExamineUserOfficeName());
+                                    eachDataRow.createCell(20).setCellValue(excelVo.getExamineRemark());
                                 }
                             }
                         }
@@ -162,42 +164,42 @@ public class IceBoxExamineExceptionReportConsumer {
         log.info("fxbill task... [{}]", JSON.toJSONString(reportMsg));
         long start = System.currentTimeMillis();
         Integer count = iceBoxExamineExceptionReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
-        log.warn("当前检索条件下的巡检记录总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
+        log.warn("当前检索条件下的巡检记录总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start, reportMsg.getOperateName());
         // 列
-        String[] columnName = {"事业部","大区","服务处","服务组","冰柜编号","冰柜型号","所属经销商编号", "所属经销商名称", "现投放客户编号", "现投放客户名称","冰柜状态","巡检人姓名","巡检人职位","巡检时间",
-                "资产拍照","备注信息"};
+        String[] columnName = {"事业部", "大区", "服务处", "服务组", "冰柜编号", "冰柜型号", "所属经销商编号", "所属经销商名称", "现投放客户编号", "现投放客户名称", "冰柜状态", "巡检人姓名", "巡检人职位", "巡检时间",
+                "资产拍照", "备注信息"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
         PoiUtil.exportReportExcelToLocalPath(count, columnName, tmpPath, imageUploadUtil, feignExportRecordsClient, reportMsg.getRecordsId(),
-                (wb,eachSheet, startRowCount, endRowCount, currentPage, pageSize) -> {
+                (wb, eachSheet, startRowCount, endRowCount, currentPage, pageSize) -> {
                     List<IceBoxExamineExcelVo> excelVoList = new ArrayList<>();
                     Page<IceBoxExamineExceptionReport> page = new Page<>();
                     page.setCurrent(currentPage);
                     page.setSize(pageSize);
-                    IPage<IceBoxExamineExceptionReport> putReportIPage = iceBoxExamineExceptionReportService.page(page,wrapper);
+                    IPage<IceBoxExamineExceptionReport> putReportIPage = iceBoxExamineExceptionReportService.page(page, wrapper);
                     List<IceBoxExamineExceptionReport> billInfos = putReportIPage.getRecords();
                     if (CollectionUtil.isNotEmpty(billInfos)) {
-                        for(IceBoxExamineExceptionReport report:billInfos){
+                        for (IceBoxExamineExceptionReport report : billInfos) {
                             IceBoxExamineExcelVo excelVo = new IceBoxExamineExcelVo();
-                            BeanUtils.copyProperties(report,excelVo);
+                            BeanUtils.copyProperties(report, excelVo);
                             IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getExamineNumber, report.getExamineNumber()));
                             if(iceExamine != null){
-                                excelVo.setImageUrl(iceExamine.getDisplayImage()+","+iceExamine.getExteriorImage());
+                                excelVo.setImageUrl(iceExamine.getDisplayImage()+","+iceExamine.getExteriorImage()+","+iceExamine.getAssetImage());
                                 excelVo.setExaminMsg(iceExamine.getExaminMsg());
                             }
                             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
-                            if(iceBox != null){
+                            if (iceBox != null) {
                                 excelVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus()));
                             }
-                            if(report.getSubmitTime() != null){
+                            if (report.getSubmitTime() != null) {
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
                             }
                             excelVoList.add(excelVo);
                         }
 //                        excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxExamineExceptionReportExcelVo::)).collect(Collectors.toList());
-                        if(CollectionUtil.isNotEmpty(excelVoList)){
-                            log.warn("当前检索条件下的巡检记录导出总数据量为 [{}],操作人[{}]", excelVoList.size(),reportMsg.getOperateName());
+                        if (CollectionUtil.isNotEmpty(excelVoList)) {
+                            log.warn("当前检索条件下的巡检记录导出总数据量为 [{}],操作人[{}]", excelVoList.size(), reportMsg.getOperateName());
                             for (int i = startRowCount; i <= endRowCount; i++) {
                                 SXSSFRow eachDataRow = eachSheet.createRow(i);
                                 if ((i - startRowCount) < excelVoList.size()) {
@@ -227,89 +229,102 @@ public class IceBoxExamineExceptionReportConsumer {
 
     private void updateReport(IceBoxExamineExceptionReportMsg reportMsg) {
         IceBoxExamineExceptionReport isExsit = iceBoxExamineExceptionReportService.getOne(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getExamineNumber, reportMsg.getExamineNumber()));
-        isExsit.setStatus(reportMsg.getStatus());
-        if(reportMsg.getExamineUserId() != null){
-            isExsit.setExamineUserId(reportMsg.getExamineUserId());
-        }
+//        isExsit.setStatus(reportMsg.getStatus());
+//        if (reportMsg.getExamineUserId() != null) {
+//            isExsit.setExamineUserId(reportMsg.getExamineUserId());
+//        }
+//        if (StringUtils.isNotEmpty(reportMsg.getExamineUserName())) {
+//            isExsit.setExamineUserName(reportMsg.getExamineUserName());
+//        }
+//        if (reportMsg.getExamineTime() != null) {
+//            isExsit.setExamineTime(reportMsg.getExamineTime());
+//        }
+//        isExsit.setExamineUserOfficeName(reportMsg.getExamineUserOfficeName() == null ? null : reportMsg.getExamineUserOfficeName());
+//        isExsit.setExamineRemark(reportMsg.getExamineRemark() == null ? null : reportMsg.getExamineRemark());
 
-        if(StringUtils.isNotEmpty(reportMsg.getExamineUserName())){
-            isExsit.setExamineUserName(reportMsg.getExamineUserName());
-        }
-
-        if(reportMsg.getExamineTime() != null){
-            isExsit.setExamineTime(reportMsg.getExamineTime());
-        }
-
-        iceBoxExamineExceptionReportService.updateById(isExsit);
+//        iceBoxExamineExceptionReportService.updateById(isExsit);
+        iceBoxExamineExceptionReportService.update(null,
+                Wrappers.<IceBoxExamineExceptionReport>lambdaUpdate()
+                .set(IceBoxExamineExceptionReport::getStatus,reportMsg.getStatus())
+                .set(IceBoxExamineExceptionReport::getExamineUserId,reportMsg.getExamineUserId())
+                .set(IceBoxExamineExceptionReport::getExamineUserName,reportMsg.getExamineUserName())
+                .set(IceBoxExamineExceptionReport::getExamineTime,reportMsg.getExamineTime())
+                .set(IceBoxExamineExceptionReport::getExamineUserOfficeName,reportMsg.getExamineUserOfficeName())
+                .set(IceBoxExamineExceptionReport::getExamineRemark,reportMsg.getExamineRemark())
+                .eq(IceBoxExamineExceptionReport::getId,isExsit.getId())
+        );
     }
 
     private void saveReport(IceBoxExamineExceptionReportMsg reportMsg) {
         IceBoxExamineExceptionReport report = new IceBoxExamineExceptionReport();
-        BeanUtils.copyProperties(reportMsg,report);
+        BeanUtils.copyProperties(reportMsg, report);
         iceBoxExamineExceptionReportService.save(report);
     }
 
     private LambdaQueryWrapper<IceBoxExamineExceptionReport> fillWrapper(IceBoxExamineExceptionReportMsg reportMsg) {
         LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = Wrappers.<IceBoxExamineExceptionReport>lambdaQuery();
-        if(reportMsg.getGroupDeptId() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getGroupDeptId,reportMsg.getGroupDeptId());
+        if (reportMsg.getGroupDeptId() != null) {
+            wrapper.eq(IceBoxExamineExceptionReport::getGroupDeptId, reportMsg.getGroupDeptId());
         }
-        if(reportMsg.getServiceDeptId() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getServiceDeptId,reportMsg.getServiceDeptId());
+        if (reportMsg.getServiceDeptId() != null) {
+            wrapper.eq(IceBoxExamineExceptionReport::getServiceDeptId, reportMsg.getServiceDeptId());
         }
-        if(reportMsg.getRegionDeptId() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getRegionDeptId,reportMsg.getRegionDeptId());
+        if (reportMsg.getRegionDeptId() != null) {
+            wrapper.eq(IceBoxExamineExceptionReport::getRegionDeptId, reportMsg.getRegionDeptId());
         }
-        if(reportMsg.getBusinessDeptId() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getBusinessDeptId,reportMsg.getBusinessDeptId());
+        if (reportMsg.getBusinessDeptId() != null) {
+            wrapper.eq(IceBoxExamineExceptionReport::getBusinessDeptId, reportMsg.getBusinessDeptId());
         }
-        if(reportMsg.getHeadquartersDeptId() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getHeadquartersDeptId,reportMsg.getHeadquartersDeptId());
+        if (reportMsg.getHeadquartersDeptId() != null) {
+            wrapper.eq(IceBoxExamineExceptionReport::getHeadquartersDeptId, reportMsg.getHeadquartersDeptId());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getExamineNumber())){
-            wrapper.like(IceBoxExamineExceptionReport::getExamineNumber,reportMsg.getExamineNumber());
+        if (StringUtils.isNotEmpty(reportMsg.getExamineNumber())) {
+            wrapper.like(IceBoxExamineExceptionReport::getExamineNumber, reportMsg.getExamineNumber());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getSupplierName())){
-            wrapper.like(IceBoxExamineExceptionReport::getSupplierName,reportMsg.getSupplierName());
+        if (StringUtils.isNotEmpty(reportMsg.getSupplierName())) {
+            wrapper.like(IceBoxExamineExceptionReport::getSupplierName, reportMsg.getSupplierName());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getSupplierNumber())){
-            wrapper.like(IceBoxExamineExceptionReport::getSupplierNumber,reportMsg.getSupplierNumber());
+        if (StringUtils.isNotEmpty(reportMsg.getSupplierNumber())) {
+            wrapper.like(IceBoxExamineExceptionReport::getSupplierNumber, reportMsg.getSupplierNumber());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getSubmitterName())){
+        if (StringUtils.isNotEmpty(reportMsg.getSubmitterName())) {
             List<Integer> userIds = FeignResponseUtil.getFeignData(feignUserClient.findUserIdsByUserName(reportMsg.getSubmitterName()));
-            if(CollectionUtil.isNotEmpty(userIds)){
-                wrapper.in(IceBoxExamineExceptionReport::getSubmitterId,userIds);
-            }else {
-                wrapper.eq(IceBoxExamineExceptionReport::getSubmitterId,"");
+            if (CollectionUtil.isNotEmpty(userIds)) {
+                wrapper.in(IceBoxExamineExceptionReport::getSubmitterId, userIds);
+            } else {
+                wrapper.eq(IceBoxExamineExceptionReport::getSubmitterId, "");
             }
 
         }
-        if(reportMsg.getSubmitTime() != null){
-            wrapper.ge(IceBoxExamineExceptionReport::getSubmitTime,reportMsg.getSubmitTime());
+        if (reportMsg.getSubmitTime() != null) {
+            wrapper.ge(IceBoxExamineExceptionReport::getSubmitTime, reportMsg.getSubmitTime());
         }
-        if(reportMsg.getSubmitEndTime() != null){
-            wrapper.le(IceBoxExamineExceptionReport::getSubmitTime,reportMsg.getSubmitEndTime());
+        if (reportMsg.getSubmitEndTime() != null) {
+            wrapper.le(IceBoxExamineExceptionReport::getSubmitTime, reportMsg.getSubmitEndTime());
         }
-        if(reportMsg.getToOaTime() != null){
-            wrapper.ge(IceBoxExamineExceptionReport::getToOaTime,reportMsg.getToOaTime());
+        if (reportMsg.getToOaTime() != null) {
+            wrapper.ge(IceBoxExamineExceptionReport::getToOaTime, reportMsg.getToOaTime());
         }
-        if(reportMsg.getToOaEndTime() != null){
-            wrapper.le(IceBoxExamineExceptionReport::getToOaTime,reportMsg.getToOaEndTime());
+        if (reportMsg.getToOaEndTime() != null) {
+            wrapper.le(IceBoxExamineExceptionReport::getToOaTime, reportMsg.getToOaEndTime());
         }
-        if(reportMsg.getPutCustomerName() != null){
-            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerName,reportMsg.getPutCustomerName());
+        if (reportMsg.getPutCustomerName() != null) {
+            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerName, reportMsg.getPutCustomerName());
         }
-        if(reportMsg.getPutCustomerNumber() != null){
-            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerNumber,reportMsg.getPutCustomerNumber());
+        if (reportMsg.getPutCustomerNumber() != null) {
+            wrapper.like(IceBoxExamineExceptionReport::getPutCustomerNumber, reportMsg.getPutCustomerNumber());
         }
-        if(reportMsg.getPutCustomerType() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getPutCustomerType,reportMsg.getPutCustomerType());
+        if (reportMsg.getPutCustomerType() != null) {
+            wrapper.eq(IceBoxExamineExceptionReport::getPutCustomerType, reportMsg.getPutCustomerType());
         }
-        if(StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
-            wrapper.eq(IceBoxExamineExceptionReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
+        if (StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())) {
+            wrapper.eq(IceBoxExamineExceptionReport::getIceBoxAssetId, reportMsg.getIceBoxAssetId());
         }
-        if(reportMsg.getStatus() != null){
-            wrapper.eq(IceBoxExamineExceptionReport::getStatus,reportMsg.getStatus());
+        if (reportMsg.getStatus() != null) {
+            wrapper.eq(IceBoxExamineExceptionReport::getStatus, reportMsg.getStatus());
+        }
+        if(reportMsg.getToOaType() != null){
+            wrapper.eq(IceBoxExamineExceptionReport::getToOaType,reportMsg.getToOaType());
         }
         if(StringUtils.isNotEmpty(reportMsg.getToOaNumber())){
             wrapper.eq(IceBoxExamineExceptionReport::getToOaNumber,reportMsg.getToOaNumber());

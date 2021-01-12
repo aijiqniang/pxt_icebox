@@ -48,6 +48,7 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignCusLabelClient;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.customer.FeignSupplierRelateUserClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignDeptRuleClient;
@@ -56,6 +57,7 @@ import com.szeastroc.common.feign.user.FeignXcxBaseClient;
 import com.szeastroc.common.feign.visit.FeignBacklogClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
@@ -65,27 +67,17 @@ import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.enums.*;
+import com.szeastroc.icebox.enums.ExamineStatusEnum;
+import com.szeastroc.icebox.enums.FreePayTypeEnum;
+import com.szeastroc.icebox.enums.OrderStatus;
+import com.szeastroc.icebox.enums.*;
+import com.szeastroc.icebox.enums.RecordStatus;
+import com.szeastroc.icebox.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
+import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
-import com.szeastroc.icebox.newprocess.dao.ApplyRelatePutStoreModelDao;
-import com.szeastroc.icebox.newprocess.dao.IceBackApplyDao;
-import com.szeastroc.icebox.newprocess.dao.IceBackApplyRelateBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxChangeHistoryDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExamineExceptionReportDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxPutReportDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxTransferHistoryDao;
-import com.szeastroc.icebox.newprocess.dao.IceExamineDao;
-import com.szeastroc.icebox.newprocess.dao.IceModelDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutApplyRelateBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutOrderDao;
-import com.szeastroc.icebox.newprocess.dao.IcePutPactRecordDao;
-import com.szeastroc.icebox.newprocess.dao.IceTransferRecordDao;
-import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
-import com.szeastroc.icebox.newprocess.dao.PutStoreRelateModelDao;
+import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.ApplyRelatePutStoreModel;
 import com.szeastroc.icebox.newprocess.entity.IceBackApply;
 import com.szeastroc.icebox.newprocess.entity.IceBackApplyRelateBox;
@@ -104,23 +96,11 @@ import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
 import com.szeastroc.icebox.newprocess.entity.IceTransferRecord;
 import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
-import com.szeastroc.icebox.newprocess.enums.CommonIsCheckEnum;
-import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.ExamineExceptionStatusEnums;
-import com.szeastroc.icebox.newprocess.enums.ExamineLastApprovalEnum;
-import com.szeastroc.icebox.newprocess.enums.ExamineNodeStatusEnum;
-import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
-import com.szeastroc.icebox.newprocess.enums.ExamineTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
-import com.szeastroc.icebox.newprocess.enums.OldIceBoxSignNoticeStatusEnums;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
-import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
-import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
@@ -136,6 +116,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
+import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
@@ -226,6 +207,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceBoxService iceBoxService;
     @Autowired
     private IcePutOrderService icePutOrderService;
+    @Autowired
+    private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
+    @Autowired
+    private FeignIceboxQueryClient feignIceboxQueryClient;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -337,8 +322,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .putStoreNumber(iceBoxRequestVo.getStoreNumber())
                 .userId(iceBoxRequestVo.getUserId())
                 .createdBy(iceBoxRequestVo.getUserId())
+                .applyPit(iceBoxRequestVo.getApplyPit())
                 .build();
         icePutApplyDao.insert(icePutApply);
+        iceBoxRequestVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(iceBoxRequestVo.getStoreNumber()))));
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
         BigDecimal totalMoney = new BigDecimal(0);
         //查询冰柜投放规则
@@ -1307,6 +1294,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPutModel.setIceBoxModelList(iceBoxModels);
         iceBoxPutModel.setApplyStoreNumber(iceBoxRequestVo.getStoreNumber());
         iceBoxPutModel.setApplyStoreName(iceBoxRequestVo.getStoreName());
+        iceBoxPutModel.setApplyPit(iceBoxRequestVo.getApplyPit());
+        iceBoxPutModel.setVisitTypeName(iceBoxRequestVo.getVisitTypeName());
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
                 .code(applyNumber)
                 .relateCode(applyNumber)
@@ -2480,6 +2469,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("createTime", i.getCreateTime()); // 巡检日期
             map.put("displayImage", i.getDisplayImage()); // 现场图片
             map.put("exteriorImage", i.getExteriorImage()); // 外观照片的URL
+            map.put("assetImage", i.getAssetImage()); // 外观照片的URL
 //            map.put("storeNumber", i.getStoreNumber()); // 备注
             examineList.add(map);
         }
@@ -2757,8 +2747,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .putStoreNumber(iceBoxRequestVo.getStoreNumber())
                 .userId(iceBoxRequestVo.getUserId())
                 .createdBy(iceBoxRequestVo.getUserId())
+                .applyPit(iceBoxRequestVo.getApplyPit())
                 .build();
         icePutApplyDao.insert(icePutApply);
+        iceBoxRequestVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(iceBoxRequestVo.getStoreNumber()))));
         List<IceBoxPutModel.IceBoxModel> iceBoxModels = new ArrayList<>();
         BigDecimal totalMoney = new BigDecimal(0);
         Date now = new Date();
@@ -2950,24 +2942,52 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             .examineStatus(ExamineStatus.DOING_EXAMINE.getStatus())
                             .updateTime(new Date())
                             .build();
-                    putStoreRelateModelDao.updateById(putStoreRelateModel);
+                    putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                            .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                            .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 }
             }
 
             //发送mq消息,同步申请数据到报表
-            CompletableFuture.runAsync(() -> {
-                IceBoxPutReportMsg report = new IceBoxPutReportMsg();
-                report.setApplyNumber(iceBoxRequest.getApplyNumber());
-                report.setExamineTime(new Date());
-                report.setExamineUserId(iceBoxRequest.getUpdateBy());
-                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
-                if (userInfoVo != null) {
-                    report.setExamineUserName(userInfoVo.getRealname());
+//            CompletableFuture.runAsync(() -> {
+//                IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+//                report.setApplyNumber(iceBoxRequest.getApplyNumber());
+//                report.setExamineTime(new Date());
+//                report.setExamineUserId(iceBoxRequest.getUpdateBy());
+//                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
+//                if (userInfoVo != null) {
+//                    report.setExamineUserName(userInfoVo.getRealname());
+//                }
+//                report.setPutStatus(PutStatus.DO_PUT.getStatus());
+//                report.setOperateType(OperateTypeEnum.UPDATE.getType());
+//                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+//            }, ExecutorServiceFactory.getInstance());
+
+
+            IceBoxPutReportMsg reportMsg = new IceBoxPutReportMsg();
+            reportMsg.setApplyNumber(iceBoxRequest.getApplyNumber());
+            reportMsg.setExamineTime(new Date());
+            reportMsg.setExamineUserId(iceBoxRequest.getUpdateBy());
+            String examinePosion = "";
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
+            if (userInfoVo != null) {
+                reportMsg.setExamineUserName(userInfoVo.getRealname());
+                examinePosion = userInfoVo.getPosion();
+            }
+            reportMsg.setPutStatus(PutStatus.DO_PUT.getStatus());
+
+            List<IceBoxPutReport> reportList = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber()));
+            if(CollectionUtil.isNotEmpty(reportList)){
+                for (IceBoxPutReport putReport:reportList){
+                    IceBoxPutReport report = new IceBoxPutReport();
+                    BeanUtils.copyProperties(reportMsg,report);
+                    report.setId(putReport.getId());
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
+                            .set(IceBoxPutReport::getExamineUserPosion,examinePosion));
                 }
-                report.setPutStatus(PutStatus.DO_PUT.getStatus());
-                report.setOperateType(OperateTypeEnum.UPDATE.getType());
-                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
-            }, ExecutorServiceFactory.getInstance());
+            }
         }
         //驳回
         if (IceBoxStatus.NO_PUT.getStatus().equals(iceBoxRequest.getStatus())) {
@@ -2989,23 +3009,49 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             .examineStatus(ExamineStatus.REJECT_EXAMINE.getStatus())
                             .updateTime(new Date())
                             .build();
-                    putStoreRelateModelDao.updateById(putStoreRelateModel);
+                    putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                            .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                            .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
+                }
+            }
+
+            IceBoxPutReportMsg reportMsg = new IceBoxPutReportMsg();
+            reportMsg.setApplyNumber(iceBoxRequest.getApplyNumber());
+            reportMsg.setExamineTime(new Date());
+            reportMsg.setExamineUserId(iceBoxRequest.getUpdateBy());
+            String examinePosion = "";
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
+            if (userInfoVo != null) {
+                reportMsg.setExamineUserName(userInfoVo.getRealname());
+                examinePosion = userInfoVo.getPosion();
+            }
+            reportMsg.setPutStatus(PutStatus.NO_PASS.getStatus());
+            List<IceBoxPutReport> reportList = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber()));
+            if(CollectionUtil.isNotEmpty(reportList)){
+                for (IceBoxPutReport putReport:reportList){
+                    IceBoxPutReport report = new IceBoxPutReport();
+                    BeanUtils.copyProperties(reportMsg,report);
+                    report.setId(putReport.getId());
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
+                            .set(IceBoxPutReport::getExamineUserPosion,examinePosion));
                 }
             }
             //发送mq消息,同步申请数据到报表
-            CompletableFuture.runAsync(() -> {
-                IceBoxPutReportMsg report = new IceBoxPutReportMsg();
-                report.setApplyNumber(iceBoxRequest.getApplyNumber());
-                report.setExamineTime(new Date());
-                report.setExamineUserId(iceBoxRequest.getUpdateBy());
-                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
-                if (userInfoVo != null) {
-                    report.setExamineUserName(userInfoVo.getRealname());
-                }
-                report.setPutStatus(PutStatus.NO_PASS.getStatus());
-                report.setOperateType(OperateTypeEnum.UPDATE.getType());
-                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
-            }, ExecutorServiceFactory.getInstance());
+//            CompletableFuture.runAsync(() -> {
+//                IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+//                report.setApplyNumber(iceBoxRequest.getApplyNumber());
+//                report.setExamineTime(new Date());
+//                report.setExamineUserId(iceBoxRequest.getUpdateBy());
+//                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
+//                if (userInfoVo != null) {
+//                    report.setExamineUserName(userInfoVo.getRealname());
+//                }
+//                report.setPutStatus(PutStatus.NO_PASS.getStatus());
+//                report.setOperateType(OperateTypeEnum.UPDATE.getType());
+//                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+//            }, ExecutorServiceFactory.getInstance());
         }
         //审批通过将冰箱置为投放中状态，商户签收将状态置为已投放
         if (IceBoxStatus.IS_PUTING.getStatus().equals(iceBoxRequest.getStatus())) {
@@ -3034,7 +3080,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 putStoreRelateModel.setPutStatus(IceBoxStatus.IS_PUTING.getStatus());
                 putStoreRelateModel.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
                 putStoreRelateModel.setUpdateTime(new Date());
-                putStoreRelateModelDao.updateById(putStoreRelateModel);
+                putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                        .eq(PutStoreRelateModel::getId,storeRelateModelId)
+                        .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
                 //旧冰柜发送签收通知
                 IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, putStoreRelateModel.getModelId())
                         .eq(IceBox::getSupplierId, putStoreRelateModel.getSupplierId())
@@ -3096,14 +3144,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 .eq(IceBoxPutReport::getSupplierId, iceBox.getSupplierId())
                                 .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                         if (report != null) {
+                            report.setIceBoxId(iceBox.getId());
                             report.setIceBoxAssetId(iceBox.getAssetId());
                             report.setExamineTime(new Date());
                             report.setExamineUserId(iceBoxRequest.getUpdateBy());
                             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
                             if (userInfoVo != null) {
                                 report.setExamineUserName(userInfoVo.getRealname());
+                                report.setExamineUserPosion(userInfoVo.getPosion());
                             }
-                            iceBoxPutReportDao.updateById(report);
+                            iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                                    .eq(IceBoxPutReport::getId,report.getId())
+                                    .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
+                                    .set(IceBoxPutReport::getExamineUserPosion,report.getExamineUserPosion()));
                         }
                         icePutOrderService.createByFree(null, iceBox);
                     }
@@ -3112,20 +3165,45 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
 
         if (ruleIceDetailVo == null || ruleIceDetailVo.getIsSign()) {
-            //发送mq消息,同步申请数据到报表
-            CompletableFuture.runAsync(() -> {
-                IceBoxPutReportMsg report = new IceBoxPutReportMsg();
-                report.setApplyNumber(iceBoxRequest.getApplyNumber());
-                report.setExamineTime(new Date());
-                report.setExamineUserId(iceBoxRequest.getUpdateBy());
-                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
-                if (userInfoVo != null) {
-                    report.setExamineUserName(userInfoVo.getRealname());
+            String examineUserPosion = "";
+            IceBoxPutReportMsg reportMsg = new IceBoxPutReportMsg();
+            reportMsg.setApplyNumber(iceBoxRequest.getApplyNumber());
+            reportMsg.setExamineTime(new Date());
+            reportMsg.setExamineUserId(iceBoxRequest.getUpdateBy());
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
+            if (userInfoVo != null) {
+                reportMsg.setExamineUserName(userInfoVo.getRealname());
+                examineUserPosion = userInfoVo.getPosion();
+            }
+            reportMsg.setPutStatus(PutStatus.DO_PUT.getStatus());
+
+            List<IceBoxPutReport> reportList = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber()));
+            if (CollectionUtil.isNotEmpty(reportList)) {
+                for (IceBoxPutReport putReport : reportList) {
+                    IceBoxPutReport report = new IceBoxPutReport();
+                    BeanUtils.copyProperties(reportMsg, report);
+                    report.setId(putReport.getId());
+                    report.setExamineRemark(iceBoxRequest.getExamineRemark());
+                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getId,putReport.getId())
+                            .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
+                            .set(IceBoxPutReport::getExamineUserPosion,examineUserPosion));
                 }
-                report.setPutStatus(PutStatus.DO_PUT.getStatus());
-                report.setOperateType(OperateTypeEnum.UPDATE.getType());
-                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
-            }, ExecutorServiceFactory.getInstance());
+            }
+            //发送mq消息,同步申请数据到报表
+//            CompletableFuture.runAsync(() -> {
+//                IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+//                report.setApplyNumber(iceBoxRequest.getApplyNumber());
+//                report.setExamineTime(new Date());
+//                report.setExamineUserId(iceBoxRequest.getUpdateBy());
+//                SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(iceBoxRequest.getUpdateBy()));
+//                if (userInfoVo != null) {
+//                    report.setExamineUserName(userInfoVo.getRealname());
+//                }
+//                report.setPutStatus(PutStatus.DO_PUT.getStatus());
+//                report.setOperateType(OperateTypeEnum.UPDATE.getType());
+//                rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+//            }, ExecutorServiceFactory.getInstance());
         }
     }
 
@@ -3155,6 +3233,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 } else {
                     boxVo.setIceStatus(iceBox.getStatus());
                 }
+                //门店拜访频率
+                boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(requestVo.getStoreNumber()))));
                 iceBoxVos.add(boxVo);
             }
         }
@@ -3209,6 +3289,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         boxVo.setLinkmanMobile(simpleSupplierInfoVo.getLinkManMobile());
                     }
                     iceBoxCountMap.put(iceBox.getModelId(), 1);
+                    //门店拜访频率
+                    boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(requestVo.getStoreNumber()))));
                     iceBoxVoList.add(boxVo);
                 }
                 if (CollectionUtil.isNotEmpty(iceBoxVoList)) {
@@ -3314,27 +3396,51 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         putStoreRelateModelDao.updateById(relateModel);
                     }
                 }
-                //发送mq消息,同步申请数据到报表
-                CompletableFuture.runAsync(() -> {
-                    if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
-                        IceBoxPutReport report = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, iceBoxExtend.getLastApplyNumber())
-                                .eq(IceBoxPutReport::getIceBoxModelId, iceBox.getModelId())
-                                .eq(IceBoxPutReport::getSupplierId, iceBox.getSupplierId())
-                                .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
-                        if (report != null) {
-                            report.setIceBoxAssetId(iceBox.getAssetId());
-                            iceBoxPutReportDao.updateById(report);
-                        }
+
+                if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
+                    IceBoxPutReport report = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                            .eq(IceBoxPutReport::getIceBoxModelId, iceBox.getModelId())
+                            .eq(IceBoxPutReport::getSupplierId, iceBox.getSupplierId())
+                            .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
+                    if (report != null) {
+                        report.setIceBoxId(iceBox.getId());
+                        report.setIceBoxAssetId(iceBox.getAssetId());
+                        iceBoxPutReportDao.updateById(report);
                     }
-                    IceBoxPutReportMsg report = new IceBoxPutReportMsg();
-                    report.setIceBoxId(iceBox.getId());
-                    report.setIceBoxAssetId(iceBox.getAssetId());
-                    report.setApplyNumber(iceBoxExtend.getLastApplyNumber());
-                    report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
-                    report.setOperateType(OperateTypeEnum.UPDATE.getType());
-                    log.info("旧冰柜签收通知报表-----》【{}】", JSON.toJSONString(report));
-                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
-                }, ExecutorServiceFactory.getInstance());
+                }
+                IceBoxPutReportMsg reportMsg = new IceBoxPutReportMsg();
+                reportMsg.setIceBoxId(iceBox.getId());
+                reportMsg.setIceBoxAssetId(iceBox.getAssetId());
+                reportMsg.setApplyNumber(iceBoxExtend.getLastApplyNumber());
+                reportMsg.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                IceBoxPutReport putReport = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxId, reportMsg.getIceBoxId())
+                        .eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber())
+                        .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
+                if(putReport != null){
+                    putReport.setPutStatus(reportMsg.getPutStatus());
+                    iceBoxPutReportDao.updateById(putReport);
+                }
+                //发送mq消息,同步申请数据到报表
+//                CompletableFuture.runAsync(() -> {
+//                    if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
+//                        IceBoxPutReport report = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+//                                .eq(IceBoxPutReport::getIceBoxModelId, iceBox.getModelId())
+//                                .eq(IceBoxPutReport::getSupplierId, iceBox.getSupplierId())
+//                                .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
+//                        if (report != null) {
+//                            report.setIceBoxAssetId(iceBox.getAssetId());
+//                            iceBoxPutReportDao.updateById(report);
+//                        }
+//                    }
+//                    IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+//                    report.setIceBoxId(iceBox.getId());
+//                    report.setIceBoxAssetId(iceBox.getAssetId());
+//                    report.setApplyNumber(iceBoxExtend.getLastApplyNumber());
+//                    report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+//                    report.setOperateType(OperateTypeEnum.UPDATE.getType());
+//                    log.info("旧冰柜签收通知报表-----》【{}】", JSON.toJSONString(report));
+//                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+//                }, ExecutorServiceFactory.getInstance());
                 return iceBoxStatusVo;
             }
             // 已有投放, 不能继续
@@ -3484,18 +3590,36 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 //            iceBoxExtend.setLastExamineTime(icePutApply.getUpdateTime());
             iceBoxExtendDao.updateById(iceBoxExtend);
         }
+
+        IceBoxPutReportMsg reportMsg = new IceBoxPutReportMsg();
+        reportMsg.setIceBoxId(iceBox.getId());
+        reportMsg.setIceBoxAssetId(iceBox.getAssetId());
+        reportMsg.setIceBoxModelId(iceBox.getModelId());
+        reportMsg.setSupplierId(iceBox.getSupplierId());
+        reportMsg.setApplyNumber(icePutApply.getApplyNumber());
+        reportMsg.setPutStatus(PutStatus.DO_PUT.getStatus());
+
+        IceBoxPutReport report = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, reportMsg.getApplyNumber())
+                .eq(IceBoxPutReport::getIceBoxModelId, reportMsg.getIceBoxModelId())
+                .eq(IceBoxPutReport::getSupplierId, reportMsg.getSupplierId())
+                .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
+        if(report != null){
+            report.setIceBoxId(reportMsg.getIceBoxId());
+            report.setIceBoxAssetId(reportMsg.getIceBoxAssetId());
+            iceBoxPutReportDao.updateById(report);
+        }
         //发送mq消息,同步申请数据到报表
-        CompletableFuture.runAsync(() -> {
-            IceBoxPutReportMsg report = new IceBoxPutReportMsg();
-            report.setIceBoxId(iceBox.getId());
-            report.setIceBoxAssetId(iceBox.getAssetId());
-            report.setIceBoxModelId(iceBox.getModelId());
-            report.setSupplierId(iceBox.getSupplierId());
-            report.setApplyNumber(icePutApply.getApplyNumber());
-            report.setPutStatus(PutStatus.DO_PUT.getStatus());
-            report.setOperateType(OperateTypeEnum.UPDATE.getType());
-            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
-        }, ExecutorServiceFactory.getInstance());
+//        CompletableFuture.runAsync(() -> {
+//            IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+//            report.setIceBoxId(iceBox.getId());
+//            report.setIceBoxAssetId(iceBox.getAssetId());
+//            report.setIceBoxModelId(iceBox.getModelId());
+//            report.setSupplierId(iceBox.getSupplierId());
+//            report.setApplyNumber(icePutApply.getApplyNumber());
+//            report.setPutStatus(PutStatus.DO_PUT.getStatus());
+//            report.setOperateType(OperateTypeEnum.UPDATE.getType());
+//            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+//        }, ExecutorServiceFactory.getInstance());
 
         return IceBoxConverter.convertToVo(Objects.requireNonNull(iceBox),
                 Objects.requireNonNull(iceBoxExtend),
@@ -3613,8 +3737,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExcelVo.setRealName(storeMap.get("realName")); // 负责业务员姓名
                 }
 
-                iceBoxExcelVo.setAssetId(iceBoxExtend.getAssetId()); // 设备编号-->东鹏资产id
-                iceBoxExcelVo.setOldAssetId(iceBox.getOldAssetId()); // 原资产编号
+                iceBoxExcelVo.setAssetId(iceBox.getAssetId());
+                Integer iceBoxType = iceBox.getIceBoxType(); // 旧冰柜得特殊处理
+                if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBoxType)){
+                    iceBoxExcelVo.setXiuGaiAssetId(iceBox.getAssetId());  // 资产编号(修改)
+                    iceBoxExcelVo.setAssetId(iceBox.getOldAssetId()); // 资产编号
+                }
                 IceModel iceModel = modelMap.get(iceBox.getModelId());
                 iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号
                 iceBoxExcelVo.setDepositMoney(iceBox.getDepositMoney().toString()); // 押金收取金额
@@ -3639,7 +3767,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         @Cleanup InputStream in = new FileInputStream(xlsxFile);
         try {
             String frontName = new DateTime().toString("yyyy-MM-dd-HH-mm-ss");
-            // todo 上传临时文件到网络
             String imgUrl = imageUploadUtil.wechatUpload(in, IceBoxConstant.ICE_BOX, "BGDC" + frontName, "xlsx");
             // 更新下载列表中的数据
             feignExportRecordsClient.updateExportRecord(imgUrl, 1, iceBoxPage.getExportRecordId());
@@ -3683,7 +3810,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     putReport.setExamineUserId(iceBoxVo.getUserId());
                     putReport.setExamineUserName(iceBoxVo.getUserName());
                     putReport.setExamineTime(new Date());
-                    iceBoxPutReportDao.updateById(putReport);
+                    SimpleUserInfoVo exaine = FeignResponseUtil.getFeignData(feignUserClient.findUserById(relateModel.getUpdateBy()));
+                    if (Objects.nonNull(exaine)){
+                        putReport.setExamineUserPosion(exaine.getPosion());
+                    }
+                    iceBoxPutReportDao.update(putReport,
+                            Wrappers.<IceBoxPutReport>lambdaUpdate().eq(IceBoxPutReport::getId,putReport.getId())
+                                    .set(IceBoxPutReport::getIceBoxAssetId,null)
+                                    .set(IceBoxPutReport::getIceBoxId,null));
                 }
             }
         }
@@ -3824,6 +3958,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(historyVo.getReviewerId()));
             if (userInfoVo != null) {
                 history.setReviewerName(userInfoVo.getRealname());
+                history.setReviewerOfficeName(userInfoVo.getPosion());
             }
             history.setReviewerTime(new Date());
             iceBoxTransferHistoryDao.updateById(history);
@@ -4219,6 +4354,19 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         LambdaUpdateWrapper<IceBox> updateWrapper = Wrappers.<IceBox>lambdaUpdate().eq(IceBox::getId, iceBoxId);
 
         Integer newStatus = iceBox.getStatus();
+        //判断报废 遗失 巡检报表增加报废遗失数量
+        if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())&&IceBoxEnums.StatusEnum.LOSE.equals(newStatus)||IceBoxEnums.StatusEnum.SCRAP.equals(newStatus)){
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                    reportMsg.setOperateType(5);
+                    reportMsg.setBoxId(iceBoxId);
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
+                }
+            });
+
+        }
         Integer oldStatus = oldIceBox.getStatus();
 
         boolean modifyCustomer = iceBoxManagerVo.isModifyCustomer();
@@ -4279,6 +4427,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 @Override
                 public void afterCommit() {
                     rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY, jsonObject.toString());
+                    //巡检报表添加投放数据
+                    IceInspectionReportMsg reportMsg = new IceInspectionReportMsg();
+                    reportMsg.setOperateType(1);
+                    reportMsg.setBoxId(iceBox.getId());
+                    rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceInspectionReportKey,reportMsg);
                 }
             });
         }
@@ -4696,6 +4849,63 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         return jsonObject;
     }
 
+    @Override
+    public int getPutCount(Integer userId) {
+        return this.getPutBoxIds(userId).size();
+    }
+
+    @Override
+    public int getLostScrapCount(List<Integer> putBoxIds) {
+        if(CollectionUtils.isEmpty(putBoxIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.in(IceBox::getStatus,IceBoxEnums.StatusEnum.SCRAP.getType(),IceBoxEnums.StatusEnum.LOSE.getType())
+                .in(IceBox::getId, putBoxIds);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+    @Override
+    public int getLostScrapCount(Integer userId) {
+        List<Integer> putBoxIds = getPutBoxIds(userId);
+        return getLostScrapCount(putBoxIds);
+    }
+
+    @Override
+    public List<Integer> getPutBoxIds(Integer userId) {
+        List<String> numbers = FeignResponseUtil.getFeignData(feignSupplierRelateUserClient.getMainCustomerNumber(userId));
+        if(CollectionUtils.isEmpty(numbers)){
+            return Lists.newArrayList();
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.select(IceBox::getId).eq(IceBox::getPutStatus,3).in(IceBox::getPutStoreNumber,numbers);
+        return iceBoxDao.selectList(iceBoxWrapper).stream().map(IceBox::getId).collect(Collectors.toList());
+    }
+
+    @Override
+    public int getLostCountByDeptId(Integer deptId) {
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+
+    @Override
+    public int getLostCountByDeptIds(List<Integer> deptIds) {
+        if(com.baomidou.mybatisplus.core.toolkit.CollectionUtils.isEmpty(deptIds)){
+            return 0;
+        }
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).in(IceBox::getDeptId,deptIds).eq(IceBox::getStatus,3);
+        return iceBoxDao.selectCount(iceBoxWrapper);
+    }
+
+    @Override
+    public int getPutCountByDeptId(Integer deptId) {
+        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
+        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId);
+        return  iceBoxDao.selectCount(iceBoxWrapper);
+    }
     /**
      * 客户变更，推送签收信息
      *

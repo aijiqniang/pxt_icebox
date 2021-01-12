@@ -6,6 +6,7 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.icebox.vo.IceExamineCheckVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.commondb.config.annotation.RedisLock;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExamineExceptionReport;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
@@ -73,6 +74,7 @@ public class ExamineController {
 
     @PostMapping("/doExamineNew")
     @MonitorAnnotation
+//    @RedisLock(key = "#iceExamineVo.iceBoxId")
     public CommonResponse<Map<String, Object>> doExamineNew(@RequestBody IceExamineVo iceExamineVo) {
         if (iceExamineVo == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
@@ -90,7 +92,7 @@ public class ExamineController {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
-        iceExamineService.dealIceExamineCheck(iceExamineCheckVo.getRedisKey(),iceExamineCheckVo.getStatus(),iceExamineCheckVo.getUpdateBy());
+        iceExamineService.dealIceExamineCheck(iceExamineCheckVo.getRedisKey(),iceExamineCheckVo.getStatus(),iceExamineCheckVo.getUpdateBy(),iceExamineCheckVo.getExamineRemark());
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,new IceExamineCheckVo());
     }

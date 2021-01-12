@@ -135,4 +135,9 @@ public class IceBoxVo {
      * 冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
      */
     private Integer iceStatus;
+
+    /**
+     * 拜访频率
+     */
+    private String visitTypeName;
 }

@@ -131,7 +131,11 @@ public class MyIceBoxController {
      */
     @PostMapping("/checkIceBoxNew")
     public void checkIceBoxNew(@RequestBody IceBoxRequest iceBoxRequest){
-        iceBoxService.checkIceBoxNew(iceBoxRequest);
+        try {
+            iceBoxService.checkIceBoxNew(iceBoxRequest);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 //        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
     /**
@@ -272,8 +276,8 @@ public class MyIceBoxController {
      * @return
      */
     @RequestMapping("dealTransferCheck")
-    public CommonResponse<Void> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo){
+    public CommonResponse<IceBoxTransferHistoryVo> dealTransferCheck(@RequestBody IceBoxTransferHistoryVo historyVo){
         iceBoxService.dealTransferCheck(historyVo);
-        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,new IceBoxTransferHistoryVo());
     }
 }

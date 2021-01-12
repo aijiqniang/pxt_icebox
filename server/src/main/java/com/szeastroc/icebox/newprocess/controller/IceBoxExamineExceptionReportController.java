@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxExamineExceptionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
@@ -11,6 +12,7 @@ import com.szeastroc.icebox.newprocess.service.IceBoxExamineExceptionReportServi
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExamineVo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -66,4 +68,17 @@ public class IceBoxExamineExceptionReportController {
     public CommonResponse<IceBoxExamineExceptionReport> sendIceExamineExportMsg(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
         return iceBoxExamineExceptionReportService.sendIceExamineExportMsg(reportMsg);
     }
+
+    /**
+     * @Date: 2021/1/8 14:42 xiao
+     *  对历史数据(t_ice_box_examine_exception_report)补充审批人职务
+     */
+    @GetMapping("updateExamineUserOfficeName")
+    public CommonResponse<Void> updateExamineUserOfficeName(){
+        ExecutorServiceFactory.getInstance().execute(()->{
+            iceBoxExamineExceptionReportService.updateExamineUserOfficeName();
+        });
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
+    }
+
 }

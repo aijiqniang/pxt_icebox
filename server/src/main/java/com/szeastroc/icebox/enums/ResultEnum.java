@@ -26,7 +26,8 @@ public enum ResultEnum {
 
     PUT_ORDER_IS_NOT_FINISH(3005,"投放的订单还未结束"),
 
-    ICE_BOX_IS_REFUNDING(30009,"您的冰柜已经申请了退还，请等待审批");
+    ICE_BOX_IS_REFUNDING(30009,"您的冰柜已经申请了退还，请等待审批"),
+    CANNOT_REFUND_ICE_BOX(30010, "该冰柜暂不支持退还");
 
 
     private Integer code;

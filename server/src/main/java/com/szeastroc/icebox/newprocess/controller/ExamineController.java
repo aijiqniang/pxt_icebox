@@ -74,7 +74,7 @@ public class ExamineController {
 
     @PostMapping("/doExamineNew")
     @MonitorAnnotation
-    @RedisLock(key = "#iceExamineVo.iceBoxId")
+//    @RedisLock(key = "#iceExamineVo.iceBoxId")
     public CommonResponse<Map<String, Object>> doExamineNew(@RequestBody IceExamineVo iceExamineVo) {
         if (iceExamineVo == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);

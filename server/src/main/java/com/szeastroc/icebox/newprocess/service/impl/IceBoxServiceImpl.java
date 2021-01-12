@@ -4470,6 +4470,18 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                //修改冰柜部门为投放客户的部门
+                if(iceBox.getPutStoreNumber().startsWith("C0")){
+                    StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                    if(store != null){
+                        iceBox.setDeptId(store.getMarketArea());
+                    }
+                }else {
+                    SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
+                    if(supplier != null){
+                        iceBox.setDeptId(supplier.getMarketAreaId());
+                    }
+                }
                 //todo 这里冰柜改为已投放
             }
         } else {

@@ -143,6 +143,25 @@ public class DirectExchangeConfig {
         return binding;
     }
 
+    /**
+     * 客户信息修改mq配置
+     */
+    @Bean
+    public FanoutExchange storeChangeExchange() {
+        return (FanoutExchange) ExchangeBuilder.fanoutExchange(MqConstant.E_STORE_CHANGE_EXCHANGE).durable(true).build();
+    }
+
+    // 修改冰柜营销区域
+    @Bean
+    public Queue storeInfoChangeQueue() {
+        return QueueBuilder.durable(MqConstant.Q_STORE_CHANGE_ICEBOX_DEPT).build();
+    }
+
+    @Bean
+    public Binding storeInfoChangeBinding(Queue storeInfoChangeQueue, FanoutExchange storeChangeExchange) {
+        return BindingBuilder.bind(storeInfoChangeQueue).to(storeChangeExchange);
+    }
+
     @Bean(name = "iceExportExcelContainer")
     public SimpleRabbitListenerContainerFactory iceExportExcelContainer(){
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();

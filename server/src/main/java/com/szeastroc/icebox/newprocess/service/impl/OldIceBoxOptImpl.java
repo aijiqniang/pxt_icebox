@@ -195,7 +195,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                           }
                       }
                 });
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜入库");
                 return jsonObject;
             }
         },

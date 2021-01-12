@@ -5,12 +5,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
 import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
+import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.commondb.config.redis.JedisClient;
+import com.szeastroc.commondb.config.redis.RedisTool;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
@@ -28,6 +31,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * @ClassName: IceInspectioReportConsumer
@@ -54,35 +58,57 @@ public class IceInspectionReportConsumer {
     FeignUserClient feignUserClient;
     @Autowired
     private IceExamineService iceExamineService;
+    @Autowired
+    private JedisClient jedisClient;
 
     @RabbitListener(queues = MqConstant.iceInspectionReportQueue)
     public void task(IceInspectionReportMsg reportMsg) {
+
         log.info("巡检报表触发变更，消息{}", JSONObject.toJSONString(reportMsg));
-        switch (reportMsg.getOperateType()) {
-            case 1:
-                increasePutCount(reportMsg);
-                break;
-            case 2:
-                increaseInspectionCount(reportMsg);
-                break;
-            case 3:
-                buildReport(reportMsg.getUserId());
-                break;
-            case 4:
-                deleteReport(reportMsg);
-                break;
-            case 5:
-                recalculateLostScrapCount(reportMsg);
-                break;
-            case 6:
-                decreasePutCount(reportMsg);
-                break;
-            case 7:
-                updateDept(reportMsg);
-                break;
-            default:
-                break;
+        String lockKey = "pxt_icebox_inspection" + reportMsg.getUserId() ;
+        String requestId = UUID.randomUUID().toString();
+        try {
+
+            boolean b = RedisTool.tryGetDistributedLock(jedisClient.getJedis(), lockKey, requestId, 600000);
+            if (!b) {
+                throw new ImproperOptionException("获取锁失败");
+            }
+            switch (reportMsg.getOperateType()) {
+                case 1:
+                    increasePutCount(reportMsg);
+                    break;
+                case 2:
+                    increaseInspectionCount(reportMsg);
+                    break;
+                case 3:
+                    buildReport(reportMsg.getUserId());
+                    break;
+                case 4:
+                    deleteReport(reportMsg);
+                    break;
+                case 5:
+                    recalculateLostScrapCount(reportMsg);
+                    break;
+                case 6:
+                    decreasePutCount(reportMsg);
+                    break;
+                case 7:
+                    updateDept(reportMsg);
+                    break;
+                default:
+                    break;
+            }
+        }catch (Exception e){
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException ex) {
+                log.error("ai识别队列消费获取锁失败");
+            }
+            task(reportMsg);
+        } finally {
+            RedisTool.releaseDistributedLock(jedisClient.getJedis(), lockKey, requestId);
         }
+
     }
 
 

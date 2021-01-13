@@ -5135,6 +5135,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
 
         report.setSubmitTime(new Date());
+        report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
         report.setOperateType(OperateTypeEnum.INSERT.getType());
         rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
     }

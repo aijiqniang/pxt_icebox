@@ -1,19 +1,32 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
+import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
+import com.szeastroc.common.entity.user.session.UserManageVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.user.FeignUserClient;
+import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.commondb.config.redis.JedisClient;
+import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceRepairOrderMsg;
 import com.szeastroc.icebox.newprocess.dao.IceRepairOrderDao;
+import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
 import com.szeastroc.icebox.newprocess.entity.IceRepairOrder;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
@@ -23,12 +36,19 @@ import com.szeastroc.icebox.newprocess.webservice.WbSiteResponseVO;
 import com.szeastroc.icebox.newprocess.webservice.WebSite;
 import com.szeastroc.icebox.newprocess.webservice.WebSitePortType;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 冰柜维修订单表(IceRepairOrder)表服务实现类
@@ -43,11 +63,19 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     private FeignStoreClient feignStoreClient;
     @Autowired
     private FeignSupplierClient feignSupplierClient;
+    @Autowired
+    private FeignUserClient feignUserClient;
 
     @Value("${hisense.repair.account}")
     private String account;
     @Value("${hisense.repair.password}")
     private String password;
+    @Autowired
+    private JedisClient jedis;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private FeignExportRecordsClient feignExportRecordsClient;
 
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     @Override
@@ -135,13 +163,74 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
 
     @Override
     public IPage<IceRepairOrder> findByPage(IceRepairOrderMsg msg) {
-
-        return null;
+        LambdaQueryWrapper<IceRepairOrder> wrapper = fillWrapper(msg);
+        return this.baseMapper.selectPage(msg,wrapper);
     }
 
     @Override
-    public CommonResponse<Void> sendExportMsg(IceRepairOrderMsg msg) {
+    public LambdaQueryWrapper<IceRepairOrder> fillWrapper(IceRepairOrderMsg msg) {
+        LambdaQueryWrapper<IceRepairOrder> wrapper = Wrappers.<IceRepairOrder>lambdaQuery();
+        if(StringUtils.isNotBlank(msg.getOrderNumber())){
+            wrapper.eq(IceRepairOrder::getOrderNumber, msg.getOrderNumber());
+        }
+        if(StringUtils.isNotBlank(msg.getCustomerName())){
+            wrapper.like(IceRepairOrder::getCustomerName, msg.getCustomerName());
+        }
+        if(StringUtils.isNotBlank(msg.getAssetId())){
+            wrapper.eq(IceRepairOrder::getAssetId, msg.getAssetId());
+        }
+        if(Objects.nonNull(msg.getStatus())){
+            wrapper.eq(IceRepairOrder::getStatus, msg.getStatus());
+        }
+        if(Objects.nonNull(msg.getHeadquartersDeptId())){
+            wrapper.eq(IceRepairOrder::getHeadquartersDeptId, msg.getHeadquartersDeptId());
+        }
+        if(Objects.nonNull(msg.getBusinessDeptId())){
+            wrapper.eq(IceRepairOrder::getBusinessDeptId, msg.getBusinessDeptId());
+        }
+        if(Objects.nonNull(msg.getRegionDeptId())){
+            wrapper.eq(IceRepairOrder::getRegionDeptId, msg.getRegionDeptId());
+        }
+        if(Objects.nonNull(msg.getServiceDeptId())){
+            wrapper.eq(IceRepairOrder::getServiceDeptId, msg.getServiceDeptId());
+        }
+        if(Objects.nonNull(msg.getGroupDeptId())){
+            wrapper.eq(IceRepairOrder::getGroupDeptId, msg.getGroupDeptId());
+        }
+        wrapper.orderByDesc(IceRepairOrder::getCreatedTime);
+        return wrapper;
+    }
 
-        return null;
+    @Override
+    public CommonResponse<Void> sendExportMsg(IceRepairOrderMsg reportMsg) {
+        // 获取当前用户相关信息
+        UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
+        String key = String.format("%s%s", RedisConstant.ICE_BOX_REPAIR_ORDER_KEY, userManageVo.getSessionUserInfoVo().getId());
+        if (null != jedis.get(key)) {
+            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
+        }
+        LambdaQueryWrapper<IceRepairOrder> wrapper = fillWrapper(reportMsg);
+        Integer count = Optional.ofNullable(this.selectByExportCount(wrapper)).orElse(0);
+        if (0 == count) {
+            return new CommonResponse<>(Constants.API_CODE_FAIL, "暂无可下载数据");
+        }
+        // 生成下载任务
+        Integer recordsId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userManageVo.getSessionUserInfoVo().getId(),
+                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "冰柜保修订单-导出"));
+
+        //发送mq消息,同步申请数据到报表
+        CompletableFuture.runAsync(() -> {
+            reportMsg.setRecordsId(recordsId);
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceBackApplyReportKey, reportMsg);
+        }, ExecutorServiceFactory.getInstance());
+        // 三分钟间隔
+        jedis.set(key, "ex", 300, TimeUnit.SECONDS);
+
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
+    }
+
+    @Override
+    public Integer selectByExportCount(LambdaQueryWrapper<IceRepairOrder> wrapper) {
+        return this.count(wrapper);
     }
 }

@@ -45,4 +45,10 @@ public interface MqConstant {
     String iceInspectionReportQueue = "ice_inspection_report_queue";
     String iceInspectionReportKey = "ice_inspection_report_routing_key";
 
+    /**
+     * 冰柜退还报表
+     */
+    String iceRepairOrderQueue = "ice_repair_order_queue";
+    String iceRepairOrderKey = "ice_repair_order_routing_key";
+
 }

@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.common.vo.CommonResponse;
@@ -20,4 +21,9 @@ public interface IceRepairOrderService extends IService<IceRepairOrder> {
     IPage<IceRepairOrder> findByPage(IceRepairOrderMsg msg);
 
     CommonResponse<Void> sendExportMsg(IceRepairOrderMsg msg);
+
+    Integer selectByExportCount(LambdaQueryWrapper<IceRepairOrder> wrapper);
+
+    LambdaQueryWrapper<IceRepairOrder> fillWrapper(IceRepairOrderMsg msg);
+
 }

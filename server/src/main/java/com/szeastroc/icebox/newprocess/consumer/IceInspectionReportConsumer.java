@@ -99,10 +99,11 @@ public class IceInspectionReportConsumer {
                     break;
             }
         }catch (Exception e){
+            log.error("巡检报表队列异常,{}",e);
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException ex) {
-                log.error("ai识别队列消费获取锁失败");
+                log.error("巡检报表队列消费获取锁失败");
             }
             task(reportMsg);
         } finally {
@@ -114,6 +115,9 @@ public class IceInspectionReportConsumer {
 
 
     private void buildReport(Integer userId){
+        if(Objects.isNull(userId)){
+            return;
+        }
         Integer deptId = FeignResponseUtil.getFeignData(feignDeptClient.getMainDeptByUserId(userId));
         if(Objects.isNull(deptId)){
             return;
@@ -168,6 +172,9 @@ public class IceInspectionReportConsumer {
      * @param reportMsg
      */
     private void decreasePutCount(IceInspectionReportMsg reportMsg) {
+        if(Objects.isNull(reportMsg.getUserId())){
+            return;
+        }
         IceInspectionReport currentMonthReport = iceInspectionReportService.getCurrentMonthReport(reportMsg.getUserId());
         if (Objects.nonNull(currentMonthReport)) {
             List<Integer> putBoxIds = iceBoxService.getPutBoxIds(reportMsg.getUserId());
@@ -185,6 +192,9 @@ public class IceInspectionReportConsumer {
      * @param reportMsg
      */
     private void increasePutCount(IceInspectionReportMsg reportMsg) {
+        if(Objects.isNull(reportMsg.getBoxId())){
+            return;
+        }
         IceBox iceBox = iceBoxService.getById(reportMsg.getBoxId());
         String storeNumber = iceBox.getPutStoreNumber();
         Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(storeNumber));
@@ -244,6 +254,9 @@ public class IceInspectionReportConsumer {
      * @param reportMsg
      */
     private void increaseInspectionCount(IceInspectionReportMsg reportMsg) {
+        if(Objects.isNull(reportMsg.getBoxId())){
+            return;
+        }
         int examineCount = iceExamineService.getExamineCount(reportMsg.getBoxId());
         if(examineCount<=1){
             IceBox iceBox = iceBoxService.getById(reportMsg.getBoxId());
@@ -269,6 +282,9 @@ public class IceInspectionReportConsumer {
      * @param reportMsg
      */
     private void recalculateLostScrapCount(IceInspectionReportMsg reportMsg) {
+        if(Objects.isNull(reportMsg.getBoxId())){
+            return;
+        }
         IceBox iceBox = iceBoxService.getById(reportMsg.getBoxId());
         String storeNumber = iceBox.getPutStoreNumber();
         Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(storeNumber));
@@ -292,6 +308,9 @@ public class IceInspectionReportConsumer {
      * @param reportMsg
      */
     private void deleteReport(IceInspectionReportMsg reportMsg) {
+        if(Objects.isNull(reportMsg.getUserId())){
+            return;
+        }
         LambdaQueryWrapper<IceInspectionReport> wrapper = new LambdaQueryWrapper<IceInspectionReport>()
                 .eq(IceInspectionReport::getUserId, reportMsg.getUserId()).eq(IceInspectionReport::getInspectionDate, new DateTime().toString("yyyy-MM"));
         iceInspectionReportService.remove(wrapper);
@@ -302,6 +321,9 @@ public class IceInspectionReportConsumer {
      * @param reportMsg
      */
     private void updateDept(IceInspectionReportMsg reportMsg) {
+        if(Objects.isNull(reportMsg.getUserId())){
+            return;
+        }
         LambdaQueryWrapper<IceInspectionReport> wrapper = Wrappers.<IceInspectionReport>lambdaQuery();
         wrapper.eq(IceInspectionReport::getUserId,reportMsg.getUserId()).eq(IceInspectionReport::getInspectionDate,new DateTime().toString("yyyy-MM"));
         IceInspectionReport one = iceInspectionReportService.getOne(wrapper);

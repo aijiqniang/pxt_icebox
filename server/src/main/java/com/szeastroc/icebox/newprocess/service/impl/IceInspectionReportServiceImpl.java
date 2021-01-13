@@ -69,5 +69,8 @@ public class IceInspectionReportServiceImpl extends ServiceImpl<IceInspectionRep
         return this.baseMapper.getServiceReports(deptId);
     }
 
-
+    @Override
+    public void truncate() {
+        this.baseMapper.truncate();
+    }
 }

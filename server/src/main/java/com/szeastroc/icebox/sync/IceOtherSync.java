@@ -323,6 +323,7 @@ public class IceOtherSync {
     }
 
     public void syncIceInspectionReport() {
+        iceInspectionReportService.truncate();
         Page<IceBox> page = new Page<>();
         page.setSize(5000);
         List<IceBox> list;

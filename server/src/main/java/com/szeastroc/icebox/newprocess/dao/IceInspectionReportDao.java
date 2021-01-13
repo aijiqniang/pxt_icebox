@@ -17,4 +17,6 @@ public interface IceInspectionReportDao extends BaseMapper<IceInspectionReport> 
     List<InspectionReportVO> getGroupReports(Integer deptId);
 
     List<InspectionReportVO> getServiceReports(Integer deptId);
+
+    void truncate();
 }

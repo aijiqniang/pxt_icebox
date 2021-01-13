@@ -99,10 +99,11 @@ public class IceInspectionReportConsumer {
                     break;
             }
         }catch (Exception e){
+            log.error("巡检报表队列异常,{}",e);
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException ex) {
-                log.error("ai识别队列消费获取锁失败");
+                log.error("巡检报表队列消费获取锁失败");
             }
             task(reportMsg);
         } finally {

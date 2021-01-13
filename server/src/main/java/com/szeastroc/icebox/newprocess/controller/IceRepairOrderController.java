@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.IceRepairOrderMsg;
-import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
 import com.szeastroc.icebox.newprocess.entity.IceRepairOrder;
 import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.request.IceRepairRequest;
@@ -33,7 +32,7 @@ public class IceRepairOrderController {
 
 
     @PostMapping("/create")
-    public CommonResponse createOrder(@RequestBody IceRepairRequest iceRepairRequest){
+    public CommonResponse<Void> createOrder(@RequestBody IceRepairRequest iceRepairRequest){
         return iceRepairOrderService.createOrder(iceRepairRequest);
     }
 

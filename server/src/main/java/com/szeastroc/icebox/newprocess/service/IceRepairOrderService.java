@@ -15,7 +15,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceRepairRequest;
  */
 public interface IceRepairOrderService extends IService<IceRepairOrder> {
 
-    CommonResponse createOrder(IceRepairRequest iceRepairRequest);
+    CommonResponse<Void> createOrder(IceRepairRequest iceRepairRequest);
 
     IPage<IceRepairOrder> findByPage(IceRepairOrderMsg msg);
 

@@ -51,7 +51,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
 
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     @Override
-    public CommonResponse createOrder(IceRepairRequest iceRepairRequest) {
+    public CommonResponse<Void> createOrder(IceRepairRequest iceRepairRequest) {
         String msg = null;
         try {
             Integer businessDeptId = null;
@@ -135,11 +135,13 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
 
     @Override
     public IPage<IceRepairOrder> findByPage(IceRepairOrderMsg msg) {
+
         return null;
     }
 
     @Override
     public CommonResponse<Void> sendExportMsg(IceRepairOrderMsg msg) {
+
         return null;
     }
 }

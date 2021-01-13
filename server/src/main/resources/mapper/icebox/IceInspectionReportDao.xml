@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.szeastroc.icebox.newprocess.dao.IceInspectionReportDao">
+    <update id="truncate">
+        truncate table t_ice_inspection_report;
+    </update>
 
     <select id="getGroupReports" resultType="com.szeastroc.icebox.newprocess.vo.InspectionReportVO">
         select sum(put_count) as putCount,sum(inspection_count) inspection,sum(put_count) - sum(inspection_count)-sum(lost_scrap_count) as noInspection,

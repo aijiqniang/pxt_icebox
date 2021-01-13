@@ -30,6 +30,7 @@ import com.szeastroc.icebox.newprocess.entity.IcePutApply;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
 import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
 import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyRelateBoxService;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyService;
@@ -328,7 +329,7 @@ public class IceOtherSync {
         page.setSize(5000);
         List<IceBox> list;
         while(true){
-            IPage<IceBox> iceBoxIPage = iceBoxDao.selectPage(page, new LambdaQueryWrapper<IceBox>().isNotNull(IceBox::getPutStoreNumber));
+            IPage<IceBox> iceBoxIPage = iceBoxDao.selectPage(page, new LambdaQueryWrapper<IceBox>().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).isNotNull(IceBox::getPutStoreNumber));
             list = iceBoxIPage.getRecords();
             if(CollectionUtils.isEmpty(list)){
                 break;
@@ -377,20 +378,14 @@ public class IceOtherSync {
                         if(Objects.nonNull(group)){
                             currentMonthReport.setGroupDeptId(group.getId()).setGroupDeptName(group.getName());
                         }
+                        List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
+                        Integer inspectionCount = iceExamineService.getInspectionBoxes(putBoxIds).size();
+                        int lostCount = iceBoxService.getLostScrapCount(putBoxIds);
+                        currentMonthReport.setInspectionCount(inspectionCount).setLostScrapCount(lostCount).setPutCount(putBoxIds.size());
                         iceInspectionReportService.save(currentMonthReport);
                     }
                 }
             }
         }
-
-        List<IceInspectionReport> reports = iceInspectionReportService.list();
-        for (IceInspectionReport report : reports) {
-            List<Integer> putBoxIds = iceBoxService.getPutBoxIds(report.getUserId());
-            Integer inspectionCount = iceExamineService.getInspectionBoxes(putBoxIds).size();
-            int lostCount = iceBoxService.getLostScrapCount(putBoxIds);
-            report.setInspectionCount(inspectionCount).setLostScrapCount(lostCount).setPutCount(putBoxIds.size());
-            iceInspectionReportService.updateById(report);
-        }
-
     }
 }

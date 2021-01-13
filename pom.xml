@@ -20,7 +20,7 @@
         <spring-cloud.version>Finchley.SR2</spring-cloud.version>
         <!-- 公共jar -->
         <pxt.common>0.4.0</pxt.common>
-        <pxt.common.db>0.4.6</pxt.common.db>
+        <pxt.common.db>0.4.5</pxt.common.db>
         <!-- feign服务 -->
         <common.feign.version>0.0.25</common.feign.version>
     </properties>

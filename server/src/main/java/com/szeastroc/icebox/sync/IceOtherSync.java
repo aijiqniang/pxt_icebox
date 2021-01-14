@@ -19,9 +19,29 @@ import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
-import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.entity.IceBackApply;
+import com.szeastroc.icebox.newprocess.entity.IceBackApplyRelateBox;
+import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
+import com.szeastroc.icebox.newprocess.entity.IceBackOrder;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
+import com.szeastroc.icebox.newprocess.entity.IceInspectionReport;
+import com.szeastroc.icebox.newprocess.entity.IcePutApply;
+import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
+import com.szeastroc.icebox.newprocess.entity.IcePutPactRecord;
 import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.service.*;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.service.IceBackApplyRelateBoxService;
+import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
+import com.szeastroc.icebox.newprocess.service.IceBackApplyService;
+import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
+import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
+import com.szeastroc.icebox.newprocess.service.IceExamineService;
+import com.szeastroc.icebox.newprocess.service.IceInspectionReportService;
+import com.szeastroc.icebox.newprocess.service.IcePutApplyService;
+import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
+import com.szeastroc.icebox.newprocess.service.IcePutPactRecordService;
 import com.szeastroc.icebox.oldprocess.entity.OrderInfo;
 import com.szeastroc.icebox.oldprocess.entity.PactRecord;
 import com.szeastroc.icebox.oldprocess.entity.WechatTransferOrder;
@@ -309,7 +329,7 @@ public class IceOtherSync {
         page.setSize(5000);
         List<IceBox> list;
         while(true){
-            IPage<IceBox> iceBoxIPage = iceBoxDao.selectPage(page, new LambdaQueryWrapper<IceBox>().isNotNull(IceBox::getPutStoreNumber));
+            IPage<IceBox> iceBoxIPage = iceBoxDao.selectPage(page, new LambdaQueryWrapper<IceBox>().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).isNotNull(IceBox::getPutStoreNumber));
             list = iceBoxIPage.getRecords();
             if(CollectionUtils.isEmpty(list)){
                 break;
@@ -358,20 +378,14 @@ public class IceOtherSync {
                         if(Objects.nonNull(group)){
                             currentMonthReport.setGroupDeptId(group.getId()).setGroupDeptName(group.getName());
                         }
+                        List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
+                        Integer inspectionCount = iceExamineService.getInspectionBoxes(putBoxIds).size();
+                        int lostCount = iceBoxService.getLostScrapCount(putBoxIds);
+                        currentMonthReport.setInspectionCount(inspectionCount).setLostScrapCount(lostCount).setPutCount(putBoxIds.size());
                         iceInspectionReportService.save(currentMonthReport);
                     }
                 }
             }
         }
-
-        List<IceInspectionReport> reports = iceInspectionReportService.list();
-        for (IceInspectionReport report : reports) {
-            List<Integer> putBoxIds = iceBoxService.getPutBoxIds(report.getUserId());
-            Integer inspectionCount = iceExamineService.getInspectionBoxes(putBoxIds).size();
-            int lostCount = iceBoxService.getLostScrapCount(putBoxIds);
-            report.setInspectionCount(inspectionCount).setLostScrapCount(lostCount).setPutCount(putBoxIds.size());
-            iceInspectionReportService.updateById(report);
-        }
-
     }
 }

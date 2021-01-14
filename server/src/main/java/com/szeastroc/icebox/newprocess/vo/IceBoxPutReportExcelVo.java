@@ -93,8 +93,36 @@ public class IceBoxPutReportExcelVo {
      */
     private String examineTime;
     /**
+     *审核备注
+     */
+    private String examineRemark;
+    /**
      *投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放
      */
     private String putStatus;
 
+    /**
+     *审核人id
+     */
+    private Integer examineUserId;
+
+    /**
+     *提交人id
+     */
+    private Integer submitterId;
+
+    private String provinceName;
+    private String cityName;
+    private String districtName;
+
+    private String customerAddress;
+
+    private String submitterMobile;
+
+    private String linkmanName;
+    private String linkmanMobile;
+
+    private String examineUserPosion;
+
+    private String visitTypeName;
 }

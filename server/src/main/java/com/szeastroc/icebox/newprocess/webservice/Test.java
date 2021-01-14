@@ -20,8 +20,8 @@ public class Test {
         requestVO.setModelName(objectFactory.createWbSiteRequestVOModelName("SC-518WYSL/HP"));
         String orderId = "REP"+new DateTime().toString("yyyyMMddHHmmss")+ RandomUtil.randomNumbers(4);
         requestVO.setSaleOrderId(objectFactory.createWbSiteRequestVOSaleOrderId(orderId));
-        requestVO.setTelephone1(objectFactory.createWbSiteRequestVOTelephone1("18672128394"));
-//        requestVO.setAreaCode1(objectFactory.createWbSiteRequestVOAreaCode1("0755"));
+        requestVO.setTelephone2(objectFactory.createWbSiteRequestVOTelephone1("18672128394"));
+        requestVO.setAreaCode1(objectFactory.createWbSiteRequestVOAreaCode1("0755"));
         requestVO.setAddress(objectFactory.createWbSiteRequestVOAddress("明亮科技园"));
         requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId("440300"));
         requestVO.setRequireServiceDate(objectFactory.createWbSiteRequestVORequireServiceDate("2021-01-15"));

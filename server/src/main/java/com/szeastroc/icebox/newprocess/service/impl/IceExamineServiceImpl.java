@@ -1482,8 +1482,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             return Lists.newArrayList();
         }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.eq(IceExamine::getExaminStatus,2)
-                .in(IceExamine::getIceBoxId,boxIds)
+        wrapper.in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);
         return iceExamineDao.selectList(wrapper);
@@ -1496,8 +1495,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             return 0;
         }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.eq(IceExamine::getExaminStatus,2)
-                .in(IceExamine::getIceBoxId,boxIds)
+        wrapper.in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
                 .groupBy(IceExamine::getIceBoxId);
         int size = iceExamineDao.selectCount(wrapper);

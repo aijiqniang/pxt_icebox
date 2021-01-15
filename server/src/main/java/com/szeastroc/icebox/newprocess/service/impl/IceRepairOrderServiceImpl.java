@@ -2,9 +2,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
 import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -14,6 +12,7 @@ import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.feign.customer.FeignDistrictExtensionClient;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
@@ -26,7 +25,6 @@ import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceRepairOrderMsg;
 import com.szeastroc.icebox.newprocess.dao.IceRepairOrderDao;
-import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
 import com.szeastroc.icebox.newprocess.entity.IceRepairOrder;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
@@ -76,6 +74,8 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private FeignExportRecordsClient feignExportRecordsClient;
+    @Autowired
+    private FeignDistrictExtensionClient districtExtensionClient;
 
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     @Override
@@ -117,11 +117,12 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
                 serviceDeptName  = supplier.getServiceDeptName();
                 groupDeptName = supplier.getGroupDeptName();
             }
-
+            String phoneAreaCode = FeignResponseUtil.getFeignData(districtExtensionClient.getPhoneAreaCodeByCode(iceRepairRequest.getCityCode()));
             iceRepairRequest.setServiceTypeId("WX");
             iceRepairRequest.setOriginFlag("DP");
             iceRepairRequest.setPsnAccount(account);
             iceRepairRequest.setPsnPwd(password);
+            iceRepairRequest.setPhoneAreaCode(phoneAreaCode);
             String orderNumber = "REP" + new DateTime().toString("yyyyMMddHHmmss") + RandomUtil.randomNumbers(4);
             IceRepairOrder repairOrder = IceRepairOrder.builder().orderNumber(orderNumber).boxId(iceRepairRequest.getBoxId())
                     .businessDeptId(businessDeptId).businessDeptName(businessDeptName)

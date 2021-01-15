@@ -5,6 +5,7 @@ import com.szeastroc.icebox.newprocess.webservice.WbSiteRequestVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @ClassName: RepairIceDTO
@@ -62,6 +63,8 @@ public class IceRepairRequest {
     @ApiModelProperty(value = "区县编码",required = true)
     private String areaCode;
 
+    private String phoneAreaCode;
+
 
 
     public WbSiteRequestVO convertToWbSite() {
@@ -74,13 +77,19 @@ public class IceRepairRequest {
         requestVO.setSaleOrderId(objectFactory.createWbSiteRequestVOSaleOrderId(this.saleOrderId));
         requestVO.setTelephone2(objectFactory.createWbSiteRequestVOTelephone2(this.linkMobile));
         requestVO.setAddress(objectFactory.createWbSiteRequestVOAddress(this.customerAddress));
-        requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode));
+        if(StringUtils.isNotBlank(this.areaCode)){
+            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode+"000"));
+        }else if(StringUtils.isNotBlank(this.cityCode)){
+            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.cityCode+"000"));
+        }else{
+            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.provinceCode+"000"));
+        }
         requestVO.setRequireServiceDate(objectFactory.createWbSiteRequestVORequireServiceDate(this.requireServiceDate));
         requestVO.setFaultDesc(objectFactory.createWbSiteRequestVOFaultDesc(this.description));
         requestVO.setCustomerName(objectFactory.createWbSiteRequestVOCustomerName(this.linkMan));
         requestVO.setBookingRange(objectFactory.createWbSiteRequestVOBookingRange(this.bookingRange));
         requestVO.setServiceTypeId(objectFactory.createWbSiteRequestVOServiceTypeId(this.serviceTypeId));
-//        requestVO.setAreaCode1(objectFactory.createWbSiteRequestVOAreaCode1(thi));
+        requestVO.setAreaCode1(objectFactory.createWbSiteRequestVOAreaCode1(this.phoneAreaCode));
         return requestVO;
     }
 }

@@ -4905,10 +4905,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         return jsonObject;
     }
 
-    @Override
-    public int getPutCount(Integer userId) {
-        return this.getPutBoxIds(userId).size();
-    }
 
     @Override
     public int getLostScrapCount(List<Integer> putBoxIds) {
@@ -4939,27 +4935,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    public int getLostCountByDeptId(Integer deptId) {
-        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
-        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId).eq(IceBox::getStatus,3);
-        return iceBoxDao.selectCount(iceBoxWrapper);
-    }
-
-
-    @Override
-    public int getLostCountByDeptIds(List<Integer> deptIds) {
-        if(com.baomidou.mybatisplus.core.toolkit.CollectionUtils.isEmpty(deptIds)){
-            return 0;
+    public List<Integer> getNormalPutBoxIds(Integer userId) {
+        List<String> numbers = FeignResponseUtil.getFeignData(feignSupplierRelateUserClient.getMainCustomerNumber(userId));
+        if(CollectionUtils.isEmpty(numbers)){
+            return Lists.newArrayList();
         }
         LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
-        iceBoxWrapper.eq(IceBox::getPutStatus,3).in(IceBox::getDeptId,deptIds).eq(IceBox::getStatus,3);
-        return iceBoxDao.selectCount(iceBoxWrapper);
-    }
-
-    @Override
-    public int getPutCountByDeptId(Integer deptId) {
-        LambdaQueryWrapper<IceBox> iceBoxWrapper = Wrappers.<IceBox>lambdaQuery();
-        iceBoxWrapper.eq(IceBox::getPutStatus,3).eq(IceBox::getDeptId,deptId);
-        return  iceBoxDao.selectCount(iceBoxWrapper);
+        iceBoxWrapper.select(IceBox::getId)
+                .eq(IceBox::getPutStatus,3)
+                .in(IceBox::getPutStoreNumber,numbers)
+                .notIn(IceBox::getStatus,IceBoxEnums.StatusEnum.SCRAP.getType(),IceBoxEnums.StatusEnum.LOSE.getType());
+        return iceBoxDao.selectList(iceBoxWrapper).stream().map(IceBox::getId).collect(Collectors.toList());
     }
 }

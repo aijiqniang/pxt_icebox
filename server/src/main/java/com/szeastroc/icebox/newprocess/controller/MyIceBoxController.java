@@ -18,6 +18,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -280,4 +281,15 @@ public class MyIceBoxController {
         iceBoxService.dealTransferCheck(historyVo);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,new IceBoxTransferHistoryVo());
     }
+
+    /**
+     * 获取冰柜详情
+     * @param iceBoxId
+     * @return
+     */
+    @RequestMapping("getBoxById")
+    public CommonResponse<IceBox> getBoxById(@RequestParam Integer iceBoxId){
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxService.getById(iceBoxId));
+    }
+
 }

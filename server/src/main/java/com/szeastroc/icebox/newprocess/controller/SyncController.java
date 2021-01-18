@@ -90,11 +90,7 @@ public class SyncController {
 
     @GetMapping("/syncIceInspectionReport")
     public CommonResponse<Void> syncIceInspectionReport() {
-        try {
-            iceOtherSync.syncIceInspectionReport();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        iceOtherSync.syncIceInspectionReport();
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 

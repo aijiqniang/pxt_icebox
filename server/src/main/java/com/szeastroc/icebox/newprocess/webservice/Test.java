@@ -21,7 +21,7 @@ public class Test {
         String orderId = "REP"+new DateTime().toString("yyyyMMddHHmmss")+ RandomUtil.randomNumbers(4);
         requestVO.setSaleOrderId(objectFactory.createWbSiteRequestVOSaleOrderId(orderId));
         requestVO.setTelephone2(objectFactory.createWbSiteRequestVOTelephone2("18672128394"));
-        requestVO.setAreaCode1(objectFactory.createWbSiteRequestVOAreaCode1("0755"));
+//        requestVO.setAreaCode1(objectFactory.createWbSiteRequestVOAreaCode1("0755"));
         requestVO.setAddress(objectFactory.createWbSiteRequestVOAddress("明亮科技园"));
         requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId("440300000"));
         requestVO.setRequireServiceDate(objectFactory.createWbSiteRequestVORequireServiceDate("2021-01-15"));

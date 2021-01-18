@@ -77,12 +77,10 @@ public class IceRepairRequest {
         requestVO.setSaleOrderId(objectFactory.createWbSiteRequestVOSaleOrderId(this.saleOrderId));
         requestVO.setTelephone2(objectFactory.createWbSiteRequestVOTelephone2(this.linkMobile));
         requestVO.setAddress(objectFactory.createWbSiteRequestVOAddress(this.customerAddress));
-        if(StringUtils.isNotBlank(this.areaCode)){
-            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode+"000"));
-        }else if(StringUtils.isNotBlank(this.cityCode)){
-            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.cityCode+"000"));
+        if(this.areaCode.length()>6){
+            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode.substring(0,6)+"000"));
         }else{
-            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.provinceCode+"000"));
+            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode+"000"));
         }
         requestVO.setRequireServiceDate(objectFactory.createWbSiteRequestVORequireServiceDate(this.requireServiceDate));
         requestVO.setFaultDesc(objectFactory.createWbSiteRequestVOFaultDesc(this.description));

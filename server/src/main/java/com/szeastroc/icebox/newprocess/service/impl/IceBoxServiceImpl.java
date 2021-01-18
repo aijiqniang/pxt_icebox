@@ -100,6 +100,7 @@ import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
+import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
@@ -210,6 +211,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
     @Autowired
     private FeignIceboxQueryClient feignIceboxQueryClient;
+    @Autowired
+    private IceRepairOrderService iceRepairOrderService;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -2729,6 +2732,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, relateBox.getId())
                         .ne(IceBackApply::getExamineStatus, 3));
                 boxVo.setBackStatus(iceBackApply == null ? -1 : iceBackApply.getExamineStatus());
+            }
+            Integer unfinishOrderCount = iceRepairOrderService.getUnfinishOrderCount(iceBox.getId());
+            if(unfinishOrderCount>0){
+                boxVo.setRepairing(Boolean.TRUE);
+            }else{
+                boxVo.setRepairing(Boolean.FALSE);
             }
             iceBoxVos.add(boxVo);
         }

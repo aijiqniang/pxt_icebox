@@ -20,14 +20,19 @@ import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.commondb.config.annotation.RedisDistributedLock;
+import com.szeastroc.commondb.config.annotation.RedisLock;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceRepairOrderMsg;
 import com.szeastroc.icebox.newprocess.dao.IceRepairOrderDao;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceRepairOrder;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
+import com.szeastroc.icebox.newprocess.vo.IceRepairOrderVO;
 import com.szeastroc.icebox.newprocess.vo.request.IceRepairRequest;
 import com.szeastroc.icebox.newprocess.webservice.WbSiteRequestVO;
 import com.szeastroc.icebox.newprocess.webservice.WbSiteResponseVO;
@@ -37,12 +42,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -76,10 +83,17 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     private FeignExportRecordsClient feignExportRecordsClient;
     @Autowired
     private FeignDistrictExtensionClient districtExtensionClient;
+    @Autowired
+    private IceBoxService iceBoxService;
 
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
+    @RedisLock(key = "#iceRepairRequest.boxId")
     @Override
-    public CommonResponse<Void> createOrder(IceRepairRequest iceRepairRequest) {
+    public CommonResponse createOrder(IceRepairRequest iceRepairRequest) {
+        Integer count = this.getUnfinishOrderCount(iceRepairRequest.getBoxId());
+        if(count>0){
+            return new CommonResponse(Constants.API_CODE_FAIL, null,"冰柜报修失败，该冰柜已存在未完成订单");
+        }
         String msg = null;
         try {
             Integer businessDeptId = null;
@@ -146,7 +160,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
             String value = responseVO.getResultCode().getValue();
             if (!"1".equals(value)) {
                 msg = responseVO.getResultMsg().getValue();
-                throw new ImproperOptionException("创建维修订单失败");
+                throw new ImproperOptionException("冰柜报修失败");
             }
         } catch (ImproperOptionException e) {
             //手动回滚事务
@@ -156,10 +170,9 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
             //手动回滚事务
             log.error("创建维修订单异常,{}", e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return new CommonResponse(Constants.API_CODE_FAIL, "创建维修订单失败");
+            return new CommonResponse(Constants.API_CODE_FAIL, "冰柜报修失败");
         }
         return new CommonResponse(Constants.API_CODE_SUCCESS, null);
-
     }
 
     @Override
@@ -217,7 +230,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         }
         // 生成下载任务
         Integer recordsId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userManageVo.getSessionUserInfoVo().getId(),
-                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "冰柜保修订单-导出"));
+                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "冰柜报修订单-导出"));
 
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
@@ -233,5 +246,34 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     @Override
     public Integer selectByExportCount(LambdaQueryWrapper<IceRepairOrder> wrapper) {
         return this.count(wrapper);
+    }
+
+
+    @Override
+    public List<IceRepairOrder> getOrders(String customerNumber) {
+        LambdaQueryWrapper<IceRepairOrder> queryWrapper = Wrappers.<IceRepairOrder>lambdaQuery();
+        queryWrapper.eq(IceRepairOrder::getCustomerNumber,customerNumber);
+        return this.baseMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public IceRepairOrderVO getDetail(String orderNumber) {
+        IceRepairOrderVO iceRepairOrderVO = new IceRepairOrderVO();
+        LambdaQueryWrapper<IceRepairOrder> queryWrapper = Wrappers.<IceRepairOrder>lambdaQuery();
+        queryWrapper.eq(IceRepairOrder::getOrderNumber,orderNumber);
+        IceRepairOrder order = this.baseMapper.selectOne(queryWrapper);
+        BeanUtils.copyProperties(order,iceRepairOrderVO);
+        IceBox iceBox = iceBoxService.getById(order.getBoxId());
+        iceRepairOrderVO.setChestName(iceBox.getChestName());
+        iceRepairOrderVO.setBrandName(iceBox.getBrandName());
+        iceRepairOrderVO.setChestNorm(iceBox.getChestNorm());
+        return iceRepairOrderVO;
+    }
+
+    @Override
+    public Integer getUnfinishOrderCount(Integer boxId){
+        LambdaQueryWrapper<IceRepairOrder> queryWrapper = Wrappers.<IceRepairOrder>lambdaQuery();
+        queryWrapper.eq(IceRepairOrder::getBoxId,boxId);
+        return this.baseMapper.selectCount(queryWrapper);
     }
 }

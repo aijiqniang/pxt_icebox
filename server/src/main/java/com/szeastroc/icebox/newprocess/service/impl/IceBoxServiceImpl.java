@@ -4992,19 +4992,21 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 isPush = true;
             }
             if (isPush) {
-                // 将旧商户的签收信息设置为【已签收】
-                oldIceBoxSignNoticeDao.update(null, Wrappers.<OldIceBoxSignNotice>lambdaUpdate()
-                        .eq(OldIceBoxSignNotice::getApplyNumber, oldApplyNumber)
-                        .set(OldIceBoxSignNotice::getStatus, OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus()));
+                if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(oldIceBox.getIceBoxType())) {
+                    // 将旧商户的签收信息设置为【已签收】
+                    oldIceBoxSignNoticeDao.update(null, Wrappers.<OldIceBoxSignNotice>lambdaUpdate()
+                            .eq(OldIceBoxSignNotice::getApplyNumber, oldApplyNumber)
+                            .set(OldIceBoxSignNotice::getStatus, OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus()));
 
-                // 推送签收信息
-                OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
-                oldIceBoxSignNotice.setApplyNumber(newApplyNumber);
-                oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
-                oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
-                oldIceBoxSignNotice.setPutStoreNumber(newPutStoreNumber);
-                oldIceBoxSignNotice.setCreateTime(new Date());
-                oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
+                    // 推送签收信息
+                    OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+                    oldIceBoxSignNotice.setApplyNumber(newApplyNumber);
+                    oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
+                    oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
+                    oldIceBoxSignNotice.setPutStoreNumber(newPutStoreNumber);
+                    oldIceBoxSignNotice.setCreateTime(new Date());
+                    oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
+                }
             }
         }
     }

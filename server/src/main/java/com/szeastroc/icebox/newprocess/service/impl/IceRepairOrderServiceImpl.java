@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -10,8 +11,6 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
-import com.szeastroc.common.exception.ImproperOptionException;
-import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignDistrictExtensionClient;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
@@ -20,7 +19,6 @@ import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
-import com.szeastroc.commondb.config.annotation.RedisDistributedLock;
 import com.szeastroc.commondb.config.annotation.RedisLock;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
@@ -34,6 +32,7 @@ import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.IceRepairOrderVO;
 import com.szeastroc.icebox.newprocess.vo.request.IceRepairRequest;
+import com.szeastroc.icebox.newprocess.vo.request.IceRepairStatusRequest;
 import com.szeastroc.icebox.newprocess.webservice.WbSiteRequestVO;
 import com.szeastroc.icebox.newprocess.webservice.WbSiteResponseVO;
 import com.szeastroc.icebox.newprocess.webservice.WebSite;
@@ -47,8 +46,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -91,124 +90,115 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     @Override
     public CommonResponse createOrder(IceRepairRequest iceRepairRequest) {
         Integer count = this.getUnfinishOrderCount(iceRepairRequest.getBoxId());
-        if(count>0){
-            return new CommonResponse(Constants.API_CODE_FAIL, null,"冰柜报修失败，该冰柜已存在未完成订单");
+        if (count > 0) {
+            return new CommonResponse(Constants.API_CODE_FAIL, null, "冰柜报修失败，该冰柜已存在未完成订单");
         }
         String msg = null;
-        try {
-            Integer businessDeptId = null;
-            Integer headquartersDeptId= null;
-            Integer serviceDeptId= null;
-            Integer groupDeptId= null;
-            Integer regionDeptId= null;
-            String headquartersDeptName= null;
-            String businessDeptName= null;
-            String regionDeptName= null;
-            String serviceDeptName= null;
-            String groupDeptName= null;
-            if (SupplierTypeEnum.IS_STORE.getType().equals(iceRepairRequest.getCustomerType())) {
-                StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceRepairRequest.getCustomerNumber()));
-                businessDeptId = store.getBusinessDeptId();
-                headquartersDeptId = store.getHeadquartersDeptId();
-                regionDeptId = store.getRegionDeptId();
-                serviceDeptId = store.getServiceDeptId();
-                groupDeptId = store.getGroupDeptId();
-                businessDeptName = store.getBusinessDeptName();
-                headquartersDeptName = store.getHeadquartersDeptName();
-                regionDeptName = store.getRegionDeptName();
-                serviceDeptName  = store.getServiceDeptName();
-                groupDeptName = store.getGroupDeptName();
-            }else{
-                SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceRepairRequest.getCustomerNumber()));
-                businessDeptId = supplier.getBusinessDeptId();
-                headquartersDeptId = supplier.getHeadquartersDeptId();
-                regionDeptId = supplier.getRegionDeptId();
-                serviceDeptId = supplier.getServiceDeptId();
-                groupDeptId = supplier.getGroupDeptId();
-                businessDeptName = supplier.getBusinessDeptName();
-                headquartersDeptName = supplier.getHeadquartersDeptName();
-                regionDeptName = supplier.getRegionDeptName();
-                serviceDeptName  = supplier.getServiceDeptName();
-                groupDeptName = supplier.getGroupDeptName();
-            }
-            String phoneAreaCode = FeignResponseUtil.getFeignData(districtExtensionClient.getPhoneAreaCodeByCode(iceRepairRequest.getCityCode()));
-            iceRepairRequest.setServiceTypeId("WX");
-            iceRepairRequest.setOriginFlag("DP");
-            iceRepairRequest.setPsnAccount(account);
-            iceRepairRequest.setPsnPwd(password);
-            iceRepairRequest.setPhoneAreaCode(phoneAreaCode);
-            String orderNumber = "REP" + new DateTime().toString("yyyyMMddHHmmss") + RandomUtil.randomNumbers(4);
-            IceRepairOrder repairOrder = IceRepairOrder.builder().orderNumber(orderNumber).boxId(iceRepairRequest.getBoxId())
-                    .businessDeptId(businessDeptId).businessDeptName(businessDeptName)
-                    .headquartersDeptId(headquartersDeptId).headquartersDeptName(headquartersDeptName)
-                    .regionDeptId(regionDeptId).regionDeptName(regionDeptName)
-                    .serviceDeptId(serviceDeptId).serviceDeptName(serviceDeptName)
-                    .groupDeptId(groupDeptId).groupDeptName(groupDeptName)
-                    .customerNumber(iceRepairRequest.getCustomerNumber()).customerName(iceRepairRequest.getCustomerName())
-                    .customerAddress(iceRepairRequest.getCustomerAddress()).customerType(iceRepairRequest.getCustomerType()).assetId(iceRepairRequest.getAssetId())
-                    .linkMan(iceRepairRequest.getLinkMan()).linkMobile(iceRepairRequest.getLinkMobile())
-                    .modelName(iceRepairRequest.getModelName()).modelId(iceRepairRequest.getModelId())
-                    .remark(iceRepairRequest.getRemark()).description(iceRepairRequest.getDescription())
-                    .province(iceRepairRequest.getProvince()).city(iceRepairRequest.getCity()).area(iceRepairRequest.getArea())
-                    .build();
-            this.baseMapper.insert(repairOrder);
-            iceRepairRequest.setSaleOrderId(orderNumber);
-            WbSiteRequestVO wbSiteRequestVO = iceRepairRequest.convertToWbSite();
-            WebSite webSite = new WebSite();
-            WebSitePortType httpEndpoint = webSite.getWebSiteHttpSoap12Endpoint();
-            WbSiteResponseVO responseVO = httpEndpoint.getWBSite(wbSiteRequestVO);
-            String value = responseVO.getResultCode().getValue();
-            if (!"1".equals(value)) {
-                msg = responseVO.getResultMsg().getValue();
-                throw new ImproperOptionException("冰柜报修失败");
-            }
-        } catch (ImproperOptionException e) {
-            //手动回滚事务
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return new CommonResponse(Constants.API_CODE_FAIL, "海信" + msg);
-        } catch (NormalOptionException e) {
-            //手动回滚事务
-            log.error("创建维修订单异常,{}", e);
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return new CommonResponse(Constants.API_CODE_FAIL, "冰柜报修失败");
+        Integer businessDeptId = null;
+        Integer headquartersDeptId = null;
+        Integer serviceDeptId = null;
+        Integer groupDeptId = null;
+        Integer regionDeptId = null;
+        String headquartersDeptName = null;
+        String businessDeptName = null;
+        String regionDeptName = null;
+        String serviceDeptName = null;
+        String groupDeptName = null;
+        if (SupplierTypeEnum.IS_STORE.getType().equals(iceRepairRequest.getCustomerType())) {
+            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceRepairRequest.getCustomerNumber()));
+            businessDeptId = store.getBusinessDeptId();
+            headquartersDeptId = store.getHeadquartersDeptId();
+            regionDeptId = store.getRegionDeptId();
+            serviceDeptId = store.getServiceDeptId();
+            groupDeptId = store.getGroupDeptId();
+            businessDeptName = store.getBusinessDeptName();
+            headquartersDeptName = store.getHeadquartersDeptName();
+            regionDeptName = store.getRegionDeptName();
+            serviceDeptName = store.getServiceDeptName();
+            groupDeptName = store.getGroupDeptName();
+        } else {
+            SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceRepairRequest.getCustomerNumber()));
+            businessDeptId = supplier.getBusinessDeptId();
+            headquartersDeptId = supplier.getHeadquartersDeptId();
+            regionDeptId = supplier.getRegionDeptId();
+            serviceDeptId = supplier.getServiceDeptId();
+            groupDeptId = supplier.getGroupDeptId();
+            businessDeptName = supplier.getBusinessDeptName();
+            headquartersDeptName = supplier.getHeadquartersDeptName();
+            regionDeptName = supplier.getRegionDeptName();
+            serviceDeptName = supplier.getServiceDeptName();
+            groupDeptName = supplier.getGroupDeptName();
         }
+        String phoneAreaCode = FeignResponseUtil.getFeignData(districtExtensionClient.getPhoneAreaCodeByCode(iceRepairRequest.getCityCode()));
+        iceRepairRequest.setServiceTypeId("WX");
+        iceRepairRequest.setOriginFlag("DP");
+        iceRepairRequest.setPsnAccount(account);
+        iceRepairRequest.setPsnPwd(password);
+        iceRepairRequest.setPhoneAreaCode(phoneAreaCode);
+        String orderNumber = "REP" + new DateTime().toString("yyyyMMddHHmmss") + RandomUtil.randomNumbers(4);
+        IceRepairOrder repairOrder = IceRepairOrder.builder().orderNumber(orderNumber).boxId(iceRepairRequest.getBoxId())
+                .businessDeptId(businessDeptId).businessDeptName(businessDeptName)
+                .headquartersDeptId(headquartersDeptId).headquartersDeptName(headquartersDeptName)
+                .regionDeptId(regionDeptId).regionDeptName(regionDeptName)
+                .serviceDeptId(serviceDeptId).serviceDeptName(serviceDeptName)
+                .groupDeptId(groupDeptId).groupDeptName(groupDeptName)
+                .customerNumber(iceRepairRequest.getCustomerNumber()).customerName(iceRepairRequest.getCustomerName())
+                .customerAddress(iceRepairRequest.getCustomerAddress()).customerType(iceRepairRequest.getCustomerType()).assetId(iceRepairRequest.getAssetId())
+                .linkMan(iceRepairRequest.getLinkMan()).linkMobile(iceRepairRequest.getLinkMobile())
+                .modelName(iceRepairRequest.getModelName()).modelId(iceRepairRequest.getModelId())
+                .remark(iceRepairRequest.getRemark()).description(iceRepairRequest.getDescription())
+                .province(iceRepairRequest.getProvince()).city(iceRepairRequest.getCity()).area(iceRepairRequest.getArea())
+                .phoneAreaCode(phoneAreaCode).requireServiceDate(iceRepairRequest.getRequireServiceDate()).bookingRange(iceRepairRequest.getBookingRange())
+                .build();
+        iceRepairRequest.setSaleOrderId(orderNumber);
+        log.info("请求海信创建报修单,{}", JSONObject.toJSONString(iceRepairRequest));
+        WbSiteRequestVO wbSiteRequestVO = iceRepairRequest.convertToWbSite();
+        WebSite webSite = new WebSite();
+        WebSitePortType httpEndpoint = webSite.getWebSiteHttpSoap12Endpoint();
+        WbSiteResponseVO responseVO = httpEndpoint.getWBSite(wbSiteRequestVO);
+        String value = responseVO.getResultCode().getValue();
+        if (!"1".equals(value)) {
+            msg = responseVO.getResultMsg().getValue();
+            return new CommonResponse(Constants.API_CODE_FAIL, "海信" + msg);
+        }
+        this.baseMapper.insert(repairOrder);
         return new CommonResponse(Constants.API_CODE_SUCCESS, null);
     }
 
     @Override
     public IPage<IceRepairOrder> findByPage(IceRepairOrderMsg msg) {
         LambdaQueryWrapper<IceRepairOrder> wrapper = fillWrapper(msg);
-        return this.baseMapper.selectPage(msg,wrapper);
+        return this.baseMapper.selectPage(msg, wrapper);
     }
 
     @Override
     public LambdaQueryWrapper<IceRepairOrder> fillWrapper(IceRepairOrderMsg msg) {
         LambdaQueryWrapper<IceRepairOrder> wrapper = Wrappers.<IceRepairOrder>lambdaQuery();
-        if(StringUtils.isNotBlank(msg.getOrderNumber())){
+        if (StringUtils.isNotBlank(msg.getOrderNumber())) {
             wrapper.eq(IceRepairOrder::getOrderNumber, msg.getOrderNumber());
         }
-        if(StringUtils.isNotBlank(msg.getCustomerName())){
+        if (StringUtils.isNotBlank(msg.getCustomerName())) {
             wrapper.like(IceRepairOrder::getCustomerName, msg.getCustomerName());
         }
-        if(StringUtils.isNotBlank(msg.getAssetId())){
+        if (StringUtils.isNotBlank(msg.getAssetId())) {
             wrapper.eq(IceRepairOrder::getAssetId, msg.getAssetId());
         }
-        if(Objects.nonNull(msg.getStatus())){
+        if (Objects.nonNull(msg.getStatus())) {
             wrapper.eq(IceRepairOrder::getStatus, msg.getStatus());
         }
-        if(Objects.nonNull(msg.getHeadquartersDeptId())){
+        if (Objects.nonNull(msg.getHeadquartersDeptId())) {
             wrapper.eq(IceRepairOrder::getHeadquartersDeptId, msg.getHeadquartersDeptId());
         }
-        if(Objects.nonNull(msg.getBusinessDeptId())){
+        if (Objects.nonNull(msg.getBusinessDeptId())) {
             wrapper.eq(IceRepairOrder::getBusinessDeptId, msg.getBusinessDeptId());
         }
-        if(Objects.nonNull(msg.getRegionDeptId())){
+        if (Objects.nonNull(msg.getRegionDeptId())) {
             wrapper.eq(IceRepairOrder::getRegionDeptId, msg.getRegionDeptId());
         }
-        if(Objects.nonNull(msg.getServiceDeptId())){
+        if (Objects.nonNull(msg.getServiceDeptId())) {
             wrapper.eq(IceRepairOrder::getServiceDeptId, msg.getServiceDeptId());
         }
-        if(Objects.nonNull(msg.getGroupDeptId())){
+        if (Objects.nonNull(msg.getGroupDeptId())) {
             wrapper.eq(IceRepairOrder::getGroupDeptId, msg.getGroupDeptId());
         }
         wrapper.orderByDesc(IceRepairOrder::getCreatedTime);
@@ -240,7 +230,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         // 三分钟间隔
         jedis.set(key, "ex", 300, TimeUnit.SECONDS);
 
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
     @Override
@@ -252,7 +242,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     @Override
     public List<IceRepairOrder> getOrders(String customerNumber) {
         LambdaQueryWrapper<IceRepairOrder> queryWrapper = Wrappers.<IceRepairOrder>lambdaQuery();
-        queryWrapper.eq(IceRepairOrder::getCustomerNumber,customerNumber);
+        queryWrapper.eq(IceRepairOrder::getCustomerNumber, customerNumber);
         return this.baseMapper.selectList(queryWrapper);
     }
 
@@ -260,9 +250,9 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     public IceRepairOrderVO getDetail(String orderNumber) {
         IceRepairOrderVO iceRepairOrderVO = new IceRepairOrderVO();
         LambdaQueryWrapper<IceRepairOrder> queryWrapper = Wrappers.<IceRepairOrder>lambdaQuery();
-        queryWrapper.eq(IceRepairOrder::getOrderNumber,orderNumber);
+        queryWrapper.eq(IceRepairOrder::getOrderNumber, orderNumber);
         IceRepairOrder order = this.baseMapper.selectOne(queryWrapper);
-        BeanUtils.copyProperties(order,iceRepairOrderVO);
+        BeanUtils.copyProperties(order, iceRepairOrderVO);
         IceBox iceBox = iceBoxService.getById(order.getBoxId());
         iceRepairOrderVO.setChestName(iceBox.getChestName());
         iceRepairOrderVO.setBrandName(iceBox.getBrandName());
@@ -271,9 +261,28 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     }
 
     @Override
-    public Integer getUnfinishOrderCount(Integer boxId){
+    public Integer getUnfinishOrderCount(Integer boxId) {
         LambdaQueryWrapper<IceRepairOrder> queryWrapper = Wrappers.<IceRepairOrder>lambdaQuery();
-        queryWrapper.eq(IceRepairOrder::getBoxId,boxId);
+        queryWrapper.eq(IceRepairOrder::getBoxId, boxId);
         return this.baseMapper.selectCount(queryWrapper);
+    }
+
+    @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
+    @Override
+    public CommonResponse changeStatus(IceRepairStatusRequest request) {
+        LambdaQueryWrapper<IceRepairOrder> queryWrapper = Wrappers.<IceRepairOrder>lambdaQuery();
+        queryWrapper.eq(IceRepairOrder::getOrderNumber, request.getOrderNumber());
+        IceRepairOrder iceRepairOrder = this.baseMapper.selectOne(queryWrapper);
+        if(Objects.isNull(iceRepairOrder)){
+            return new CommonResponse(Constants.API_CODE_FAIL, null, "该订单不存在");
+        }
+        iceRepairOrder.setStatus(request.getStatus()).setFinishStatus(request.getFinishStatus())
+        .setAcceptTime(request.getAcceptTime()).setCause(request.getCause()).setFinishTime(request.getFinishTime())
+        .setFactServiceMethod(request.getFactServiceMethod()).setFactServiceType(request.getFactServiceType())
+        .setEngineer(request.getEngineer()).setServiceProviderCode(request.getServiceProviderCode())
+        .setServiceProviderName(request.getServiceProviderName()).setFallback(request.getFallback())
+        .setRepairMethod(request.getRepairMethod()).setResult(request.getResult()).setUpdatedTime(new Date());
+        this.baseMapper.updateById(iceRepairOrder);
+        return new CommonResponse(Constants.API_CODE_SUCCESS, null);
     }
 }

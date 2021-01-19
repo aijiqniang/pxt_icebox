@@ -8,6 +8,7 @@ import com.szeastroc.icebox.newprocess.consumer.common.IceRepairOrderMsg;
 import com.szeastroc.icebox.newprocess.entity.IceRepairOrder;
 import com.szeastroc.icebox.newprocess.vo.IceRepairOrderVO;
 import com.szeastroc.icebox.newprocess.vo.request.IceRepairRequest;
+import com.szeastroc.icebox.newprocess.vo.request.IceRepairStatusRequest;
 
 import java.util.List;
 
@@ -34,4 +35,6 @@ public interface IceRepairOrderService extends IService<IceRepairOrder> {
     IceRepairOrderVO getDetail(String orderNumber);
 
     Integer getUnfinishOrderCount(Integer boxId);
+
+    CommonResponse changeStatus(IceRepairStatusRequest request);
 }

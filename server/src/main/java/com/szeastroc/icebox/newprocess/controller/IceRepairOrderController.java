@@ -12,6 +12,7 @@ import com.szeastroc.icebox.newprocess.service.IceQuestionDescService;
 import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.IceRepairOrderVO;
 import com.szeastroc.icebox.newprocess.vo.request.IceRepairRequest;
+import com.szeastroc.icebox.newprocess.vo.request.IceRepairStatusRequest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -82,6 +83,12 @@ public class IceRepairOrderController {
     @GetMapping("getDesc")
     public CommonResponse<List<IceQuestionDesc>> getDesc(){
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null,iceQuestionDescService.list());
+    }
+
+
+    @PostMapping("changeStatus")
+    public CommonResponse changeStatus(@RequestBody IceRepairStatusRequest request){
+        return iceRepairOrderService.changeStatus(request);
     }
 
 }

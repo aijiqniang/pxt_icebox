@@ -25,7 +25,7 @@ import java.util.Date;
 @SuppressWarnings("serial")
 @Data
 @Builder
-@Accessors
+@Accessors(chain = true)
 @TableName("t_ice_repair_order")
 @ApiModel
 @NoArgsConstructor
@@ -157,6 +157,18 @@ public class IceRepairOrder extends Model<IceRepairOrder> {
     @ApiModelProperty(value = "区")
     private String area;
 
+    @TableField(value = "phone_area_code")
+    @ApiModelProperty(value = "电话区号")
+    private String phoneAreaCode;
+
+    @TableField(value = "booking_range")
+    @ApiModelProperty(value = "时间范围")
+    private String bookingRange;
+
+    @TableField(value = "require_service_date")
+    @ApiModelProperty(value = "电话区号")
+    private String requireServiceDate;
+
 
     /**
      * 问题描述
@@ -194,6 +206,56 @@ public class IceRepairOrder extends Model<IceRepairOrder> {
      */
     @TableField(value = "updated_time")
     private Date updatedTime;
+
+    /**
+     * 完成状态
+     */
+    private Integer finishStatus;
+    /**
+     * 服务提供商编号
+     */
+    private String serviceProviderCode;
+
+    /**
+     * 服务提供商名称
+     */
+    private String serviceProviderName;
+    /**
+     * 受理时间
+     */
+    private Date acceptTime;
+    /**
+     * 故障原因
+     */
+    private String cause;
+    /**
+     * 维修措施
+     */
+    private String repairMethod;
+    /**
+     * 实际服务类型
+     */
+    private String factServiceType;
+    /**
+     * 实际服务方式
+     */
+    private String factServiceMethod;
+    /**
+     * 中间结果描述
+     */
+    private String result;
+    /**
+     * 反馈备注
+     */
+    private String fallback;
+    /**
+     * 服务完成时间
+     */
+    private Date finishTime;
+    /**
+     * 工程师
+     */
+    private String engineer;
 
 
     /**

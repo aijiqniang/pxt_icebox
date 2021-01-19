@@ -271,11 +271,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
             if (sessionUserInfoVo != null && DeptTypeEnum.SERVICE.getType().equals(sessionUserInfoVo.getDeptType())) {
                 userIds.add(sessionUserInfoVo.getId());
-                userIds.add(examineUserId);
+                if (null != examineUserId && !userIds.contains(examineUserId)) {
+                    userIds.add(examineUserId);
+                }
                 continue;
             }
             if (sessionUserInfoVo != null && DeptTypeEnum.LARGE_AREA.getType().equals(sessionUserInfoVo.getDeptType())) {
-                userIds.add(examineUserId);
+                if (null != examineUserId && !userIds.contains(examineUserId)) {
+                    userIds.add(examineUserId);
+                }
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }
@@ -286,7 +290,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
         }
 
-        if (!userIds.contains(examineUserId)) {
+        if (null != examineUserId && !userIds.contains(examineUserId)) {
             userIds.add(examineUserId);
         }
 

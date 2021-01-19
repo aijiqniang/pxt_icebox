@@ -11,10 +11,8 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>WbSiteRequestVO complex type的 Java 类。
- * 
- * <p>以下模式片段指定包含在此类中的预期内容。
- * 
+ *
+ *
  * <pre>
  * &lt;complexType name="WbSiteRequestVO">
  *   &lt;complexContent>
@@ -376,7 +374,7 @@ public class WbSiteRequestVO {
     protected JAXBElement<String> zxMode;
 
     /**
-     * 获取activeFlag属性的值。
+     * 锟斤拷取activeFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -388,7 +386,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置activeFlag属性的值。
+     * 锟斤拷锟斤拷activeFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -400,7 +398,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取address属性的值。
+     * 锟斤拷取address锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -412,7 +410,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置address属性的值。
+     * 锟斤拷锟斤拷address锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -424,7 +422,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取areaCode1属性的值。
+     * 锟斤拷取areaCode1锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -436,7 +434,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置areaCode1属性的值。
+     * 锟斤拷锟斤拷areaCode1锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -448,7 +446,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute1属性的值。
+     * 锟斤拷取attribute1锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -460,7 +458,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute1属性的值。
+     * 锟斤拷锟斤拷attribute1锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -472,7 +470,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute10属性的值。
+     * 锟斤拷取attribute10锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -484,7 +482,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute10属性的值。
+     * 锟斤拷锟斤拷attribute10锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -496,7 +494,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute11属性的值。
+     * 锟斤拷取attribute11锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -508,7 +506,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute11属性的值。
+     * 锟斤拷锟斤拷attribute11锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -520,7 +518,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute12属性的值。
+     * 锟斤拷取attribute12锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -532,7 +530,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute12属性的值。
+     * 锟斤拷锟斤拷attribute12锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -544,7 +542,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute13属性的值。
+     * 锟斤拷取attribute13锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -556,7 +554,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute13属性的值。
+     * 锟斤拷锟斤拷attribute13锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -568,7 +566,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute14属性的值。
+     * 锟斤拷取attribute14锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -580,7 +578,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute14属性的值。
+     * 锟斤拷锟斤拷attribute14锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -592,7 +590,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute15属性的值。
+     * 锟斤拷取attribute15锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -604,7 +602,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute15属性的值。
+     * 锟斤拷锟斤拷attribute15锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -616,7 +614,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute16属性的值。
+     * 锟斤拷取attribute16锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -628,7 +626,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute16属性的值。
+     * 锟斤拷锟斤拷attribute16锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -640,7 +638,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute17属性的值。
+     * 锟斤拷取attribute17锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -652,7 +650,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute17属性的值。
+     * 锟斤拷锟斤拷attribute17锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -664,7 +662,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute18属性的值。
+     * 锟斤拷取attribute18锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -676,7 +674,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute18属性的值。
+     * 锟斤拷锟斤拷attribute18锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -688,7 +686,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute19属性的值。
+     * 锟斤拷取attribute19锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -700,7 +698,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute19属性的值。
+     * 锟斤拷锟斤拷attribute19锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -712,7 +710,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute2属性的值。
+     * 锟斤拷取attribute2锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -724,7 +722,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute2属性的值。
+     * 锟斤拷锟斤拷attribute2锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -736,7 +734,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute20属性的值。
+     * 锟斤拷取attribute20锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -748,7 +746,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute20属性的值。
+     * 锟斤拷锟斤拷attribute20锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -760,7 +758,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute3属性的值。
+     * 锟斤拷取attribute3锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -772,7 +770,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute3属性的值。
+     * 锟斤拷锟斤拷attribute3锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -784,7 +782,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute4属性的值。
+     * 锟斤拷取attribute4锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -796,7 +794,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute4属性的值。
+     * 锟斤拷锟斤拷attribute4锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -808,7 +806,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute5属性的值。
+     * 锟斤拷取attribute5锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -820,7 +818,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute5属性的值。
+     * 锟斤拷锟斤拷attribute5锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -832,7 +830,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute6属性的值。
+     * 锟斤拷取attribute6锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -844,7 +842,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute6属性的值。
+     * 锟斤拷锟斤拷attribute6锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -856,7 +854,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute7属性的值。
+     * 锟斤拷取attribute7锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -868,7 +866,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute7属性的值。
+     * 锟斤拷锟斤拷attribute7锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -880,7 +878,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute8属性的值。
+     * 锟斤拷取attribute8锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -892,7 +890,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute8属性的值。
+     * 锟斤拷锟斤拷attribute8锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -904,7 +902,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取attribute9属性的值。
+     * 锟斤拷取attribute9锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -916,7 +914,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置attribute9属性的值。
+     * 锟斤拷锟斤拷attribute9锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -928,7 +926,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取barterFlag属性的值。
+     * 锟斤拷取barterFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -940,7 +938,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置barterFlag属性的值。
+     * 锟斤拷锟斤拷barterFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -952,7 +950,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取bookingRange属性的值。
+     * 锟斤拷取bookingRange锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -964,7 +962,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置bookingRange属性的值。
+     * 锟斤拷锟斤拷bookingRange锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -976,7 +974,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取buyDate属性的值。
+     * 锟斤拷取buyDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -988,7 +986,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置buyDate属性的值。
+     * 锟斤拷锟斤拷buyDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1000,7 +998,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取createdBy属性的值。
+     * 锟斤拷取createdBy锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1012,7 +1010,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置createdBy属性的值。
+     * 锟斤拷锟斤拷createdBy锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1024,7 +1022,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取createdDate属性的值。
+     * 锟斤拷取createdDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1036,7 +1034,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置createdDate属性的值。
+     * 锟斤拷锟斤拷createdDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1048,7 +1046,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取customerId属性的值。
+     * 锟斤拷取customerId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1060,7 +1058,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置customerId属性的值。
+     * 锟斤拷锟斤拷customerId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1072,7 +1070,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取customerName属性的值。
+     * 锟斤拷取customerName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1084,7 +1082,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置customerName属性的值。
+     * 锟斤拷锟斤拷customerName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1096,7 +1094,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取email属性的值。
+     * 锟斤拷取email锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1108,7 +1106,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置email属性的值。
+     * 锟斤拷锟斤拷email锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1120,7 +1118,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取errorInfo属性的值。
+     * 锟斤拷取errorInfo锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1132,7 +1130,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置errorInfo属性的值。
+     * 锟斤拷锟斤拷errorInfo锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1144,7 +1142,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取faultDesc属性的值。
+     * 锟斤拷取faultDesc锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1156,7 +1154,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置faultDesc属性的值。
+     * 锟斤拷锟斤拷faultDesc锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1168,7 +1166,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取ifFlush属性的值。
+     * 锟斤拷取ifFlush锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1180,7 +1178,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置ifFlush属性的值。
+     * 锟斤拷锟斤拷ifFlush锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1192,7 +1190,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取ifPullBack属性的值。
+     * 锟斤拷取ifPullBack锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1204,7 +1202,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置ifPullBack属性的值。
+     * 锟斤拷锟斤拷ifPullBack锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1216,7 +1214,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取ifService属性的值。
+     * 锟斤拷取ifService锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1228,7 +1226,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置ifService属性的值。
+     * 锟斤拷锟斤拷ifService锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1240,7 +1238,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取imageUrl属性的值。
+     * 锟斤拷取imageUrl锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1252,7 +1250,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置imageUrl属性的值。
+     * 锟斤拷锟斤拷imageUrl锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1264,7 +1262,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取importFlag属性的值。
+     * 锟斤拷取importFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1276,7 +1274,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置importFlag属性的值。
+     * 锟斤拷锟斤拷importFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1288,7 +1286,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取jdWbId属性的值。
+     * 锟斤拷取jdWbId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1300,7 +1298,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置jdWbId属性的值。
+     * 锟斤拷锟斤拷jdWbId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1312,7 +1310,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取lastUpdBy属性的值。
+     * 锟斤拷取lastUpdBy锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1324,7 +1322,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置lastUpdBy属性的值。
+     * 锟斤拷锟斤拷lastUpdBy锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1336,7 +1334,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取lastUpdDate属性的值。
+     * 锟斤拷取lastUpdDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1348,7 +1346,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置lastUpdDate属性的值。
+     * 锟斤拷锟斤拷lastUpdDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1360,7 +1358,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取logoId属性的值。
+     * 锟斤拷取logoId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1372,7 +1370,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置logoId属性的值。
+     * 锟斤拷锟斤拷logoId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1384,7 +1382,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取logoName属性的值。
+     * 锟斤拷取logoName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1396,7 +1394,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置logoName属性的值。
+     * 锟斤拷锟斤拷logoName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1408,7 +1406,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取lsOrder属性的值。
+     * 锟斤拷取lsOrder锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1420,7 +1418,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置lsOrder属性的值。
+     * 锟斤拷锟斤拷lsOrder锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1432,7 +1430,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取marketId属性的值。
+     * 锟斤拷取marketId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1444,7 +1442,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置marketId属性的值。
+     * 锟斤拷锟斤拷marketId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1456,7 +1454,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取marketName属性的值。
+     * 锟斤拷取marketName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1468,7 +1466,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置marketName属性的值。
+     * 锟斤拷锟斤拷marketName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1480,7 +1478,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取midProductId属性的值。
+     * 锟斤拷取midProductId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1492,7 +1490,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置midProductId属性的值。
+     * 锟斤拷锟斤拷midProductId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1504,7 +1502,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取midProductName属性的值。
+     * 锟斤拷取midProductName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1516,7 +1514,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置midProductName属性的值。
+     * 锟斤拷锟斤拷midProductName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1528,7 +1526,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取modelCode属性的值。
+     * 锟斤拷取modelCode锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1540,7 +1538,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置modelCode属性的值。
+     * 锟斤拷锟斤拷modelCode锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1552,7 +1550,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取modelId属性的值。
+     * 锟斤拷取modelId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1564,7 +1562,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置modelId属性的值。
+     * 锟斤拷锟斤拷modelId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1576,7 +1574,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取modelName属性的值。
+     * 锟斤拷取modelName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1588,7 +1586,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置modelName属性的值。
+     * 锟斤拷锟斤拷modelName锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1600,7 +1598,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取modificationNum属性的值。
+     * 锟斤拷取modificationNum锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1612,7 +1610,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置modificationNum属性的值。
+     * 锟斤拷锟斤拷modificationNum锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1624,7 +1622,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取openFlag属性的值。
+     * 锟斤拷取openFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1636,7 +1634,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置openFlag属性的值。
+     * 锟斤拷锟斤拷openFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1648,7 +1646,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取originFlag属性的值。
+     * 锟斤拷取originFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1660,7 +1658,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置originFlag属性的值。
+     * 锟斤拷锟斤拷originFlag锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1672,7 +1670,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取price属性的值。
+     * 锟斤拷取price锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1684,7 +1682,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置price属性的值。
+     * 锟斤拷锟斤拷price锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1696,7 +1694,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取prodSerialNo属性的值。
+     * 锟斤拷取prodSerialNo锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1708,7 +1706,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置prodSerialNo属性的值。
+     * 锟斤拷锟斤拷prodSerialNo锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1720,7 +1718,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取prodTypeId属性的值。
+     * 锟斤拷取prodTypeId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1732,7 +1730,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置prodTypeId属性的值。
+     * 锟斤拷锟斤拷prodTypeId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1744,7 +1742,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取projectNo属性的值。
+     * 锟斤拷取projectNo锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1756,7 +1754,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置projectNo属性的值。
+     * 锟斤拷锟斤拷projectNo锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1768,7 +1766,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取psnAccount属性的值。
+     * 锟斤拷取psnAccount锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1780,7 +1778,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置psnAccount属性的值。
+     * 锟斤拷锟斤拷psnAccount锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1792,7 +1790,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取psnPwd属性的值。
+     * 锟斤拷取psnPwd锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1804,7 +1802,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置psnPwd属性的值。
+     * 锟斤拷锟斤拷psnPwd锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1816,7 +1814,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取regoinId属性的值。
+     * 锟斤拷取regoinId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1828,7 +1826,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置regoinId属性的值。
+     * 锟斤拷锟斤拷regoinId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1840,7 +1838,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取remark属性的值。
+     * 锟斤拷取remark锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1852,7 +1850,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置remark属性的值。
+     * 锟斤拷锟斤拷remark锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1864,7 +1862,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取requireDesc属性的值。
+     * 锟斤拷取requireDesc锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1876,7 +1874,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置requireDesc属性的值。
+     * 锟斤拷锟斤拷requireDesc锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1888,7 +1886,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取requireServiceDate属性的值。
+     * 锟斤拷取requireServiceDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1900,7 +1898,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置requireServiceDate属性的值。
+     * 锟斤拷锟斤拷requireServiceDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1912,7 +1910,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取roadId属性的值。
+     * 锟斤拷取roadId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1924,7 +1922,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置roadId属性的值。
+     * 锟斤拷锟斤拷roadId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1936,7 +1934,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取rowId属性的值。
+     * 锟斤拷取rowId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1948,7 +1946,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置rowId属性的值。
+     * 锟斤拷锟斤拷rowId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1960,7 +1958,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取saleOrderId属性的值。
+     * 锟斤拷取saleOrderId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1972,7 +1970,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置saleOrderId属性的值。
+     * 锟斤拷锟斤拷saleOrderId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -1984,7 +1982,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取saleOrderNo属性的值。
+     * 锟斤拷取saleOrderNo锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -1996,7 +1994,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置saleOrderNo属性的值。
+     * 锟斤拷锟斤拷saleOrderNo锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2008,7 +2006,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取saleOrderNoSon属性的值。
+     * 锟斤拷取saleOrderNoSon锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2020,7 +2018,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置saleOrderNoSon属性的值。
+     * 锟斤拷锟斤拷saleOrderNoSon锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2032,7 +2030,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取serverId属性的值。
+     * 锟斤拷取serverId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2044,7 +2042,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置serverId属性的值。
+     * 锟斤拷锟斤拷serverId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2056,7 +2054,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取serviceModeId属性的值。
+     * 锟斤拷取serviceModeId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2068,7 +2066,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置serviceModeId属性的值。
+     * 锟斤拷锟斤拷serviceModeId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2080,7 +2078,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取serviceTypeId属性的值。
+     * 锟斤拷取serviceTypeId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2092,7 +2090,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置serviceTypeId属性的值。
+     * 锟斤拷锟斤拷serviceTypeId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2104,7 +2102,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取telephone1属性的值。
+     * 锟斤拷取telephone1锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2116,7 +2114,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置telephone1属性的值。
+     * 锟斤拷锟斤拷telephone1锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2128,7 +2126,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取telephone2属性的值。
+     * 锟斤拷取telephone2锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2140,7 +2138,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置telephone2属性的值。
+     * 锟斤拷锟斤拷telephone2锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2152,7 +2150,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取telephone3属性的值。
+     * 锟斤拷取telephone3锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2164,7 +2162,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置telephone3属性的值。
+     * 锟斤拷锟斤拷telephone3锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2176,7 +2174,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取totalNum属性的值。
+     * 锟斤拷取totalNum锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2188,7 +2186,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置totalNum属性的值。
+     * 锟斤拷锟斤拷totalNum锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2200,7 +2198,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取userIp属性的值。
+     * 锟斤拷取userIp锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2212,7 +2210,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置userIp属性的值。
+     * 锟斤拷锟斤拷userIp锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2224,7 +2222,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取userIpDate属性的值。
+     * 锟斤拷取userIpDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2236,7 +2234,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置userIpDate属性的值。
+     * 锟斤拷锟斤拷userIpDate锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2248,7 +2246,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取videoUrl属性的值。
+     * 锟斤拷取videoUrl锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2260,7 +2258,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置videoUrl属性的值。
+     * 锟斤拷锟斤拷videoUrl锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2272,7 +2270,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取weChatNc属性的值。
+     * 锟斤拷取weChatNc锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2284,7 +2282,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置weChatNc属性的值。
+     * 锟斤拷锟斤拷weChatNc锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2296,7 +2294,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取wxOpenid属性的值。
+     * 锟斤拷取wxOpenid锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2308,7 +2306,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置wxOpenid属性的值。
+     * 锟斤拷锟斤拷wxOpenid锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2320,7 +2318,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取wzCustomerId属性的值。
+     * 锟斤拷取wzCustomerId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2332,7 +2330,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置wzCustomerId属性的值。
+     * 锟斤拷锟斤拷wzCustomerId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2344,7 +2342,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取wzRowId属性的值。
+     * 锟斤拷取wzRowId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2356,7 +2354,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置wzRowId属性的值。
+     * 锟斤拷锟斤拷wzRowId锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2368,7 +2366,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取zxContent属性的值。
+     * 锟斤拷取zxContent锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2380,7 +2378,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置zxContent属性的值。
+     * 锟斤拷锟斤拷zxContent锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is
@@ -2392,7 +2390,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 获取zxMode属性的值。
+     * 锟斤拷取zxMode锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -2404,7 +2402,7 @@ public class WbSiteRequestVO {
     }
 
     /**
-     * 设置zxMode属性的值。
+     * 锟斤拷锟斤拷zxMode锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is

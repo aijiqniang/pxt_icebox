@@ -10,10 +10,8 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>anonymous complex type的 Java 类。
- * 
- * <p>以下模式片段指定包含在此类中的预期内容。
- * 
+ *
+ *
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -39,7 +37,7 @@ public class GetWBSites {
     protected JAXBElement<String> info;
 
     /**
-     * 获取info属性的值。
+     * 锟斤拷取info锟斤拷锟皆碉拷值锟斤拷
      * 
      * @return
      *     possible object is
@@ -51,7 +49,7 @@ public class GetWBSites {
     }
 
     /**
-     * 设置info属性的值。
+     * 锟斤拷锟斤拷info锟斤拷锟皆碉拷值锟斤拷
      * 
      * @param value
      *     allowed object is

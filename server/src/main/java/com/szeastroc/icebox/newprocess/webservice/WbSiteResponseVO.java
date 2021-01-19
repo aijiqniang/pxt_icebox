@@ -10,10 +10,8 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>WbSiteResponseVO complex type�� Java �ࡣ
- * 
- * <p>����ģʽƬ��ָ�������ڴ����е�Ԥ�����ݡ�
- * 
+ *
+ *
  * <pre>
  * &lt;complexType name="WbSiteResponseVO">
  *   &lt;complexContent>

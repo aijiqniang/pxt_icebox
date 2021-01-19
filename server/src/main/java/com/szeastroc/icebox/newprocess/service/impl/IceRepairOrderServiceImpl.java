@@ -149,7 +149,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
                 .remark(iceRepairRequest.getRemark()).description(iceRepairRequest.getDescription())
                 .province(iceRepairRequest.getProvince()).city(iceRepairRequest.getCity()).area(iceRepairRequest.getArea())
                 .phoneAreaCode(phoneAreaCode).requireServiceDate(iceRepairRequest.getRequireServiceDate()).bookingRange(iceRepairRequest.getBookingRange())
-                .build();
+                .createdTime(new Date()).build();
         iceRepairRequest.setSaleOrderId(orderNumber);
         log.info("请求海信创建报修单,{}", JSONObject.toJSONString(iceRepairRequest));
         WbSiteRequestVO wbSiteRequestVO = iceRepairRequest.convertToWbSite();

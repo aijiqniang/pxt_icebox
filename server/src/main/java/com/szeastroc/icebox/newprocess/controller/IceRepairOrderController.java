@@ -85,7 +85,7 @@ public class IceRepairOrderController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null,iceQuestionDescService.list());
     }
 
-
+    @ApiOperation(value = "变更订单状态",httpMethod="POST")
     @PostMapping("changeStatus")
     public CommonResponse changeStatus(@RequestBody IceRepairStatusRequest request){
         return iceRepairOrderService.changeStatus(request);

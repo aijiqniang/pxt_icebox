@@ -247,7 +247,7 @@ public class IceRepairOrder extends Model<IceRepairOrder> {
     /**
      * 反馈备注
      */
-    private String fallback;
+    private String feedback;
     /**
      * 服务完成时间
      */

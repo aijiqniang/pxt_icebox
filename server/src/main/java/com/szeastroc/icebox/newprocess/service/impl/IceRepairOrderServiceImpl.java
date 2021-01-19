@@ -280,7 +280,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         .setAcceptTime(request.getAcceptTime()).setCause(request.getCause()).setFinishTime(request.getFinishTime())
         .setFactServiceMethod(request.getFactServiceMethod()).setFactServiceType(request.getFactServiceType())
         .setEngineer(request.getEngineer()).setServiceProviderCode(request.getServiceProviderCode())
-        .setServiceProviderName(request.getServiceProviderName()).setFallback(request.getFeedback())
+        .setServiceProviderName(request.getServiceProviderName()).setFeedback(request.getFeedback())
         .setRepairMethod(request.getRepairMethod()).setResult(request.getResult()).setUpdatedTime(new Date());
         this.baseMapper.updateById(iceRepairOrder);
         return new CommonResponse(Constants.API_CODE_SUCCESS, null);

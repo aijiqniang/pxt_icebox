@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
@@ -154,6 +155,18 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 if (StringUtils.isNotBlank(storeNumber)) {
                     iceBox.setPutStoreNumber(storeNumber);
                     iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                    //修改冰柜部门为投放客户的部门
+                    if(iceBox.getPutStoreNumber().startsWith("C0")){
+                        StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                        if(store != null){
+                            iceBox.setDeptId(store.getMarketArea());
+                        }
+                    }else {
+                        SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
+                        if(supplier != null){
+                            iceBox.setDeptId(supplier.getMarketAreaId());
+                        }
+                    }
                 } else {
                     iceBox.setPutStoreNumber("0");
                     iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());

@@ -30,7 +30,7 @@ public class IceInspectionReportServiceImpl extends ServiceImpl<IceInspectionRep
     @Override
     public IceInspectionReport getCurrentMonthReport(Integer userId) {
         LambdaQueryWrapper<IceInspectionReport> wrapper = Wrappers.<IceInspectionReport>lambdaQuery();
-        wrapper.eq(IceInspectionReport::getUserId, userId).eq(IceInspectionReport::getInspectionDate, new DateTime().toString("yyyy-MM"));
+        wrapper.eq(IceInspectionReport::getUserId, userId).eq(IceInspectionReport::getInspectionDate, new DateTime().toString("yyyy-MM")).last("limit 1");
         return this.getOne(wrapper);
     }
 

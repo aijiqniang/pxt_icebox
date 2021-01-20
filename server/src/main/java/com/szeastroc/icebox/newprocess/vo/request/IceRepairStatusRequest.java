@@ -26,7 +26,7 @@ public class IceRepairStatusRequest {
      * 完成状态
      */
     @ApiModelProperty(value = "完成状态")
-    private Integer finishStatus;
+    private String finishStatus;
 
     /**
      * 工单状态

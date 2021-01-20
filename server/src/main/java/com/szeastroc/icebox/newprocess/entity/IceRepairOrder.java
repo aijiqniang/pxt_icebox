@@ -210,7 +210,7 @@ public class IceRepairOrder extends Model<IceRepairOrder> {
     /**
      * 完成状态
      */
-    private Integer finishStatus;
+    private String finishStatus;
     /**
      * 服务提供商编号
      */

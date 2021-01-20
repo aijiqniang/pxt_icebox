@@ -23,4 +23,5 @@ public interface IceInspectionReportService extends IService<IceInspectionReport
 
     List<InspectionReportVO> getServiceReports(Integer deptId);
 
+    void truncate();
 }

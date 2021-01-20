@@ -123,6 +123,8 @@ public interface IceBoxService extends IService<IceBox> {
 
     List<Integer> getPutBoxIds(Integer userId);
 
+    List<Integer> getNormalPutBoxIds(Integer userId);
+
     /**
      * 冰柜遗失数量
      * @return

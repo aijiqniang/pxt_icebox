@@ -88,7 +88,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
     }
 
     public List<StoreVO> getStoreByUserId(Integer userId) {
-        List<Integer> putBoxIds = iceBoxService.getPutBoxIds(userId);
+        List<Integer> putBoxIds = iceBoxService.getNormalPutBoxIds(userId);
         List<IceExamine> inspectionBoxes = iceExamineService.getInspectionBoxes(putBoxIds);
         Set<Integer> idSet = new HashSet<>();
         if (CollectionUtils.isEmpty(inspectionBoxes)) {
@@ -102,7 +102,7 @@ public class GroupMemberInspectionServiceImpl implements InspectionService, Init
             return Lists.newArrayList();
         }
         LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
-        wrapper.in(IceBox::getId, idSet).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1);
+        wrapper.in(IceBox::getId, idSet).eq(IceBox::getPutStatus, 3);
         List<IceBox> iceBoxes = iceBoxService.list(wrapper);
         if(CollectionUtils.isEmpty(iceBoxes)){
             return Lists.newArrayList();

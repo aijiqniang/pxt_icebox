@@ -240,8 +240,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 服务处信息查询有误，请核对服务处名称");
                 }
                 IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId));
-                String storeNumber = iceBox.getPutStoreNumber();
                 if (null != iceBox) {
+                    String storeNumber = iceBox.getPutStoreNumber();
                     Integer oldStatus = iceBox.getPutStatus();
                     // 更新冰柜状态及经销商信息
                     iceBox.setDeptId(serviceDeptId);

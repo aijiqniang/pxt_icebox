@@ -16,9 +16,11 @@ import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceModelDao;
+import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
+import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
@@ -36,6 +38,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -59,6 +62,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private FeignStoreClient feignStoreClient;
+    @Resource
+    private OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
 
 
     @Override
@@ -171,12 +176,23 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
                 if (null != selectIceBox) {
                     iceBox.setId(selectIceBox.getId());
+                    if (StringUtils.isNotBlank(storeNumber)) {
+                        String oldPutStoreNumber = selectIceBox.getPutStoreNumber();
+                        if ((null == oldPutStoreNumber || "0".equals(oldPutStoreNumber)) || (!oldPutStoreNumber.equals(storeNumber))) {
+                            // 未投放 变成投放
+                            iceBoxService.changeCustomer(iceBox);
+                        }
+                    }
                     iceBoxDao.updateById(iceBox);
                 } else {
                     iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
+                    // 创建投放相关数据并同步到【投放报表】
+                    String newApplyNumber = iceBoxService.createIcePutData(iceBox, storeNumber);
+                    iceBoxService.saveIceBoxPutReport(iceBox, newApplyNumber, storeNumber);
+                    iceBoxService.createOldIceBoxSignNotice(iceBox, newApplyNumber, storeNumber);
                 }
                 // 新的 冰柜状态/投放状态
                 JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜入库");
@@ -224,8 +240,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 服务处信息查询有误，请核对服务处名称");
                 }
                 IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assetId));
-                String storeNumber = iceBox.getPutStoreNumber();
                 if (null != iceBox) {
+                    String storeNumber = iceBox.getPutStoreNumber();
                     Integer oldStatus = iceBox.getPutStatus();
                     // 更新冰柜状态及经销商信息
                     iceBox.setDeptId(serviceDeptId);
@@ -294,7 +310,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜退回经销商");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜退回经销商");
                 return jsonObject;
             }
         },
@@ -397,7 +413,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜报废");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜报废");
                 return jsonObject;
             }
         },
@@ -494,7 +510,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜遗失");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜遗失");
                 return jsonObject;
             }
         };

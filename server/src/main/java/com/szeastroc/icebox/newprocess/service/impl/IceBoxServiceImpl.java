@@ -66,6 +66,7 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
+import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
@@ -100,15 +101,7 @@ import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
-import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
-import com.szeastroc.icebox.newprocess.vo.ImportIceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
@@ -1460,7 +1453,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (CollectionUtil.isEmpty(sessionExamineVos)) {
             for (String applyNumber : putStoreModelByApplyNumberMap.keySet()) {
                 List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = putStoreModelByApplyNumberMap.get(applyNumber);
-                if(CollectionUtil.isEmpty(applyRelatePutStoreModels)){
+                if (CollectionUtil.isEmpty(applyRelatePutStoreModels)) {
                     continue;
                 }
                 Map<String, Integer> countMap = new HashMap<>();
@@ -1475,7 +1468,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
                 List<Integer> storeRelateModelIds = applyRelatePutStoreModels.stream().map(x -> x.getStoreRelateModelId()).collect(Collectors.toList());
                 List<PutStoreRelateModel> relateModels = putStoreRelateModelDao.selectBatchIds(storeRelateModelIds);
-                if(CollectionUtil.isEmpty(relateModels)){
+                if (CollectionUtil.isEmpty(relateModels)) {
                     continue;
                 }
                 List<String> existList = new ArrayList<>();
@@ -1484,7 +1477,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     Integer modelId = relateModel.getModelId();
                     Integer supplierId = relateModel.getSupplierId();
                     String key = modelId + "_" + supplierId;
-                    if(existList.contains(key)){
+                    if (existList.contains(key)) {
                         continue;
                     }
                     IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getModelId, modelId)
@@ -2044,7 +2037,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
             Map<String, Object> map = new HashMap<>(32);
             map.put("statusStr", IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 设备状态
-            map.put("putStatusStr",PutStatus.convertEnum(iceBox.getPutStatus()).getDesc());
+            map.put("putStatusStr", PutStatus.convertEnum(iceBox.getPutStatus()).getDesc());
             String deptStr = null;
             if (deptMap != null) {
                 deptStr = deptMap.get(iceBox.getDeptId()); // 营销区域
@@ -2653,7 +2646,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
             }
 
-            JSONObject jsonObject = setAssetReportJson(iceBox,"importByEasyExcel");
+            JSONObject jsonObject = setAssetReportJson(iceBox, "importByEasyExcel");
             lists.add(jsonObject);
         }
         log.info("importExcel 处理数据结束-->{}", importSize);
@@ -3364,7 +3357,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         oldIceBoxSignNoticeDao.updateById(oldIceBoxSignNotice);
                         log.info("查到的冰柜信息---》【{}】，扩展信息---》【{}】，通知---》【{}】", JSON.toJSONString(iceBox), JSON.toJSONString(iceBoxExtend), JSON.toJSONString(oldIceBoxSignNotice));
                     }
-                    if(!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
+                    if (!IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())) {
                         iceBox.setOldAssetId(iceBox.getAssetId());
                         iceBox.setAssetId(IceBoxConstant.virtual_asset_id);
                         iceBox.setUpdatedTime(new Date());
@@ -3683,7 +3676,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
 //            List<String> storeNumbers = iceBoxes.stream().map(IceBox::getPutStoreNumber).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(storeNumbers)) {
-                log.info("导出的storeNumbers-->{}",storeNumbers);
+                log.info("导出的storeNumbers-->{}", storeNumbers);
                 storeMaps = FeignResponseUtil.getFeignData(feignStoreClient.getSimpledataByNumber(storeNumbers));
             }
             storeMaps = getSuppMap(storeMaps, storeNumbers);
@@ -3746,7 +3739,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxExcelVo.setChestModel(iceModel == null ? null : iceModel.getChestModel()); // 冰柜型号
                 iceBoxExcelVo.setDepositMoney(iceBox.getDepositMoney().toString()); // 押金收取金额
                 iceBoxExcelVo.setIceStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 冰柜状态
-                 iceBoxExcelVo.setPutStatusStr(PutStatus.convertEnum(iceBox.getPutStatus()).getDesc()); // 投放投放状态
+                iceBoxExcelVo.setPutStatusStr(PutStatus.convertEnum(iceBox.getPutStatus()).getDesc()); // 投放投放状态
                 iceBoxExcelVo.setLastPutTimeStr(iceBoxExtend.getLastPutTime() == null ? null : new DateTime(iceBoxExtend.getLastPutTime()).toString("yyyy-MM-dd HH:mm:ss")); // 投放日期
                 iceBoxExcelVo.setLastExamineTimeStr(iceBoxExtend.getLastExamineTime() == null ? null : new DateTime(iceBoxExtend.getLastExamineTime()).toString("yyyy-MM-dd HH:mm:ss")); // 最后一次巡检时间
                 iceBoxExcelVo.setRemark(iceBox.getRemark()); // 冰柜备注
@@ -4320,6 +4313,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         String assetId = iceBox.getAssetId();
         IceBox oldIceBox = iceBoxDao.selectById(iceBoxId);
         Integer oldPutStatus = oldIceBox.getPutStatus();
+        String oldPutStoreNumber = oldIceBox.getPutStoreNumber();
         if (PutStatus.LOCK_PUT.getStatus().equals(oldPutStatus) || PutStatus.DO_PUT.getStatus().equals(oldPutStatus)) {
             throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_ICEBOX.getCode(), "不能变更申请中及投放中的冰柜");
         }
@@ -4391,89 +4385,39 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             } else {
                 // 说明开始要投放的该门店。校验相关参数
                 // 先判断 当前 客户 存在几台冰柜
-                Integer selectCount = iceBoxDao.selectCount(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStoreNumber, customerNumber).ne(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+                Integer selectCount = iceBoxDao.selectCount(Wrappers.<IceBox>lambdaQuery()
+                        .eq(IceBox::getPutStoreNumber, customerNumber)
+                        .ne(IceBox::getId, iceBoxId)
+                        .ne(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
                 if (selectCount > 2) {
                     // 当前客户不能超过三个冰柜
                     throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), "当前客户投放冰柜数量已达到限制");
                 }
-
-                /*if (PutStatus.NO_PUT.getStatus().equals(oldPutStatus)) {
-                    // 冰柜未投放  直接投放至门店，需要创建投放相关数据 方便退还
-                    // 创建免押类型投放
-                    // 处理申请冰柜流程数据
-                    // 创建申请流程
-                    Integer optUserId = userManageVo.getSessionUserInfoVo().getId();
-                    String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
-                    IcePutApply icePutApply = IcePutApply.builder()
-                            .applyNumber(applyNumber)
-                            .putStoreNumber(customerNumber)
-                            .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
-                            .userId(optUserId)
-                            .createdBy(optUserId)
-                            .build();
-                    icePutApplyDao.insert(icePutApply);
-
-                    Date now = new Date();
-                    PutStoreRelateModel relateModel = PutStoreRelateModel.builder()
-                            .putStoreNumber(customerNumber)
-                            .modelId(iceBox.getModelId())
-                            .supplierId(iceBox.getSupplierId())
-                            .createBy(optUserId)
-                            .createTime(now)
-                            .putStatus(PutStatus.FINISH_PUT.getStatus())
-                            .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
-                            .remark("后台变更冰柜使用客户")
-                            .build();
-                    putStoreRelateModelDao.insert(relateModel);
-
-                    ApplyRelatePutStoreModel applyRelatePutStoreModel = ApplyRelatePutStoreModel.builder()
-                            .applyNumber(applyNumber)
-                            .storeRelateModelId(relateModel.getId())
-                            .freeType(FreePayTypeEnum.IS_FREE.getType())
-                            .build();
-                    applyRelatePutStoreModelDao.insert(applyRelatePutStoreModel);
-
-                    IceBoxExtend iceBoxExtend = new IceBoxExtend();
-                    iceBoxExtend.setId(iceBoxId);
-                    iceBoxExtend.setLastApplyNumber(applyNumber);
-                    iceBoxExtendDao.updateById(iceBoxExtend);
-
-                    IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
-                            .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
-                            .eq(IcePutApplyRelateBox::getBoxId, iceBoxId));
-                    if (icePutApplyRelateBox == null) {
-                        IcePutApplyRelateBox relateBox = new IcePutApplyRelateBox();
-                        relateBox.setApplyNumber(iceBoxExtend.getLastApplyNumber());
-                        relateBox.setFreeType(FreePayTypeEnum.IS_FREE.getType());
-                        relateBox.setBoxId(iceBoxId);
-                        relateBox.setModelId(iceBox.getModelId());
-                        icePutApplyRelateBoxDao.insert(relateBox);
-                    }
-                } else if (PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) {
-                    // 已投放的门店变更  查询是否有投放流程相关的数据 然后变更数据
-                    // 查询是否存在了 投放相关的流程数据 (可能会没有)
-                    IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, iceBoxId));
-                    String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
-                    if (StringUtils.isNotBlank(lastApplyNumber)) {
-                        icePutApplyRelateBoxDao.update(null, Wrappers.<IcePutApplyRelateBox>lambdaUpdate()
-                                .eq(IcePutApplyRelateBox::getBoxId, iceBoxId).eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber).set(IcePutApplyRelateBox::getModelId, iceBox.getModelId()));
-
-                        icePutApplyDao.update(null, Wrappers.<IcePutApply>lambdaUpdate().eq(IcePutApply::getApplyNumber, lastApplyNumber).set(IcePutApply::getPutStoreNumber, customerNumber));
-                        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaUpdate().eq(ApplyRelatePutStoreModel::getApplyNumber, lastApplyNumber));
-                        if (null != applyRelatePutStoreModel) {
-                            putStoreRelateModelDao.update(null, Wrappers.<PutStoreRelateModel>lambdaUpdate()
-                                    .eq(PutStoreRelateModel::getId, applyRelatePutStoreModel.getId())
-                                    .set(PutStoreRelateModel::getPutStoreNumber, customerNumber));
-                        }
-                    }
-                }*/
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+
+                if ((null == oldPutStoreNumber || "0".equals(oldPutStoreNumber)) || (!oldPutStoreNumber.equals(customerNumber))) {
+                    // 未投放 变成投放
+                    iceBox.setId(iceBoxId);
+                    iceBoxService.changeCustomer(iceBox);
+                }
+                //修改冰柜部门为投放客户的部门
+                if(iceBox.getPutStoreNumber().startsWith("C0")){
+                    StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                    if(store != null){
+                        iceBox.setDeptId(store.getMarketArea());
+                    }
+                }else {
+                    SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
+                    if(supplier != null){
+                        iceBox.setDeptId(supplier.getMarketAreaId());
+                    }
+                }
                 //todo 这里冰柜改为已投放
             }
         } else {
-            iceBox.setPutStoreNumber(oldIceBox.getPutStoreNumber());
+            iceBox.setPutStoreNumber(oldPutStoreNumber);
         }
         iceBoxDao.update(iceBox, updateWrapper);
         iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBoxId).set(IceBoxExtend::getAssetId, iceBox.getAssetId()));
@@ -4947,4 +4891,304 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 .notIn(IceBox::getStatus,IceBoxEnums.StatusEnum.SCRAP.getType(),IceBoxEnums.StatusEnum.LOSE.getType());
         return iceBoxDao.selectList(iceBoxWrapper).stream().map(IceBox::getId).collect(Collectors.toList());
     }
+    /**
+     * 客户变更，推送签收信息
+     *
+     * @param iceBox
+     */
+    @Override
+    public void changeCustomer(IceBox iceBox) {
+        UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
+        //判断客户是否变更
+        IceBox oldIceBox = iceBoxDao.selectById(iceBox.getId());
+        Integer oldPutStatus = oldIceBox.getPutStatus();
+        String newPutStoreNumber = iceBox.getPutStoreNumber(); //变更后的客户
+        String oldApplyNumber = "";
+        String newApplyNumber = "";
+        Boolean isPush = false; //是否需要推送签收信息
+
+        if (!newPutStoreNumber.equals(oldIceBox.getPutStoreNumber())) {
+            if (PutStatus.NO_PUT.getStatus().equals(oldPutStatus)) {
+
+                // 冰柜未投放  直接投放至门店，需要创建投放相关数据 方便退还
+                // 创建免押类型投放
+                // 处理申请冰柜流程数据
+                // 创建申请流程
+                newApplyNumber = iceBoxService.createIcePutData(iceBox, newPutStoreNumber);
+
+                // 同步到【投放报表】
+                iceBoxService.saveIceBoxPutReport(iceBox, newApplyNumber, newPutStoreNumber);
+                isPush = true;
+            } else if (PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) {
+                // 已投放的门店变更，把之前的关联关系去掉, 然后创建投放相关数据 TODO
+                // 已投放的门店变更  查询是否有投放流程相关的数据 然后变更数据
+                // 查询是否存在了 投放相关的流程数据 (可能会没有)
+                IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, iceBox.getId()));
+                String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
+                oldApplyNumber = lastApplyNumber;
+                if (StringUtils.isNotBlank(lastApplyNumber)) {
+                    //业务员申请关联冰柜表 查询免押类型
+                    IcePutApplyRelateBox icePutApplyRelate = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+                            .eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber)
+                            .eq(IcePutApplyRelateBox::getBoxId, oldIceBox.getId())
+                    );
+
+                    // 获取门店关联投放冰柜型号ID
+                    List<Integer> storeRelateModelIds = new ArrayList<>();
+                    List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
+                                    .eq(ApplyRelatePutStoreModel::getApplyNumber, lastApplyNumber)
+                                    .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelate.getFreeType()));
+
+                    if (applyRelatePutStoreModels.size() > 0){
+                        applyRelatePutStoreModels.forEach(applyRelatePutStoreModel -> {
+                            storeRelateModelIds.add(applyRelatePutStoreModel.getStoreRelateModelId());
+                        });
+                    }
+
+                    //修改 旧门店关联投放冰柜型号为【无效】
+                    List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery()
+                            .in(PutStoreRelateModel::getId, storeRelateModelIds));
+                    for (PutStoreRelateModel putStoreRelateModel : putStoreRelateModels) {
+                        if (putStoreRelateModel.getPutStoreNumber().equals(oldIceBox.getPutStoreNumber())
+                                && putStoreRelateModel.getModelId().equals(oldIceBox.getModelId())
+                                && putStoreRelateModel.getSupplierId().equals(oldIceBox.getSupplierId())
+                                && putStoreRelateModel.getPutStatus().equals(PutStatus.FINISH_PUT.getStatus())
+                                && putStoreRelateModel.getStatus().equals(IsValidEnum.IS_VALID.getStatus())
+                        ){
+                            putStoreRelateModelDao.update(null, Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                                    .eq(PutStoreRelateModel::getId, putStoreRelateModel.getId())
+                                    .set(PutStoreRelateModel::getStatus, IsValidEnum.NO_VALID.getStatus())
+                                    .set(PutStoreRelateModel::getRemark, "后台变更冰柜使用客户")
+                                    .set(PutStoreRelateModel::getUpdateTime, new Date())
+                                    .set(PutStoreRelateModel::getUpdateBy, userManageVo.getSessionUserInfoVo().getId()));
+                            continue;
+                        }
+                    }
+
+                    // 创建投放相关数据
+                    newApplyNumber = createIcePutData(iceBox, newPutStoreNumber);
+
+                    // 修改【投放报表】
+                    IceBoxCustomerVo iceBoxCustomerVo = this.getIceBoxCustomerVo(newPutStoreNumber);
+                    iceBoxPutReportDao.update(null, Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            .eq(IceBoxPutReport::getApplyNumber, lastApplyNumber)
+                            .eq(IceBoxPutReport::getIceBoxId, oldIceBox.getId())
+                            .set(IceBoxPutReport::getFreeType, FreePayTypeEnum.IS_FREE.getType())
+                            .set(IceBoxPutReport::getPutCustomerNumber, newPutStoreNumber)
+                            .set(IceBoxPutReport::getPutCustomerName, iceBoxCustomerVo.getCustomerName())
+                            .set(IceBoxPutReport::getPutCustomerType, iceBoxCustomerVo.getSupplierType())
+                            .set(IceBoxPutReport::getSubmitterId, iceBoxCustomerVo.getMainSalesmanId())
+                            .set(IceBoxPutReport::getSubmitterName, iceBoxCustomerVo.getMainSalesmanName())
+                            .set(IceBoxPutReport::getApplyNumber, newApplyNumber)
+                    );
+                }
+                isPush = true;
+            }
+            if (isPush) {
+                if(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(oldIceBox.getIceBoxType())) {
+                    // 将旧商户的签收信息设置为【已签收】
+                    oldIceBoxSignNoticeDao.update(null, Wrappers.<OldIceBoxSignNotice>lambdaUpdate()
+                            .eq(OldIceBoxSignNotice::getApplyNumber, oldApplyNumber)
+                            .set(OldIceBoxSignNotice::getStatus, OldIceBoxSignNoticeStatusEnums.IS_SIGNED.getStatus()));
+
+                    // 推送签收信息
+                    OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+                    oldIceBoxSignNotice.setApplyNumber(newApplyNumber);
+                    oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
+                    oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
+                    oldIceBoxSignNotice.setPutStoreNumber(newPutStoreNumber);
+                    oldIceBoxSignNotice.setCreateTime(new Date());
+                    oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
+                }
+            }
+        }
+    }
+
+    /**
+     * 创建投放相关数据
+     * @param iceBox
+     */
+    @Override
+    public String createIcePutData(IceBox iceBox, String newPutStoreNumber){
+        UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
+        // 冰柜未投放  直接投放至门店，需要创建投放相关数据 方便退还
+        // 创建免押类型投放
+        // 处理申请冰柜流程数据
+        // 创建申请流程
+        // 同步到【投放报表】
+        Integer optUserId = userManageVo.getSessionUserInfoVo().getId();
+        String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+        IcePutApply icePutApply = IcePutApply.builder()
+                .applyNumber(applyNumber)
+                .putStoreNumber(newPutStoreNumber)
+                .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
+                .userId(optUserId)
+                .createdBy(optUserId)
+                .build();
+        icePutApplyDao.insert(icePutApply);
+
+        Date now = new Date();
+        PutStoreRelateModel relateModel = PutStoreRelateModel.builder()
+                .putStoreNumber(newPutStoreNumber)
+                .modelId(iceBox.getModelId())
+                .supplierId(iceBox.getSupplierId())
+                .createBy(optUserId)
+                .createTime(now)
+                .putStatus(PutStatus.FINISH_PUT.getStatus())
+                .examineStatus(ExamineStatus.PASS_EXAMINE.getStatus())
+                .remark("后台变更冰柜使用客户")
+                .build();
+        putStoreRelateModelDao.insert(relateModel);
+
+        ApplyRelatePutStoreModel applyRelatePutStoreModel = ApplyRelatePutStoreModel.builder()
+                .applyNumber(applyNumber)
+                .storeRelateModelId(relateModel.getId())
+                .freeType(FreePayTypeEnum.IS_FREE.getType())
+                .build();
+        applyRelatePutStoreModelDao.insert(applyRelatePutStoreModel);
+
+        IceBoxExtend iceBoxExtend = new IceBoxExtend();
+        iceBoxExtend.setId(iceBox.getId());
+        iceBoxExtend.setLastApplyNumber(applyNumber);
+        iceBoxExtendDao.updateById(iceBoxExtend);
+
+        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+                .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                .eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+        if (icePutApplyRelateBox == null) {
+            IcePutApplyRelateBox relateBox = new IcePutApplyRelateBox();
+            relateBox.setApplyNumber(iceBoxExtend.getLastApplyNumber());
+            relateBox.setFreeType(FreePayTypeEnum.IS_FREE.getType());
+            relateBox.setBoxId(iceBox.getId());
+            relateBox.setModelId(iceBox.getModelId());
+            icePutApplyRelateBoxDao.insert(relateBox);
+        }
+
+        return applyNumber;
+    }
+
+    /**
+     * 插入冰柜投放报表
+     * @param iceBox 冰柜信息
+     * @param applyNumber 申请流程ID
+     * @param putStoreNumber 投放客户编号
+     */
+    @Override
+    public void saveIceBoxPutReport(IceBox iceBox, String applyNumber, String putStoreNumber){
+        IceBoxPutReportMsg report = new IceBoxPutReportMsg();
+        //获取客户信息信息
+        IceBoxCustomerVo iceBoxCustomerVo = this.getIceBoxCustomerVo(putStoreNumber);
+        report.setPutCustomerType(iceBoxCustomerVo.getSupplierType());
+        report.setSubmitterId(iceBoxCustomerVo.getMainSalesmanId());
+        report.setSubmitterName(iceBoxCustomerVo.getMainSalesmanName());
+        report.setPutCustomerNumber(putStoreNumber);
+        report.setPutCustomerName(iceBoxCustomerVo.getCustomerName());
+
+        //获取部门信息
+        Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(iceBoxCustomerVo.getMarketArea()));
+        SessionDeptInfoVo group = deptInfoVoMap.get(1);
+        if (group != null) {
+            report.setGroupDeptId(group.getId());
+            report.setGroupDeptName(group.getName());
+        }
+
+        SessionDeptInfoVo service = deptInfoVoMap.get(2);
+        if (service != null) {
+            report.setServiceDeptId(service.getId());
+            report.setServiceDeptName(service.getName());
+        }
+
+        SessionDeptInfoVo region = deptInfoVoMap.get(3);
+        if (region != null) {
+            report.setRegionDeptId(region.getId());
+            report.setRegionDeptName(region.getName());
+        }
+
+        SessionDeptInfoVo business = deptInfoVoMap.get(4);
+        if (business != null) {
+            report.setBusinessDeptId(business.getId());
+            report.setBusinessDeptName(business.getName());
+        }
+
+        SessionDeptInfoVo headquarters = deptInfoVoMap.get(5);
+        if (headquarters != null) {
+            report.setHeadquartersDeptId(headquarters.getId());
+            report.setHeadquartersDeptName(headquarters.getName());
+        }
+
+        report.setApplyNumber(applyNumber);
+        report.setFreeType(FreePayTypeEnum.IS_FREE.getType());
+        report.setIceBoxModelId(iceBox.getModelId());
+        report.setIceBoxModelName(iceBox.getModelName());
+        report.setIceBoxId(iceBox.getId());
+        report.setIceBoxAssetId(iceBox.getAssetId());
+        SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
+        report.setSupplierId(iceBox.getSupplierId());
+        if (supplier != null) {
+            report.setSupplierNumber(supplier.getNumber());
+            report.setSupplierName(supplier.getName());
+        }
+
+        report.setSubmitTime(new Date());
+        report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+        report.setOperateType(OperateTypeEnum.INSERT.getType());
+        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
+    }
+
+    /**
+     * 获取客户信息
+     * @param putStoreNumber
+     * @return
+     */
+    @Override
+    public IceBoxCustomerVo getIceBoxCustomerVo(String putStoreNumber){
+        IceBoxCustomerVo iceBoxCustomerVo = new IceBoxCustomerVo();
+        Integer marketArea = null;
+        String customerName = "";
+        Integer supplierType = null;
+        Integer mainSaleManId = null;
+        String mainSaleManName = "";
+
+        //判断客户类型
+        StoreInfoDtoVo storeInfoDtoVo = feignStoreClient.getByStoreNumber(putStoreNumber).getData();
+        if (!Objects.isNull(storeInfoDtoVo)){
+            // 门店
+            marketArea = storeInfoDtoVo.getMarketArea();
+            customerName = storeInfoDtoVo.getStoreName();
+            supplierType = SupplierTypeEnum.IS_STORE.getType();
+            mainSaleManId = storeInfoDtoVo.getMainSaleManId();
+            mainSaleManName = storeInfoDtoVo.getMainSaleManName();
+        } else {
+            // 非门店
+            SubordinateInfoVo subordinateInfoVo = feignSupplierClient.findByNumber(putStoreNumber).getData();
+            marketArea = subordinateInfoVo.getMarketAreaId();
+            customerName = subordinateInfoVo.getName();
+            supplierType = subordinateInfoVo.getSupplierType();
+
+            mainSaleManId = feignSupplierClient.getMainSaleManId(putStoreNumber).getData();
+            SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(mainSaleManId));
+            if (userInfoVo != null) {
+                mainSaleManName = userInfoVo.getRealname();
+            }
+        }
+        iceBoxCustomerVo.setCustomerName(customerName);
+        iceBoxCustomerVo.setMarketArea(marketArea);
+        iceBoxCustomerVo.setMainSalesmanId(mainSaleManId);
+        iceBoxCustomerVo.setMainSalesmanName(mainSaleManName);
+        iceBoxCustomerVo.setSupplierType(supplierType);
+        return iceBoxCustomerVo;
+    }
+
+    @Override
+    public void createOldIceBoxSignNotice(IceBox iceBox, String applyNumber, String storeNumber) {
+        // 推送签收信息
+        OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
+        oldIceBoxSignNotice.setApplyNumber(applyNumber);
+        oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
+        oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
+        oldIceBoxSignNotice.setPutStoreNumber(storeNumber);
+        oldIceBoxSignNotice.setCreateTime(new Date());
+        oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
+    }
+
 }

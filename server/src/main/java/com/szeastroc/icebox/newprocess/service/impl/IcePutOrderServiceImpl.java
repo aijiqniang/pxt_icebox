@@ -7,8 +7,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.user.FeignUserClient;
+import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
@@ -75,11 +81,13 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     private final OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
     private final IceBoxPutReportDao iceBoxPutReportDao;
     private final RabbitTemplate rabbitTemplate;
+    private final FeignStoreClient feignStoreClient;
+    private final FeignSupplierClient feignSupplierClient;
     @Autowired
     private IceBoxService iceBoxService;
 
-    @Transactional
     @Override
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     public OrderPayResponse applyPayIceBox(ClientInfoRequest clientInfoRequest) throws Exception {
 
         // 获取投放申请数据及对应冰柜的申请
@@ -208,7 +216,22 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
     public OrderPayResponse createByFree(ClientInfoRequest clientInfoRequest, IceBox iceBox) throws ImproperOptionException {
         //修改冰柜信息的投放状态
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+
+        //修改冰柜部门为投放客户的部门
+        if(iceBox.getPutStoreNumber().startsWith("C0")){
+            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+            if(store != null){
+                iceBox.setDeptId(store.getMarketArea());
+            }
+        }else {
+            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
+            if(supplier != null){
+                iceBox.setDeptId(supplier.getMarketAreaId());
+            }
+        }
         iceBoxDao.updateById(iceBox);
+
+
         //todo 这里冰柜改为已投放
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
@@ -351,6 +374,18 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         //修改冰柜投放信息
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+        //修改冰柜部门为投放客户的部门
+        if(iceBox.getPutStoreNumber().startsWith("C0")){
+            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+            if(store != null){
+                iceBox.setDeptId(store.getMarketArea());
+            }
+        }else {
+            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
+            if(supplier != null){
+                iceBox.setDeptId(supplier.getMarketAreaId());
+            }
+        }
         iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate().set(IceBox::getPutStatus,PutStatus.FINISH_PUT.getStatus()).eq(IceBox::getId,iceBox.getId()));
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
@@ -511,6 +546,18 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         if (flag) {
             //修改冰柜信息的投放状态
             iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+            //修改冰柜部门为投放客户的部门
+            if(iceBox.getPutStoreNumber().startsWith("C0")){
+                StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                if(store != null){
+                    iceBox.setDeptId(store.getMarketArea());
+                }
+            }else {
+                SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
+                if(supplier != null){
+                    iceBox.setDeptId(supplier.getMarketAreaId());
+                }
+            }
             iceBoxDao.updateById(iceBox);
             //todo 这里冰柜改为已投放
 

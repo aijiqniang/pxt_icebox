@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
@@ -15,9 +16,11 @@ import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
 import com.szeastroc.icebox.newprocess.dao.IceModelDao;
+import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
+import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
@@ -35,6 +38,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,6 +62,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private FeignStoreClient feignStoreClient;
+    @Resource
+    private OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
 
 
     @Override
@@ -149,6 +155,18 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 if (StringUtils.isNotBlank(storeNumber)) {
                     iceBox.setPutStoreNumber(storeNumber);
                     iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                    //修改冰柜部门为投放客户的部门
+                    if(iceBox.getPutStoreNumber().startsWith("C0")){
+                        StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                        if(store != null){
+                            iceBox.setDeptId(store.getMarketArea());
+                        }
+                    }else {
+                        SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
+                        if(supplier != null){
+                            iceBox.setDeptId(supplier.getMarketAreaId());
+                        }
+                    }
                 } else {
                     iceBox.setPutStoreNumber("0");
                     iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
@@ -158,12 +176,23 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
 
                 if (null != selectIceBox) {
                     iceBox.setId(selectIceBox.getId());
+                    if (StringUtils.isNotBlank(storeNumber)) {
+                        String oldPutStoreNumber = selectIceBox.getPutStoreNumber();
+                        if ((null == oldPutStoreNumber || "0".equals(oldPutStoreNumber)) || (!oldPutStoreNumber.equals(storeNumber))) {
+                            // 未投放 变成投放
+                            iceBoxService.changeCustomer(iceBox);
+                        }
+                    }
                     iceBoxDao.updateById(iceBox);
                 } else {
                     iceBox.setIceBoxType(IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType());
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
+                    // 创建投放相关数据并同步到【投放报表】
+                    String newApplyNumber = iceBoxService.createIcePutData(iceBox, storeNumber);
+                    iceBoxService.saveIceBoxPutReport(iceBox, newApplyNumber, storeNumber);
+                    iceBoxService.createOldIceBoxSignNotice(iceBox, newApplyNumber, storeNumber);
                 }
                 // 新的 冰柜状态/投放状态
                 JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜入库");
@@ -281,7 +310,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜退回经销商");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜退回经销商");
                 return jsonObject;
             }
         },
@@ -384,7 +413,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtendDao.insert(iceBoxExtend);
                 }
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜报废");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜报废");
                 return jsonObject;
             }
         },
@@ -481,7 +510,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 }
 
                 // 新的 冰柜状态/投放状态
-                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜遗失");
+                JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox, "旧冰柜遗失");
                 return jsonObject;
             }
         };

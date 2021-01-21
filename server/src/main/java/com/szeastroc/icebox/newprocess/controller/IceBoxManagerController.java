@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.commondb.config.annotation.RedisLock;
 import com.szeastroc.icebox.newprocess.entity.IceBoxChangeHistory;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
@@ -71,6 +72,7 @@ public class IceBoxManagerController {
 
 
     @PostMapping("/changeIcebox")
+    @RedisLock(includeToken = true)
     public CommonResponse<Void> changeIcebox(@RequestBody IceBoxManagerVo iceBoxManagerVo) {
         iceBoxService.changeIcebox(iceBoxManagerVo);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);

@@ -129,7 +129,7 @@ public interface IceBoxService extends IService<IceBox> {
      *
      * @param iceBox
      */
-    void changeCustomer(IceBox iceBox);
+    void changeCustomer(IceBox newIceBox,IceBox oldIcebox);
 
     String createIcePutData(IceBox iceBox, String newPutStoreNumber);
 

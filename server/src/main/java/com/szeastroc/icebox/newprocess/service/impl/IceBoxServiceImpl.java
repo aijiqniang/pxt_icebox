@@ -4400,7 +4400,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if ((null == oldPutStoreNumber || "0".equals(oldPutStoreNumber)) || (!oldPutStoreNumber.equals(customerNumber))) {
                     // 未投放 变成投放
                     iceBox.setId(iceBoxId);
-                    iceBoxService.changeCustomer(iceBox);
+                    iceBoxService.changeCustomer(iceBox, oldIceBox);
                 }
                 //修改冰柜部门为投放客户的部门
                 if(iceBox.getPutStoreNumber().startsWith("C0")){
@@ -4897,12 +4897,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
      * @param iceBox
      */
     @Override
-    public void changeCustomer(IceBox iceBox) {
+    public void changeCustomer(IceBox newIceBox, IceBox oldIceBox) {
         UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
         //判断客户是否变更
-        IceBox oldIceBox = iceBoxDao.selectById(iceBox.getId());
         Integer oldPutStatus = oldIceBox.getPutStatus();
-        String newPutStoreNumber = iceBox.getPutStoreNumber(); //变更后的客户
+        String newPutStoreNumber = newIceBox.getPutStoreNumber(); //变更后的客户
         String oldApplyNumber = "";
         String newApplyNumber = "";
         Boolean isPush = false; //是否需要推送签收信息
@@ -4914,16 +4913,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 // 创建免押类型投放
                 // 处理申请冰柜流程数据
                 // 创建申请流程
-                newApplyNumber = iceBoxService.createIcePutData(iceBox, newPutStoreNumber);
+                newApplyNumber = iceBoxService.createIcePutData(newIceBox, newPutStoreNumber);
 
                 // 同步到【投放报表】
-                iceBoxService.saveIceBoxPutReport(iceBox, newApplyNumber, newPutStoreNumber);
+                iceBoxService.saveIceBoxPutReport(newIceBox, newApplyNumber, newPutStoreNumber);
                 isPush = true;
             } else if (PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) {
                 // 已投放的门店变更，把之前的关联关系去掉, 然后创建投放相关数据 TODO
                 // 已投放的门店变更  查询是否有投放流程相关的数据 然后变更数据
                 // 查询是否存在了 投放相关的流程数据 (可能会没有)
-                IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, iceBox.getId()));
+                IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, newIceBox.getId()));
                 String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
                 oldApplyNumber = lastApplyNumber;
                 if (StringUtils.isNotBlank(lastApplyNumber)) {
@@ -4966,7 +4965,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
 
                     // 创建投放相关数据
-                    newApplyNumber = createIcePutData(iceBox, newPutStoreNumber);
+                    newApplyNumber = createIcePutData(newIceBox, newPutStoreNumber);
 
                     // 修改【投放报表】
                     IceBoxCustomerVo iceBoxCustomerVo = this.getIceBoxCustomerVo(newPutStoreNumber);
@@ -4994,8 +4993,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     // 推送签收信息
                     OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
                     oldIceBoxSignNotice.setApplyNumber(newApplyNumber);
-                    oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
-                    oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
+                    oldIceBoxSignNotice.setIceBoxId(newIceBox.getId());
+                    oldIceBoxSignNotice.setAssetId(newIceBox.getAssetId());
                     oldIceBoxSignNotice.setPutStoreNumber(newPutStoreNumber);
                     oldIceBoxSignNotice.setCreateTime(new Date());
                     oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);

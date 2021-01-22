@@ -140,6 +140,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                 if (null == iceModel) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
+                } else {
+                    Integer type = iceModel.getType();
+                    if (IceBoxEnums.TypeEnum.NEW_ICE_BOX.getType().equals(type)) {
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号为新冰柜型号，请核对冰柜型号");
+                    }
                 }
                 iceBox.setModelId(iceModel.getId());
                 BigDecimal depositMoney = oldIceBoxImportVo.getDepositMoney();
@@ -294,6 +299,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                     if (null == iceModel) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
+                    } else {
+                        Integer type = iceModel.getType();
+                        if (IceBoxEnums.TypeEnum.NEW_ICE_BOX.getType().equals(type)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号为新冰柜型号，请核对冰柜型号");
+                        }
                     }
                     iceBox.setModelId(iceModel.getId());
                     BigDecimal depositMoney = oldIceBoxImportVo.getDepositMoney();
@@ -396,6 +406,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                     if (null == iceModel) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
+                    } else {
+                        Integer type = iceModel.getType();
+                        if (IceBoxEnums.TypeEnum.NEW_ICE_BOX.getType().equals(type)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号为新冰柜型号，请核对冰柜型号");
+                        }
                     }
                     iceBox.setModelId(iceModel.getId());
                     BigDecimal depositMoney = oldIceBoxImportVo.getDepositMoney();
@@ -493,6 +508,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                     if (null == iceModel) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
+                    } else {
+                        Integer type = iceModel.getType();
+                        if (IceBoxEnums.TypeEnum.NEW_ICE_BOX.getType().equals(type)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号为新冰柜型号，请核对冰柜型号");
+                        }
                     }
                     iceBox.setModelId(iceModel.getId());
                     BigDecimal depositMoney = oldIceBoxImportVo.getDepositMoney();

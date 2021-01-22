@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
@@ -20,7 +21,6 @@ import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
 import com.szeastroc.icebox.newprocess.entity.IceModel;
-import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
@@ -38,9 +38,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Component
 public class OldIceBoxOptImpl implements OldIceBoxOpt {
@@ -71,6 +69,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
     public List<JSONObject> opt(List<OldIceBoxImportVo> oldIceBoxImportVoList) {
 
         List<JSONObject> lists = Lists.newArrayList();
+        Map<String, List<IceBox>> map = new HashMap<>();
         for (int i = 0; i < oldIceBoxImportVoList.size(); i++) {
             OldIceBoxImportVo oldIceBoxImportVo = oldIceBoxImportVoList.get(i);
             String type = oldIceBoxImportVo.getType();
@@ -84,8 +83,22 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             if (item == null) {
                 continue;
             }
-            JSONObject jsonObject = item.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao, iceBoxService,rabbitTemplate,feignStoreClient);
+            JSONObject jsonObject = item.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao, iceBoxService, rabbitTemplate, feignStoreClient, map);
             lists.add(jsonObject);
+        }
+        if (CollectionUtil.isNotEmpty(map)) {
+            map.forEach((key, value) -> {
+                if (value.size() == 1) {
+                    IceBox iceBox = value.get(0);
+                    String newApplyNumber = iceBoxService.createIcePutData(iceBox, iceBox.getPutStoreNumber());
+                    iceBoxService.saveIceBoxPutReport(iceBox, newApplyNumber, iceBox.getPutStoreNumber());
+                    iceBoxService.createOldIceBoxSignNotice(iceBox, newApplyNumber, iceBox.getPutStoreNumber());
+                }else {
+                    IceBox newIceBox = value.get(0);
+                    IceBox oldIceBox = value.get(1);
+                    iceBoxService.changeCustomer(newIceBox, oldIceBox);
+                }
+            });
         }
         return lists;
     }
@@ -97,7 +110,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient) {
+                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map) {
                 // 导入冰柜参数限制较多，需要多重校验
                 IceBox iceBox = new IceBox();
                 IceBoxExtend iceBoxExtend = new IceBoxExtend();
@@ -140,6 +153,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                 IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                 if (null == iceModel) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
+                } else {
+                    Integer type = iceModel.getType();
+                    if (IceBoxEnums.TypeEnum.NEW_ICE_BOX.getType().equals(type)) {
+                        throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号为新冰柜型号，请核对冰柜型号");
+                    }
                 }
                 iceBox.setModelId(iceModel.getId());
                 BigDecimal depositMoney = oldIceBoxImportVo.getDepositMoney();
@@ -180,7 +198,10 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         String oldPutStoreNumber = selectIceBox.getPutStoreNumber();
                         if ((null == oldPutStoreNumber || "0".equals(oldPutStoreNumber)) || (!oldPutStoreNumber.equals(storeNumber))) {
                             // 未投放 变成投放
-                            iceBoxService.changeCustomer(iceBox);
+                            List<IceBox> list = new ArrayList<>();
+                            list.add(iceBox);
+                            list.add(selectIceBox);
+                            map.put(assetId, list);
                         }
                     }
                     iceBoxDao.updateById(iceBox);
@@ -190,9 +211,9 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
                     // 创建投放相关数据并同步到【投放报表】
-                    String newApplyNumber = iceBoxService.createIcePutData(iceBox, storeNumber);
-                    iceBoxService.saveIceBoxPutReport(iceBox, newApplyNumber, storeNumber);
-                    iceBoxService.createOldIceBoxSignNotice(iceBox, newApplyNumber, storeNumber);
+                    List<IceBox> list = new ArrayList<>();
+                    list.add(iceBox);
+                    map.put(assetId,list);
                 }
                 // 新的 冰柜状态/投放状态
                 JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜入库");
@@ -215,7 +236,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient) {
+                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map) {
 
                 // 退仓需要指定经销商
                 // 资产编号
@@ -294,6 +315,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                     if (null == iceModel) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
+                    } else {
+                        Integer type = iceModel.getType();
+                        if (IceBoxEnums.TypeEnum.NEW_ICE_BOX.getType().equals(type)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号为新冰柜型号，请核对冰柜型号");
+                        }
                     }
                     iceBox.setModelId(iceModel.getId());
                     BigDecimal depositMoney = oldIceBoxImportVo.getDepositMoney();
@@ -318,8 +344,8 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient
-            ) {
+                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient,
+                                        Map<String, List<IceBox>> map) {
 
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
 
@@ -396,6 +422,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                     if (null == iceModel) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
+                    } else {
+                        Integer type = iceModel.getType();
+                        if (IceBoxEnums.TypeEnum.NEW_ICE_BOX.getType().equals(type)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号为新冰柜型号，请核对冰柜型号");
+                        }
                     }
                     iceBox.setModelId(iceModel.getId());
                     BigDecimal depositMoney = oldIceBoxImportVo.getDepositMoney();
@@ -421,7 +452,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient) {
+                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map) {
 
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
                 String assetId = oldIceBoxImportVo.getAssetId();
@@ -493,6 +524,11 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
                     if (null == iceModel) {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号未导入数据库，请联系相关人员补充");
+                    } else {
+                        Integer type = iceModel.getType();
+                        if (IceBoxEnums.TypeEnum.NEW_ICE_BOX.getType().equals(type)) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 型号为新冰柜型号，请核对冰柜型号");
+                        }
                     }
                     iceBox.setModelId(iceModel.getId());
                     BigDecimal depositMoney = oldIceBoxImportVo.getDepositMoney();
@@ -534,7 +570,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
         abstract public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao,
                                              IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient,
                                              FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                             IceBoxService iceBoxService,RabbitTemplate rabbitTemplate,FeignStoreClient feignStoreClient);
+                                             IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map);
 
     }
 

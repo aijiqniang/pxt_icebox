@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.enums.IceRepairStatusEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceRepairOrderMsg;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
 import com.szeastroc.icebox.newprocess.entity.IceRepairOrder;
@@ -44,9 +45,9 @@ public class IceRepairOrderConsumer {
         Integer count = iceRepairOrderService.selectByExportCount(wrapper);
         // 列
         String[] columnName = {"保修工单号","事业部", "大区", "服务处", "用户姓名","门店名称","手机","行政区域","地址",
-                "资产编号","产品型号","问题描述","备注"};
+                "资产编号","产品型号","问题描述","备注","服务商代码","受理服务商","受理时间","故障原因描述","维修措施","实际服务类型","实际服务方式","中间结果描述","反馈备注","工单状态","完成状态","服务完成时间","工程师"};
         // 先写入本地文件
-//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
         PoiUtil.exportReportExcelToLocalPath(count, columnName, tmpPath, imageUploadUtil, feignExportRecordsClient, msg.getRecordsId(),
                 (wb, eachSheet, startRowCount, endRowCount, currentPage, pageSize) -> {
@@ -73,6 +74,19 @@ public class IceRepairOrderConsumer {
                                 eachDataRow.createCell(10).setCellValue(report.getModelName());
                                 eachDataRow.createCell(11).setCellValue(report.getDescription());
                                 eachDataRow.createCell(12).setCellValue(report.getRemark());
+                                eachDataRow.createCell(13).setCellValue(report.getServiceProviderCode());
+                                eachDataRow.createCell(14).setCellValue(report.getServiceProviderName());
+                                eachDataRow.createCell(15).setCellValue(Objects.nonNull(report.getAcceptTime())?dateFormat.format(report.getAcceptTime()):"");
+                                eachDataRow.createCell(16).setCellValue(report.getCause());
+                                eachDataRow.createCell(17).setCellValue(report.getRepairMethod());
+                                eachDataRow.createCell(18).setCellValue(report.getFactServiceType());
+                                eachDataRow.createCell(19).setCellValue(report.getFactServiceMethod());
+                                eachDataRow.createCell(20).setCellValue(report.getResult());
+                                eachDataRow.createCell(21).setCellValue(report.getFeedback());
+                                eachDataRow.createCell(22).setCellValue(IceRepairStatusEnum.getDesc(report.getStatus()));
+                                eachDataRow.createCell(23).setCellValue(report.getFinishStatus());
+                                eachDataRow.createCell(24).setCellValue(Objects.nonNull(report.getFinishTime())?dateFormat.format(report.getFinishTime()):"");
+                                eachDataRow.createCell(25).setCellValue(report.getEngineer());
                             }
                         }
                     }

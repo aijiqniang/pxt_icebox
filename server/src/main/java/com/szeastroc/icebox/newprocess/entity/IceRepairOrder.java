@@ -190,7 +190,7 @@ public class IceRepairOrder extends Model<IceRepairOrder> {
      * 订单状态
      */
     @TableField(value = "status")
-    @ApiModelProperty(value = "订单状态")
+    @ApiModelProperty(value = "订单状态",notes = "0.维修中 1.带派工 2.已派工 3.已接受  4.已联系用户  5.已指派工程师 6.已反馈  7.已接单反馈 50.已取消")
     private Integer status;
 
 
@@ -210,51 +210,63 @@ public class IceRepairOrder extends Model<IceRepairOrder> {
     /**
      * 完成状态
      */
+    @ApiModelProperty(value = "完成状态",notes = "已完成/未完成")
     private String finishStatus;
     /**
      * 服务提供商编号
      */
+    @ApiModelProperty(value = "服务提供商编号")
     private String serviceProviderCode;
 
     /**
      * 服务提供商名称
      */
+    @ApiModelProperty(value = "服务提供商名称")
     private String serviceProviderName;
     /**
      * 受理时间
      */
+    @ApiModelProperty(value = "受理时间")
     private Date acceptTime;
     /**
      * 故障原因
      */
+    @ApiModelProperty(value = "故障原因")
     private String cause;
     /**
      * 维修措施
      */
+    @ApiModelProperty(value = "维修措施")
     private String repairMethod;
     /**
      * 实际服务类型
      */
+    @ApiModelProperty(value = "实际服务类型")
     private String factServiceType;
     /**
      * 实际服务方式
      */
+    @ApiModelProperty(value = "实际服务方式")
     private String factServiceMethod;
     /**
      * 中间结果描述
      */
+    @ApiModelProperty(value = "中间结果描述")
     private String result;
     /**
      * 反馈备注
      */
+    @ApiModelProperty(value = "反馈备注")
     private String feedback;
     /**
      * 服务完成时间
      */
+    @ApiModelProperty(value = "服务完成时间")
     private Date finishTime;
     /**
      * 工程师
      */
+    @ApiModelProperty(value = "工程师")
     private String engineer;
 
 

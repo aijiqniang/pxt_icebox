@@ -149,7 +149,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
                 .remark(iceRepairRequest.getRemark()).description(iceRepairRequest.getDescription())
                 .province(iceRepairRequest.getProvince()).city(iceRepairRequest.getCity()).area(iceRepairRequest.getArea())
                 .phoneAreaCode(phoneAreaCode).requireServiceDate(iceRepairRequest.getRequireServiceDate()).bookingRange(iceRepairRequest.getBookingRange())
-                .createdTime(new Date()).build();
+                .finishStatus("未完成").createdTime(new Date()).build();
         iceRepairRequest.setSaleOrderId(orderNumber);
         log.info("请求海信创建报修单,{}", JSONObject.toJSONString(iceRepairRequest));
         WbSiteRequestVO wbSiteRequestVO = iceRepairRequest.convertToWbSite();
@@ -210,9 +210,9 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         // 获取当前用户相关信息
         UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
         String key = String.format("%s%s", RedisConstant.ICE_BOX_REPAIR_ORDER_KEY, userManageVo.getSessionUserInfoVo().getId());
-        if (null != jedis.get(key)) {
-            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
-        }
+//        if (null != jedis.get(key)) {
+//            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
+//        }
         LambdaQueryWrapper<IceRepairOrder> wrapper = fillWrapper(reportMsg);
         Integer count = Optional.ofNullable(this.selectByExportCount(wrapper)).orElse(0);
         if (0 == count) {
@@ -225,7 +225,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
             reportMsg.setRecordsId(recordsId);
-            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceBackApplyReportKey, reportMsg);
+            rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceRepairOrderKey, reportMsg);
         }, ExecutorServiceFactory.getInstance());
         // 三分钟间隔
         jedis.set(key, "ex", 300, TimeUnit.SECONDS);

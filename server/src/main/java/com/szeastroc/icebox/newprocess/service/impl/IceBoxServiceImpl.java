@@ -2050,10 +2050,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 return true;
             }
             Set<Integer> searchDeptIdSet = searchDeptIdList.stream().collect(Collectors.toSet());
-            deptIdSet = Sets.intersection(deptIdSet, searchDeptIdSet);
+            if(deptIdSet.contains(1)){
+                deptIdSet=searchDeptIdSet;
+            }else {
+                deptIdSet = Sets.intersection(deptIdSet, searchDeptIdSet);
+            }
         }
         iceBoxPage.setDeptIdList(null);
-        iceBoxPage.setDeptIds(deptIdSet.contains(1) ? null : deptIdSet); // 如果数据范围是 东鹏饮料（集团）股份有限公司,就是查询所有部门了
+         iceBoxPage.setDeptIds(deptIdSet.contains(1) ? null : deptIdSet); // 如果数据范围是 东鹏饮料（集团）股份有限公司,就是查询所有部门了
 
         Set<Integer> supplierIdList = new HashSet<>(); // 拥有者的经销商
         // 所在对象  (put_status  投放状态 0: 未投放 1:已锁定(被业务员申请) 2:投放中 3:已投放; 当经销商时为 0-未投放;当门店时为非未投放状态;)

@@ -16,9 +16,7 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.newprocess.vo.CodeVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
-import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
-import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -60,11 +58,11 @@ public class IceBoxExtendController {
     @PostMapping("/exportExcel")
     public CommonResponse<Void> exportExcel(@RequestBody IceBoxPage iceBoxPage) throws Exception {
 
-        String prefix="ice_export_excel_";
-        String jobName="冰柜记录导出";
+        String prefix = "ice_export_excel_";
+        String jobName = "冰柜记录导出";
         // 从session 中获取用户信息
         Integer exportRecordId = setExportRecord(iceBoxPage, prefix, jobName);
-        rabbitTemplate.convertAndSend(MqConstant.directExchange,MqConstant.EXPORT_EXCEL_QUEUE,exportRecordId);
+        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.EXPORT_EXCEL_QUEUE, exportRecordId);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
@@ -123,15 +121,15 @@ public class IceBoxExtendController {
 
     /**
      * @Date: 2021/1/7 9:46 xiao
-     *  导出冰柜变更记录 到excel
+     * 导出冰柜变更记录 到excel
      */
     @PostMapping("/exportChangeRecord")
     public CommonResponse<Void> exportChangeRecord(@RequestBody IceBoxPage iceBoxPage) throws Exception {
 
-        String prefix="export_change_record_";
-        String jobName="冰柜变更记录导出";
+        String prefix = "export_change_record_";
+        String jobName = "冰柜变更记录导出";
         Integer exportRecordId = setExportRecord(iceBoxPage, prefix, jobName);
-        rabbitTemplate.convertAndSend(MqConstant.directExchange,MqConstant.EXPORT_CHANGE_RECORD_QUEUE,exportRecordId);
+        rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.EXPORT_CHANGE_RECORD_QUEUE, exportRecordId);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
@@ -153,7 +151,7 @@ public class IceBoxExtendController {
         }
         jedisClient.setnx(key, userId.toString(), 180);
         // 塞入部门集合
-        iceBoxPage.setDeptIdList(deptIdList);
+        iceBoxPage.setDeptIdList(deptIdList.contains(1) ? null : deptIdList);
         // 塞入数据到下载列表中  exportRecordId
         Integer integer = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userId, userName, JSON.toJSONString(iceBoxPage), jobName));
         return integer;

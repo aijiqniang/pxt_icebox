@@ -106,6 +106,9 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         String groupDeptName = null;
         if (SupplierTypeEnum.IS_STORE.getType().equals(iceRepairRequest.getCustomerType())) {
             StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceRepairRequest.getCustomerNumber()));
+            if(Objects.isNull(store)){
+                return new CommonResponse(Constants.API_CODE_FAIL, null, "鹏讯通不存在该门店");
+            }
             businessDeptId = store.getBusinessDeptId();
             headquartersDeptId = store.getHeadquartersDeptId();
             regionDeptId = store.getRegionDeptId();
@@ -118,6 +121,9 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
             groupDeptName = store.getGroupDeptName();
         } else {
             SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceRepairRequest.getCustomerNumber()));
+            if(Objects.isNull(supplier)){
+                return new CommonResponse(Constants.API_CODE_FAIL, null, "鹏讯通不存在该配送商");
+            }
             businessDeptId = supplier.getBusinessDeptId();
             headquartersDeptId = supplier.getHeadquartersDeptId();
             regionDeptId = supplier.getRegionDeptId();

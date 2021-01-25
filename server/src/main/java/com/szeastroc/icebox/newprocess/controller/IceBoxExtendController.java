@@ -151,7 +151,7 @@ public class IceBoxExtendController {
         }
         jedisClient.setnx(key, userId.toString(), 180);
         // 塞入部门集合
-        iceBoxPage.setDeptIdList(deptIdList.contains(1) ? null : deptIdList);
+        iceBoxPage.setDeptIdList(deptIdList.contains(1) ? Lists.newArrayList(1) : deptIdList);
         // 塞入数据到下载列表中  exportRecordId
         Integer integer = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userId, userName, JSON.toJSONString(iceBoxPage), jobName));
         return integer;

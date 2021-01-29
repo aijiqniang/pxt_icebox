@@ -4332,12 +4332,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Integer modelId = iceBox.getModelId();
         Integer supplierId = iceBox.getSupplierId();
 
-        if ((!oldIceBoxModelId.equals(modelId)) || (!supplierId.equals(oldSupplierId))) {
+        if ((!PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) && ((!oldIceBoxModelId.equals(modelId)) || (!supplierId.equals(oldSupplierId)))) {
             // 变更了型号  获取 投放中和申请中的型号数量
             Integer usedCount = putStoreRelateModelDao.selectCount(Wrappers.<PutStoreRelateModel>lambdaQuery()
                     .eq(PutStoreRelateModel::getModelId, oldIceBoxModelId)
                     .eq(PutStoreRelateModel::getSupplierId, oldSupplierId)
-                    .between(PutStoreRelateModel::getPutStatus, PutStatus.LOCK_PUT.getStatus(), PutStatus.DO_PUT.getStatus()));
+                    .between(PutStoreRelateModel::getPutStatus, PutStatus.LOCK_PUT.getStatus(), PutStatus.DO_PUT.getStatus())
+                    .eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()));
 
             // 获取所有可用于投放冰柜的数量
             Integer allCount = iceBoxDao.selectCount(Wrappers.<IceBox>lambdaQuery()
@@ -4345,8 +4346,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     .eq(IceBox::getModelId, oldIceBoxModelId)
                     .eq(IceBox::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())
                     .eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
-            if (allCount - usedCount <= 0) {
-                throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_ICEBOX.getCode(), "当前冰柜不能变更经销商或型号");
+            if (usedCount > 0 && usedCount >= allCount) {
+                throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_ICEBOX.getCode(), "该经销商的该型号的未投放冰柜数量不能小于" + usedCount);
             }
         }
 
@@ -5006,7 +5007,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                     .set(PutStoreRelateModel::getRemark, "后台变更冰柜使用客户")
                                     .set(PutStoreRelateModel::getUpdateTime, new Date())
                                     .set(PutStoreRelateModel::getUpdateBy, userManageVo.getSessionUserInfoVo().getId()));
-                            continue;
+                            break;
                         }
                     }
 

@@ -14,13 +14,8 @@ import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
-import com.szeastroc.icebox.newprocess.dao.IceModelDao;
-import com.szeastroc.icebox.newprocess.dao.OldIceBoxSignNoticeDao;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
-import com.szeastroc.icebox.newprocess.entity.IceModel;
+import com.szeastroc.icebox.newprocess.dao.*;
+import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
@@ -62,6 +57,12 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
     private FeignStoreClient feignStoreClient;
     @Resource
     private OldIceBoxSignNoticeDao oldIceBoxSignNoticeDao;
+    @Resource
+    private ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
+    @Resource
+    private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
+    @Resource
+    private PutStoreRelateModelDao putStoreRelateModelDao;
 
 
     @Override
@@ -83,7 +84,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             if (item == null) {
                 continue;
             }
-            JSONObject jsonObject = item.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao, iceBoxService, rabbitTemplate, feignStoreClient, map);
+            JSONObject jsonObject = item.operating(index, oldIceBoxImportVo, iceBoxDao, iceBoxExtendDao, feignDeptClient, feignSupplierClient, iceModelDao, iceBoxService, rabbitTemplate, feignStoreClient, map, applyRelatePutStoreModelDao, icePutApplyRelateBoxDao, putStoreRelateModelDao);
             lists.add(jsonObject);
         }
         if (CollectionUtil.isNotEmpty(map)) {
@@ -110,7 +111,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map) {
+                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map, ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao, IcePutApplyRelateBoxDao icePutApplyRelateBoxDao, PutStoreRelateModelDao putStoreRelateModelDao) {
                 // 导入冰柜参数限制较多，需要多重校验
                 IceBox iceBox = new IceBox();
                 IceBoxExtend iceBoxExtend = new IceBoxExtend();
@@ -236,7 +237,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map) {
+                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map, ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao, IcePutApplyRelateBoxDao icePutApplyRelateBoxDao, PutStoreRelateModelDao putStoreRelateModelDao) {
 
                 // 退仓需要指定经销商
                 // 资产编号
@@ -270,6 +271,26 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBox.setPutStoreNumber("0");
                     iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
                     iceBoxDao.updateById(iceBox);
+
+                    IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
+                    String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
+                    if (null != lastApplyNumber) { // 说明存在投放记录
+                        // 变更当前型号状态
+                        IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber));
+                        if (null != icePutApplyRelateBox) {
+                            ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
+                                    .eq(ApplyRelatePutStoreModel::getApplyNumber, lastApplyNumber)
+                                    .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
+                                    .last("limit 1"));
+                            if (null != applyRelatePutStoreModel) {
+                                Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+                                PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
+                                putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
+                                putStoreRelateModel.setUpdateTime(new Date());
+                                putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+                            }
+                        }
+                    }
                     Integer boxId = iceBox.getId();
                     if(PutStatus.FINISH_PUT.getStatus().equals(oldStatus)){
                         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
@@ -345,7 +366,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
                                         IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient,
-                                        Map<String, List<IceBox>> map) {
+                                        Map<String, List<IceBox>> map, ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao, IcePutApplyRelateBoxDao icePutApplyRelateBoxDao, PutStoreRelateModelDao putStoreRelateModelDao) {
 
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
 
@@ -452,7 +473,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
             @Override
             public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao, IceBoxExtendDao iceBoxExtendDao,
                                         FeignDeptClient feignDeptClient, FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map) {
+                                        IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map, ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao, IcePutApplyRelateBoxDao icePutApplyRelateBoxDao, PutStoreRelateModelDao putStoreRelateModelDao) {
 
                 // 冰柜报废，目前把冰柜退回经销商然后 冰柜状态置为异常
                 String assetId = oldIceBoxImportVo.getAssetId();
@@ -570,7 +591,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
         abstract public JSONObject operating(Integer index, OldIceBoxImportVo oldIceBoxImportVo, IceBoxDao iceBoxDao,
                                              IceBoxExtendDao iceBoxExtendDao, FeignDeptClient feignDeptClient,
                                              FeignSupplierClient feignSupplierClient, IceModelDao iceModelDao,
-                                             IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map);
+                                             IceBoxService iceBoxService, RabbitTemplate rabbitTemplate, FeignStoreClient feignStoreClient, Map<String, List<IceBox>> map, ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao, IcePutApplyRelateBoxDao icePutApplyRelateBoxDao, PutStoreRelateModelDao putStoreRelateModelDao);
 
     }
 

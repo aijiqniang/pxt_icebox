@@ -18,6 +18,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.dto.CustomerLabelDetailDto;
 import com.szeastroc.common.entity.customer.vo.SessionStoreInfoVo;
@@ -4324,6 +4325,32 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (count > 0) {
             throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_ICEBOX.getCode(), "不能变更异常报备中的冰柜");
         }
+
+
+        Integer oldIceBoxModelId = oldIceBox.getModelId();
+        Integer oldSupplierId = oldIceBox.getSupplierId();
+        Integer modelId = iceBox.getModelId();
+        Integer supplierId = iceBox.getSupplierId();
+
+        if ((!PutStatus.FINISH_PUT.getStatus().equals(oldPutStatus)) && ((!oldIceBoxModelId.equals(modelId)) || (!supplierId.equals(oldSupplierId)))) {
+            // 变更了型号  获取 投放中和申请中的型号数量
+            Integer usedCount = putStoreRelateModelDao.selectCount(Wrappers.<PutStoreRelateModel>lambdaQuery()
+                    .eq(PutStoreRelateModel::getModelId, oldIceBoxModelId)
+                    .eq(PutStoreRelateModel::getSupplierId, oldSupplierId)
+                    .between(PutStoreRelateModel::getPutStatus, PutStatus.LOCK_PUT.getStatus(), PutStatus.DO_PUT.getStatus())
+                    .eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()));
+
+            // 获取所有可用于投放冰柜的数量
+            Integer allCount = iceBoxDao.selectCount(Wrappers.<IceBox>lambdaQuery()
+                    .eq(IceBox::getSupplierId, oldSupplierId)
+                    .eq(IceBox::getModelId, oldIceBoxModelId)
+                    .eq(IceBox::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())
+                    .eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
+            if (usedCount > 0 && usedCount >= allCount) {
+                throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_ICEBOX.getCode(), "该经销商的该型号的未投放冰柜数量不能小于" + usedCount);
+            }
+        }
+
         IceBoxChangeHistory iceBoxChangeHistory = new IceBoxChangeHistory();
 
         // 资产编号变更
@@ -4378,6 +4405,26 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     if (supplierNumber.equals(customerNumber)) {
                         // 退仓
                         updateWrapper.set(IceBox::getPutStoreNumber, null).set(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
+
+                        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+                        String lastApplyNumber = iceBoxExtend.getLastApplyNumber();
+                        if (null != lastApplyNumber) { // 说明存在投放记录
+                            // 变更当前型号状态
+                            IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber));
+                            if (null != icePutApplyRelateBox) {
+                                ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
+                                        .eq(ApplyRelatePutStoreModel::getApplyNumber, lastApplyNumber)
+                                        .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
+                                        .last("limit 1"));
+                                if (null != applyRelatePutStoreModel) {
+                                    Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+                                    PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
+                                    putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
+                                    putStoreRelateModel.setUpdateTime(new Date());
+                                    putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+                                }
+                            }
+                        }
                     } else {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "如更改客户为经销商则该经销商必须是冰柜所属经销商");
                     }
@@ -4960,7 +5007,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                     .set(PutStoreRelateModel::getRemark, "后台变更冰柜使用客户")
                                     .set(PutStoreRelateModel::getUpdateTime, new Date())
                                     .set(PutStoreRelateModel::getUpdateBy, userManageVo.getSessionUserInfoVo().getId()));
-                            continue;
+                            break;
                         }
                     }
 

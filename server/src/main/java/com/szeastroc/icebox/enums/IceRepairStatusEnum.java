@@ -12,7 +12,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum IceRepairStatusEnum {
-    REPAIRING(0,"维修中"),
+    REPAIRING(0,"报修中"),
     NO_ARRANGE(1, "待派工"),
     ARRANGED(2, "已派工"),
     ACCEPTED(3, "已接受"),

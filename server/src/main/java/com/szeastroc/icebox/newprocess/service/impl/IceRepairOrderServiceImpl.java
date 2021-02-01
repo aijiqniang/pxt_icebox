@@ -192,6 +192,9 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         if (Objects.nonNull(msg.getStatus())) {
             wrapper.eq(IceRepairOrder::getStatus, msg.getStatus());
         }
+        if (StringUtils.isNotBlank(msg.getFinishStatus())) {
+            wrapper.eq(IceRepairOrder::getFinishStatus, msg.getFinishStatus());
+        }
         if (Objects.nonNull(msg.getHeadquartersDeptId())) {
             wrapper.eq(IceRepairOrder::getHeadquartersDeptId, msg.getHeadquartersDeptId());
         }

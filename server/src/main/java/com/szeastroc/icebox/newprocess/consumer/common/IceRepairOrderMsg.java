@@ -70,4 +70,7 @@ public class IceRepairOrderMsg extends Page implements Serializable {
     @ApiModelProperty(value = "订单状态")
     private Integer status;
 
+    @ApiModelProperty("完成状态")
+    private String finishStatus;
+
 }

@@ -20,7 +20,7 @@
         <spring-cloud.version>Hoxton.SR9</spring-cloud.version>
         <!-- 公共jar -->
         <pxt.common>0.4.7</pxt.common>
-        <pxt.common.db>0.4.5</pxt.common.db>
+        <pxt.common.db>0.4.6</pxt.common.db>
         <!-- feign服务 -->
         <common.feign.version>0.0.27</common.feign.version>
     </properties>

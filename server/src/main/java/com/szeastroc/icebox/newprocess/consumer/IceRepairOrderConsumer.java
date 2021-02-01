@@ -81,7 +81,7 @@ public class IceRepairOrderConsumer {
                                 eachDataRow.createCell(18).setCellValue(report.getFactServiceType());
                                 eachDataRow.createCell(19).setCellValue(report.getFactServiceMethod());
                                 eachDataRow.createCell(20).setCellValue(report.getResult());
-                                eachDataRow.createCell(21).setCellValue(report.getFeedback());
+                                eachDataRow.createCell(21).setCellValue(StringUtils.isNotBlank(report.getFeedback())?"null".equals(report.getFeedback().trim())?"":report.getFeedback().trim():"");
                                 eachDataRow.createCell(22).setCellValue(IceRepairStatusEnum.getDesc(report.getStatus()));
                                 eachDataRow.createCell(23).setCellValue(report.getFinishStatus());
                                 eachDataRow.createCell(24).setCellValue(Objects.nonNull(report.getFinishTime())?dateFormat.format(report.getFinishTime()):"");

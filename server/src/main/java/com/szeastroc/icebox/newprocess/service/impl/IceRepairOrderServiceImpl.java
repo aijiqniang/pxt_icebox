@@ -178,6 +178,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         page.convert(one->{
             if(StringUtils.isNotBlank(one.getRemark())){
                 one.setRemark("null".equals(one.getRemark().trim())?"":one.getRemark().trim());
+                one.setFeedback("null".equals(one.getFeedback().trim())?"":one.getFeedback().trim());
             }
             return one;
         });
@@ -224,19 +225,19 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     @Override
     public CommonResponse<Void> sendExportMsg(IceRepairOrderMsg reportMsg) {
         // 获取当前用户相关信息
-//        UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
-        String key = String.format("%s%s", RedisConstant.ICE_BOX_REPAIR_ORDER_KEY,1973);
-//        if (null != jedis.get(key)) {
-//            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
-//        }
+        UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
+        String key = String.format("%s%s", RedisConstant.ICE_BOX_REPAIR_ORDER_KEY,userManageVo.getSessionUserInfoVo().getId());
+        if (null != jedis.get(key)) {
+            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
+        }
         LambdaQueryWrapper<IceRepairOrder> wrapper = fillWrapper(reportMsg);
         Integer count = Optional.ofNullable(this.selectByExportCount(wrapper)).orElse(0);
         if (0 == count) {
             return new CommonResponse<>(Constants.API_CODE_FAIL, "暂无可下载数据");
         }
         // 生成下载任务
-        Integer recordsId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(1973,
-                "李超海", JSON.toJSONString(reportMsg), "冰柜报修订单-导出"));
+        Integer recordsId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userManageVo.getSessionUserInfoVo().getId(),
+                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "冰柜报修订单-导出"));
 
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {

@@ -178,6 +178,8 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         page.convert(one->{
             if(StringUtils.isNotBlank(one.getRemark())){
                 one.setRemark("null".equals(one.getRemark().trim())?"":one.getRemark().trim());
+            }
+            if(StringUtils.isNotBlank(one.getFeedback())){
                 one.setFeedback("null".equals(one.getFeedback().trim())?"":one.getFeedback().trim());
             }
             return one;

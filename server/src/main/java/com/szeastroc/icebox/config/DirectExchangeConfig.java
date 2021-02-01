@@ -81,6 +81,37 @@ public class DirectExchangeConfig {
         return binding;
     }
 
+
+
+    // 定义冰柜异常报备队列
+    @Bean(name = "iceBackApplyReportQueue")
+    public Queue iceBackApplyReportQueue() {
+        Queue queue = new Queue(MqConstant.iceBackApplyReportQueue);
+        return queue;
+    }
+
+    // 定义队列跟交换机的绑定关系
+    @Bean
+    public Binding bindingIceBackApplyReportExchange() {
+        Binding binding = BindingBuilder.bind(iceBackApplyReportQueue()).to(directExchange()).with(MqConstant.iceBackApplyReportKey);
+        return binding;
+    }
+
+
+    // 定义冰柜异常报备队列
+    @Bean(name = "iceInspectionReportQueue")
+    public Queue iceInspectionReportQueue() {
+        Queue queue = new Queue(MqConstant.iceInspectionReportQueue);
+        return queue;
+    }
+
+    // 定义队列跟交换机的绑定关系
+    @Bean
+    public Binding bindingIceInspectionReportExchange() {
+        Binding binding = BindingBuilder.bind(iceInspectionReportQueue()).to(directExchange()).with(MqConstant.iceInspectionReportKey);
+        return binding;
+    }
+
     /**
      * DEATAIL_EXPORT
      * 队列消费配置
@@ -110,6 +141,25 @@ public class DirectExchangeConfig {
     public Binding bindingExchangeReport() {
         Binding binding = BindingBuilder.bind(directQueueReport()).to(directExchange()).with(MqConstant.ICEBOX_ASSETS_REPORT_ROUTING_KEY);
         return binding;
+    }
+
+    /**
+     * 客户信息修改mq配置
+     */
+    @Bean
+    public FanoutExchange storeChangeExchange() {
+        return (FanoutExchange) ExchangeBuilder.fanoutExchange(MqConstant.E_STORE_CHANGE_EXCHANGE).durable(true).build();
+    }
+
+    // 修改冰柜营销区域
+    @Bean
+    public Queue storeInfoChangeQueue() {
+        return QueueBuilder.durable(MqConstant.Q_STORE_CHANGE_ICEBOX_DEPT).build();
+    }
+
+    @Bean
+    public Binding storeInfoChangeBinding(Queue storeInfoChangeQueue, FanoutExchange storeChangeExchange) {
+        return BindingBuilder.bind(storeInfoChangeQueue).to(storeChangeExchange);
     }
 
     @Bean(name = "iceExportExcelContainer")

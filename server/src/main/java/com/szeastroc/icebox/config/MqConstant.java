@@ -8,7 +8,7 @@ package com.szeastroc.icebox.config;
 public interface MqConstant {
     /*****************************  直连模式的参数   *************************************/
     String directExchange = "pxt_mq_exchange";
-    String directQueue = "icebox_export_excel_queue";
+    String directQueue = "icebox_export_excel_queue_xiao";
     String directRoutingKey = "icebox_export_excel_routing_key";
     /**
      * @Date: 2020/10/19 14:14 xiao
@@ -32,4 +32,24 @@ public interface MqConstant {
     /*****************************  直连模式的参数   *************************************/
 
 
+    /**
+     * 冰柜退还报表
+     */
+    String iceBackApplyReportQueue = "ice_back_apply_report_queue";
+    String iceBackApplyReportKey = "ice_back_apply_report_routing_key";
+
+
+    /**
+     * 冰柜退还报表
+     */
+    String iceInspectionReportQueue = "ice_inspection_report_queue";
+    String iceInspectionReportKey = "ice_inspection_report_routing_key";
+
+    /**
+     * 客户信息变更，变更冰柜营销区域
+     */
+
+    String E_STORE_CHANGE_EXCHANGE = "E_STORE_CHANGE_EXCHANGE";
+
+    String Q_STORE_CHANGE_ICEBOX_DEPT = "Q_STORE_CHANGE_ICEBOX_DEPT";
 }

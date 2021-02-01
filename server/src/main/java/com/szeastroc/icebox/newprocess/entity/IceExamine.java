@@ -56,6 +56,12 @@ public class IceExamine {
     private String displayImage;
 
     /**
+     * 资产编号图片的URL
+     */
+    @TableField(value = "asset_image")
+    private String assetImage;
+
+    /**
      * 创建人
      */
     @TableField(value = "create_by")
@@ -140,6 +146,7 @@ public class IceExamine {
                 .createName(realName)
                 .displayImage(iceExamine.getDisplayImage())
                 .exteriorImage(iceExamine.getExteriorImage())
+                .assetImage(iceExamine.getAssetImage())
                 .createTime(iceExamine.getCreateTime())
                 .storeName(storeName)
                 .storeNumber(storeNumber)

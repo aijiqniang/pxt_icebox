@@ -128,9 +128,18 @@ public class IceBoxExamineExceptionReport {
      */
     private String examineUserName;
     /**
+     *审核备注
+     */
+    private String examineRemark;
+    /**
      *审核时间
      */
     private Date examineTime;
+    /**
+     *  审批人职务
+     */
+    private String examineUserOfficeName;
+
     /**
      *状态 0:报备中 1:可提报  2:已提报 3:已报备 4：已驳回
      */

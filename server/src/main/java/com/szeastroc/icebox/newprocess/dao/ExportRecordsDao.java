@@ -3,6 +3,8 @@ package com.szeastroc.icebox.newprocess.dao;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.icebox.newprocess.entity.ExportRecords;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import org.apache.ibatis.annotations.Param;

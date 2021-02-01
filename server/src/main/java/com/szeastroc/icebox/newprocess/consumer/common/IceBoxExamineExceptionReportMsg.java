@@ -143,6 +143,14 @@ public class IceBoxExamineExceptionReportMsg extends Page implements Serializabl
      */
     private Date examineTime;
     /**
+     *  审核备注
+     */
+    private String examineRemark;
+    /**
+     *  审核人职务
+     */
+    private String examineUserOfficeName;
+    /**
      *状态 0:报备中 1:可提报  2:已提报 3:已报备 4：已驳回
      */
     private Integer status;

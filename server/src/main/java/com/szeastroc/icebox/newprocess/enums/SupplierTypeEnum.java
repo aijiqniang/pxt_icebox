@@ -20,7 +20,7 @@ public enum SupplierTypeEnum {
     private Integer type;
     private String desc;
 
-    public static String getDesc(String type) {
+    public static String getDesc(Integer type) {
         for (SupplierTypeEnum supplierTypeEnum : SupplierTypeEnum.values()) {
             if (supplierTypeEnum.getType().equals(type)) {
                 return supplierTypeEnum.getDesc();

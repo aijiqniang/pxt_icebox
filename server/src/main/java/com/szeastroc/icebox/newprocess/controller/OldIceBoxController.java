@@ -18,6 +18,7 @@ import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.commondb.config.annotation.RedisLock;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
@@ -202,6 +203,7 @@ public class OldIceBoxController {
      * @throws IOException
      * @throws ImproperOptionException
      */
+    @RedisLock(includeToken = true)
     @RequestMapping("/importOrUpdate")
     public CommonResponse<Void> importOrUpdate(@RequestParam("excelFile") MultipartFile file) throws IOException, ImproperOptionException {
 
@@ -238,6 +240,7 @@ public class OldIceBoxController {
         oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("新增").build());
         oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("退仓").build());
         oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("报废").build());
+        oldIceBoxImportVoList.add(OldIceBoxImportVo.builder().type("遗失").build());
         excelUtil.oldExportExcel(fileName, titleName, columnName, oldIceBoxImportVoList, response);
     }
 }

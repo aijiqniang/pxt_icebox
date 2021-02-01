@@ -35,6 +35,10 @@ public class ClientInfoRequest {
      * 旧冰柜通知类型：1-已投放有冰柜id,2-未投放无冰柜id
      */
     private Integer type;
+    /**
+     *审核备注
+     */
+    private String examineRemark;
 
     public boolean validate(){
 //        if(StringUtils.isBlank(clientName) || StringUtils.isBlank(clientNumber) || StringUtils.isBlank(marketAreaId)

@@ -42,6 +42,12 @@ import java.util.List;
 @Component
 public class IceBoxExamineExceptionReportConsumer {
 
+
+    /**
+     * 虚拟资产编号
+     */
+    public final static String virtual_asset_id = "00000000000";
+
     @Autowired
     private IceBoxExamineExceptionReportService iceBoxExamineExceptionReportService;
     @Autowired
@@ -56,7 +62,7 @@ public class IceBoxExamineExceptionReportConsumer {
     private IceExamineDao iceExamineDao;
 
     //    @RabbitHandler
-    @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue)
+    @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue, containerFactory = "iceBoxExceptionContainer")
     public void task(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
         log.info("接收到的巡检信息到巡检报表——》【{}】", JSON.toJSONString(reportMsg));
         if (OperateTypeEnum.INSERT.getType().equals(reportMsg.getOperateType())) {
@@ -188,9 +194,13 @@ public class IceBoxExamineExceptionReportConsumer {
                                 excelVo.setImageUrl(iceExamine.getDisplayImage()+","+iceExamine.getExteriorImage()+","+iceExamine.getAssetImage());
                                 excelVo.setExaminMsg(iceExamine.getExaminMsg());
                             }
-                            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
-                            if (iceBox != null) {
-                                excelVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus()));
+                            if(virtual_asset_id.equals(report.getIceBoxAssetId())){
+                                excelVo.setStatusStr(IceBoxEnums.StatusEnum.NORMAL.getDesc());
+                            }else {
+                                IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
+                                if (iceBox != null) {
+                                    excelVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus()));
+                                }
                             }
                             if (report.getSubmitTime() != null) {
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));

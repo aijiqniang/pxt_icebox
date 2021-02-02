@@ -56,7 +56,7 @@ public class IceBoxExamineExceptionReportConsumer {
     private IceExamineDao iceExamineDao;
 
     //    @RabbitHandler
-    @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue)
+    @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue, containerFactory = "iceBoxExceptionContainer")
     public void task(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
         log.info("接收到的巡检信息到巡检报表——》【{}】", JSON.toJSONString(reportMsg));
         if (OperateTypeEnum.INSERT.getType().equals(reportMsg.getOperateType())) {

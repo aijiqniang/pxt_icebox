@@ -268,6 +268,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //                userIds.add(sessionUserInfoVo.getId());
 //                break;
 //            }
+            if (sessionUserInfoVo != null && DeptTypeEnum.GROUP.getType().equals(sessionUserInfoVo.getDeptType())) {
+                userIds.add(sessionUserInfoVo.getId());
+                continue;
+            }
 
             if (sessionUserInfoVo != null && DeptTypeEnum.SERVICE.getType().equals(sessionUserInfoVo.getDeptType())) {
                 userIds.add(sessionUserInfoVo.getId());

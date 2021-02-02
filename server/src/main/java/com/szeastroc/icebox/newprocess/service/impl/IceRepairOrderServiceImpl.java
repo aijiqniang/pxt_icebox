@@ -24,8 +24,14 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.IceRepairOrderMsg;
+import com.szeastroc.icebox.newprocess.dao.IceBackApplyDao;
+import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
+import com.szeastroc.icebox.newprocess.dao.IcePutApplyRelateBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceRepairOrderDao;
+import com.szeastroc.icebox.newprocess.entity.IceBackApply;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
+import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
+import com.szeastroc.icebox.newprocess.entity.IcePutApplyRelateBox;
 import com.szeastroc.icebox.newprocess.entity.IceRepairOrder;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
@@ -47,6 +53,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -84,6 +91,12 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     private FeignDistrictExtensionClient districtExtensionClient;
     @Autowired
     private IceBoxService iceBoxService;
+    @Resource
+    private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
+    @Resource
+    private IceBackApplyDao iceBackApplyDao;
+    @Resource
+    private IceBoxExtendDao iceBoxExtendDao;
 
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     @RedisLock(key = "#iceRepairRequest.boxId")
@@ -92,6 +105,18 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         Integer count = this.getUnfinishOrderCount(iceRepairRequest.getBoxId());
         if (count > 0) {
             return new CommonResponse(Constants.API_CODE_FAIL, null, "冰柜报修失败，该冰柜已存在未完成订单");
+        }
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceRepairRequest.getBoxId());
+        IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(
+                Wrappers.<IcePutApplyRelateBox>lambdaQuery()
+                .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                .eq(IcePutApplyRelateBox::getBoxId, iceRepairRequest.getBoxId()));
+        if (relateBox != null) {
+            IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, relateBox.getId())
+                    .ne(IceBackApply::getExamineStatus, 3));
+            if(Objects.nonNull(iceBackApply)){
+                return new CommonResponse(Constants.API_CODE_FAIL, null, "冰柜退还中，无法报修");
+            }
         }
         String msg = null;
         Integer businessDeptId = null;

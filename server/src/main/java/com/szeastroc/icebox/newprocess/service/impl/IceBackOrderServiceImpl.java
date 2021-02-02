@@ -62,6 +62,7 @@ import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
+import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
@@ -134,6 +135,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final IceBackApplyReportService iceBackApplyReportService;
     private final FeignStoreRelateMemberClient feignStoreRelateMemberClient;
     private final FeignDistrictClient feignDistrictClient;
+
+    private final IceRepairOrderService iceRepairOrderService;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -799,6 +802,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         }
         if (!icePutOrder.getStatus().equals(OrderStatus.IS_FINISH.getStatus())) {
             throw new NormalOptionException(ResultEnum.PUT_ORDER_IS_NOT_FINISH.getCode(), ResultEnum.PUT_ORDER_IS_NOT_FINISH.getMessage());
+        }
+        Integer unfinishOrderCount = iceRepairOrderService.getUnfinishOrderCount(iceBox.getId());
+        if(unfinishOrderCount>0){
+            throw new NormalOptionException(ResultEnum.HAVE_REPAIR_ORDER.getCode(), ResultEnum.HAVE_REPAIR_ORDER.getMessage());
         }
     }
 

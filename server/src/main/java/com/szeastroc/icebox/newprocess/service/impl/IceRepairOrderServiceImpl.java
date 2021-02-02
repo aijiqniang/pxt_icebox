@@ -141,7 +141,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         iceRepairRequest.setPsnAccount(account);
         iceRepairRequest.setPsnPwd(password);
         iceRepairRequest.setPhoneAreaCode(phoneAreaCode);
-        String orderNumber = "REP" + new DateTime().toString("yyyyMMddHHmmss") + RandomUtil.randomNumbers(4);
+        String orderNumber = "REP" + new DateTime().toString("yyyyMMddHHmmss") + RandomUtil.randomNumbers(8);
         IceRepairOrder repairOrder = IceRepairOrder.builder().orderNumber(orderNumber).boxId(iceRepairRequest.getBoxId())
                 .businessDeptId(businessDeptId).businessDeptName(businessDeptName)
                 .headquartersDeptId(headquartersDeptId).headquartersDeptName(headquartersDeptName)

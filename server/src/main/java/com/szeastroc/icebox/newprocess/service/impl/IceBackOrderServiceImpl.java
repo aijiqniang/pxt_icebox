@@ -758,6 +758,11 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         if (IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
             throw new NormalOptionException(ResultEnum.CANNOT_REFUND_ICE_BOX.getCode(), ResultEnum.CANNOT_REFUND_ICE_BOX.getMessage());
         }
+        // 报修中的冰柜不支持退还
+        Integer unfinishOrderCount = iceRepairOrderService.getUnfinishOrderCount(iceBox.getId());
+        if(unfinishOrderCount>0){
+            throw new NormalOptionException(ResultEnum.HAVE_REPAIR_ORDER.getCode(), ResultEnum.HAVE_REPAIR_ORDER.getMessage());
+        }
 
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery()
                 .eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApply::getPutStoreNumber, iceBox.getPutStoreNumber()));
@@ -802,10 +807,6 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         }
         if (!icePutOrder.getStatus().equals(OrderStatus.IS_FINISH.getStatus())) {
             throw new NormalOptionException(ResultEnum.PUT_ORDER_IS_NOT_FINISH.getCode(), ResultEnum.PUT_ORDER_IS_NOT_FINISH.getMessage());
-        }
-        Integer unfinishOrderCount = iceRepairOrderService.getUnfinishOrderCount(iceBox.getId());
-        if(unfinishOrderCount>0){
-            throw new NormalOptionException(ResultEnum.HAVE_REPAIR_ORDER.getCode(), ResultEnum.HAVE_REPAIR_ORDER.getMessage());
         }
     }
 

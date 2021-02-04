@@ -73,7 +73,11 @@ public class IceRepairRequest {
         requestVO.setPsnAccount(objectFactory.createWbSiteRequestVOPsnAccount(this.psnAccount));
         requestVO.setPsnPwd(objectFactory.createWbSiteRequestVOPsnPwd(this.psnPwd));
         requestVO.setOriginFlag(objectFactory.createWbSiteRequestVOOriginFlag(this.originFlag));
-        requestVO.setModelName(objectFactory.createWbSiteRequestVOModelName(this.modelName));
+        if("SC-200-1".equals(this.modelName)){
+            requestVO.setModelName(objectFactory.createWbSiteRequestVOModelName("SC-200"));
+        }else{
+            requestVO.setModelName(objectFactory.createWbSiteRequestVOModelName(this.modelName));
+        }
         requestVO.setSaleOrderId(objectFactory.createWbSiteRequestVOSaleOrderId(this.saleOrderId));
         requestVO.setTelephone2(objectFactory.createWbSiteRequestVOTelephone2(this.linkMobile));
         requestVO.setAddress(objectFactory.createWbSiteRequestVOAddress(this.customerAddress));

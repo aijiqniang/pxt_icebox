@@ -44,6 +44,8 @@ public interface IceBoxService extends IService<IceBox> {
 
     IPage findPage(IceBoxPage iceBoxPage);
 
+    boolean dealIceBoxPage(IceBoxPage iceBoxPage);
+
     Map<String, Object> readBasic(Integer id);
 
     Map<String, Object> readModule(Integer id);
@@ -104,7 +106,7 @@ public interface IceBoxService extends IService<IceBox> {
     void test();
 
 
-    void changeAssetId(Integer iceBoxId,String assetId,boolean reconfirm );
+    void changeAssetId(Integer iceBoxId, String assetId, boolean reconfirm);
 
 
     IceBoxStatusVo checkIceBoxById(Integer id, String pxtNumber);
@@ -113,7 +115,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     List<IceBoxVo> findIceBoxsBySupplierIdAndModelId(Integer supplierId, Integer modelId);
 
-    JSONObject setAssetReportJson(IceBox iceBox,String resourceStr);
+    JSONObject setAssetReportJson(IceBox iceBox, String resourceStr);
 
     List<Integer> getPutBoxIds(Integer userId);
 
@@ -121,24 +123,25 @@ public interface IceBoxService extends IService<IceBox> {
 
     /**
      * 冰柜遗失数量
+     *
      * @return
      */
     int getLostScrapCount(List<Integer> putBoxIds);
+
     /**
      * 客户变更，推送签收信息
-     *
-     * @param iceBox
      */
-    void changeCustomer(IceBox newIceBox,IceBox oldIcebox);
+    void changeCustomer(IceBox newIceBox, IceBox oldIcebox);
 
     String createIcePutData(IceBox iceBox, String newPutStoreNumber);
 
     int getLostScrapCount(Integer userId);
+
     void saveIceBoxPutReport(IceBox iceBox, String applyNumber, String putStoreNumber);
 
     IceBoxCustomerVo getIceBoxCustomerVo(String putStoreNumber);
 
-    void createOldIceBoxSignNotice(IceBox iceBox, String applyNumber,String storeNumber);
+    void createOldIceBoxSignNotice(IceBox iceBox, String applyNumber, String storeNumber);
 }
 
 

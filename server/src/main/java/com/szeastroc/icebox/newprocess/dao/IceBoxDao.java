@@ -17,7 +17,9 @@ public interface IceBoxDao extends BaseMapper<IceBox> {
 
     List<IceBox> exportExcel(Map<String, Object> param);
 
+    Integer exportExcelCount(Map<String, Object> param);
+
     @Select("SELECT * FROM `t_ice_box` LIMIT #{pageCode},#{pageNum};")
-    List<IceBox>readLimitData(@Param("pageCode")Integer pageCode,@Param("pageNum") Integer pageNum);
+    List<IceBox> readLimitData(@Param("pageCode") Integer pageCode, @Param("pageNum") Integer pageNum);
 
 }

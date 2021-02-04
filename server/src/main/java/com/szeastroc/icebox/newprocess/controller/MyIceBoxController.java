@@ -130,13 +130,13 @@ public class MyIceBoxController {
      * @return
      */
     @PostMapping("/checkIceBoxNew")
-    public void checkIceBoxNew(@RequestBody IceBoxRequest iceBoxRequest){
+    public CommonResponse<IceBoxRequest> checkIceBoxNew(@RequestBody IceBoxRequest iceBoxRequest){
         try {
             iceBoxService.checkIceBoxNew(iceBoxRequest);
         } catch (Exception e) {
             e.printStackTrace();
         }
-//        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null, new IceBoxRequest());
     }
     /**
      * 根据门店编号获取所属冰柜信息

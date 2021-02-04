@@ -546,9 +546,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                     }else{
                         SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(report.getPutCustomerNumber()));
                         if(Objects.nonNull(supplierInfoSessionVo)){
-                            report.setProvinceName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getProvinceId())));
-                            report.setCityName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getCityId())));
-                            report.setDistrictName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getRegionId())));
+                            if (Objects.nonNull(supplierInfoSessionVo.getProvinceId())) report.setProvinceName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getProvinceId())));
+                            if (Objects.nonNull(supplierInfoSessionVo.getCityId())) report.setCityName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getCityId())));
+                            if (Objects.nonNull(supplierInfoSessionVo.getRegionId())) report.setDistrictName(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectDistrictNameForReport(supplierInfoSessionVo.getRegionId())));
                             report.setPutCustomerName(supplierInfoSessionVo.getName());
                             report.setCustomerAddress(supplierInfoSessionVo.getAddress());
                             report.setLinkmanMobile(supplierInfoSessionVo.getLinkManMobile());

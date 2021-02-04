@@ -41,6 +41,7 @@ import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.transfer.FeignTransferClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
+import com.szeastroc.common.feign.user.FeignIceBoxExamineUserClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.feign.visit.FeignOutBacklogClient;
@@ -134,6 +135,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final IceBackApplyReportService iceBackApplyReportService;
     private final FeignStoreRelateMemberClient feignStoreRelateMemberClient;
     private final FeignDistrictClient feignDistrictClient;
+    private final FeignIceBoxExamineUserClient feignIceBoxExamineUserClient;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -235,13 +237,16 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         IceBackApplyReport backApplyReport = iceBackApplyReportService.getOne(Wrappers.<IceBackApplyReport>lambdaQuery().eq(IceBackApplyReport::getApplyNumber, applyNumber));
 
         SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(simpleIceBoxDetailVo.getUserId()));
-        Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId()));
+        Integer userDeptId = simpleUserInfoVo.getSimpleDeptInfoVos().get(0).getId();
+        Map<Integer, SessionUserInfoVo> sessionUserInfoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptId(userDeptId));
         //        获取上级部门领导
         List<Integer> userIds = new ArrayList<>();
 //        SessionUserInfoVo userInfoVo1 = sessionUserInfoMap.get(1);
 //        SessionUserInfoVo userInfoVo2 = sessionUserInfoMap.get(2);
 //        SessionUserInfoVo userInfoVo3 = sessionUserInfoMap.get(3);
 
+
+        Integer examineUserId = FeignResponseUtil.getFeignData(feignIceBoxExamineUserClient.getExamineUserIdByDeptId(userDeptId));
 
         for (Integer key : sessionUserInfoMap.keySet()) {
             SessionUserInfoVo sessionUserInfoVo = sessionUserInfoMap.get(key);
@@ -251,15 +256,34 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             if (sessionUserInfoVo != null && userIds.contains(sessionUserInfoVo.getId())) {
                 continue;
             }
-            if (sessionUserInfoVo != null && (group.equals(sessionUserInfoVo.getOfficeName()))) {
+//            if (sessionUserInfoVo != null && (group.equals(sessionUserInfoVo.getOfficeName()))) {
+//                userIds.add(sessionUserInfoVo.getId());
+//                continue;
+//            }
+//            if (sessionUserInfoVo != null && (service.equals(sessionUserInfoVo.getOfficeName()) || serviceOther.equals(sessionUserInfoVo.getOfficeName()))) {
+//                userIds.add(sessionUserInfoVo.getId());
+//                continue;
+//            }
+//            if (sessionUserInfoVo != null && (divion.equals(sessionUserInfoVo.getOfficeName()) || divionOther.equals(sessionUserInfoVo.getOfficeName()))) {
+//                userIds.add(sessionUserInfoVo.getId());
+//                break;
+//            }
+            if (sessionUserInfoVo != null && DeptTypeEnum.GROUP.getType().equals(sessionUserInfoVo.getDeptType())) {
                 userIds.add(sessionUserInfoVo.getId());
                 continue;
             }
-            if (sessionUserInfoVo != null && (service.equals(sessionUserInfoVo.getOfficeName()) || serviceOther.equals(sessionUserInfoVo.getOfficeName()))) {
+
+            if (sessionUserInfoVo != null && DeptTypeEnum.SERVICE.getType().equals(sessionUserInfoVo.getDeptType())) {
                 userIds.add(sessionUserInfoVo.getId());
+                if (null != examineUserId && !userIds.contains(examineUserId)) {
+                    userIds.add(examineUserId);
+                }
                 continue;
             }
-            if (sessionUserInfoVo != null && (divion.equals(sessionUserInfoVo.getOfficeName()) || divionOther.equals(sessionUserInfoVo.getOfficeName()))) {
+            if (sessionUserInfoVo != null && DeptTypeEnum.LARGE_AREA.getType().equals(sessionUserInfoVo.getDeptType())) {
+                if (null != examineUserId && !userIds.contains(examineUserId)) {
+                    userIds.add(examineUserId);
+                }
                 userIds.add(sessionUserInfoVo.getId());
                 break;
             }
@@ -268,6 +292,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         if (CollectionUtil.isEmpty(userIds)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到上级审批人！");
+        }
+
+        if (null != examineUserId && !userIds.contains(examineUserId)) {
+            userIds.add(examineUserId);
         }
 
 //        List<Integer> userIds = Arrays.asList(5941, 2103);

@@ -37,11 +37,7 @@ import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.*;
 import com.szeastroc.common.feign.customer.FeignSupplierRelateUserClient;
-import com.szeastroc.common.feign.user.FeignCacheClient;
-import com.szeastroc.common.feign.user.FeignDeptClient;
-import com.szeastroc.common.feign.user.FeignDeptRuleClient;
-import com.szeastroc.common.feign.user.FeignUserClient;
-import com.szeastroc.common.feign.user.FeignXcxBaseClient;
+import com.szeastroc.common.feign.user.*;
 import com.szeastroc.common.feign.visit.FeignBacklogClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
@@ -58,7 +54,6 @@ import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
-import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
 import com.szeastroc.icebox.enums.*;
@@ -100,7 +95,6 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
-import com.szeastroc.icebox.oldprocess.vo.ClientInfoRequest;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.CreatePathUtil;
 import com.szeastroc.icebox.util.redis.RedisLockUtil;
@@ -176,6 +170,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxExamineExceptionReportDao iceBoxExamineExceptionReportDao;
     private final IceBoxPutReportDao iceBoxPutReportDao;
     private final FeignDeptRuleClient feignDeptRuleClient;
+    private final FeignIceBoxExamineUserClient feignIceBoxExamineUserClient;
     @Autowired
     private IceBoxService iceBoxService;
     @Autowired
@@ -466,6 +461,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
 
         }
+
+        Integer examineUserId = FeignResponseUtil.getFeignData(feignIceBoxExamineUserClient.getExamineUserIdByDeptId(iceBoxRequestVo.getUserMarketAreaId()));
+
         if (ruleIceDetailVo != null) {
             //规则设置：不需审批
             if (!ruleIceDetailVo.getIsApproval()) {
@@ -551,15 +549,17 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批审批
                          */
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
-
+                        Boolean flag = false;
                         if (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())) {
                             userInfoVo = groupUser;
                             if (simpleUserInfoVo.getIsLearder().equals(1)) {
                                 userInfoVo = serviceUser;
+                                flag = true;
                             }
                         }
                         if (DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())) {
                             userInfoVo = serviceUser;
+                            flag = true;
                         }
 
                         if (userInfoVo == null || userInfoVo.getId() == null) {
@@ -577,6 +577,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         if (!ids.contains(userInfoVo.getId())) {
                             ids.add(userInfoVo.getId());
                         }
+                       if(flag){
+                           if (examineUserId == null) {
+                               throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                           }
+                           if (!ids.contains(examineUserId)) {
+                               ids.add(examineUserId);
+                           }
+                       }
                         createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
                         return map;
                     }
@@ -592,6 +600,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
                     if (!ids.contains(serviceUser.getId())) {
                         ids.add(serviceUser.getId());
+
+                        if (examineUserId == null) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                        }
+                        if (!ids.contains(examineUserId)) {
+                            ids.add(examineUserId);
+                        }
                     }
                     createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
                     return map;
@@ -608,6 +623,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
                     if (!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())) {
                         ids.add(serviceUser.getId());
+
+                        if (examineUserId == null) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                        }
+                        if (!ids.contains(examineUserId)) {
+                            ids.add(examineUserId);
+                        }
                     }
                     createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
                     return map;
@@ -642,14 +664,17 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批
                          */
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
+                        Boolean flag = false;
                         if (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())) {
                             userInfoVo = groupUser;
                             if (simpleUserInfoVo.getIsLearder().equals(1)) {
                                 userInfoVo = serviceUser;
+                                flag = true;
                             }
                         }
                         if (DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())) {
                             userInfoVo = serviceUser;
+                            flag = true;
                             if (simpleUserInfoVo.getIsLearder().equals(1)) {
                                 userInfoVo = regionUser;
                             }
@@ -672,6 +697,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         if (!ids.contains(userInfoVo.getId())) {
                             ids.add(userInfoVo.getId());
                         }
+                        if (flag) {
+                            if (examineUserId == null) {
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                            }
+                            if (!ids.contains(examineUserId)) {
+                                ids.add(examineUserId);
+                            }
+                        }
                         createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
                         return map;
                     } else {
@@ -693,11 +726,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             }
                         }
                         SessionUserInfoVo userInfoVo = null;
+
+                        Boolean flag = false;
                         if (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())) {
 
                             if (simpleUserInfoVo.getIsLearder().equals(1)) {
                                 if (allNodes.contains(2)) {
                                     userInfoVo = serviceUser;
+                                    flag = true;
                                 }
                                 if (!allNodes.contains(2) && allNodes.contains(3)) {
                                     userInfoVo = regionUser;
@@ -708,6 +744,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 }
                                 if (!allNodes.contains(1) && allNodes.contains(2)) {
                                     userInfoVo = serviceUser;
+                                    flag = true;
                                 }
                                 if (!allNodes.contains(1) && !allNodes.contains(2) && allNodes.contains(3)) {
                                     userInfoVo = regionUser;
@@ -722,6 +759,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             } else {
                                 if (allNodes.contains(2)) {
                                     userInfoVo = serviceUser;
+                                    flag = true;
                                 }
                                 if (!allNodes.contains(2) && allNodes.contains(3)) {
                                     userInfoVo = regionUser;
@@ -747,6 +785,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         }
                         if (!ids.contains(userInfoVo.getId())) {
                             ids.add(userInfoVo.getId());
+                        }
+                        if(flag){
+                            if (examineUserId == null) {
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                            }
+                            if (!ids.contains(examineUserId)) {
+                                ids.add(examineUserId);
+                            }
                         }
                         createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
                         return map;
@@ -782,6 +828,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             ids.add(serviceUser.getId());
                         }
 
+                        if (examineUserId == null) {
+                            throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                        }
+                        if (!ids.contains(examineUserId)) {
+                            ids.add(examineUserId);
+                        }
+
                         if (!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())) {
                             ids.add(regionUser.getId());
                         }
@@ -803,6 +856,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
                             if (!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())) {
                                 ids.add(serviceUser.getId());
+                            }
+
+                            if (examineUserId == null) {
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                            }
+                            if (!ids.contains(examineUserId)) {
+                                ids.add(examineUserId);
                             }
                         }
 
@@ -851,6 +911,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         if (simpleUserInfoVo.getIsLearder().equals(1)) {
                             if (allNodes.contains(2) && !ids.contains(serviceUser.getId())) {
                                 ids.add(serviceUser.getId());
+
+                                if (examineUserId == null) {
+                                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                                }
+                                if (!ids.contains(examineUserId)) {
+                                    ids.add(examineUserId);
+                                }
                             }
                         } else {
                             if (allNodes.contains(1) && !ids.contains(groupUser.getId())) {
@@ -858,6 +925,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             }
                             if (allNodes.contains(2) && !ids.contains(serviceUser.getId())) {
                                 ids.add(serviceUser.getId());
+
+                                if (examineUserId == null) {
+                                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                                }
+                                if (!ids.contains(examineUserId)) {
+                                    ids.add(examineUserId);
+                                }
                             }
                         }
                     }
@@ -866,6 +940,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         if (!simpleUserInfoVo.getIsLearder().equals(1)) {
                             if (allNodes.contains(2) && !ids.contains(serviceUser.getId())) {
                                 ids.add(serviceUser.getId());
+
+                                if (examineUserId == null) {
+                                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                                }
+                                if (!ids.contains(examineUserId)) {
+                                    ids.add(examineUserId);
+                                }
                             }
                         }
                     }
@@ -904,11 +985,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                          * 不存在需要跳过的节点
                          * 判断创建人是否和第一个领导为同一人，是：直接审批通过；否：第一个领导审批
                          */
+                        Boolean flag = false;
                         SessionUserInfoVo userInfoVo = sessionUserInfoMap.get(0);
                         if (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())) {
                             userInfoVo = groupUser;
                             if (simpleUserInfoVo.getIsLearder().equals(1)) {
                                 userInfoVo = serviceUser;
+                                flag = true;
                             }
                         }
                         if (DeptTypeEnum.SERVICE.getType().equals(simpleUserInfoVo.getDeptType())) {
@@ -941,6 +1024,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         if (!ids.contains(userInfoVo.getId())) {
                             ids.add(userInfoVo.getId());
                         }
+                        if(flag){
+                            if (examineUserId == null) {
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                            }
+                            if (!ids.contains(examineUserId)) {
+                                ids.add(examineUserId);
+                            }
+                        }
                         createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
                         return map;
                     } else {
@@ -964,11 +1055,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         }
 
                         SessionUserInfoVo userInfoVo = null;
+                        Boolean flag = false;
                         if (DeptTypeEnum.GROUP.getType().equals(simpleUserInfoVo.getDeptType())) {
 
                             if (simpleUserInfoVo.getIsLearder().equals(1)) {
                                 if (allNodes.contains(2)) {
                                     userInfoVo = serviceUser;
+                                    flag = true;
                                 }
                                 if (!allNodes.contains(2) && allNodes.contains(3)) {
                                     userInfoVo = regionUser;
@@ -979,6 +1072,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 }
                                 if (!allNodes.contains(1) && allNodes.contains(2)) {
                                     userInfoVo = serviceUser;
+                                    flag = true;
                                 }
                                 if (!allNodes.contains(1) && !allNodes.contains(2) && allNodes.contains(3)) {
                                     userInfoVo = regionUser;
@@ -1002,6 +1096,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             } else {
                                 if (allNodes.contains(2)) {
                                     userInfoVo = serviceUser;
+                                    flag = true;
                                 }
                                 if (!allNodes.contains(2) && allNodes.contains(3)) {
                                     userInfoVo = regionUser;
@@ -1045,6 +1140,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         if (!ids.contains(userInfoVo.getId())) {
                             ids.add(userInfoVo.getId());
                         }
+
+                        if(flag){
+                            if (examineUserId == null) {
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                            }
+                            if (!ids.contains(examineUserId)) {
+                                ids.add(examineUserId);
+                            }
+                        }
                         createIceBoxPutModel(iceBoxRequestVo, applyNumber, iceBoxModels, map, simpleUserInfoVo, ids);
                         return map;
                     }
@@ -1080,6 +1184,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
                         if (!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())) {
                             ids.add(serviceUser.getId());
+
+                            if (examineUserId == null) {
+                                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                            }
+                            if (!ids.contains(examineUserId)) {
+                                ids.add(examineUserId);
+                            }
                         }
 
                         if (!ids.contains(regionUser.getId()) && !simpleUserInfoVo.getId().equals(regionUser.getId())) {
@@ -1109,6 +1220,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
                             if (!ids.contains(serviceUser.getId()) && !simpleUserInfoVo.getId().equals(serviceUser.getId())) {
                                 ids.add(serviceUser.getId());
+
+                                if (examineUserId == null) {
+                                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                                }
+                                if (!ids.contains(examineUserId)) {
+                                    ids.add(examineUserId);
+                                }
                             }
                         }
 
@@ -1179,6 +1297,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         if (simpleUserInfoVo.getIsLearder().equals(1)) {
                             if (allNodes.contains(2) && !ids.contains(serviceUser.getId())) {
                                 ids.add(serviceUser.getId());
+
+                                if (examineUserId == null) {
+                                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                                }
+                                if (!ids.contains(examineUserId)) {
+                                    ids.add(examineUserId);
+                                }
                             }
                             if (allNodes.contains(3) && !ids.contains(regionUser.getId())) {
                                 ids.add(regionUser.getId());
@@ -1189,6 +1314,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             }
                             if (allNodes.contains(2) && !ids.contains(serviceUser.getId())) {
                                 ids.add(serviceUser.getId());
+
+                                if (examineUserId == null) {
+                                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                                }
+                                if (!ids.contains(examineUserId)) {
+                                    ids.add(examineUserId);
+                                }
                             }
                             if (allNodes.contains(3) && !ids.contains(regionUser.getId())) {
                                 ids.add(regionUser.getId());
@@ -1201,6 +1333,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         if (!simpleUserInfoVo.getIsLearder().equals(1)) {
                             if (allNodes.contains(2) && !ids.contains(serviceUser.getId())) {
                                 ids.add(serviceUser.getId());
+
+                                if (examineUserId == null) {
+                                    throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+                                }
+                                if (!ids.contains(examineUserId)) {
+                                    ids.add(examineUserId);
+                                }
                             }
                         }
                         if (allNodes.contains(3) && !ids.contains(regionUser.getId())) {
@@ -1230,6 +1369,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到服务处负责人！");
             }
             ids.add(serviceUser.getId());
+
+            if (examineUserId == null) {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败,找不到冰柜管理主管！");
+            }
+            if (!ids.contains(examineUserId)) {
+                ids.add(examineUserId);
+            }
+
             if (regionLeaderCheck) {
                 if (regionUser == null) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "提交失败，找不到大区负责人！");
@@ -2715,7 +2862,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-//    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     public Map<String, Object> submitApplyNew(List<IceBoxRequestVo> requestNewVos) throws InterruptedException {
         Map<String, Object> map = new HashMap<>();
         IceBoxRequestVo iceBoxRequestVo = requestNewVos.get(0);

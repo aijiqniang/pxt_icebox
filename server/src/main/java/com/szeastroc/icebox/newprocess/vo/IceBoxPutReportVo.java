@@ -15,23 +15,44 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class IceBoxPutReportExcelVo {
+public class IceBoxPutReportVo {
+    private Integer id;
+    /**
+     *本部id
+     */
+    private Integer headquartersDeptId;
     /**
      *本部名称
      */
     private String headquartersDeptName;
     /**
+     *事业部id
+     */
+    private Integer businessDeptId;
+    /**
      *事业部名称
      */
     private String businessDeptName;
+    /**
+     *大区id
+     */
+    private Integer regionDeptId;
     /**
      *大区名称
      */
     private String regionDeptName;
     /**
+     *服务处id
+     */
+    private Integer serviceDeptId;
+    /**
      *服务处名称
      */
     private String serviceDeptName;
+    /**
+     *组id
+     */
+    private Integer groupDeptId;
     /**
      *组名称
      */
@@ -41,6 +62,10 @@ public class IceBoxPutReportExcelVo {
      */
     private String applyNumber;
     /**
+     *所属经销商id
+     */
+    private Integer supplierId;
+    /**
      *所属经销商编号
      */
     private String supplierNumber;
@@ -49,13 +74,17 @@ public class IceBoxPutReportExcelVo {
      */
     private String supplierName;
     /**
+     *提交人id
+     */
+    private Integer submitterId;
+    /**
      *提交人名称
      */
     private String submitterName;
     /**
      *提交日期
      */
-    private String submitTime;
+    private Date submitTime;
     /**
      *投放客户编号
      */
@@ -67,7 +96,11 @@ public class IceBoxPutReportExcelVo {
     /**
      *投放客户类型
      */
-    private String putCustomerType;
+    private Integer putCustomerType;
+    /**
+     *冰柜类型id
+     */
+    private Integer iceBoxModelId;
     /**
      *冰柜型号名称
      */
@@ -77,39 +110,37 @@ public class IceBoxPutReportExcelVo {
      */
     private String iceBoxAssetId;
     /**
+     *冰柜id
+     */
+    private Integer iceBoxId;
+    /**
      *免押类型：1-不免押，2-免押
      */
-    private String freeType;
+    private Integer freeType;
     /**
      *押金
      */
     private BigDecimal depositMoney;
     /**
+     *审核人id
+     */
+    private Integer examineUserId;
+    /**
      *审核人名称
      */
     private String examineUserName;
-    /**
-     *审核时间
-     */
-    private String examineTime;
     /**
      *审核备注
      */
     private String examineRemark;
     /**
+     *审核时间
+     */
+    private Date examineTime;
+    /**
      *投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放
      */
-    private String putStatus;
-
-    /**
-     *审核人id
-     */
-    private Integer examineUserId;
-
-    /**
-     *提交人id
-     */
-    private Integer submitterId;
+    private Integer putStatus;
 
     private String provinceName;
     private String cityName;
@@ -124,7 +155,13 @@ public class IceBoxPutReportExcelVo {
 
     private String examineUserPosion;
 
-    private String visitTypeName;
+    /**
+     * 拜访频率
+     */
+    private Integer visitType;
 
+    /**
+     * 投放申请备注
+     */
     private String applyPit;
 }

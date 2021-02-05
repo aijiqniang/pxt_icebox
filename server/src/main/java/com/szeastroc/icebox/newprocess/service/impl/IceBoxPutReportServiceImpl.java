@@ -40,10 +40,12 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportVo;
 import com.szeastroc.icebox.util.JudgeCustomerUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +78,8 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
     @Autowired
     private ApplyRelatePutStoreModelDao applyRelatePutStoreModelDao;
     @Autowired
+    private IcePutApplyDao icePutApplyDao;
+    @Autowired
     private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
     @Autowired
     private FeignSupplierClient feignSupplierClient;
@@ -88,11 +92,22 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
     @Autowired
     private FeignIceboxQueryClient feignIceboxQueryClient;
 
+
     @Override
-    public IPage<IceBoxPutReport> findByPage(IceBoxPutReportMsg reportMsg) {
+    public IPage<IceBoxPutReportVo> findByPage(IceBoxPutReportMsg reportMsg) {
         LambdaQueryWrapper<IceBoxPutReport> wrapper = fillWrapper(reportMsg);
         IPage<IceBoxPutReport> page = iceBoxPutReportDao.selectPage(reportMsg, wrapper);
-        return page;
+        IPage<IceBoxPutReportVo> pageVo = page.convert(report ->{
+            IceBoxPutReportVo reportVo = new IceBoxPutReportVo();
+            BeanUtils.copyProperties(report,reportVo);
+            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, report.getApplyNumber()).last("limit 1"));
+            if(icePutApply != null){
+                reportVo.setApplyPit(icePutApply.getApplyPit());
+            }
+            return reportVo;
+        });
+
+        return pageVo;
     }
 
     @Override
@@ -100,9 +115,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
         // 获取当前用户相关信息
         UserManageVo userManageVo = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfo());
         String key = String.format("%s%s", RedisConstant.ICE_BOX_PUT_REPORT_EXPORT_KEY, userManageVo.getSessionUserInfoVo().getId());
-//        if (null != jedis.get(key)) {
-//            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
-//        }
+        if (null != jedis.get(key)) {
+            return new CommonResponse<>(Constants.API_CODE_FAIL, "请求导出操作频繁，请稍候操作");
+        }
         LambdaQueryWrapper<IceBoxPutReport> wrapper = fillWrapper(reportMsg);
         Integer count = Optional.ofNullable(iceBoxPutReportDao.selectByExportCount(wrapper)).orElse(0);
         if (0 == count) {

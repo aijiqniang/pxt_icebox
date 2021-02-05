@@ -6,13 +6,14 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
+import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportVo;
 
 import java.util.List;
 
 public interface IceBoxPutReportService extends IService<IceBoxPutReport> {
 
 
-    IPage<IceBoxPutReport> findByPage(IceBoxPutReportMsg reportMsg);
+    IPage<IceBoxPutReportVo> findByPage(IceBoxPutReportMsg reportMsg);
 
     CommonResponse<IceBoxPutReport> sendExportMsg(IceBoxPutReportMsg reportMsg);
 

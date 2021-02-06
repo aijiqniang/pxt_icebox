@@ -170,4 +170,26 @@ public class DirectExchangeConfig {
         factory.setPrefetchCount(1);
         return factory;
     }
+
+    @Bean
+    public Queue exportExcelQueue() {
+        Queue queue = new Queue(MqConstant.EXPORT_EXCEL_QUEUE);
+        return queue;
+    }
+    @Bean
+    public Binding exportExcelBinding() {
+        Binding binding = BindingBuilder.bind(exportExcelQueue()).to(directExchange()).with(MqConstant.EXPORT_EXCEL_QUEUE);
+        return binding;
+    }
+
+    @Bean
+    public Queue exportChangeRecordQueue() {
+        Queue queue = new Queue(MqConstant.EXPORT_CHANGE_RECORD_QUEUE);
+        return queue;
+    }
+    @Bean
+    public Binding exportChangeRecordBinding() {
+        Binding binding = BindingBuilder.bind(exportChangeRecordQueue()).to(directExchange()).with(MqConstant.EXPORT_CHANGE_RECORD_QUEUE);
+        return binding;
+    }
 }

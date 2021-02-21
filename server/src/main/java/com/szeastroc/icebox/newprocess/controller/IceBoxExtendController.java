@@ -31,6 +31,7 @@ import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author xiao
@@ -153,7 +154,9 @@ public class IceBoxExtendController {
         // 塞入部门集合
         iceBoxPage.setDeptIdList(deptIdList.contains(1) ? Lists.newArrayList(1) : deptIdList);
         // 塞入数据到下载列表中  exportRecordId
-        Integer integer = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userId, userName, JSON.toJSONString(iceBoxPage), jobName));
+        String param = JSON.toJSONString(iceBoxPage);
+        jedisClient.set(key, param, 10, TimeUnit.SECONDS);
+        Integer integer = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecordsRedis(userId, userName, param, jobName));
         return integer;
     }
 

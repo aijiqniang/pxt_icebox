@@ -155,7 +155,7 @@ public class IceBoxExtendController {
         iceBoxPage.setDeptIdList(deptIdList.contains(1) ? Lists.newArrayList(1) : deptIdList);
         // 塞入数据到下载列表中  exportRecordId
         String param = JSON.toJSONString(iceBoxPage);
-        jedisClient.set(key, param, 10, TimeUnit.SECONDS);
+        jedisClient.set(key+"exp", param, 10, TimeUnit.SECONDS);
         Integer integer = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecordsRedis(userId, userName, param, jobName));
         return integer;
     }

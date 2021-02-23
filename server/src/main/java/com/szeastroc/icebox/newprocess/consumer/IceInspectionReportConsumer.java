@@ -105,6 +105,7 @@ public class IceInspectionReportConsumer {
             } catch (InterruptedException ex) {
                 log.error("巡检报表队列消费获取锁失败");
             }
+            RedisTool.releaseDistributedLock(jedisClient.getJedis(), lockKey, requestId);
             task(reportMsg);
         } finally {
             RedisTool.releaseDistributedLock(jedisClient.getJedis(), lockKey, requestId);

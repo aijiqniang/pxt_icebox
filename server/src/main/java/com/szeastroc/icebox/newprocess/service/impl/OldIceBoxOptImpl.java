@@ -211,10 +211,12 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     iceBoxDao.insert(iceBox);
                     iceBoxExtend.setId(iceBox.getId());
                     iceBoxExtendDao.insert(iceBoxExtend);
-                    // 创建投放相关数据并同步到【投放报表】
-                    List<IceBox> list = new ArrayList<>();
-                    list.add(iceBox);
-                    map.put(assetId,list);
+                    if (StringUtils.isNotBlank(storeNumber)) {
+                        // 创建投放相关数据并同步到【投放报表】
+                        List<IceBox> list = new ArrayList<>();
+                        list.add(iceBox);
+                        map.put(assetId, list);
+                    }
                 }
                 // 新的 冰柜状态/投放状态
                 JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"旧冰柜入库");

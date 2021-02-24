@@ -3785,7 +3785,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         /**
          *  分页查找数据
          */
-        int pageNum = 960; // 每页数量
+        int pageNum = 96; // 每页数量
         int totalPage = (count - 1) / pageNum + 1; // 总页数
         for (int j = 0; j < totalPage; j++) {
             Integer pageCode = j * pageNum;

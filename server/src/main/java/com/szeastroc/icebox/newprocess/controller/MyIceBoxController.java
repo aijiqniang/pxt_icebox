@@ -73,8 +73,13 @@ public class MyIceBoxController {
      */
     @RequestMapping("findPutingIceBoxListNew")
     public CommonResponse<Map<String,List<IceBoxVo>>> findPutingIceBoxListNew(@RequestBody IceBoxRequestVo requestVo){
-        Map<String,List<IceBoxVo>> map = iceBoxService.findPutingIceBoxListNew(requestVo);
-        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+        try {
+            Map<String,List<IceBoxVo>> map = iceBoxService.findPutingIceBoxListNew(requestVo);
+            return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+        }catch (Exception e){
+            e.printStackTrace();
+            return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
+        }
     }
 
     /**

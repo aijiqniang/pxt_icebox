@@ -28,7 +28,9 @@ import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
+import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
+import com.szeastroc.icebox.newprocess.entity.IcePutApply;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
@@ -62,9 +64,7 @@ public class IceBoxPutReportConsumer {
     @Autowired
     private FeignUserClient feignUserClient;
     @Autowired
-    private FeignStoreRelateMemberClient feignStoreRelateMemberClient;
-    @Autowired
-    private UserRedisServiceImpl userRedisService;
+    private IcePutApplyDao icePutApplyDao;
     @Autowired
     private FeignStoreClient feignStoreClient;
     @Autowired
@@ -94,8 +94,8 @@ public class IceBoxPutReportConsumer {
         // 列
         String[] columnName = {"事业部","大区","服务处","省","市","区县", "流程编号"
                 , "所属经销商编号", "所属经销商名称", "提交人","提交人电话","提交日期"
-                , "投放客户编号", "投放客户名称","投放客户类型","客户地址","联系人","联系人电话"
-                , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期","审批备注", "投放状态"};
+                , "投放客户编号", "投放客户名称","投放客户类型","客户地址","联系人","联系人电话","拜访频率"
+                , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期","审批备注", "投放状态","投放备注"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -111,6 +111,11 @@ public class IceBoxPutReportConsumer {
                         for(IceBoxPutReport report:billInfos){
                             IceBoxPutReportExcelVo excelVo = new IceBoxPutReportExcelVo();
                             BeanUtils.copyProperties(report,excelVo);
+                            excelVo.setVisitTypeName(VisitCycleEnum.getDescByCode(report.getVisitType()));
+                            IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, report.getApplyNumber()).last("limit 1"));
+                            if(icePutApply != null){
+                                excelVo.setApplyPit(icePutApply.getApplyPit());
+                            }
                             if(report.getSubmitTime() != null){
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
                             }
@@ -167,15 +172,17 @@ public class IceBoxPutReportConsumer {
                                     eachDataRow.createCell(15).setCellValue(excelVo.getCustomerAddress());
                                     eachDataRow.createCell(16).setCellValue(excelVo.getLinkmanName());
                                     eachDataRow.createCell(17).setCellValue(excelVo.getLinkmanMobile());
-                                    eachDataRow.createCell(18).setCellValue(excelVo.getIceBoxModelName());
-                                    eachDataRow.createCell(19).setCellValue(excelVo.getIceBoxAssetId());
-                                    eachDataRow.createCell(20).setCellValue(excelVo.getFreeType());
-                                    eachDataRow.createCell(21).setCellValue(excelVo.getDepositMoney()+"");
-                                    eachDataRow.createCell(22).setCellValue(excelVo.getExamineUserName());
-                                    eachDataRow.createCell(23).setCellValue(excelVo.getExamineUserPosion());
-                                    eachDataRow.createCell(24).setCellValue(excelVo.getExamineTime());
-                                    eachDataRow.createCell(25).setCellValue(excelVo.getExamineRemark());
-                                    eachDataRow.createCell(26).setCellValue(excelVo.getPutStatus());
+                                    eachDataRow.createCell(18).setCellValue(excelVo.getVisitTypeName());
+                                    eachDataRow.createCell(19).setCellValue(excelVo.getIceBoxModelName());
+                                    eachDataRow.createCell(20).setCellValue(excelVo.getIceBoxAssetId());
+                                    eachDataRow.createCell(21).setCellValue(excelVo.getFreeType());
+                                    eachDataRow.createCell(22).setCellValue(excelVo.getDepositMoney()+"");
+                                    eachDataRow.createCell(23).setCellValue(excelVo.getExamineUserName());
+                                    eachDataRow.createCell(24).setCellValue(excelVo.getExamineUserPosion());
+                                    eachDataRow.createCell(25).setCellValue(excelVo.getExamineTime());
+                                    eachDataRow.createCell(26).setCellValue(excelVo.getExamineRemark());
+                                    eachDataRow.createCell(27).setCellValue(excelVo.getPutStatus());
+                                    eachDataRow.createCell(28).setCellValue(excelVo.getApplyPit());
                                 }
                             }
                         }

@@ -6,6 +6,7 @@ import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
+import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,8 +25,8 @@ public class IceBoxPutReportController {
 
 
     @RequestMapping("findByPage")
-    public CommonResponse<IPage<IceBoxPutReport>> findByPage(@RequestBody IceBoxPutReportMsg reportMsg){
-        IPage<IceBoxPutReport> reportIPage = iceBoxPutReportService.findByPage(reportMsg);
+    public CommonResponse<IPage<IceBoxPutReportVo>> findByPage(@RequestBody IceBoxPutReportMsg reportMsg){
+        IPage<IceBoxPutReportVo> reportIPage = iceBoxPutReportService.findByPage(reportMsg);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null, reportIPage);
     }
 

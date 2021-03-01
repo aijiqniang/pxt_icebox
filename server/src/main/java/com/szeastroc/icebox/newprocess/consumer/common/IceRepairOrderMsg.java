@@ -73,4 +73,15 @@ public class IceRepairOrderMsg extends Page implements Serializable {
     @ApiModelProperty("完成状态")
     private String finishStatus;
 
+    /**
+     * 开始时间
+     */
+    @ApiModelProperty("开始时间")
+    private String startTime;
+    /**
+     * 结束时间
+     */
+    @ApiModelProperty("结束时间")
+    private String endTime;
+
 }

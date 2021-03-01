@@ -39,6 +39,7 @@ import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.IceRepairOrderVO;
 import com.szeastroc.icebox.newprocess.vo.request.IceRepairRequest;
 import com.szeastroc.icebox.newprocess.vo.request.IceRepairStatusRequest;
+import com.szeastroc.icebox.newprocess.webservice.JaxbUtil;
 import com.szeastroc.icebox.newprocess.webservice.WbSiteRequestVO;
 import com.szeastroc.icebox.newprocess.webservice.WbSiteResponseVO;
 import com.szeastroc.icebox.newprocess.webservice.WebSite;
@@ -196,6 +197,13 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         return new CommonResponse(Constants.API_CODE_SUCCESS, null);
     }
 
+    public static void main(String[] args) throws Exception{
+        String json = "{\"area\":\"南山区\",\"areaCode\":\"440305\",\"assetId\":\"CSFWC0000001\",\"bookingRange\":\"全天\",\"boxId\":37269,\"city\":\"深圳市\",\"cityCode\":\"440300\",\"customerAddress\":\"南山区西丽明亮科技园(珠光北路南)\",\"customerName\":\"小梁的测试门店\",\"customerNumber\":\"C02173666\",\"customerType\":5,\"description\":\"风机故障、漏水\",\"linkMan\":\"小小小\",\"linkMobile\":\"17880617874\",\"modelId\":1,\"modelName\":\"SC-518WYSL/HP\",\"originFlag\":\"DP\",\"phoneAreaCode\":\"0755\",\"province\":\"广东省\",\"provinceCode\":\"440000\",\"psnAccount\":\"website\",\"psnPwd\":\"Aa666666\",\"remark\":\"风机坏了\",\"requireServiceDate\":\"2021-02-26\",\"saleOrderId\":\"REP2021022609175094539137\",\"serviceTypeId\":\"WX\"}";
+        IceRepairRequest iceRepairRequest = JSONObject.parseObject(json, IceRepairRequest.class);
+        WbSiteRequestVO wbSiteRequestVO = iceRepairRequest.convertToWbSite();
+        System.out.println(JaxbUtil.convertToXml(wbSiteRequestVO));
+    }
+
     @Override
     public IPage<IceRepairOrder> findByPage(IceRepairOrderMsg msg) {
         LambdaQueryWrapper<IceRepairOrder> wrapper = fillWrapper(msg);
@@ -244,6 +252,12 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         }
         if (Objects.nonNull(msg.getGroupDeptId())) {
             wrapper.eq(IceRepairOrder::getGroupDeptId, msg.getGroupDeptId());
+        }
+        if(StringUtils.isNotBlank(msg.getStartTime())){
+            wrapper.ge(IceRepairOrder::getCreatedTime,msg.getStartTime());
+        }
+        if(StringUtils.isNotBlank(msg.getEndTime())){
+            wrapper.le(IceRepairOrder::getCreatedTime,msg.getEndTime());
         }
         wrapper.orderByDesc(IceRepairOrder::getCreatedTime);
         return wrapper;

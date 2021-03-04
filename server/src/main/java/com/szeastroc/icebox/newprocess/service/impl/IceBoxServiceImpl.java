@@ -4581,14 +4581,14 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             } else {
                 // 说明开始要投放的该门店。校验相关参数
                 // 先判断 当前 客户 存在几台冰柜
-                Integer selectCount = iceBoxDao.selectCount(Wrappers.<IceBox>lambdaQuery()
+                /*Integer selectCount = iceBoxDao.selectCount(Wrappers.<IceBox>lambdaQuery()
                         .eq(IceBox::getPutStoreNumber, customerNumber)
                         .ne(IceBox::getId, iceBoxId)
                         .ne(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus()));
                 if (selectCount > 2) {
                     // 当前客户不能超过三个冰柜
                     throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), "当前客户投放冰柜数量已达到限制");
-                }
+                }*/
                 iceBoxChangeHistory.setNewPutStoreNumber(customerNumber);
                 iceBox.setPutStoreNumber(customerNumber);
                 iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());

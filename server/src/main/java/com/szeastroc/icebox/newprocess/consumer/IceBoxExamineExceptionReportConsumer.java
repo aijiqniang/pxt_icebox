@@ -273,6 +273,7 @@ public class IceBoxExamineExceptionReportConsumer {
 
     private LambdaQueryWrapper<IceBoxExamineExceptionReport> fillWrapper(IceBoxExamineExceptionReportMsg reportMsg) {
         LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = Wrappers.<IceBoxExamineExceptionReport>lambdaQuery();
+        wrapper.ne(IceBoxExamineExceptionReport::getToOaType,IceBoxEnums.StatusEnum.NORMAL.getType());
         if (reportMsg.getGroupDeptId() != null) {
             wrapper.eq(IceBoxExamineExceptionReport::getGroupDeptId, reportMsg.getGroupDeptId());
         }

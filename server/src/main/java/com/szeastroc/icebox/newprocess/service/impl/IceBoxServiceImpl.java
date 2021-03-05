@@ -89,6 +89,16 @@ import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
 import com.szeastroc.icebox.newprocess.vo.*;
+import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
+import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
+import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
+import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
+import com.szeastroc.icebox.newprocess.vo.ImportIceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
@@ -179,6 +189,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private FeignSupplierRelateUserClient feignSupplierRelateUserClient;
     @Autowired
     private FeignIceboxQueryClient feignIceboxQueryClient;
+    @Autowired
+    private IceRepairOrderService iceRepairOrderService;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -2856,6 +2868,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, relateBox.getId())
                         .ne(IceBackApply::getExamineStatus, 3));
                 boxVo.setBackStatus(iceBackApply == null ? -1 : iceBackApply.getExamineStatus());
+            }
+            Integer unfinishOrderCount = iceRepairOrderService.getUnfinishOrderCount(iceBox.getId());
+            if(unfinishOrderCount>0){
+                boxVo.setRepairing(Boolean.TRUE);
+            }else{
+                boxVo.setRepairing(Boolean.FALSE);
             }
             iceBoxVos.add(boxVo);
         }

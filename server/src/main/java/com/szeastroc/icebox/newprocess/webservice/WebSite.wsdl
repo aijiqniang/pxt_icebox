@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ax215="http://vo.website.webservice.net.crm.neusoft.com/xsd" xmlns:ns="http://action.website.webservice.net.crm.neusoft.com" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns1="http://org.apache.axis2/xsd" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" targetNamespace="http://action.website.webservice.net.crm.neusoft.com">
+    <wsdl:documentation>WebSite</wsdl:documentation>
+    <wsdl:types>
+        <xs:schema xmlns:ax216="http://vo.website.webservice.net.crm.neusoft.com/xsd" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://action.website.webservice.net.crm.neusoft.com">
+            <xs:import namespace="http://vo.website.webservice.net.crm.neusoft.com/xsd"/>
+            <xs:element name="main">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="args" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getWBSite">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="request" nillable="true" type="ax215:WbSiteRequestVO"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getWBSiteResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="return" nillable="true" type="ax215:WbSiteResponseVO"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getWBSites">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="info" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getWBSitesResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="return" nillable="true" type="ax215:WbSiteResponseVO"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getWBMail">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="request" nillable="true" type="ax215:WbSiteRequestVO"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getWBMailResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="return" nillable="true" type="ax215:WbSiteResponseVO"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:schema>
+        <xs:schema attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://vo.website.webservice.net.crm.neusoft.com/xsd">
+            <xs:complexType name="WbSiteRequestVO">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="active_flag" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="address" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="area_code1" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute1" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute10" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute11" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute12" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute13" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute14" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute15" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute16" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute17" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute18" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute19" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute2" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute20" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute3" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute4" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute5" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute6" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute7" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute8" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="attribute9" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="barter_flag" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="booking_range" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="buy_date" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="created_by" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="created_date" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="customer_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="customer_name" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="email" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="error_info" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="fault_desc" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="if_flush" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="if_pull_back" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="if_service" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="image_url" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="import_flag" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="jd_wb_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="last_upd_by" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="last_upd_date" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="logo_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="logo_name" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="ls_order" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="market_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="market_name" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="mid_product_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="mid_product_name" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="model_code" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="model_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="model_name" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="modification_num" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="open_flag" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="origin_flag" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="price" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="prod_serial_no" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="prod_type_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="project_no" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="psn_account" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="psn_pwd" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="regoin_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="remark" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="require_desc" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="require_service_date" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="road_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="row_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="sale_order_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="sale_order_no" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="sale_order_no_son" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="server_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="service_mode_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="service_type_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="telephone1" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="telephone2" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="telephone3" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="total_num" type="xs:int"/>
+                    <xs:element minOccurs="0" name="user_ip" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="user_ip_date" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="video_url" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="we_chat_nc" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="wx_openid" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="wz_customer_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="wz_row_id" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="zx_content" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="zx_mode" nillable="true" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="WbSiteResponseVO">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="result_code" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="result_msg" nillable="true" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+        </xs:schema>
+    </wsdl:types>
+    <wsdl:message name="getWBMailRequest">
+        <wsdl:part name="parameters" element="ns:getWBMail"/>
+    </wsdl:message>
+    <wsdl:message name="getWBMailResponse">
+        <wsdl:part name="parameters" element="ns:getWBMailResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getWBSiteRequest">
+        <wsdl:part name="parameters" element="ns:getWBSite"/>
+    </wsdl:message>
+    <wsdl:message name="getWBSiteResponse">
+        <wsdl:part name="parameters" element="ns:getWBSiteResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getWBSitesRequest">
+        <wsdl:part name="parameters" element="ns:getWBSites"/>
+    </wsdl:message>
+    <wsdl:message name="getWBSitesResponse">
+        <wsdl:part name="parameters" element="ns:getWBSitesResponse"/>
+    </wsdl:message>
+    <wsdl:message name="mainRequest">
+        <wsdl:part name="parameters" element="ns:main"/>
+    </wsdl:message>
+    <wsdl:portType name="WebSitePortType">
+        <wsdl:operation name="getWBMail">
+            <wsdl:input message="ns:getWBMailRequest" wsaw:Action="urn:getWBMail"/>
+            <wsdl:output message="ns:getWBMailResponse" wsaw:Action="urn:getWBMailResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getWBSite">
+            <wsdl:input message="ns:getWBSiteRequest" wsaw:Action="urn:getWBSite"/>
+            <wsdl:output message="ns:getWBSiteResponse" wsaw:Action="urn:getWBSiteResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getWBSites">
+            <wsdl:input message="ns:getWBSitesRequest" wsaw:Action="urn:getWBSites"/>
+            <wsdl:output message="ns:getWBSitesResponse" wsaw:Action="urn:getWBSitesResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="main">
+            <wsdl:input message="ns:mainRequest" wsaw:Action="urn:main"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="WebSiteSoap11Binding" type="ns:WebSitePortType">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="getWBMail">
+            <soap:operation soapAction="urn:getWBMail" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getWBSite">
+            <soap:operation soapAction="urn:getWBSite" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getWBSites">
+            <soap:operation soapAction="urn:getWBSites" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="main">
+            <soap:operation soapAction="urn:main" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="WebSiteSoap12Binding" type="ns:WebSitePortType">
+        <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="getWBMail">
+            <soap12:operation soapAction="urn:getWBMail" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getWBSite">
+            <soap12:operation soapAction="urn:getWBSite" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getWBSites">
+            <soap12:operation soapAction="urn:getWBSites" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="main">
+            <soap12:operation soapAction="urn:main" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="WebSiteHttpBinding" type="ns:WebSitePortType">
+        <http:binding verb="POST"/>
+        <wsdl:operation name="getWBMail">
+            <http:operation location="getWBMail"/>
+            <wsdl:input>
+                <mime:content type="application/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="application/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getWBSite">
+            <http:operation location="getWBSite"/>
+            <wsdl:input>
+                <mime:content type="application/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="application/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getWBSites">
+            <http:operation location="getWBSites"/>
+            <wsdl:input>
+                <mime:content type="application/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="application/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="main">
+            <http:operation location="main"/>
+            <wsdl:input>
+                <mime:content type="application/xml" part="parameters"/>
+            </wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="WebSite">
+        <wsdl:port name="WebSiteHttpSoap11Endpoint" binding="ns:WebSiteSoap11Binding">
+            <soap:address location="http://172.16.41.13:9080/HisenseCRMWS/services/WebSite.WebSiteHttpSoap11Endpoint/"/>
+        </wsdl:port>
+        <wsdl:port name="WebSiteHttpSoap12Endpoint" binding="ns:WebSiteSoap12Binding">
+            <soap12:address location="http://172.16.41.13:9080/HisenseCRMWS/services/WebSite.WebSiteHttpSoap12Endpoint/"/>
+        </wsdl:port>
+        <wsdl:port name="WebSiteHttpEndpoint" binding="ns:WebSiteHttpBinding">
+            <http:address location="http://172.16.41.13:9080/HisenseCRMWS/services/WebSite.WebSiteHttpEndpoint/"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

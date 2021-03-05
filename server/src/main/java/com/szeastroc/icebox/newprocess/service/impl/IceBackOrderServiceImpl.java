@@ -63,6 +63,7 @@ import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
+import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.SimpleIceBoxDetailVo;
 import com.szeastroc.icebox.oldprocess.dao.WechatTransferOrderDao;
 import com.szeastroc.icebox.oldprocess.vo.IceDepositResponse;
@@ -136,6 +137,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final FeignStoreRelateMemberClient feignStoreRelateMemberClient;
     private final FeignDistrictClient feignDistrictClient;
     private final FeignIceBoxExamineUserClient feignIceBoxExamineUserClient;
+
+    private final IceRepairOrderService iceRepairOrderService;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -782,6 +785,11 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         // 特殊编号冰柜不支持退还
         if (IceBoxConstant.virtual_asset_id.equals(iceBox.getAssetId())){
             throw new NormalOptionException(ResultEnum.CANNOT_REFUND_ICE_BOX.getCode(), ResultEnum.CANNOT_REFUND_ICE_BOX.getMessage());
+        }
+        // 报修中的冰柜不支持退还
+        Integer unfinishOrderCount = iceRepairOrderService.getUnfinishOrderCount(iceBox.getId());
+        if(unfinishOrderCount>0){
+            throw new NormalOptionException(ResultEnum.HAVE_REPAIR_ORDER.getCode(), ResultEnum.HAVE_REPAIR_ORDER.getMessage());
         }
 
         IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery()

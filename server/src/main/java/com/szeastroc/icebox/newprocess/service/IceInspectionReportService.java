@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.newprocess.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.entity.IceInspectionReport;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 
@@ -24,4 +25,6 @@ public interface IceInspectionReportService extends IService<IceInspectionReport
     List<InspectionReportVO> getServiceReports(Integer deptId);
 
     void truncate();
+
+    void task(IceInspectionReportMsg reportMsg);
 }

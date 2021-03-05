@@ -88,6 +88,7 @@ public class IceBoxExamineExceptionReportConsumer {
 
     private void exportExceptionReport(IceBoxExamineExceptionReportMsg reportMsg) throws Exception {
         LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = fillWrapper(reportMsg);
+        wrapper.ne(IceBoxExamineExceptionReport::getToOaType,IceBoxEnums.StatusEnum.NORMAL.getType());
         log.info("fxbill task... [{}]", JSON.toJSONString(reportMsg));
         long start = System.currentTimeMillis();
         Integer count = iceBoxExamineExceptionReportService.selectByExportCount(wrapper); // 得到当前条件下的总量

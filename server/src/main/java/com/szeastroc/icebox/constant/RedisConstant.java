@@ -28,4 +28,6 @@ public class RedisConstant {
     public final static String ICE_BOX_EXCEPTION_REPORT_EXPORT_KEY = "ICE_BOX_EXCEPTION_REPORT_EXPORT_";
 
     public final static String ICE_BOX_EXAMINE_REPORT_EXPORT_KEY = "ICE_BOX_EXAMINE_REPORT_EXPORT_";
+
+    public final static String ICE_BOX_REPAIR_ORDER_KEY = "ICE_BOX_REPAIR_ORDER_KEY_";
 }

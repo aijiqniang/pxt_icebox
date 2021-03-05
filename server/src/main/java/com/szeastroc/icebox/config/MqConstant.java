@@ -55,4 +55,10 @@ public interface MqConstant {
     String EXPORT_EXCEL_QUEUE = "export_excel_queue";
     String EXPORT_CHANGE_RECORD_QUEUE = "export_change_record_queue";
 //  http://10.136.15.102:15672/#/exchanges/pxt/pxt_mq_exchange
+    /**
+     * 冰柜退还报表
+     */
+    String iceRepairOrderQueue = "ice_repair_order_queue";
+    String iceRepairOrderKey = "ice_repair_order_routing_key";
+
 }

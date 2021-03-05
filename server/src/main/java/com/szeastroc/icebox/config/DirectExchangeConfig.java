@@ -171,6 +171,21 @@ public class DirectExchangeConfig {
         return factory;
     }
 
+
+    // 定义冰柜保修订单队列
+    @Bean(name = "iceRepairOrderQueue")
+    public Queue iceRepairOrderQueue() {
+        Queue queue = new Queue(MqConstant.iceRepairOrderQueue);
+        return queue;
+    }
+
+    // 定义队列跟交换机的绑定关系
+    @Bean
+    public Binding bindingIceRepairOrderExchange() {
+        Binding binding = BindingBuilder.bind(iceRepairOrderQueue()).to(directExchange()).with(MqConstant.iceRepairOrderKey);
+        return binding;
+    }
+
     @Bean
     public Queue exportExcelQueue() {
         Queue queue = new Queue(MqConstant.EXPORT_EXCEL_QUEUE);

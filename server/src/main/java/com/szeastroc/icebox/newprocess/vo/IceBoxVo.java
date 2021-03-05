@@ -140,4 +140,9 @@ public class IceBoxVo {
      * 拜访频率
      */
     private String visitTypeName;
+
+    /**
+     * 是否维修中
+     */
+    private Boolean repairing;
 }

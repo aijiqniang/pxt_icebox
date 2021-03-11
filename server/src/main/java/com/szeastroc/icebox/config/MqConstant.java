@@ -61,4 +61,10 @@ public interface MqConstant {
     String iceRepairOrderQueue = "ice_repair_order_queue";
     String iceRepairOrderKey = "ice_repair_order_routing_key";
 
+
+    /**
+     * 冰柜推送数据
+     */
+    String ICEBOX_EVENT_PUSH_QUEUE = "ICEBOX_EVENT_PUSH_QUEUE";
+
 }

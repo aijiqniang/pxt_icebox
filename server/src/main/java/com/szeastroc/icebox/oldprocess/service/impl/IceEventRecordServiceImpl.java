@@ -178,32 +178,32 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getExternalId, hisenseDTO.getControlId()));
 
         if (null == iceBoxExtend) {
-            throw new DongPengException("无效设备信息");
+            log.info("无效设备信息,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
+        } else {
+            Map<String, Object> map = new HashMap<>();
+            map.put("occurrence_time", hisenseDTO.getOccurrenceTime());
+            map.put("asset_id", iceBoxExtend.getAssetId());
+            map.put("type", hisenseDTO.getType());
+            List<IceEventRecord> list = iceEventRecordDao.selectByMap(map);
+            if (null != list && list.size() > 0) {
+                return;
+            }
+            // 新增记录
+            IceEventRecord iceEventRecord = new IceEventRecord();
+            iceEventRecord.setAssetId(iceBoxExtend.getAssetId());
+            iceEventRecord.setCreateTime(new Date());
+            BeanUtils.copyProperties(hisenseDTO, iceEventRecord);
+            iceEventRecordDao.insert(iceEventRecord);
+            //增加冰箱次数
+            IceBoxExtend updateIceBoxExtend = new IceBoxExtend();
+            updateIceBoxExtend.setId(iceBoxExtend.getId());
+            Integer openTotal = iceBoxExtend.getOpenTotal();
+            if (null == openTotal) {
+                openTotal = 0;
+            }
+            updateIceBoxExtend.setOpenTotal(openTotal + hisenseDTO.getOpenCloseCount());
+            iceBoxExtendDao.updateById(updateIceBoxExtend);
         }
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("occurrence_time", hisenseDTO.getOccurrenceTime());
-        map.put("asset_id", iceBoxExtend.getAssetId());
-        map.put("type", hisenseDTO.getType());
-        List<IceEventRecord> list = iceEventRecordDao.selectByMap(map);
-        if (null != list && list.size() > 0) {
-            return;
-        }
-        // 新增记录
-        IceEventRecord iceEventRecord = new IceEventRecord();
-        iceEventRecord.setAssetId(iceBoxExtend.getAssetId());
-        iceEventRecord.setCreateTime(new Date());
-        BeanUtils.copyProperties(hisenseDTO, iceEventRecord);
-        iceEventRecordDao.insert(iceEventRecord);
-        //增加冰箱次数
-        IceBoxExtend updateIceBoxExtend = new IceBoxExtend();
-        updateIceBoxExtend.setId(iceBoxExtend.getId());
-        Integer openTotal = iceBoxExtend.getOpenTotal();
-        if (null == openTotal) {
-            openTotal = 0;
-        }
-        updateIceBoxExtend.setOpenTotal(openTotal + hisenseDTO.getOpenCloseCount());
-        iceBoxExtendDao.updateById(updateIceBoxExtend);
     }
 
 }

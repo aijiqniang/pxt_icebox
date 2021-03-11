@@ -29,7 +29,7 @@ public class IceboxEventController {
     public CommonResponse<IceExamineVo> eventPush(@RequestBody List<HisenseDTO> hisenseDTOList) {
 
         iceEventRecordService.newEventPush(hisenseDTOList);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, "推送成功");
     }
 
 

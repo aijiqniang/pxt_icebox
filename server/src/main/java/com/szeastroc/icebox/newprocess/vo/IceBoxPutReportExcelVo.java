@@ -69,6 +69,10 @@ public class IceBoxPutReportExcelVo {
      */
     private String putCustomerType;
     /**
+     *投放客户等级
+     */
+    private String putCustomerLevel;
+    /**
      *冰柜型号名称
      */
     private String iceBoxModelName;

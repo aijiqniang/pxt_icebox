@@ -1426,6 +1426,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         iceBoxPutModel.setIceBoxModelList(iceBoxModels);
         iceBoxPutModel.setApplyStoreNumber(iceBoxRequestVo.getStoreNumber());
         iceBoxPutModel.setApplyStoreName(iceBoxRequestVo.getStoreName());
+        iceBoxPutModel.setApplyStoreLevel(iceBoxRequestVo.getStoreLevel());
+
         iceBoxPutModel.setApplyPit(iceBoxRequestVo.getApplyPit());
         iceBoxPutModel.setVisitTypeName(iceBoxRequestVo.getVisitTypeName());
         SessionExamineCreateVo sessionExamineCreateVo = SessionExamineCreateVo.builder()
@@ -2202,6 +2204,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
             String name = null;
             String number = null;
+            String level = null;
             String belongObjStr = null;
             String belongDealer = null;
             if (suppMaps != null) {
@@ -2209,6 +2212,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && suppMap != null) { // 经销商
                     name = suppMap.get("suppName");
                     number = suppMap.get("suppNumber");
+                    level = suppMap.get("level");
                     belongObjStr = suppMap.get("suppTypeName"); // 客户类型
                 }
                 belongDealer = suppMap == null ? null : suppMap.get("suppName"); // 所属经销商
@@ -2219,10 +2223,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 Map<String, String> storeMap = storeMaps.get(iceBox.getPutStoreNumber());
                 name = storeMap == null ? null : storeMap.get("storeName");
                 number = storeMap == null ? null : storeMap.get("storeNumber");
+                level = storeMap == null ? null : storeMap.get("storeLevel");
                 belongObjStr = storeMap == null ? null : storeMap.get("storeTypeName");
             }
             map.put("number", number); // 客户编号
             map.put("name", name); // 客户名称
+            map.put("level", level); // 客户等级
             map.put("belongObjStr", belongObjStr); // 客户类型
             map.put("id", iceBox.getId());
 //            map.put("belongObjStr", iceBox.getPutStatus().equals(0) ? "经销商" : "门店"); // 所在客户类型
@@ -3875,6 +3881,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if (suppMaps != null && suppMaps.get(iceBox.getSupplierId()) != null) {
                     Map<String, String> suppMap = suppMaps.get(iceBox.getSupplierId());
                     iceBoxExcelVo.setSuppNumber(suppMap.get("suppNumber")); // 所属经销商编号
+                    iceBoxExcelVo.setSuppName(suppMap.get("suppName")); // 所属经销商名称
                     iceBoxExcelVo.setSuppName(suppMap.get("suppName")); // 所属经销商名称
                     iceBoxExcelVo.setRealName(suppMap.get("realname")); // 负责业务员姓名
                 }

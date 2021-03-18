@@ -19,10 +19,10 @@
         <java.version>1.8</java.version>
         <spring-cloud.version>Hoxton.SR9</spring-cloud.version>
         <!-- 公共jar -->
-        <pxt.common>0.4.7</pxt.common>
+        <pxt.common>0.5.9</pxt.common>
         <pxt.common.db>0.5.2</pxt.common.db>
         <!-- feign服务 -->
-        <common.feign.version>0.0.1-SNAPSHOT</common.feign.version>
+        <common.feign.version>0.1.12</common.feign.version>
     </properties>
 
     <parent>

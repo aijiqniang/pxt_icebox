@@ -44,8 +44,8 @@ public class IceBackApplyReportController {
     }
 
     @RequestMapping("updateDept")
-    public CommonResponse<Void> updateDept(@RequestParam Integer boxId,@RequestParam Integer deptId){
+    public CommonResponse<Boolean> updateDept(@RequestParam Integer boxId,@RequestParam Integer deptId){
         iceBackApplyReportService.updateDept(boxId,deptId);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS,null,true);
     }
 }

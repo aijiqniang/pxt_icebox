@@ -98,6 +98,10 @@ public class IceBoxPutReportVo {
      */
     private Integer putCustomerType;
     /**
+     *投放客户等级
+     */
+    private String putCustomerLevel;
+    /**
      *冰柜类型id
      */
     private Integer iceBoxModelId;

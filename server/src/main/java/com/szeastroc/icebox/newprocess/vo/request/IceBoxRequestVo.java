@@ -21,6 +21,10 @@ public class IceBoxRequestVo {
      */
     private Integer storeType;
     /**
+     * 投放客户等级
+     */
+    private String storeLevel;
+    /**
      * 门店营销区域
      */
     private Integer marketAreaId;

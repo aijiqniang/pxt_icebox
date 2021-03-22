@@ -40,7 +40,7 @@ public class HisenseController extends BaseController {
     @RequestMapping(value = "/eventPush")
     public Result EventPush(@RequestBody HisenseDTO hisenseDTO){
         try{
-            if(hisenseDTO.isEmpty()){
+            if(hisenseDTO.validate()){
                 return renderFailed("参数错误");
             }
             //调用推送业务

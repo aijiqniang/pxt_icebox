@@ -59,7 +59,7 @@ public class DirectExchangeConfig {
      * 队列消费配置
      */
     @Bean(name = "iceBoxPutContainer")
-    public SimpleRabbitListenerContainerFactory iceBoxPutContainer(){
+    public SimpleRabbitListenerContainerFactory iceBoxPutContainer() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factoryConfigurer.configure(factory, connectionFactory);
         factory.setAcknowledgeMode(AcknowledgeMode.NONE);
@@ -80,7 +80,6 @@ public class DirectExchangeConfig {
         Binding binding = BindingBuilder.bind(iceboxExceptionReportQueue()).to(directExchange()).with(MqConstant.iceboxExceptionReportKey);
         return binding;
     }
-
 
 
     // 定义冰柜异常报备队列
@@ -117,7 +116,7 @@ public class DirectExchangeConfig {
      * 队列消费配置
      */
     @Bean(name = "iceBoxExceptionContainer")
-    public SimpleRabbitListenerContainerFactory iceBoxExceptionContainer(){
+    public SimpleRabbitListenerContainerFactory iceBoxExceptionContainer() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factoryConfigurer.configure(factory, connectionFactory);
         factory.setAcknowledgeMode(AcknowledgeMode.NONE);
@@ -127,7 +126,7 @@ public class DirectExchangeConfig {
 
     /**
      * @Date: 2020/10/19 14:13 xiao
-     *  报表使用的消息队列
+     * 报表使用的消息队列
      */
     // 定义交队列
     @Bean
@@ -163,7 +162,7 @@ public class DirectExchangeConfig {
     }
 
     @Bean(name = "iceExportExcelContainer")
-    public SimpleRabbitListenerContainerFactory iceExportExcelContainer(){
+    public SimpleRabbitListenerContainerFactory iceExportExcelContainer() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factoryConfigurer.configure(factory, connectionFactory);
         factory.setAcknowledgeMode(AcknowledgeMode.NONE);
@@ -191,6 +190,7 @@ public class DirectExchangeConfig {
         Queue queue = new Queue(MqConstant.EXPORT_EXCEL_QUEUE);
         return queue;
     }
+
     @Bean
     public Binding exportExcelBinding() {
         Binding binding = BindingBuilder.bind(exportExcelQueue()).to(directExchange()).with(MqConstant.EXPORT_EXCEL_QUEUE);
@@ -202,9 +202,39 @@ public class DirectExchangeConfig {
         Queue queue = new Queue(MqConstant.EXPORT_CHANGE_RECORD_QUEUE);
         return queue;
     }
+
     @Bean
     public Binding exportChangeRecordBinding() {
         Binding binding = BindingBuilder.bind(exportChangeRecordQueue()).to(directExchange()).with(MqConstant.EXPORT_CHANGE_RECORD_QUEUE);
         return binding;
     }
+
+    /**
+     * 冰柜事件推送
+     */
+    @Bean
+    public Queue iceboxEventPushQueue() {
+        return new Queue(MqConstant.ICEBOX_EVENT_PUSH_QUEUE);
+    }
+
+    /**
+     * 冰柜事件推送
+     */
+    @Bean
+    public Binding iceboxEventPushQueueBinding() {
+        return BindingBuilder.bind(iceboxEventPushQueue()).to(directExchange()).with(MqConstant.ICEBOX_EVENT_PUSH_QUEUE);
+    }
+
+    /**
+     * 冰柜事件推送
+     */
+    @Bean(name = "iceboxEventPushContainer")
+    public SimpleRabbitListenerContainerFactory iceboxEventPushContainer() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.NONE);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
+
 }

@@ -2,6 +2,7 @@ package com.szeastroc.icebox.oldprocess.vo;
 
 import org.apache.commons.lang.StringUtils;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -10,9 +11,10 @@ import java.util.Date;
  * @author yuqi9
  * @since 2019/5/23
  */
-public class HisenseDTO {
+public class HisenseDTO implements Serializable {
 
 
+    private static final long serialVersionUID = -8777317011888606184L;
     /**
      * 推送事件类型 1.普通定时推送 2.温度变化  3.发生断点  4.GPS位置变化
      */
@@ -53,6 +55,11 @@ public class HisenseDTO {
      * 详细地址
      */
     private String detailAddress;
+
+    /**
+     * 签名信息
+     */
+    private String sign;
 
     public Integer getType() {
         return type;
@@ -118,7 +125,15 @@ public class HisenseDTO {
         this.detailAddress = detailAddress;
     }
 
-    public boolean isEmpty(){
+    public String getSign() {
+        return sign;
+    }
+
+    public void setSign(String sign) {
+        this.sign = sign;
+    }
+
+    public boolean validate(){
         if(null == this.type || StringUtils.isBlank(controlId) || null == occurrenceTime || null == temperature || null == openCloseCount ){
             return true;
         }

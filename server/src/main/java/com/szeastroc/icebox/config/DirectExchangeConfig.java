@@ -237,4 +237,27 @@ public class DirectExchangeConfig {
         return factory;
     }
 
+    /**
+     * 冰柜申请审批推送
+     */
+    @Bean(name = "iceboxPutApplyContainer")
+    public SimpleRabbitListenerContainerFactory iceboxPutApplyContainer() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
+
+    // 冰柜申请审批通知
+    @Bean
+    public Queue iceBoxPutApplyQueue() {
+        return QueueBuilder.durable(MqConstant.ICE_BOX_PUT_APPLY_Q).build();
+    }
+
+    @Bean
+    public Binding iceBoxPutApplyBinding(Queue iceBoxPutApplyQueue, FanoutExchange storeChangeExchange) {
+        return BindingBuilder.bind(iceBoxPutApplyQueue).to(storeChangeExchange);
+    }
+
 }

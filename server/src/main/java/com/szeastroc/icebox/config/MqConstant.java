@@ -67,4 +67,10 @@ public interface MqConstant {
      */
     String ICEBOX_EVENT_PUSH_QUEUE = "ICEBOX_EVENT_PUSH_QUEUE";
 
+    /**
+     * 冰柜申请审批
+     */
+    String ICE_BOX_PUT_APPLY_Q = "ice_box_put_apply_queue";
+    String ICE_BOX_PUT_APPLY_K = "ice_box_put_apply_key";
+
 }

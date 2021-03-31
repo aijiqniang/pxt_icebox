@@ -34,6 +34,7 @@ import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.entity.IcePutApply;
 import com.szeastroc.icebox.newprocess.entity.IceTransferRecord;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
@@ -117,6 +118,9 @@ public class IceBoxPutReportConsumer {
                             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, report.getApplyNumber()).last("limit 1"));
                             if(icePutApply != null){
                                 excelVo.setApplyPit(icePutApply.getApplyPit());
+                                if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())){
+                                    excelVo.setSignTime(icePutApply.getUpdateTime());
+                                }
                             }
                             if(report.getSubmitTime() != null){
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
@@ -146,17 +150,6 @@ public class IceBoxPutReportConsumer {
                                 excelVo.setPutStatus("已作废");
                             }
                             excelVo.setVisitTypeName(VisitCycleEnum.getDescByCode(report.getVisitType()));
-
-                            if(report.getIceBoxId() != null){
-                                LambdaQueryWrapper<IceTransferRecord> recordWrapper = Wrappers.<IceTransferRecord>lambdaQuery();
-                                recordWrapper.eq(IceTransferRecord::getApplyNumber, report.getApplyNumber());
-                                recordWrapper.eq(IceTransferRecord::getBoxId, report.getIceBoxId());
-                                IceTransferRecord iceTransferRecord = iceTransferRecordService.getOne(recordWrapper);
-                                if(iceTransferRecord != null){
-                                    Date signTime  = (iceTransferRecord.getUpdateTime()==null)?iceTransferRecord.getCreateTime():iceTransferRecord.getUpdateTime();
-                                    excelVo.setSignTime(signTime);
-                                }
-                            }
                             excelVoList.add(excelVo);
                         }
                         excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxPutReportExcelVo::getApplyNumber)).collect(Collectors.toList());

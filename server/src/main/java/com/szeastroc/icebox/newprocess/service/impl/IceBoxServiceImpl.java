@@ -2198,13 +2198,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                         .eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber).last(" limit 1"));
 
-                LambdaQueryWrapper<IceTransferRecord> recordWrapper = Wrappers.<IceTransferRecord>lambdaQuery();
-                recordWrapper.eq(IceTransferRecord::getApplyNumber, lastApplyNumber);
-                recordWrapper.eq(IceTransferRecord::getBoxId, iceBox.getId());
-                IceTransferRecord iceTransferRecord = iceTransferRecordService.getOne(recordWrapper);
-                if(iceTransferRecord != null){
-                    signTime  = (iceTransferRecord.getUpdateTime()==null)?iceTransferRecord.getCreateTime():iceTransferRecord.getUpdateTime();
-
+                LambdaQueryWrapper<IcePutApply> icePutApplyWrapper = Wrappers.<IcePutApply>lambdaQuery();
+                icePutApplyWrapper.eq(IcePutApply::getStoreSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus());
+                icePutApplyWrapper.eq(IcePutApply::getApplyNumber, lastApplyNumber).last(" limit 1");
+                IcePutApply icePutApply = icePutApplyDao.selectOne(icePutApplyWrapper);
+                if(icePutApply != null){
+                    signTime  = icePutApply.getUpdateTime();
                 }
             }
             map.put("signTime", signTime); // 签收日期

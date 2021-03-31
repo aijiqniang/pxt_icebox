@@ -38,6 +38,7 @@ import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportVo;
@@ -106,18 +107,10 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, report.getApplyNumber()).last("limit 1"));
             if(icePutApply != null){
                 reportVo.setApplyPit(icePutApply.getApplyPit());
-            }
-            if(report.getIceBoxId() != null){
-                LambdaQueryWrapper<IceTransferRecord> recordWrapper = Wrappers.<IceTransferRecord>lambdaQuery();
-                recordWrapper.eq(IceTransferRecord::getApplyNumber, report.getApplyNumber());
-                recordWrapper.eq(IceTransferRecord::getBoxId, report.getIceBoxId());
-                IceTransferRecord iceTransferRecord = iceTransferRecordDao.selectOne(recordWrapper);
-                if(iceTransferRecord != null){
-                    Date signTime  = (iceTransferRecord.getUpdateTime()==null)?iceTransferRecord.getCreateTime():iceTransferRecord.getUpdateTime();
-                    reportVo.setSignTime(signTime);
+                if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())){
+                    reportVo.setSignTime(icePutApply.getUpdateTime());
                 }
             }
-
             return reportVo;
         });
 

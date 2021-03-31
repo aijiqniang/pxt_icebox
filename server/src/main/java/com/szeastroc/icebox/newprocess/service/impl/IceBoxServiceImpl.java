@@ -2249,16 +2249,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("id", iceBox.getId());
             String fullDept = "";
             if(StringUtils.isNoneBlank(businessDeptName)){
-                fullDept = businessDeptName + "/";
+                fullDept = businessDeptName;
             }
             if(StringUtils.isNoneBlank(regionDeptName)){
-                fullDept = fullDept + regionDeptName + "/";
+                fullDept = fullDept + "/" + regionDeptName;
             }
             if(StringUtils.isNoneBlank(serviceDeptName)){
-                fullDept = fullDept + serviceDeptName + "/";
+                fullDept = fullDept + "/" + serviceDeptName;
             }
             if(StringUtils.isNoneBlank(groupDeptName)){
-                fullDept = fullDept + groupDeptName;
+                fullDept = fullDept + "/" + groupDeptName;
             }
 
             if(StringUtils.isNoneBlank(fullDept)){

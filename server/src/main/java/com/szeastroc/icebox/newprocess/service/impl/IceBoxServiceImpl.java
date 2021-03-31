@@ -18,7 +18,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
-import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.dto.CustomerLabelDetailDto;
 import com.szeastroc.common.entity.customer.vo.*;
@@ -37,7 +36,6 @@ import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.*;
 import com.szeastroc.common.feign.customer.FeignSupplierRelateUserClient;
-import com.szeastroc.common.feign.user.*;
 import com.szeastroc.common.feign.visit.FeignBacklogClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
@@ -56,7 +54,6 @@ import com.szeastroc.icebox.enums.FreePayTypeEnum;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
-import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
@@ -81,13 +78,11 @@ import com.szeastroc.icebox.newprocess.entity.IceTransferRecord;
 import com.szeastroc.icebox.newprocess.entity.OldIceBoxSignNotice;
 import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.enums.*;
-import com.szeastroc.icebox.newprocess.dao.*;
-import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
-import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
+import com.szeastroc.icebox.newprocess.service.IceTransferRecordService;
 import com.szeastroc.icebox.newprocess.vo.*;
 import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
@@ -191,6 +186,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private FeignIceboxQueryClient feignIceboxQueryClient;
     @Autowired
     private IceRepairOrderService iceRepairOrderService;
+    @Autowired
+    private IceTransferRecordService iceTransferRecordService;
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -2196,10 +2193,21 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("lastExamineTime", iceBoxExtend.getLastExamineTime()); // 最近巡检日期
             String lastApplyNumber = iceBoxExtend.getLastApplyNumber(); // 最近一次申请编号
             IcePutApplyRelateBox icePutApplyRelateBox = null;
+            Date signTime  = null;
             if (StringUtils.isNotBlank(lastApplyNumber)) {
                 icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                         .eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber).last(" limit 1"));
+
+                LambdaQueryWrapper<IceTransferRecord> recordWrapper = Wrappers.<IceTransferRecord>lambdaQuery();
+                recordWrapper.eq(IceTransferRecord::getApplyNumber, lastApplyNumber);
+                recordWrapper.eq(IceTransferRecord::getBoxId, iceBox.getId());
+                IceTransferRecord iceTransferRecord = iceTransferRecordService.getOne(recordWrapper);
+                if(iceTransferRecord != null){
+                    signTime  = (iceTransferRecord.getUpdateTime()==null)?iceTransferRecord.getCreateTime():iceTransferRecord.getUpdateTime();
+
+                }
             }
+            map.put("signTime", signTime); // 签收日期
             map.put("freeTypeStr", icePutApplyRelateBox == null ? null : FreePayTypeEnum.getDesc(icePutApplyRelateBox.getFreeType())); // 押金收取
 
             String name = null;
@@ -2207,6 +2215,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             String level = null;
             String belongObjStr = null;
             String belongDealer = null;
+            String businessDeptName = null;
+            String regionDeptName = null;
+            String serviceDeptName = null;
+            String groupDeptName = null;
             if (suppMaps != null) {
                 Map<String, String> suppMap = suppMaps.get(iceBox.getSupplierId());
                 if (PutStatus.NO_PUT.getStatus().equals(iceBox.getPutStatus()) && suppMap != null) { // 经销商
@@ -2225,12 +2237,34 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 number = storeMap == null ? null : storeMap.get("storeNumber");
                 level = storeMap == null ? null : storeMap.get("storeLevel");
                 belongObjStr = storeMap == null ? null : storeMap.get("storeTypeName");
+
+                businessDeptName = storeMap == null ? null : storeMap.get("businessDeptName");
+                regionDeptName = storeMap == null ? null : storeMap.get("regionDeptName");
+                serviceDeptName = storeMap == null ? null : storeMap.get("serviceDeptName");
+                groupDeptName = storeMap == null ? null : storeMap.get("groupDeptName");
             }
             map.put("number", number); // 客户编号
             map.put("name", name); // 客户名称
             map.put("level", level); // 客户等级
             map.put("belongObjStr", belongObjStr); // 客户类型
             map.put("id", iceBox.getId());
+            String fullDept = "";
+            if(StringUtils.isNoneBlank(businessDeptName)){
+                fullDept = businessDeptName + "/";
+            }
+            if(StringUtils.isNoneBlank(regionDeptName)){
+                fullDept = fullDept + regionDeptName + "/";
+            }
+            if(StringUtils.isNoneBlank(serviceDeptName)){
+                fullDept = fullDept + serviceDeptName + "/";
+            }
+            if(StringUtils.isNoneBlank(groupDeptName)){
+                fullDept = fullDept + groupDeptName;
+            }
+
+            if(StringUtils.isNoneBlank(fullDept)){
+                map.put("deptStr", fullDept); // 营销区域
+            }
 //            map.put("belongObjStr", iceBox.getPutStatus().equals(0) ? "经销商" : "门店"); // 所在客户类型
             list.add(map);
         }
@@ -3796,6 +3830,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (count == null || count == 0) {
             return;
         }
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         // 设备型号不多,可以一次性查出来
         List<IceModel> iceModels = iceModelDao.selectList(null);
         Map<Integer, IceModel> modelMap = iceModels.stream().collect(Collectors.toMap(IceModel::getId, i -> i));
@@ -3897,6 +3932,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExcelVo.setAddress(storeMap.get("address")); // 现投放门店地址
                     iceBoxExcelVo.setStatusStr(storeMap.get("statusStr")); // 门店状态
                     iceBoxExcelVo.setRealName(storeMap.get("realName")); // 负责业务员姓名
+
+
+                    iceBoxExcelVo.setSybStr(storeMap.get("businessDeptName")); // 事业部
+                    iceBoxExcelVo.setDqStr(storeMap.get("regionDeptName")); // 大区
+                    iceBoxExcelVo.setFwcStr(storeMap.get("serviceDeptName")); // 服务处
+                    iceBoxExcelVo.setGroupStr(storeMap.get("groupDeptName")); // 组
                 }
 
                 iceBoxExcelVo.setAssetId(iceBox.getAssetId());
@@ -3913,6 +3954,17 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxExcelVo.setLastPutTimeStr(iceBoxExtend.getLastPutTime() == null ? null : new DateTime(iceBoxExtend.getLastPutTime()).toString("yyyy-MM-dd HH:mm:ss")); // 投放日期
                 iceBoxExcelVo.setLastExamineTimeStr(iceBoxExtend.getLastExamineTime() == null ? null : new DateTime(iceBoxExtend.getLastExamineTime()).toString("yyyy-MM-dd HH:mm:ss")); // 最后一次巡检时间
                 iceBoxExcelVo.setRemark(iceBox.getRemark()); // 冰柜备注
+                if(iceBoxExtend.getReleaseTime() != null){
+                    iceBoxExcelVo.setReleaseTimeStr(dateFormat.format(iceBoxExtend.getReleaseTime()));
+
+                    SimpleDateFormat yearDateFormat = new SimpleDateFormat("yyyy");
+                    iceBoxExcelVo.setIceboxYear(yearDateFormat.format(iceBoxExtend.getReleaseTime()));
+                }
+
+                if(iceBoxExtend.getRepairBeginTime() != null){
+                    iceBoxExcelVo.setRepairBeginTimeStr(dateFormat.format(iceBoxExtend.getRepairBeginTime()));
+                }
+
                 iceBoxExcelVoList.add(iceBoxExcelVo);
             }
             // 写入excel

@@ -91,6 +91,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
     private UserRedisServiceImpl userRedisService;
     @Autowired
     private FeignIceboxQueryClient feignIceboxQueryClient;
+    @Autowired
+    private IceTransferRecordDao iceTransferRecordDao;
+
 
 
     @Override
@@ -104,6 +107,17 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             if(icePutApply != null){
                 reportVo.setApplyPit(icePutApply.getApplyPit());
             }
+            if(report.getIceBoxId() != null){
+                LambdaQueryWrapper<IceTransferRecord> recordWrapper = Wrappers.<IceTransferRecord>lambdaQuery();
+                recordWrapper.eq(IceTransferRecord::getApplyNumber, report.getApplyNumber());
+                recordWrapper.eq(IceTransferRecord::getBoxId, report.getIceBoxId());
+                IceTransferRecord iceTransferRecord = iceTransferRecordDao.selectOne(recordWrapper);
+                if(iceTransferRecord != null){
+                    Date signTime  = (iceTransferRecord.getUpdateTime()==null)?iceTransferRecord.getCreateTime():iceTransferRecord.getUpdateTime();
+                    reportVo.setSignTime(signTime);
+                }
+            }
+
             return reportVo;
         });
 

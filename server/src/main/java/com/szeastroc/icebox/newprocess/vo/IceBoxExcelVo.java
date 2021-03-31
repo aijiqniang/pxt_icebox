@@ -5,6 +5,8 @@ import com.alibaba.excel.annotation.write.style.ColumnWidth;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Date;
+
 /**
  * @Author xiao
  * @Date create in 2020/4/3 11:16
@@ -26,6 +28,9 @@ public class IceBoxExcelVo {
     @ColumnWidth(50)
     @ExcelProperty(value = "服务处")
     private String fwcStr; // 服务处
+    @ColumnWidth(50)
+    @ExcelProperty(value = "组")
+    private String groupStr; // 组
 
 
     @ColumnWidth(50)
@@ -87,5 +92,23 @@ public class IceBoxExcelVo {
     @ColumnWidth(50)
     @ExcelProperty(value = "冰柜备注")
     private String remark; // 冰柜备注
+    /**
+     *冰柜生产日期
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "生产日期")
+    private String releaseTimeStr;
+    /**
+     *冰柜保修起算日期
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "保修起算日期")
+    private String repairBeginTimeStr;
+    /**
+     *冰柜年份
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "冰柜年份")
+    private String iceboxYear;
 
 }

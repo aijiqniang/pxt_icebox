@@ -131,4 +131,9 @@ public class IceBoxPutReportExcelVo {
     private String visitTypeName;
 
     private String applyPit;
+
+    /**
+     *冰柜签收日期
+     */
+    private Date signTime;
 }

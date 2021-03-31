@@ -29,12 +29,15 @@ import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
 import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
+import com.szeastroc.icebox.newprocess.dao.IceTransferRecordDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.entity.IcePutApply;
+import com.szeastroc.icebox.newprocess.entity.IceTransferRecord;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
 import com.szeastroc.icebox.newprocess.service.IceBoxPutReportService;
+import com.szeastroc.icebox.newprocess.service.IceTransferRecordService;
 import com.szeastroc.icebox.newprocess.vo.IceBoxPutReportExcelVo;
 import com.szeastroc.icebox.util.JudgeCustomerUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -45,10 +48,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -71,6 +71,8 @@ public class IceBoxPutReportConsumer {
     private FeignSupplierClient feignSupplierClient;
     @Autowired
     private FeignIceboxQueryClient feignIceboxQueryClient;
+    @Autowired
+    private IceTransferRecordService iceTransferRecordService;
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
     public void task(IceBoxPutReportMsg reportMsg) throws Exception {
@@ -93,7 +95,7 @@ public class IceBoxPutReportConsumer {
         log.warn("当前检索条件下的分销订单总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start,reportMsg.getOperateName());
         // 列
         String[] columnName = {"事业部","大区","服务处","省","市","区县", "流程编号"
-                , "所属经销商编号", "所属经销商名称", "提交人","提交人电话","提交日期"
+                , "所属经销商编号", "所属经销商名称", "提交人","提交人电话","申请日期","签收日期"
                 ,"客户等级", "投放客户编号", "投放客户名称","投放客户类型","客户地址","联系人","联系人电话","拜访频率"
                 , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期","审批备注", "投放状态","投放备注"};
         // 先写入本地文件
@@ -144,6 +146,17 @@ public class IceBoxPutReportConsumer {
                                 excelVo.setPutStatus("已作废");
                             }
                             excelVo.setVisitTypeName(VisitCycleEnum.getDescByCode(report.getVisitType()));
+
+                            if(report.getIceBoxId() != null){
+                                LambdaQueryWrapper<IceTransferRecord> recordWrapper = Wrappers.<IceTransferRecord>lambdaQuery();
+                                recordWrapper.eq(IceTransferRecord::getApplyNumber, report.getApplyNumber());
+                                recordWrapper.eq(IceTransferRecord::getBoxId, report.getIceBoxId());
+                                IceTransferRecord iceTransferRecord = iceTransferRecordService.getOne(recordWrapper);
+                                if(iceTransferRecord != null){
+                                    Date signTime  = (iceTransferRecord.getUpdateTime()==null)?iceTransferRecord.getCreateTime():iceTransferRecord.getUpdateTime();
+                                    excelVo.setSignTime(signTime);
+                                }
+                            }
                             excelVoList.add(excelVo);
                         }
                         excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxPutReportExcelVo::getApplyNumber)).collect(Collectors.toList());
@@ -166,24 +179,25 @@ public class IceBoxPutReportConsumer {
                                     eachDataRow.createCell(9).setCellValue(excelVo.getSubmitterName());
                                     eachDataRow.createCell(10).setCellValue(excelVo.getSubmitterMobile());
                                     eachDataRow.createCell(11).setCellValue(excelVo.getSubmitTime());
-                                    eachDataRow.createCell(12).setCellValue(excelVo.getPutCustomerLevel());
-                                    eachDataRow.createCell(13).setCellValue(excelVo.getPutCustomerNumber());
-                                    eachDataRow.createCell(14).setCellValue(excelVo.getPutCustomerName());
-                                    eachDataRow.createCell(15).setCellValue(excelVo.getPutCustomerType());
-                                    eachDataRow.createCell(16).setCellValue(excelVo.getCustomerAddress());
-                                    eachDataRow.createCell(17).setCellValue(excelVo.getLinkmanName());
-                                    eachDataRow.createCell(18).setCellValue(excelVo.getLinkmanMobile());
-                                    eachDataRow.createCell(19).setCellValue(excelVo.getVisitTypeName());
-                                    eachDataRow.createCell(20).setCellValue(excelVo.getIceBoxModelName());
-                                    eachDataRow.createCell(21).setCellValue(excelVo.getIceBoxAssetId());
-                                    eachDataRow.createCell(22).setCellValue(excelVo.getFreeType());
-                                    eachDataRow.createCell(23).setCellValue(excelVo.getDepositMoney()+"");
-                                    eachDataRow.createCell(24).setCellValue(excelVo.getExamineUserName());
-                                    eachDataRow.createCell(25).setCellValue(excelVo.getExamineUserPosion());
-                                    eachDataRow.createCell(26).setCellValue(excelVo.getExamineTime());
-                                    eachDataRow.createCell(27).setCellValue(excelVo.getExamineRemark());
-                                    eachDataRow.createCell(28).setCellValue(excelVo.getPutStatus());
-                                    eachDataRow.createCell(29).setCellValue(excelVo.getApplyPit());
+                                    eachDataRow.createCell(12).setCellValue(excelVo.getSignTime());
+                                    eachDataRow.createCell(13).setCellValue(excelVo.getPutCustomerLevel());
+                                    eachDataRow.createCell(14).setCellValue(excelVo.getPutCustomerNumber());
+                                    eachDataRow.createCell(15).setCellValue(excelVo.getPutCustomerName());
+                                    eachDataRow.createCell(16).setCellValue(excelVo.getPutCustomerType());
+                                    eachDataRow.createCell(17).setCellValue(excelVo.getCustomerAddress());
+                                    eachDataRow.createCell(18).setCellValue(excelVo.getLinkmanName());
+                                    eachDataRow.createCell(19).setCellValue(excelVo.getLinkmanMobile());
+                                    eachDataRow.createCell(20).setCellValue(excelVo.getVisitTypeName());
+                                    eachDataRow.createCell(21).setCellValue(excelVo.getIceBoxModelName());
+                                    eachDataRow.createCell(22).setCellValue(excelVo.getIceBoxAssetId());
+                                    eachDataRow.createCell(23).setCellValue(excelVo.getFreeType());
+                                    eachDataRow.createCell(24).setCellValue(excelVo.getDepositMoney()+"");
+                                    eachDataRow.createCell(25).setCellValue(excelVo.getExamineUserName());
+                                    eachDataRow.createCell(26).setCellValue(excelVo.getExamineUserPosion());
+                                    eachDataRow.createCell(27).setCellValue(excelVo.getExamineTime());
+                                    eachDataRow.createCell(28).setCellValue(excelVo.getExamineRemark());
+                                    eachDataRow.createCell(29).setCellValue(excelVo.getPutStatus());
+                                    eachDataRow.createCell(30).setCellValue(excelVo.getApplyPit());
                                 }
                             }
                         }

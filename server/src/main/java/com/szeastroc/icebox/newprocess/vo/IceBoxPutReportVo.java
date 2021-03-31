@@ -168,4 +168,9 @@ public class IceBoxPutReportVo {
      * 投放申请备注
      */
     private String applyPit;
+
+    /**
+     *冰柜签收日期
+     */
+    private Date signTime;
 }

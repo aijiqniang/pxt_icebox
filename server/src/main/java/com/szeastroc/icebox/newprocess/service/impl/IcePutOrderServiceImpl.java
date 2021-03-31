@@ -104,6 +104,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         if (icePutApplyRelateBox.getFreeType().equals(FreePayTypeEnum.IS_FREE.getType())) {
 //            throw new ImproperOptionException("不免押流程的申请存在免押冰柜");
             icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+            icePutApply.setUpdateTime(new Date());
             icePutApplyDao.updateById(icePutApply);
             //旧冰柜更新通知状态
             if (IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
@@ -370,6 +371,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
         icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+        icePutApply.setUpdateTime(new Date());
         icePutApplyDao.updateById(icePutApply);
 
         //修改冰柜投放信息

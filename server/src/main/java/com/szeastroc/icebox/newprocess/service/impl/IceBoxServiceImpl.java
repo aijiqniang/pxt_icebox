@@ -3299,6 +3299,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if (ruleIceDetailVo != null) {
                     if (!ruleIceDetailVo.getIsSign()) {
                         icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+                        icePutApply.setUpdateTime(new Date());
                         icePutApplyDao.updateById(icePutApply);
                         //创建冰柜和投放申请编号的关联关系
                         IcePutApplyRelateBox isExist = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, icePutApply.getApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));

@@ -70,6 +70,7 @@ public interface MqConstant {
     /**
      * 冰柜申请审批
      */
+    String E_EXCHANGE = "EXPORT_FXBILL";
     String ICE_BOX_PUT_APPLY_Q = "ice_box_put_apply_queue";
     String ICE_BOX_PUT_APPLY_K = "ice_box_put_apply_key";
 

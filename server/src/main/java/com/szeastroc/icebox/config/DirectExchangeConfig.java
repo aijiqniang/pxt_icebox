@@ -26,6 +26,11 @@ public class DirectExchangeConfig {
         return directExchange;
     }
 
+    @Bean
+    public DirectExchange storeExportExchange(){
+        return (DirectExchange)ExchangeBuilder.directExchange(MqConstant.E_EXCHANGE).durable(true).build();
+    }
+
     // 定义交队列
     @Bean
     public Queue directQueue() {
@@ -256,8 +261,8 @@ public class DirectExchangeConfig {
     }
 
     @Bean
-    public Binding iceBoxPutApplyBinding(Queue iceBoxPutApplyQueue, FanoutExchange storeChangeExchange) {
-        return BindingBuilder.bind(iceBoxPutApplyQueue).to(storeChangeExchange);
+    public Binding iceBoxPutApplyBinding(Queue iceBoxPutApplyQueue, DirectExchange storeExportExchange) {
+        return BindingBuilder.bind(iceBoxPutApplyQueue).to(storeExportExchange).with(MqConstant.ICE_BOX_PUT_APPLY_K);
     }
 
 }

@@ -135,5 +135,5 @@ public class IceBoxPutReportExcelVo {
     /**
      *冰柜签收日期
      */
-    private Date signTime;
+    private String signTime;
 }

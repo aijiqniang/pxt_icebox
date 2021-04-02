@@ -118,8 +118,9 @@ public class IceBoxPutReportConsumer {
                             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, report.getApplyNumber()).last("limit 1"));
                             if(icePutApply != null){
                                 excelVo.setApplyPit(icePutApply.getApplyPit());
-                                if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())){
-                                    excelVo.setSignTime(icePutApply.getUpdateTime());
+                                if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())
+                                        && icePutApply.getUpdateTime() != null){
+                                    excelVo.setSignTime(dateFormat.format(icePutApply.getUpdateTime()));
                                 }
                             }
                             if(report.getSubmitTime() != null){

@@ -300,13 +300,13 @@
     </wsdl:binding>
     <wsdl:service name="WebSite">
         <wsdl:port name="WebSiteHttpSoap11Endpoint" binding="ns:WebSiteSoap11Binding">
-            <soap:address location="http://172.16.41.13:9080/HisenseCRMWS/services/WebSite.WebSiteHttpSoap11Endpoint/"/>
+            <soap:address location="http://221.215.1.147/HisenseCRMWS/services/WebSite.WebSiteHttpSoap11Endpoint/"/>
         </wsdl:port>
         <wsdl:port name="WebSiteHttpSoap12Endpoint" binding="ns:WebSiteSoap12Binding">
-            <soap12:address location="http://172.16.41.13:9080/HisenseCRMWS/services/WebSite.WebSiteHttpSoap12Endpoint/"/>
+            <soap12:address location="http://221.215.1.147/HisenseCRMWS/services/WebSite.WebSiteHttpSoap12Endpoint/"/>
         </wsdl:port>
         <wsdl:port name="WebSiteHttpEndpoint" binding="ns:WebSiteHttpBinding">
-            <http:address location="http://172.16.41.13:9080/HisenseCRMWS/services/WebSite.WebSiteHttpEndpoint/"/>
+            <http:address location="http://221.215.1.147/HisenseCRMWS/services/WebSite.WebSiteHttpEndpoint/"/>
         </wsdl:port>
     </wsdl:service>
 </wsdl:definitions>

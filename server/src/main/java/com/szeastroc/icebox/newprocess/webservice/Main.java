@@ -11,8 +11,10 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- *
- *
+ * <p>anonymous complex type�� Java �ࡣ
+ * 
+ * <p>����ģʽƬ��ָ�������ڴ����е�Ԥ�����ݡ�
+ * 
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>

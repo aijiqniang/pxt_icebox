@@ -10,7 +10,7 @@ import javax.xml.namespace.QName;
 /**
  * This object contains factory methods for each 
  * Java content interface and Java element interface 
- * generated in the com.szeastroc.icebox.newprocess.webservice package. 
+ * generated in the com.example.demo.webservice package. 
  * <p>An ObjectFactory allows you to programatically 
  * construct new instances of the Java representation 
  * for XML content. The Java representation of XML 
@@ -24,11 +24,8 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
-    private final static QName _WbSiteResponseVOResultMsg_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "result_msg");
-    private final static QName _WbSiteResponseVOResultCode_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "result_code");
-    private final static QName _GetWBMailResponseReturn_QNAME = new QName("http://action.website.webservice.net.crm.neusoft.com", "return");
     private final static QName _GetWBMailRequest_QNAME = new QName("http://action.website.webservice.net.crm.neusoft.com", "request");
-    private final static QName _GetWBSitesInfo_QNAME = new QName("http://action.website.webservice.net.crm.neusoft.com", "info");
+    private final static QName _GetWBSitesResponseReturn_QNAME = new QName("http://action.website.webservice.net.crm.neusoft.com", "return");
     private final static QName _WbSiteRequestVOVideoUrl_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "video_url");
     private final static QName _WbSiteRequestVOEmail_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "email");
     private final static QName _WbSiteRequestVOAttribute20_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "attribute20");
@@ -113,20 +110,23 @@ public class ObjectFactory {
     private final static QName _WbSiteRequestVOCreatedBy_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "created_by");
     private final static QName _WbSiteRequestVORegoinId_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "regoin_id");
     private final static QName _WbSiteRequestVOServerId_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "server_id");
+    private final static QName _WbSiteResponseVOResultMsg_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "result_msg");
+    private final static QName _WbSiteResponseVOResultCode_QNAME = new QName("http://vo.website.webservice.net.crm.neusoft.com/xsd", "result_code");
+    private final static QName _GetWBSitesInfo_QNAME = new QName("http://action.website.webservice.net.crm.neusoft.com", "info");
 
     /**
-     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.szeastroc.icebox.newprocess.webservice
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.example.demo.webservice
      * 
      */
     public ObjectFactory() {
     }
 
     /**
-     * Create an instance of {@link GetWBMail }
+     * Create an instance of {@link WbSiteResponseVO }
      * 
      */
-    public GetWBMail createGetWBMail() {
-        return new GetWBMail();
+    public WbSiteResponseVO createWbSiteResponseVO() {
+        return new WbSiteResponseVO();
     }
 
     /**
@@ -138,19 +138,19 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link GetWBMail }
+     * 
+     */
+    public GetWBMail createGetWBMail() {
+        return new GetWBMail();
+    }
+
+    /**
      * Create an instance of {@link GetWBMailResponse }
      * 
      */
     public GetWBMailResponse createGetWBMailResponse() {
         return new GetWBMailResponse();
-    }
-
-    /**
-     * Create an instance of {@link WbSiteResponseVO }
-     * 
-     */
-    public WbSiteResponseVO createWbSiteResponseVO() {
-        return new WbSiteResponseVO();
     }
 
     /**
@@ -194,33 +194,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://vo.website.webservice.net.crm.neusoft.com/xsd", name = "result_msg", scope = WbSiteResponseVO.class)
-    public JAXBElement<String> createWbSiteResponseVOResultMsg(String value) {
-        return new JAXBElement<String>(_WbSiteResponseVOResultMsg_QNAME, String.class, WbSiteResponseVO.class, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://vo.website.webservice.net.crm.neusoft.com/xsd", name = "result_code", scope = WbSiteResponseVO.class)
-    public JAXBElement<String> createWbSiteResponseVOResultCode(String value) {
-        return new JAXBElement<String>(_WbSiteResponseVOResultCode_QNAME, String.class, WbSiteResponseVO.class, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link WbSiteResponseVO }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://action.website.webservice.net.crm.neusoft.com", name = "return", scope = GetWBMailResponse.class)
-    public JAXBElement<WbSiteResponseVO> createGetWBMailResponseReturn(WbSiteResponseVO value) {
-        return new JAXBElement<WbSiteResponseVO>(_GetWBMailResponseReturn_QNAME, WbSiteResponseVO.class, GetWBMailResponse.class, value);
-    }
-
-    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link WbSiteRequestVO }{@code >}}
      * 
      */
@@ -235,25 +208,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://action.website.webservice.net.crm.neusoft.com", name = "return", scope = GetWBSitesResponse.class)
     public JAXBElement<WbSiteResponseVO> createGetWBSitesResponseReturn(WbSiteResponseVO value) {
-        return new JAXBElement<WbSiteResponseVO>(_GetWBMailResponseReturn_QNAME, WbSiteResponseVO.class, GetWBSitesResponse.class, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link WbSiteRequestVO }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://action.website.webservice.net.crm.neusoft.com", name = "request", scope = GetWBSite.class)
-    public JAXBElement<WbSiteRequestVO> createGetWBSiteRequest(WbSiteRequestVO value) {
-        return new JAXBElement<WbSiteRequestVO>(_GetWBMailRequest_QNAME, WbSiteRequestVO.class, GetWBSite.class, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://action.website.webservice.net.crm.neusoft.com", name = "info", scope = GetWBSites.class)
-    public JAXBElement<String> createGetWBSitesInfo(String value) {
-        return new JAXBElement<String>(_GetWBSitesInfo_QNAME, String.class, GetWBSites.class, value);
+        return new JAXBElement<WbSiteResponseVO>(_GetWBSitesResponseReturn_QNAME, WbSiteResponseVO.class, GetWBSitesResponse.class, value);
     }
 
     /**
@@ -262,7 +217,16 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://action.website.webservice.net.crm.neusoft.com", name = "return", scope = GetWBSiteResponse.class)
     public JAXBElement<WbSiteResponseVO> createGetWBSiteResponseReturn(WbSiteResponseVO value) {
-        return new JAXBElement<WbSiteResponseVO>(_GetWBMailResponseReturn_QNAME, WbSiteResponseVO.class, GetWBSiteResponse.class, value);
+        return new JAXBElement<WbSiteResponseVO>(_GetWBSitesResponseReturn_QNAME, WbSiteResponseVO.class, GetWBSiteResponse.class, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link WbSiteResponseVO }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://action.website.webservice.net.crm.neusoft.com", name = "return", scope = GetWBMailResponse.class)
+    public JAXBElement<WbSiteResponseVO> createGetWBMailResponseReturn(WbSiteResponseVO value) {
+        return new JAXBElement<WbSiteResponseVO>(_GetWBSitesResponseReturn_QNAME, WbSiteResponseVO.class, GetWBMailResponse.class, value);
     }
 
     /**
@@ -1019,6 +983,42 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://vo.website.webservice.net.crm.neusoft.com/xsd", name = "server_id", scope = WbSiteRequestVO.class)
     public JAXBElement<String> createWbSiteRequestVOServerId(String value) {
         return new JAXBElement<String>(_WbSiteRequestVOServerId_QNAME, String.class, WbSiteRequestVO.class, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link WbSiteRequestVO }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://action.website.webservice.net.crm.neusoft.com", name = "request", scope = GetWBSite.class)
+    public JAXBElement<WbSiteRequestVO> createGetWBSiteRequest(WbSiteRequestVO value) {
+        return new JAXBElement<WbSiteRequestVO>(_GetWBMailRequest_QNAME, WbSiteRequestVO.class, GetWBSite.class, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://vo.website.webservice.net.crm.neusoft.com/xsd", name = "result_msg", scope = WbSiteResponseVO.class)
+    public JAXBElement<String> createWbSiteResponseVOResultMsg(String value) {
+        return new JAXBElement<String>(_WbSiteResponseVOResultMsg_QNAME, String.class, WbSiteResponseVO.class, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://vo.website.webservice.net.crm.neusoft.com/xsd", name = "result_code", scope = WbSiteResponseVO.class)
+    public JAXBElement<String> createWbSiteResponseVOResultCode(String value) {
+        return new JAXBElement<String>(_WbSiteResponseVOResultCode_QNAME, String.class, WbSiteResponseVO.class, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://action.website.webservice.net.crm.neusoft.com", name = "info", scope = GetWBSites.class)
+    public JAXBElement<String> createGetWBSitesInfo(String value) {
+        return new JAXBElement<String>(_GetWBSitesInfo_QNAME, String.class, GetWBSites.class, value);
     }
 
 }

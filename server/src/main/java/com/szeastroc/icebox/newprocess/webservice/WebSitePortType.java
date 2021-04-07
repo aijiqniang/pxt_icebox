@@ -20,49 +20,21 @@ import javax.xml.ws.ResponseWrapper;
  */
 @WebService(name = "WebSitePortType", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
 @XmlSeeAlso({
-    ObjectFactory.class
+   ObjectFactory.class
 })
 public interface WebSitePortType {
 
 
     /**
      * 
-     * @param request
-     * @return
-     *     returns com.szeastroc.icebox.newprocess.webservice.WbSiteResponseVO
-     */
-    @WebMethod(action = "urn:getWBMail")
-    @WebResult(targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
-    @RequestWrapper(localName = "getWBMail", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.szeastroc.icebox.newprocess.webservice.GetWBMail")
-    @ResponseWrapper(localName = "getWBMailResponse", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.szeastroc.icebox.newprocess.webservice.GetWBMailResponse")
-    public WbSiteResponseVO getWBMail(
-        @WebParam(name = "request", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
-        WbSiteRequestVO request);
-
-    /**
-     * 
-     * @param request
-     * @return
-     *     returns com.szeastroc.icebox.newprocess.webservice.WbSiteResponseVO
-     */
-    @WebMethod(action = "urn:getWBSite")
-    @WebResult(targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
-    @RequestWrapper(localName = "getWBSite", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.szeastroc.icebox.newprocess.webservice.GetWBSite")
-    @ResponseWrapper(localName = "getWBSiteResponse", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.szeastroc.icebox.newprocess.webservice.GetWBSiteResponse")
-    public WbSiteResponseVO getWBSite(
-        @WebParam(name = "request", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
-        WbSiteRequestVO request);
-
-    /**
-     * 
      * @param info
      * @return
-     *     returns com.szeastroc.icebox.newprocess.webservice.WbSiteResponseVO
+     *     returns com.example.demo.webservice.WbSiteResponseVO
      */
     @WebMethod(action = "urn:getWBSites")
     @WebResult(targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
-    @RequestWrapper(localName = "getWBSites", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.szeastroc.icebox.newprocess.webservice.GetWBSites")
-    @ResponseWrapper(localName = "getWBSitesResponse", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.szeastroc.icebox.newprocess.webservice.GetWBSitesResponse")
+    @RequestWrapper(localName = "getWBSites", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.example.demo.webservice.GetWBSites")
+    @ResponseWrapper(localName = "getWBSitesResponse", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.example.demo.webservice.GetWBSitesResponse")
     public WbSiteResponseVO getWBSites(
         @WebParam(name = "info", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
         String info);
@@ -73,9 +45,37 @@ public interface WebSitePortType {
      */
     @WebMethod(action = "urn:main")
     @Oneway
-    @RequestWrapper(localName = "main", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.szeastroc.icebox.newprocess.webservice.Main")
+    @RequestWrapper(localName = "main", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.example.demo.webservice.Main")
     public void main(
         @WebParam(name = "args", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
         List<String> args);
+
+    /**
+     * 
+     * @param request
+     * @return
+     *     returns com.example.demo.webservice.WbSiteResponseVO
+     */
+    @WebMethod(action = "urn:getWBMail")
+    @WebResult(targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
+    @RequestWrapper(localName = "getWBMail", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.example.demo.webservice.GetWBMail")
+    @ResponseWrapper(localName = "getWBMailResponse", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.example.demo.webservice.GetWBMailResponse")
+    public WbSiteResponseVO getWBMail(
+        @WebParam(name = "request", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
+        WbSiteRequestVO request);
+
+    /**
+     * 
+     * @param request
+     * @return
+     *     returns .WbSiteResponseVO
+     */
+    @WebMethod(action = "urn:getWBSite")
+    @WebResult(targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
+    @RequestWrapper(localName = "getWBSite", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.example.demo.webservice.GetWBSite")
+    @ResponseWrapper(localName = "getWBSiteResponse", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", className = "com.example.demo.webservice.GetWBSiteResponse")
+    public WbSiteResponseVO getWBSite(
+        @WebParam(name = "request", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com")
+        WbSiteRequestVO request);
 
 }

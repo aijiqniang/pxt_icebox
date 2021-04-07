@@ -1,14 +1,14 @@
 
 package com.szeastroc.icebox.newprocess.webservice;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 import javax.xml.ws.WebEndpoint;
 import javax.xml.ws.WebServiceClient;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.WebServiceFeature;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 
 /**
@@ -17,7 +17,7 @@ import javax.xml.ws.WebServiceFeature;
  * Generated source version: 2.2
  * 
  */
-@WebServiceClient(name = "WebSite", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", wsdlLocation = "http://172.16.41.13/HisenseCRMWS/services/WebSite?wsdl")
+@WebServiceClient(name = "WebSite", targetNamespace = "http://action.website.webservice.net.crm.neusoft.com", wsdlLocation = "http://221.215.1.147/HisenseCRMWS/services/WebSite?wsdl")
 public class WebSite
     extends Service
 {
@@ -30,7 +30,7 @@ public class WebSite
         URL url = null;
         WebServiceException e = null;
         try {
-            url = new URL("http://172.16.41.13/HisenseCRMWS/services/WebSite?wsdl");
+            url = new URL("http://221.215.1.147/HisenseCRMWS/services/WebSite?wsdl");
         } catch (MalformedURLException ex) {
             e = new WebServiceException(ex);
         }
@@ -75,7 +75,7 @@ public class WebSite
     /**
      * 
      * @param features
-     *     A list of {@link javax.xml.ws.WebServiceFeature} to configure on the proxy.  Supported features not in the <code>features</code> parameter will have their default values.
+     *     A list of {@link WebServiceFeature} to configure on the proxy.  Supported features not in the <code>features</code> parameter will have their default values.
      * @return
      *     returns WebSitePortType
      */
@@ -97,7 +97,7 @@ public class WebSite
     /**
      * 
      * @param features
-     *     A list of {@link javax.xml.ws.WebServiceFeature} to configure on the proxy.  Supported features not in the <code>features</code> parameter will have their default values.
+     *     A list of {@link WebServiceFeature} to configure on the proxy.  Supported features not in the <code>features</code> parameter will have their default values.
      * @return
      *     returns WebSitePortType
      */
@@ -119,7 +119,7 @@ public class WebSite
     /**
      * 
      * @param features
-     *     A list of {@link javax.xml.ws.WebServiceFeature} to configure on the proxy.  Supported features not in the <code>features</code> parameter will have their default values.
+     *     A list of {@link WebServiceFeature} to configure on the proxy.  Supported features not in the <code>features</code> parameter will have their default values.
      * @return
      *     returns WebSitePortType
      */

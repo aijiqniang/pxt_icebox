@@ -6,13 +6,14 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 
 /**
- *
- *
+ * <p>WbSiteRequestVO complex type�� Java �ࡣ
+ * 
+ * <p>����ģʽƬ��ָ�������ڴ����е�Ԥ�����ݡ�
+ * 
  * <pre>
  * &lt;complexType name="WbSiteRequestVO">
  *   &lt;complexContent>
@@ -199,7 +200,6 @@ import javax.xml.bind.annotation.XmlType;
     "zxContent",
     "zxMode"
 })
-@XmlRootElement
 public class WbSiteRequestVO {
 
     @XmlElementRef(name = "active_flag", namespace = "http://vo.website.webservice.net.crm.neusoft.com/xsd", type = JAXBElement.class, required = false)

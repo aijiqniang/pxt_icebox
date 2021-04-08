@@ -18,6 +18,7 @@ import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.commondb.config.annotation.RedisLock;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
@@ -348,6 +349,7 @@ public class IceBoxController {
      * @return
      */
     @RequestMapping("/takeBackIceBox")
+    @RedisLock(key = "#iceBoxId")
     public CommonResponse<String> takeBackIceBox(Integer iceBoxId) {
         if (iceBoxId == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);

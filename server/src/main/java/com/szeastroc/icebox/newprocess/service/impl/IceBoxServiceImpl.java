@@ -4103,6 +4103,17 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             throw new NormalOptionException(Constants.API_CODE_FAIL, "请选择要转移的冰柜！");
         }
         List<IceBox> iceBoxList = iceBoxDao.selectBatchIds(iceBoxIds);
+
+        List<IceBox> allIceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId, historyVo.getOldSupplierId()).eq(IceBox::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType()));
+
+        List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getSupplierId, historyVo.getOldSupplierId()).eq(PutStoreRelateModel::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType()));
+        int used = 0;
+        if(CollectionUtil.isNotEmpty(relateModelList)){
+            used = relateModelList.size();
+        }
+        if(used > allIceBoxList.size() - iceBoxList.size()){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "冰柜可用数量不足，无法转移！");
+        }
         Map<String, Object> map = createIceBoxTransferCheckProcess(historyVo);
         for (IceBox iceBox : iceBoxList) {
             LambdaQueryWrapper<IceBoxTransferHistory> wrapper = Wrappers.<IceBoxTransferHistory>lambdaQuery();

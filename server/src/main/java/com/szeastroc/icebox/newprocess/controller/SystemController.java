@@ -23,10 +23,10 @@ public class SystemController {
 
 
     @GetMapping("/heart")
-    public CommonResponse<IceBox> getSystemStatus() {
+    public CommonResponse<Boolean> getSystemStatus() {
 
         IceBox iceBox = iceBoxService.getOne(Wrappers.<IceBox>lambdaQuery().last("limit 1"));
 
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, iceBox);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, true);
     }
 }

@@ -188,6 +188,11 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         WebSite webSite = new WebSite();
         WebSitePortType httpEndpoint = webSite.getWebSiteHttpSoap12Endpoint();
         WbSiteResponseVO responseVO = httpEndpoint.getWBSite(wbSiteRequestVO);
+        try {
+            log.info("海信创建报修单响应,{}", JaxbUtil.convertToXml(wbSiteRequestVO));
+        } catch (Exception e) {
+            log.info("海信创建报修单响应转换异常");
+        }
         String value = responseVO.getResultCode().getValue();
         if (!"1".equals(value)) {
             msg = responseVO.getResultMsg().getValue();

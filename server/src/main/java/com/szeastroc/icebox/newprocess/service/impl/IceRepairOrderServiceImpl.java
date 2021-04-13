@@ -326,7 +326,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     @Override
     public Integer getUnfinishOrderCount(Integer boxId) {
         LambdaQueryWrapper<IceRepairOrder> queryWrapper = Wrappers.<IceRepairOrder>lambdaQuery();
-        queryWrapper.eq(IceRepairOrder::getBoxId, boxId).ne(IceRepairOrder::getFinishStatus,"已完成");
+        queryWrapper.eq(IceRepairOrder::getBoxId, boxId).notIn(IceRepairOrder::getStatus,7,50);;
         return this.baseMapper.selectCount(queryWrapper);
     }
 

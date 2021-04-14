@@ -189,7 +189,8 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
         WebSitePortType httpEndpoint = webSite.getWebSiteHttpSoap12Endpoint();
         WbSiteResponseVO responseVO = httpEndpoint.getWBSite(wbSiteRequestVO);
         try {
-            log.info("海信创建报修单响应,{}", JaxbUtil.convertToXml(wbSiteRequestVO));
+            log.info("海信创建报修单请求,{}", JaxbUtil.convertToXml(wbSiteRequestVO));
+            log.info("海信创建报修单响应,{}", JaxbUtil.convertToXml(responseVO));
         } catch (Exception e) {
             log.info("海信创建报修单响应转换异常");
         }
@@ -203,7 +204,7 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
     }
 
     public static void main(String[] args) throws Exception{
-        String json = "{\"area\":\"南山区\",\"areaCode\":\"440305\",\"assetId\":\"CSFWC0000001\",\"bookingRange\":\"全天\",\"boxId\":37269,\"city\":\"深圳市\",\"cityCode\":\"440300\",\"customerAddress\":\"南山区西丽明亮科技园(珠光北路南)\",\"customerName\":\"小梁的测试门店\",\"customerNumber\":\"C02173666\",\"customerType\":5,\"description\":\"风机故障、漏水\",\"linkMan\":\"小小小\",\"linkMobile\":\"17880617874\",\"modelId\":1,\"modelName\":\"SC-518WYSL/HP\",\"originFlag\":\"DP\",\"phoneAreaCode\":\"0755\",\"province\":\"广东省\",\"provinceCode\":\"440000\",\"psnAccount\":\"website\",\"psnPwd\":\"Aa666666\",\"remark\":\"风机坏了\",\"requireServiceDate\":\"2021-02-26\",\"saleOrderId\":\"REP2021022609175094539137\",\"serviceTypeId\":\"WX\"}";
+        String json = "{\"area\":\"茶山镇\",\"areaCode\":\"441907\",\"assetId\":\"2100518103426\",\"bookingRange\":\"全天\",\"boxId\":64985,\"city\":\"东莞市\",\"cityCode\":\"441900\",\"customerAddress\":\"瑞鸣高新产业园西北100米(渡船街南)\",\"customerName\":\"茶山塘角茶塘路阿华便利店\",\"customerNumber\":\"C02431183\",\"customerType\":5,\"description\":\"不制冷\",\"linkMan\":\"阿华\",\"linkMobile\":\"18046909386\",\"modelId\":1,\"modelName\":\"SC-518WYSL/HP\",\"originFlag\":\"DP\",\"phoneAreaCode\":\"0769\",\"province\":\"广东省\",\"provinceCode\":\"440000\",\"psnAccount\":\"website\",\"psnPwd\":\"Aa666666\",\"remark\":\"冰箱不制冷\",\"requireServiceDate\":\"2021-04-14\",\"saleOrderId\":\"REP2021041411351166291548\",\"serviceTypeId\":\"WX\"}";
         IceRepairRequest iceRepairRequest = JSONObject.parseObject(json, IceRepairRequest.class);
         WbSiteRequestVO wbSiteRequestVO = iceRepairRequest.convertToWbSite();
         System.out.println(JaxbUtil.convertToXml(wbSiteRequestVO));

@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.icebox.vo.IceBoxTransferHistoryVo;
@@ -140,7 +141,7 @@ public class MyIceBoxController {
         try {
             iceBoxService.checkIceBoxNew(iceBoxRequest);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.info("冰柜审批触发事件,传递的参数-->[{}],报错信息为-->[{}]", JSON.toJSONString(iceBoxRequest), e.getMessage());
         }
         return new CommonResponse(Constants.API_CODE_SUCCESS,null, new IceBoxRequest());
     }

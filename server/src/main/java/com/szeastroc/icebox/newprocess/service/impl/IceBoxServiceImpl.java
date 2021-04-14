@@ -2381,8 +2381,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("brandName", iceBox.getBrandName()); // 品牌
         map.put("chestMoney", iceBox.getChestMoney()); // 价值
         map.put("depositMoney", iceBox.getDepositMoney()); // 标准押金
-        map.put("statusStr", IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 状态
-        map.put("status", iceBox.getStatus()); // 状态
         map.put("releaseTime", iceBoxExtend.getReleaseTime()); // 生产日期
         map.put("repairBeginTime", iceBoxExtend.getRepairBeginTime()); // 保修起算日期
         map.put("remark", iceBox.getRemark()); // 保修起算日期
@@ -2462,6 +2460,28 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             belongDealer = suppInfoVo.getName();
         }
         map.put("belongDealer", belongDealer); // 所属经销商
+
+        Integer status = iceBox.getStatus();
+        map.put("status", status); // 状态
+        String statusStr = "";
+        if (IceBoxEnums.StatusEnum.REPAIR.getType() >= status ) {
+            statusStr =  IceBoxEnums.StatusEnum.getDesc(status); // 状态
+        }else {
+            // 异常报备的冰柜状态
+            IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).orderByDesc(IceExamine::getId).last("limit 1"));
+            if (null != iceExamine) {
+                Integer iceStatus = iceExamine.getIceStatus();
+                Integer examinStatus = iceExamine.getExaminStatus();
+                if (ExamineStatus.PASS_EXAMINE.getStatus().equals(examinStatus)) {
+                    statusStr = "已报备" + IceBoxEnums.StatusEnum.getDesc(iceStatus);
+                } else if (ExamineStatus.DEFAULT_EXAMINE.getStatus().equals(examinStatus) || ExamineStatus.DOING_EXAMINE.getStatus().equals(examinStatus)) {
+                    statusStr = "报备" + IceBoxEnums.StatusEnum.getDesc(iceStatus) + "中";
+                } else if (ExamineStatus.REJECT_EXAMINE.getStatus().equals(examinStatus)) {
+                    statusStr = IceBoxEnums.StatusEnum.getDesc(status);
+                }
+            }
+        }
+        map.put("statusStr",statusStr);
 
         return map;
     }

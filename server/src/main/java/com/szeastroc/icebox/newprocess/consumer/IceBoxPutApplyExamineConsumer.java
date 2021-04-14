@@ -62,10 +62,11 @@ public class IceBoxPutApplyExamineConsumer {
 
     @RabbitListener(queues = MqConstant.ICE_BOX_PUT_APPLY_Q, containerFactory = "iceboxPutApplyContainer")
     public void task(IceBoxRequest iceBoxRequest) {
+        log.info("冰柜审批触发事件,传递的参数-->[{}]", JSON.toJSONString(iceBoxRequest));
         try {
             iceBoxService.checkIceBoxNew(iceBoxRequest);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.info("冰柜审批触发事件,传递的参数-->[{}],报错信息为-->[{}]", JSON.toJSONString(iceBoxRequest), e.getMessage());
         }
     }
 

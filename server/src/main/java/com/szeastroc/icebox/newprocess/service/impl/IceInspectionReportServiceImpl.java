@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.rabbitmq.client.Channel;
 import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
 import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
@@ -20,11 +21,13 @@ import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.service.IceInspectionReportService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
+import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +38,7 @@ import java.util.Objects;
  * @author chenchao
  * @since 2020-12-16 16:46:21
  */
+@Slf4j
 @Service
 public class IceInspectionReportServiceImpl extends ServiceImpl<IceInspectionReportDao, IceInspectionReport> implements IceInspectionReportService {
 
@@ -108,7 +112,7 @@ public class IceInspectionReportServiceImpl extends ServiceImpl<IceInspectionRep
 
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     @Override
-    public void task(IceInspectionReportMsg reportMsg) {
+    public void task(IceInspectionReportMsg reportMsg, Channel channel, long deliveryTag) throws IOException {
         switch (reportMsg.getOperateType()) {
             case 1:
                 increasePutCount(reportMsg);
@@ -134,6 +138,7 @@ public class IceInspectionReportServiceImpl extends ServiceImpl<IceInspectionRep
             default:
                 break;
         }
+        channel.basicAck(deliveryTag, false);
     }
 
 

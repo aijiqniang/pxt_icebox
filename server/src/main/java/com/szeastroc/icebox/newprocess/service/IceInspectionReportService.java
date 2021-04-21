@@ -1,10 +1,12 @@
 package com.szeastroc.icebox.newprocess.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.rabbitmq.client.Channel;
 import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.entity.IceInspectionReport;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -26,5 +28,5 @@ public interface IceInspectionReportService extends IService<IceInspectionReport
 
     void truncate();
 
-    void task(IceInspectionReportMsg reportMsg);
+    void task(IceInspectionReportMsg reportMsg, Channel channel, long deliveryTag) throws IOException;
 }

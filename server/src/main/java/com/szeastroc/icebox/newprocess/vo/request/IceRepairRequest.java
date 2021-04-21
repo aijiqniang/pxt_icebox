@@ -1,6 +1,5 @@
 package com.szeastroc.icebox.newprocess.vo.request;
 
-import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.icebox.newprocess.webservice.ObjectFactory;
 import com.szeastroc.icebox.newprocess.webservice.WbSiteRequestVO;
 import io.swagger.annotations.ApiModel;

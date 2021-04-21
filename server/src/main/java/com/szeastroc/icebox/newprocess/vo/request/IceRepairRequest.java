@@ -7,6 +7,8 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.validation.constraints.NotEmpty;
+
 /**
  * @ClassName: RepairIceDTO
  * @Description:
@@ -20,15 +22,20 @@ public class IceRepairRequest {
     private String psnAccount;
     private String psnPwd;
     private String originFlag;
+    @NotEmpty(message = "冰柜型号不能为空")
     @ApiModelProperty(value = "冰柜型号", required = true)
     private String modelName;
     private String saleOrderId;
+    @NotEmpty(message = "预约日期不能为空")
     @ApiModelProperty(value = "预约日期", required = true)
     private String requireServiceDate;
+    @NotEmpty(message = "姓名不能为空")
     @ApiModelProperty(value = "姓名", required = true)
     private String linkMan;
+    @NotEmpty(message = "手机号不能为空")
     @ApiModelProperty(value = "手机号", required = true)
     private String linkMobile;
+    @NotEmpty(message = "时间范围不能为空")
     @ApiModelProperty(value = "时间范围", required = true)
     private String bookingRange;
     private String serviceTypeId;
@@ -36,6 +43,7 @@ public class IceRepairRequest {
     private String customerNumber;
     @ApiModelProperty(value = "客户名称", required = true)
     private String customerName;
+    @NotEmpty(message = "客户地址不能为空")
     @ApiModelProperty(value = "客户地址", required = true)
     private String customerAddress;
     @ApiModelProperty(value = "冰箱id", required = true)
@@ -46,6 +54,7 @@ public class IceRepairRequest {
     private Integer customerType;
     @ApiModelProperty(value = "维修备注", required = true)
     private String remark;
+    @NotEmpty(message = "问题类型不能为空")
     @ApiModelProperty(value = "问题类型", required = true)
     private String description;
     @ApiModelProperty(value = "冰箱类型id", required = true)
@@ -67,6 +76,12 @@ public class IceRepairRequest {
 
 
     public WbSiteRequestVO convertToWbSite() {
+        if (StringUtils.isBlank(this.areaCode)) {
+            this.areaCode = this.cityCode;
+            if (StringUtils.isBlank(this.areaCode)) {
+                this.areaCode = this.provinceCode;
+            }
+        }
         ObjectFactory objectFactory = new ObjectFactory();
         WbSiteRequestVO requestVO = objectFactory.createWbSiteRequestVO();
         requestVO.setPsnAccount(objectFactory.createWbSiteRequestVOPsnAccount(this.psnAccount));
@@ -93,7 +108,6 @@ public class IceRepairRequest {
                 requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode + "000"));
             }
         }
-
         requestVO.setRequireServiceDate(objectFactory.createWbSiteRequestVORequireServiceDate(this.requireServiceDate));
         requestVO.setFaultDesc(objectFactory.createWbSiteRequestVOFaultDesc(this.description));
         requestVO.setCustomerName(objectFactory.createWbSiteRequestVOCustomerName(this.linkMan));

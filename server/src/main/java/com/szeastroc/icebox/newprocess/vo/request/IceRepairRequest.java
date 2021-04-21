@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.vo.request;
 
+import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.icebox.newprocess.webservice.ObjectFactory;
 import com.szeastroc.icebox.newprocess.webservice.WbSiteRequestVO;
 import io.swagger.annotations.ApiModel;
@@ -69,7 +70,6 @@ public class IceRepairRequest {
     private String cityCode;
     @ApiModelProperty(value = "区县",required = true)
     private String area;
-    @NotEmpty(message = "区县编码不能为空")
     @ApiModelProperty(value = "区县编码",required = true)
     private String areaCode;
 
@@ -78,6 +78,12 @@ public class IceRepairRequest {
 
 
     public WbSiteRequestVO convertToWbSite() {
+        if(StringUtils.isBlank(this.areaCode)){
+            this.areaCode = this.cityCode;
+            if(StringUtils.isBlank(this.areaCode)){
+                this.areaCode = this.provinceCode;
+            }
+        }
         ObjectFactory objectFactory = new ObjectFactory();
         WbSiteRequestVO requestVO = objectFactory.createWbSiteRequestVO();
         requestVO.setPsnAccount(objectFactory.createWbSiteRequestVOPsnAccount(this.psnAccount));
@@ -91,10 +97,12 @@ public class IceRepairRequest {
         requestVO.setSaleOrderId(objectFactory.createWbSiteRequestVOSaleOrderId(this.saleOrderId));
         requestVO.setTelephone2(objectFactory.createWbSiteRequestVOTelephone2(this.linkMobile));
         requestVO.setAddress(objectFactory.createWbSiteRequestVOAddress(this.customerAddress));
-        if(this.areaCode.length()>6){
-            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode.substring(0,6)+"000"));
-        }else{
-            requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode+"000"));
+        if(StringUtils.isNotBlank(this.areaCode)){
+            if(this.areaCode.length()>6){
+                requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode.substring(0,6)+"000"));
+            }else{
+                requestVO.setRegoinId(objectFactory.createWbSiteRequestVORegoinId(this.areaCode+"000"));
+            }
         }
         requestVO.setRequireServiceDate(objectFactory.createWbSiteRequestVORequireServiceDate(this.requireServiceDate));
         requestVO.setFaultDesc(objectFactory.createWbSiteRequestVOFaultDesc(this.description));

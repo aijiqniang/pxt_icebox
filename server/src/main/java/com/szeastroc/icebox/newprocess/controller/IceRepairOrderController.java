@@ -19,6 +19,7 @@ import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,7 +50,7 @@ public class IceRepairOrderController {
 
     @ApiOperation(value = "创建维修订单",httpMethod="POST")
     @PostMapping("/create")
-    public CommonResponse createOrder(@RequestBody IceRepairRequest iceRepairRequest){
+    public CommonResponse createOrder(@RequestBody @Validated IceRepairRequest iceRepairRequest){
         return iceRepairOrderService.createOrder(iceRepairRequest);
     }
 

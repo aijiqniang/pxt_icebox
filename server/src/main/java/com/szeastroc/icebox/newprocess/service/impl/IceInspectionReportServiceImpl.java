@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.rabbitmq.client.Channel;
 import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
 import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
@@ -20,11 +21,15 @@ import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.service.IceExamineService;
 import com.szeastroc.icebox.newprocess.service.IceInspectionReportService;
 import com.szeastroc.icebox.newprocess.vo.InspectionReportVO;
+import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.transaction.support.TransactionSynchronization;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +40,7 @@ import java.util.Objects;
  * @author chenchao
  * @since 2020-12-16 16:46:21
  */
+@Slf4j
 @Service
 public class IceInspectionReportServiceImpl extends ServiceImpl<IceInspectionReportDao, IceInspectionReport> implements IceInspectionReportService {
 
@@ -108,32 +114,38 @@ public class IceInspectionReportServiceImpl extends ServiceImpl<IceInspectionRep
 
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     @Override
-    public void task(IceInspectionReportMsg reportMsg) {
-        switch (reportMsg.getOperateType()) {
-            case 1:
-                increasePutCount(reportMsg);
-                break;
-            case 2:
-                increaseInspectionCount(reportMsg);
-                break;
-            case 3:
-                buildReport(reportMsg.getUserId());
-                break;
-            case 4:
-                deleteReport(reportMsg);
-                break;
-            case 5:
-                recalculateLostScrapCount(reportMsg);
-                break;
-            case 6:
-                decreasePutCount(reportMsg);
-                break;
-            case 7:
-                updateDept(reportMsg);
-                break;
-            default:
-                break;
+    public void task(IceInspectionReportMsg reportMsg, Channel channel, long deliveryTag) throws IOException {
+        try {
+            switch (reportMsg.getOperateType()) {
+                case 1:
+                    increasePutCount(reportMsg);
+                    break;
+                case 2:
+                    increaseInspectionCount(reportMsg);
+                    break;
+                case 3:
+                    buildReport(reportMsg.getUserId());
+                    break;
+                case 4:
+                    deleteReport(reportMsg);
+                    break;
+                case 5:
+                    recalculateLostScrapCount(reportMsg);
+                    break;
+                case 6:
+                    decreasePutCount(reportMsg);
+                    break;
+                case 7:
+                    updateDept(reportMsg);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception e) {
+            log.warn("小程序冰柜巡检报表消费消息异常，{}",e.getMessage());
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         }
+        channel.basicAck(deliveryTag, false);
     }
 
 

@@ -40,7 +40,7 @@ public interface MqConstant {
 
 
     /**
-     * 冰柜退还报表
+     * 小程序冰柜巡检报表
      */
     String iceInspectionReportQueue = "ice_inspection_report_queue";
     String iceInspectionReportKey = "ice_inspection_report_routing_key";

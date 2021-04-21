@@ -1855,21 +1855,27 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Override
     public List<SimpleSupplierInfoVo> findSupplierByDeptId(Integer deptId) {
         // 通过部门id 查询下面所有的经销商的supplier_id 然后聚合 t_ice_box表
-
-        List<SimpleSupplierInfoVo> simpleSupplierInfoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.findByDeptId(deptId));
-
-        Map<Integer, SimpleSupplierInfoVo> map = simpleSupplierInfoVoList.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, Function.identity()));
-
-        List<Integer> list = simpleSupplierInfoVoList.stream().map(SimpleSupplierInfoVo::getId).collect(Collectors.toList());
-
-        List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getSupplierId, list));
-
-        Set<Integer> collect = iceBoxList.stream().map(IceBox::getSupplierId).collect(Collectors.toSet());
-
-
         List<SimpleSupplierInfoVo> supplierInfoVoList = new ArrayList<>();
 
-        collect.forEach(supplierId -> supplierInfoVoList.add(map.get(supplierId)));
+        List<SimpleSupplierInfoVo> simpleSupplierInfoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.findByDeptId(deptId));
+        if (CollectionUtil.isNotEmpty(simpleSupplierInfoVoList)) {
+
+            Map<Integer, SimpleSupplierInfoVo> map = simpleSupplierInfoVoList.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, Function.identity()));
+
+            List<Integer> list = simpleSupplierInfoVoList.stream().map(SimpleSupplierInfoVo::getId).collect(Collectors.toList());
+
+            List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getSupplierId, list).groupBy(IceBox::getSupplierId));
+
+            if (CollectionUtil.isNotEmpty(iceBoxList)) {
+                Set<Integer> collect = iceBoxList.stream().map(IceBox::getSupplierId).collect(Collectors.toSet());
+                collect.forEach(supplierId -> {
+                    SimpleSupplierInfoVo simpleSupplierInfoVo = map.get(supplierId);
+                    if (null != simpleSupplierInfoVo) {
+                        supplierInfoVoList.add(simpleSupplierInfoVo);
+                    }
+                });
+            }
+        }
 
 
         return supplierInfoVoList;

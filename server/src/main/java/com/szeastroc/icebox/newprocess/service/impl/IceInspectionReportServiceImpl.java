@@ -26,6 +26,8 @@ import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.io.IOException;
 import java.util.List;
@@ -113,30 +115,35 @@ public class IceInspectionReportServiceImpl extends ServiceImpl<IceInspectionRep
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     @Override
     public void task(IceInspectionReportMsg reportMsg, Channel channel, long deliveryTag) throws IOException {
-        switch (reportMsg.getOperateType()) {
-            case 1:
-                increasePutCount(reportMsg);
-                break;
-            case 2:
-                increaseInspectionCount(reportMsg);
-                break;
-            case 3:
-                buildReport(reportMsg.getUserId());
-                break;
-            case 4:
-                deleteReport(reportMsg);
-                break;
-            case 5:
-                recalculateLostScrapCount(reportMsg);
-                break;
-            case 6:
-                decreasePutCount(reportMsg);
-                break;
-            case 7:
-                updateDept(reportMsg);
-                break;
-            default:
-                break;
+        try {
+            switch (reportMsg.getOperateType()) {
+                case 1:
+                    increasePutCount(reportMsg);
+                    break;
+                case 2:
+                    increaseInspectionCount(reportMsg);
+                    break;
+                case 3:
+                    buildReport(reportMsg.getUserId());
+                    break;
+                case 4:
+                    deleteReport(reportMsg);
+                    break;
+                case 5:
+                    recalculateLostScrapCount(reportMsg);
+                    break;
+                case 6:
+                    decreasePutCount(reportMsg);
+                    break;
+                case 7:
+                    updateDept(reportMsg);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception e) {
+            log.warn("小程序冰柜巡检报表消费消息异常，{}",e.getMessage());
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         }
         channel.basicAck(deliveryTag, false);
     }

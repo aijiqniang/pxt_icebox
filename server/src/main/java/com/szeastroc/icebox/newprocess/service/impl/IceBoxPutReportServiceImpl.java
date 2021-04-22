@@ -49,6 +49,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -348,6 +349,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void syncPutDataToReport(List<Integer> ids) {
         List<PutStoreRelateModel> relateModelList = new ArrayList<>();
         if(CollectionUtil.isNotEmpty(ids)){
@@ -374,6 +376,7 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
         }
         for(PutStoreRelateModel relateModel:relateModelList){
             IceBoxPutReport putReport = new IceBoxPutReport();
+            log.info("当前处理的数据--->[{}]", relateModel.getId());
             ApplyRelatePutStoreModel storeModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
             if(storeModel == null){
                 continue;

@@ -511,11 +511,19 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 for(SessionExamineVo.VisitExamineNodeVo examineNodeVo:visitExamineNodeVos){
                     if(examineNodeVo.getExamineStatus().equals(1)){
                         putReport.setExamineUserId(examineNodeVo.getUserId());
-                        SimpleUserInfoVo userInfo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(examineNodeVo.getUserId()));
+                        /**
+                         * 这个地方会因为缓存中userrelatedept没有数据报空指针异常  所以不用feign调用
+                         */
+                        //SimpleUserInfoVo userInfo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(examineNodeVo.getUserId()));
+                        /**
+                         * 修改为直接去查
+                         */
+                        SimpleUserInfoVo userInfo = userRedisService.getUserById(examineNodeVo.getUserId());
                         if(userInfo != null){
                             putReport.setExamineUserName(userInfo.getRealname());
                             putReport.setExamineUserPosion(userInfo.getPosion());
                         }
+
                         putReport.setExamineTime(examineNodeVo.getUpdateTime());
                     }
                 }

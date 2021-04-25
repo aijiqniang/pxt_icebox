@@ -20,7 +20,12 @@ public enum IceRepairStatusEnum {
     ARRANGE_ENGINEER(5, "已指派工程师"),
     FEEDBACK(6, "已反馈"),
     ACCEPT_FEEDBACK(7, "已接单反馈"),
+    ORDER_FINISH(8, "已结单"),
+    AUTO_AUDIT(9, "已自动审核"),
+    PASS_INTERVIEW(10, "回访通过"),
     CANCEL(50, "已取消"),
+    CANCEL_INTERVIEW(51, "回访取消"),
+    CONFIRM_CANCEL(52, "已确认取消"),
     ;
 
     private Integer status;

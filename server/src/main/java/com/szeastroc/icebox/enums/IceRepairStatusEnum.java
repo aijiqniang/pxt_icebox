@@ -23,6 +23,7 @@ public enum IceRepairStatusEnum {
     ORDER_FINISH(8, "已结单"),
     AUTO_AUDIT(9, "已自动审核"),
     PASS_INTERVIEW(10, "回访通过"),
+    CLOSE(20, "已关闭"),
     CANCEL(50, "已取消"),
     CANCEL_INTERVIEW(51, "回访取消"),
     CONFIRM_CANCEL(52, "已确认取消"),

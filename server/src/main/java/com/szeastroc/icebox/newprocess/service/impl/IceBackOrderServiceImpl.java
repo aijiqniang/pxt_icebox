@@ -964,6 +964,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(putStoreNumber));
         }
 
+        if (null == userId) {
+            throw new NormalOptionException(ResultEnum.CANNOT_FIND_MAIN_SALESMAN.getCode(), ResultEnum.CANNOT_FIND_MAIN_SALESMAN.getMessage());
+        }
+
 
         String assetId = iceBoxExtend.getAssetId();
         String relateCode = prefix + "_" + assetId;

@@ -881,6 +881,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //        iceBoxExtendDao.updateById(iceBoxExtend);
         iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate()
                 .eq(IceBoxExtend::getId, iceBoxId)
+                .set(IceBoxExtend::getLastPutId, 0)
                 .set(IceBoxExtend::getLastApplyNumber, null));
 
         // 变更当前型号状态

@@ -302,6 +302,7 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                             }
                             iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate()
                                     .eq(IceBoxExtend::getId, iceBox.getId())
+                                    .set(IceBoxExtend::getLastPutId, 0)
                                     .set(IceBoxExtend::getLastApplyNumber, null));
                         }
                     }

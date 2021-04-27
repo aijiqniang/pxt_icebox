@@ -4696,6 +4696,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 }
                                 iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate()
                                         .eq(IceBoxExtend::getId, iceBoxId)
+                                        .set(IceBoxExtend::getLastPutId, 0)
                                         .set(IceBoxExtend::getLastApplyNumber, null));
                             }
                         }

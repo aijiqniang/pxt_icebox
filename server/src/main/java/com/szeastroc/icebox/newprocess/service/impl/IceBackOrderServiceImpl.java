@@ -879,18 +879,30 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 //        iceBoxExtend.setLastPutId(iceTransferRecord.getId());
 //        iceBoxExtend.setLastApplyNumber(applyNumber);
 //        iceBoxExtendDao.updateById(iceBoxExtend);
+        iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate()
+                .eq(IceBoxExtend::getId, iceBoxId)
+                .set(IceBoxExtend::getLastApplyNumber, null));
 
         // 变更当前型号状态
-        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
+        List<ApplyRelatePutStoreModel> applyRelatePutStoreModelList = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
                 .eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber())
-                .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
-                .last("limit 1"));
-        if (null != applyRelatePutStoreModel) {
-            Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
-            PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
-            putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
-            putStoreRelateModel.setUpdateTime(new Date());
-            putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+                .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType()));
+        if (CollectionUtil.isNotEmpty(applyRelatePutStoreModelList)) {
+            Integer modelId = iceBox.getModelId();
+            for (ApplyRelatePutStoreModel applyRelatePutStoreModel : applyRelatePutStoreModelList) {
+                Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+                PutStoreRelateModel putStoreRelateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery()
+                        .eq(PutStoreRelateModel::getId, storeRelateModelId)
+                        .eq(PutStoreRelateModel::getModelId, modelId)
+                        .eq(PutStoreRelateModel::getPutStatus, com.szeastroc.icebox.newprocess.enums.PutStatus.FINISH_PUT.getStatus()));
+                if (null != putStoreRelateModel) {
+                    putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                            .set(PutStoreRelateModel::getPutStatus, com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus())
+                            .set(PutStoreRelateModel::getUpdateTime, new Date())
+                            .eq(PutStoreRelateModel::getId, storeRelateModelId));
+                    break;
+                }
+            }
         }
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());

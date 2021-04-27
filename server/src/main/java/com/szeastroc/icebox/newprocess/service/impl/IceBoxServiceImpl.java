@@ -4675,17 +4675,28 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             // 变更当前型号状态
                             IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber));
                             if (null != icePutApplyRelateBox) {
-                                ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
-                                        .eq(ApplyRelatePutStoreModel::getApplyNumber, lastApplyNumber)
-                                        .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
-                                        .last("limit 1"));
-                                if (null != applyRelatePutStoreModel) {
-                                    Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
-                                    PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
-                                    putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
-                                    putStoreRelateModel.setUpdateTime(new Date());
-                                    putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+                                List<ApplyRelatePutStoreModel> applyRelatePutStoreModelList = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
+                                        .eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                                        .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType()));
+                                if (CollectionUtil.isNotEmpty(applyRelatePutStoreModelList)) {
+                                    for (ApplyRelatePutStoreModel applyRelatePutStoreModel : applyRelatePutStoreModelList) {
+                                        Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+                                        PutStoreRelateModel putStoreRelateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery()
+                                                .eq(PutStoreRelateModel::getId, storeRelateModelId)
+                                                .eq(PutStoreRelateModel::getModelId, oldIceBoxModelId)
+                                                .eq(PutStoreRelateModel::getPutStatus, com.szeastroc.icebox.newprocess.enums.PutStatus.FINISH_PUT.getStatus()));
+                                        if (null != putStoreRelateModel) {
+                                            putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                                                    .set(PutStoreRelateModel::getPutStatus, com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus())
+                                                    .set(PutStoreRelateModel::getUpdateTime, new Date())
+                                                    .eq(PutStoreRelateModel::getId, storeRelateModelId));
+                                            break;
+                                        }
+                                    }
                                 }
+                                iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate()
+                                        .eq(IceBoxExtend::getId, iceBoxId)
+                                        .set(IceBoxExtend::getLastApplyNumber, null));
                             }
                         }
                     } else {

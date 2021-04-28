@@ -1857,23 +1857,27 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         // 通过部门id 查询下面所有的经销商的supplier_id 然后聚合 t_ice_box表
         List<SimpleSupplierInfoVo> supplierInfoVoList = new ArrayList<>();
 
-        List<SimpleSupplierInfoVo> simpleSupplierInfoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.findByDeptId(deptId));
-        if (CollectionUtil.isNotEmpty(simpleSupplierInfoVoList)) {
+        Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findServiceDeptIdByDeptId(deptId));
+        if (null != serviceDeptId) {
+            List<SimpleSupplierInfoVo> simpleSupplierInfoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.findByDeptId(serviceDeptId));
 
-            Map<Integer, SimpleSupplierInfoVo> map = simpleSupplierInfoVoList.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, Function.identity()));
+            if (CollectionUtil.isNotEmpty(simpleSupplierInfoVoList)) {
 
-            List<Integer> list = simpleSupplierInfoVoList.stream().map(SimpleSupplierInfoVo::getId).collect(Collectors.toList());
+                Map<Integer, SimpleSupplierInfoVo> map = simpleSupplierInfoVoList.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, Function.identity()));
 
-            List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getSupplierId, list).groupBy(IceBox::getSupplierId));
+                List<Integer> list = simpleSupplierInfoVoList.stream().map(SimpleSupplierInfoVo::getId).collect(Collectors.toList());
 
-            if (CollectionUtil.isNotEmpty(iceBoxList)) {
-                Set<Integer> collect = iceBoxList.stream().map(IceBox::getSupplierId).collect(Collectors.toSet());
-                collect.forEach(supplierId -> {
-                    SimpleSupplierInfoVo simpleSupplierInfoVo = map.get(supplierId);
-                    if (null != simpleSupplierInfoVo) {
-                        supplierInfoVoList.add(simpleSupplierInfoVo);
-                    }
-                });
+                List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().in(IceBox::getSupplierId, list).groupBy(IceBox::getSupplierId));
+
+                if (CollectionUtil.isNotEmpty(iceBoxList)) {
+                    Set<Integer> collect = iceBoxList.stream().map(IceBox::getSupplierId).collect(Collectors.toSet());
+                    collect.forEach(supplierId -> {
+                        SimpleSupplierInfoVo simpleSupplierInfoVo = map.get(supplierId);
+                        if (null != simpleSupplierInfoVo) {
+                            supplierInfoVoList.add(simpleSupplierInfoVo);
+                        }
+                    });
+                }
             }
         }
 

@@ -137,8 +137,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 服务处信息查询有误，请核对服务处名称");
                 }
                 iceBox.setDeptId(integer);
-
-                String suppName = null;// 经销商名称
                 // 经销商编号
                 String supplierNumber = oldIceBoxImportVo.getSupplierNumber();
 
@@ -148,7 +146,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
                     }
                     iceBox.setSupplierId(subordinateInfoVo.getSupplierId());
-                    suppName = subordinateInfoVo.getName();
                 }
 
                 IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
@@ -256,7 +253,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
                 }
 
-                String suppName = subordinateInfoVo.getName(); // 经销商名称
                 String service = oldIceBoxImportVo.getService();
 
                 Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findMaxIdByName(service));
@@ -398,7 +394,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         subordinateInfoVo = feignData;
                     }
                 }
-                String suppName = subordinateInfoVo.getName(); // 经销商名称
                 String service = oldIceBoxImportVo.getService();
 
 
@@ -503,7 +498,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     }
                 }
 
-                String suppName = subordinateInfoVo.getName(); // 经销商名称
                 String service = oldIceBoxImportVo.getService();
 
                 Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findMaxIdByName(service));

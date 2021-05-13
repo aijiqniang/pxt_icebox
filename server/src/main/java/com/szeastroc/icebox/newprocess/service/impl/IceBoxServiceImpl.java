@@ -3032,8 +3032,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         Integer isFree = freeType;
                         CompletableFuture.runAsync(() -> {
                             requestVo.setFreeType(isFree);
-                            buildReportAndSendMq(requestVo, applyNumber, now);
+                            buildReportAndSendMq(requestVo, applyNumber, now,relateModel.getId());
                         }, ExecutorServiceFactory.getInstance());
+
+                        relateModel.setIsSync(IsSyncEnum.IS_SEND.getStatus());
+                        putStoreRelateModelDao.updateById(relateModel);
                     }
                 } catch (Exception e) {
                     throw e;
@@ -3067,7 +3070,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         return map;
     }
 
-    private void buildReportAndSendMq(IceBoxRequestVo iceBoxRequestVo, String applyNumber, Date now) {
+    private void buildReportAndSendMq(IceBoxRequestVo iceBoxRequestVo, String applyNumber, Date now,Integer relateModelId) {
         IceBoxPutReportMsg report = new IceBoxPutReportMsg();
         Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(iceBoxRequestVo.getMarketAreaId()));
         SessionDeptInfoVo group = deptInfoVoMap.get(1);
@@ -3130,6 +3133,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         report.setSubmitTime(now);
         report.setOperateType(OperateTypeEnum.INSERT.getType());
+        if(relateModelId != null && relateModelId > 0){
+            report.setPutStoreModelId(relateModelId);
+        }
         rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxReportKey, report);
     }
 
@@ -5054,7 +5060,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
                 }
                 requestVo.setSupplierId(iceBox.getSupplierId());
-                buildReportAndSendMq(requestVo, applyNumber, now);
+                buildReportAndSendMq(requestVo, applyNumber, now,0);
             }, ExecutorServiceFactory.getInstance());
 
             OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
@@ -5250,7 +5256,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     /**
      * 客户变更，推送签收信息
      *
-     * @param iceBox
+     * @param
      */
     @Override
     public void changeCustomer(IceBox newIceBox, IceBox oldIceBox) {

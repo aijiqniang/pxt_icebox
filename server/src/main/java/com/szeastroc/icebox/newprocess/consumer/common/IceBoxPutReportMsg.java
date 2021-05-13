@@ -160,4 +160,9 @@ public class IceBoxPutReportMsg extends Page implements Serializable {
      * 操作人
      */
     private String operateName;
+
+    /**
+     * put_store_model_id
+     */
+    private  Integer putStoreModelId;
 }

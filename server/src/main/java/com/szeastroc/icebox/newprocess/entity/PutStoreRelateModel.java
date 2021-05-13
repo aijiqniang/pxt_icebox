@@ -107,6 +107,15 @@ public class PutStoreRelateModel {
     @TableField(value = "remark")
     private String remark;
 
+    /**
+     * 是否同步 1未同步 2已发mq  3已同步
+     */
+    @TableField(value = "is_sync")
+    private Integer isSync;
+
+    @TableField(value = "sign_time")
+    private Date signTime;
+
 
 
 

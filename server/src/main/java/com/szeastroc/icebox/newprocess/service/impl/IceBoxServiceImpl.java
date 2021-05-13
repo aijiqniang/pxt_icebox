@@ -4067,6 +4067,34 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         this.deleteBacklogByCode(iceBoxVo);
 
+        /**
+         * 申请冰柜扫码不签收,这时候作废会导致的问题,这里同时去改变icebox状态
+         */
+        List<IceBoxExtend> extendList = iceBoxExtendDao.selectList(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getLastApplyNumber, iceBoxVo.getApplyNumber()));
+        if(extendList.size()>0){
+            Set<Integer> iceboxIds = extendList.stream().map(x-> x.getId()).collect(Collectors.toSet());
+            if(iceboxIds.size() > 0){
+                List<IceBox> iceBoxes = iceBoxDao.selectBatchIds(iceboxIds);
+                List<IceBox> doPutingBoxs = iceBoxes.stream().filter(iceBox -> PutStatus.DO_PUT.getStatus().equals(iceBox.getPutStatus())).collect(Collectors.toList());
+                List<IceBox> lockPutBoxs = iceBoxes.stream().filter(iceBox -> PutStatus.LOCK_PUT.getStatus().equals(iceBox.getPutStatus())).collect(Collectors.toList());
+                if(doPutingBoxs.size()>0){
+                    for (IceBox iceBox : doPutingBoxs){
+                        iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
+                        iceBox.setPutStoreNumber(0+"");
+                        iceBox.setUpdatedTime(new Date());
+                        iceBoxDao.updateById(iceBox);
+                    }
+                }
+                if(lockPutBoxs.size()>0){
+                    for(IceBox iceBox : lockPutBoxs){
+                        iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
+                        iceBox.setPutStoreNumber(0+"");
+                        iceBox.setUpdatedTime(new Date());
+                        iceBoxDao.updateById(iceBox);
+                    }
+                }
+            }
+        }
 
         List<ExamineNodeVo> examineNodeVoList = iceBoxVo.getExamineNodeVoList();
         for (ExamineNodeVo nodeVo : examineNodeVoList) {

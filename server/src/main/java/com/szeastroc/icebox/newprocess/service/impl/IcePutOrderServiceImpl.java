@@ -56,6 +56,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -248,6 +249,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 if (applyRelatePutStoreModel != null && FreePayTypeEnum.IS_FREE.getType().equals(applyRelatePutStoreModel.getFreeType())) {
                     relateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                     relateModel.setUpdateTime(new Date());
+                    relateModel.setSignTime(new Date());
                     putStoreRelateModelDao.updateById(relateModel);
                     IceTransferRecord transferRecord = iceTransferRecordDao.selectOne(Wrappers.<IceTransferRecord>lambdaQuery().eq(IceTransferRecord::getBoxId, iceBox.getId()).eq(IceTransferRecord::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
                     if (transferRecord != null) {
@@ -289,6 +291,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                             .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
                     if(putReport != null){
                         putReport.setPutStatus(reportMsg.getPutStatus());
+                        putReport.setSignTime(new Date());
                         iceBoxPutReportDao.updateById(putReport);
                     }
                     //发送mq消息,同步申请数据到报表
@@ -399,6 +402,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             PutStoreRelateModel relateModel = relateModelList.get(0);
             relateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
             relateModel.setUpdateTime(new Date());
+            relateModel.setSignTime(new Date());
             putStoreRelateModelDao.updateById(relateModel);
         }
 //        iceBoxDao.updateById(iceBox);
@@ -437,6 +441,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 .eq(IceBoxPutReport::getPutStatus, PutStatus.DO_PUT.getStatus()).last("limit 1"));
         if(putReport != null){
             putReport.setPutStatus(reportMsg.getPutStatus());
+            putReport.setSignTime(new Date());
             iceBoxPutReportDao.updateById(putReport);
         }
         //发送mq消息,同步申请数据到报表

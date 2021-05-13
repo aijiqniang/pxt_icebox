@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -50,6 +52,22 @@ public class IceBoxPutReportController {
     public CommonResponse<Void> syncPutDataToReport(@RequestBody List<Integer> ids){
         try {
             iceBoxPutReportService.syncPutDataToReport(ids);
+        }catch (Exception e){
+            return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
+        }
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
+    /**
+     * 定时任务检查没有同步的数据  自动同步
+     * @return
+     */
+    @RequestMapping("syncPutDataToReportSchedule")
+    public CommonResponse<Void> syncPutDataToReportSchedule(){
+
+
+        try {
+            CompletableFuture.runAsync(()->iceBoxPutReportService.syncPutDataToReportSchedule(), ExecutorServiceFactory.getInstance());
         }catch (Exception e){
             return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
         }

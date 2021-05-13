@@ -25,14 +25,17 @@ import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.FreePayTypeEnum;
+import com.szeastroc.icebox.enums.IsSyncEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
 import com.szeastroc.icebox.newprocess.dao.IcePutApplyDao;
 import com.szeastroc.icebox.newprocess.dao.IceTransferRecordDao;
+import com.szeastroc.icebox.newprocess.dao.PutStoreRelateModelDao;
 import com.szeastroc.icebox.newprocess.entity.IceBoxPutReport;
 import com.szeastroc.icebox.newprocess.entity.IcePutApply;
 import com.szeastroc.icebox.newprocess.entity.IceTransferRecord;
+import com.szeastroc.icebox.newprocess.entity.PutStoreRelateModel;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
@@ -74,6 +77,9 @@ public class IceBoxPutReportConsumer {
     private FeignIceboxQueryClient feignIceboxQueryClient;
     @Autowired
     private IceTransferRecordService iceTransferRecordService;
+    @Autowired
+    private PutStoreRelateModelDao putStoreRelateModelDao;
+
 //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxReportQueue)
     public void task(IceBoxPutReportMsg reportMsg) throws Exception {
@@ -302,6 +308,13 @@ public class IceBoxPutReportConsumer {
             }
         }
         iceBoxPutReportService.save(report);
+
+        if(report.getPutStoreModelId() != null && report.getPutStoreModelId() > 0){
+            PutStoreRelateModel relateModel = new PutStoreRelateModel();
+            relateModel.setId(report.getPutStoreModelId());
+            relateModel.setIsSync(IsSyncEnum.IS_SYNC.getStatus());
+            putStoreRelateModelDao.updateById(relateModel);
+        }
     }
 
     private LambdaQueryWrapper<IceBoxPutReport> fillWrapper(IceBoxPutReportMsg reportMsg) {

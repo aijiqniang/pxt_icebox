@@ -54,11 +54,11 @@ import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.*;
 import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
+import com.szeastroc.icebox.enums.PutStatus;
+import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.BackType;
-import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
@@ -72,6 +72,7 @@ import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.NewExcelUtil;
+import com.szeastroc.icebox.util.SendRequestUtils;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,6 +85,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -139,6 +142,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final FeignIceBoxExamineUserClient feignIceBoxExamineUserClient;
 
     private final IceRepairOrderService iceRepairOrderService;
+    private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -840,6 +844,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
     private JSONObject doTransfer(String applyNumber) {
 
+        IceBoxRelateDms iceBoxRelateDms = new IceBoxRelateDms();
+        MultiValueMap<String, String> params = new LinkedMultiValueMap();
         IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
         IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
 
@@ -871,6 +877,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         if (iceBackOrder != null) {
             iceTransferRecord.setTransferMoney(iceBackOrder.getAmount());
         }
+        iceBoxRelateDms.setIceBoxId(iceBoxId);
+        iceBoxRelateDms.setIceBoxType(iceBox.getIceBoxType());
+        iceBoxRelateDms.setIceBoxAssetId(iceBox.getAssetId());
+        iceBoxRelateDms.setSupplierId(iceBox.getSupplierId());
+        iceBoxRelateDms.setModelId(iceBox.getModelId());
+        iceBoxRelateDms.setRelateNumber(applyNumber);
+        iceBoxRelateDms.setType(2);
+        iceBoxRelateDms.setBackstatus(IceBackStatusEnum.IS_ACEPTD.getType());
+
         // 插入交易记录
         iceTransferRecordDao.insert(iceTransferRecord);
 
@@ -901,10 +916,19 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                             .set(PutStoreRelateModel::getPutStatus, com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus())
                             .set(PutStoreRelateModel::getUpdateTime, new Date())
                             .eq(PutStoreRelateModel::getId, storeRelateModelId));
+                    iceBoxRelateDms.setPutStoreRelateModelId(putStoreRelateModel.getId());
+                    params.add("pxtNumber",putStoreRelateModel.getPutStoreNumber());
                     break;
                 }
             }
         }
+
+        //  2021/5/12 加入dms通知
+        iceBoxRelateDmsDao.insert(iceBoxRelateDms);
+        params.add("type",SendDmsIceboxTypeEnum.BACK_CONFIRM.getCode()+"");
+        params.add("relateCode",iceBoxRelateDms.getId()+"");
+        SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
         iceBox.setPutStoreNumber("0");

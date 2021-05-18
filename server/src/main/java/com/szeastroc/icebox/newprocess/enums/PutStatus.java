@@ -19,7 +19,9 @@ public enum PutStatus {
     /**
      * 投放报表使用
      */
-    IS_CANCEL(5, "已作废");
+    IS_CANCEL(5, "已作废"),
+    IS_ACCEPT(6,"配送中"),
+    IS_ARRIVED(7,"待签收");
 
     private Integer status;
     private String desc;

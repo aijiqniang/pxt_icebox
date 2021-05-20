@@ -22,4 +22,7 @@ public class IceBoxConstant {
      */
     public final static String virtual_asset_id = "00000000000";
 
+    public final static String SEND_DMS_URL ="http://10.136.15.213:9200";
+    //private final static String send_dms_url="10.136.15.213:9200/";
+
 }

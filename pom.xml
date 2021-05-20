@@ -62,7 +62,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    
     <repositories>
         <repository>
             <id>snapshots</id>

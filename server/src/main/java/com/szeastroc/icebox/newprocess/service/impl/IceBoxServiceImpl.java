@@ -44,6 +44,7 @@ import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.common.utils.Streams;
+import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
@@ -2540,6 +2541,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             String address = info.getDetailAddress();
             if (StringUtils.isBlank(address)) {
                 if (StringUtils.isNotBlank(info.getLng()) && StringUtils.isNotBlank(info.getLat())) {
+                    map.put("lat",info.getLat());
+                    map.put("lng",info.getLng());
                     AddressVo addressVo = FeignResponseUtil.getFeignData(feignXcxBaseClient.getAddressBylatAndLng(info.getLng(), info.getLat()));
                     if (addressVo != null) {
                         address = addressVo.getAddress();
@@ -4000,6 +4003,47 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if(iceBoxExtend.getRepairBeginTime() != null){
                     iceBoxExcelVo.setRepairBeginTimeStr(dateFormat.format(iceBoxExtend.getRepairBeginTime()));
                 }
+                /**
+                 * 5.18导入加入新字段
+                 */
+                Map<String, Object> equipMap = readEquipNews(iceBox.getId());
+                iceBoxExcelVo.setTotalSum((Integer) equipMap.get("totalSum"));
+                iceBoxExcelVo.setMonthSum((Integer) equipMap.get("monthSum"));
+                iceBoxExcelVo.setTotalSum((Integer) equipMap.get("todaySum"));
+                iceBoxExcelVo.setTemperature((String) equipMap.get("temperature"));
+                iceBoxExcelVo.setGpsAddress((String) equipMap.get("address"));
+                iceBoxExcelVo.setOccurrenceTime((Date)equipMap.get("occurrenceTime"));
+                String iceboxLatStr = (String) equipMap.get("lat");
+                String iceboxLngStr = (String) equipMap.get("lat");
+                double iceboxLat = 0.0;
+                double iceboxLng = 0.0;
+                if(StringUtils.isNotBlank(iceboxLatStr) && StringUtils.isNotBlank(iceboxLngStr)){
+                    iceboxLat = Double.parseDouble(iceboxLatStr);
+                    iceboxLng = Double.parseDouble(iceboxLngStr);
+                }
+                double cusLat = 0.0;
+                double cusLng = 0.0;
+                double distance = 0.0;
+                if(StringUtils.isNotBlank(iceBox.getPutStoreNumber())){
+                    //冰柜已投放
+                    StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                    if(storeInfoDtoVo != null){
+                        cusLat = Double.parseDouble(storeInfoDtoVo.getLatitude());
+                        cusLng = Double.parseDouble(storeInfoDtoVo.getLongitude());
+                    }
+                }else{
+                    if(iceBox.getSupplierId() != null && iceBox.getSupplierId() > 0){
+                        SupplierInfo info = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
+                        if(info != null){
+                            cusLat = Double.parseDouble(info.getLatitude());
+                            cusLng = Double.parseDouble(info.getLongitude());
+                        }
+                    }
+                }
+                if(!Double.isNaN(cusLat) && !Double.isNaN(cusLng)){
+                    distance = getDistance(iceboxLat,iceboxLng,cusLat,cusLng);
+                }
+                iceBoxExcelVo.setDistance(distance);
 
                 iceBoxExcelVoList.add(iceBoxExcelVo);
             }
@@ -4028,6 +4072,35 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 FileUtils.deleteQuietly(xlsxFile);
             }
         }
+    }
+
+
+    private static double EARTH_RADIUS = 6378.137;
+
+    private static double rad(double d) {
+        return d * Math.PI / 180.0;
+    }
+
+    /**
+     * 通过经纬度获取距离(单位：米)
+     * @param lat1
+     * @param lng1
+     * @param lat2
+     * @param lng2
+     * @return
+     */
+    public static double getDistance(double lat1, double lng1, double lat2,double lng2) {
+        double radLat1 = rad(lat1);
+        double radLat2 = rad(lat2);
+        double a = radLat1 - radLat2;
+        double b = rad(lng1) - rad(lng2);
+        double s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2)
+                + Math.cos(radLat1) * Math.cos(radLat2)
+                * Math.pow(Math.sin(b / 2), 2)));
+        s = s * EARTH_RADIUS;
+        s = Math.round(s * 10000d) / 10000d;
+        s = s*1000;
+        return s;
     }
 
     @Override
@@ -5550,6 +5623,27 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         oldIceBoxSignNotice.setPutStoreNumber(storeNumber);
         oldIceBoxSignNotice.setCreateTime(new Date());
         oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);
+    }
+
+    @Override
+    public Map<String, Object> checkApplyStatus(List<IceBoxRequestVo> iceBoxRequestVos) {
+        Map responseMap = new HashMap();
+        responseMap.put("flag",true);
+        responseMap.put("message","");
+        if(iceBoxRequestVos.size() > 0){
+            for(IceBoxRequestVo iceBoxRequestVo : iceBoxRequestVos){
+                if(iceBoxRequestVo != null){
+                    List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getSupplierId, iceBoxRequestVo.getSupplierId()).eq(PutStoreRelateModel::getModelId, iceBoxRequestVo.getModelId()).eq(PutStoreRelateModel::getPutStoreNumber, iceBoxRequestVo.getStoreNumber()).eq(PutStoreRelateModel::getStatus,1).and(x -> x.eq(PutStoreRelateModel::getPutStatus,PutStatus.DO_PUT.getStatus()).or().eq(PutStoreRelateModel::getPutStatus,PutStatus.LOCK_PUT.getStatus())));
+                    if(putStoreRelateModels.size() > 0){
+                        IceModel iceModel = iceModelDao.selectById(putStoreRelateModels.get(0).getModelId());
+                        CommonResponse<UserInfoVo> commonResponse = feignUserClient.findById(putStoreRelateModels.get(0).getCreateBy());
+                        responseMap.put("flag",false);
+                        responseMap.put("message","该客户已有"+iceModel.getChestName()+"的冰柜正在投放中，投放人:"+commonResponse.getData().getRealname()+",请确认是否需要继续追加冰柜投放");
+                    }
+                }
+            }
+        }
+        return responseMap;
     }
 
 }

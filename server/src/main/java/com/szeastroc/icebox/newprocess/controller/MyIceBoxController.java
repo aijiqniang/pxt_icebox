@@ -109,6 +109,16 @@ public class MyIceBoxController {
     }
 
     /**
+     * 申请之前检查申请状态
+     * @param iceBoxRequestVos
+     * @return
+     */
+    @RequestMapping("checkApplyStatus")
+    public CommonResponse<Map<String,Object>> checkApplyStatus(@RequestBody List<IceBoxRequestVo> iceBoxRequestVos){
+        Map<String,Object> map = iceBoxService.checkApplyStatus(iceBoxRequestVos);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,map);
+    }
+    /**
      * 申请冰柜(新)
      * @param iceBoxRequestVos
      * @return

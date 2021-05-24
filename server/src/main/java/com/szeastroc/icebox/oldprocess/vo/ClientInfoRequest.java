@@ -24,6 +24,7 @@ public class ClientInfoRequest {
     private String contactMobile;
     private String marketAreaId;
     private String iceChestId;
+    private String iceChestAssetId;
     private String ip;
     private String openid;
     private String qrcode;

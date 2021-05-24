@@ -10,13 +10,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.entity.customer.vo.BaseDistrictVO;
-import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
-import com.szeastroc.common.entity.customer.vo.SessionStoreInfoVo;
-import com.szeastroc.common.entity.customer.vo.SimpleSupplierInfoVo;
-import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
-import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
-import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
+import com.szeastroc.common.entity.customer.vo.*;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.transfer.enums.ResourceTypeEnum;
 import com.szeastroc.common.entity.transfer.enums.WechatPayTypeEnum;
@@ -845,7 +839,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private JSONObject doTransfer(String applyNumber) {
 
         IceBoxRelateDms iceBoxRelateDms = new IceBoxRelateDms();
-        MultiValueMap<String, String> params = new LinkedMultiValueMap();
+        Map params = new HashMap();
         IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
         IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
 
@@ -884,6 +878,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBoxRelateDms.setModelId(iceBox.getModelId());
         iceBoxRelateDms.setRelateNumber(applyNumber);
         iceBoxRelateDms.setType(2);
+        iceBoxRelateDms.setPutStoreNumber(icePutApply.getPutStoreNumber());
         iceBoxRelateDms.setBackstatus(IceBackStatusEnum.IS_ACEPTD.getType());
 
         // 插入交易记录
@@ -917,7 +912,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                             .set(PutStoreRelateModel::getUpdateTime, new Date())
                             .eq(PutStoreRelateModel::getId, storeRelateModelId));
                     iceBoxRelateDms.setPutStoreRelateModelId(putStoreRelateModel.getId());
-                    params.add("pxtNumber",putStoreRelateModel.getPutStoreNumber());
+                    if(putStoreRelateModel.getSupplierId() != null && putStoreRelateModel.getSupplierId() > 0){
+                        SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(putStoreRelateModel.getSupplierId()));
+                        params.put("pxtNumber",supplierInfo.getNumber());
+                    }
                     break;
                 }
             }
@@ -925,8 +923,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
         //  2021/5/12 加入dms通知
         iceBoxRelateDmsDao.insert(iceBoxRelateDms);
-        params.add("type",SendDmsIceboxTypeEnum.BACK_CONFIRM.getCode()+"");
-        params.add("relateCode",iceBoxRelateDms.getId()+"");
+        params.put("type",SendDmsIceboxTypeEnum.BACK_CONFIRM.getCode()+"");
+        params.put("relateCode",iceBoxRelateDms.getId()+"");
         SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
 
         // 更新冰柜状态

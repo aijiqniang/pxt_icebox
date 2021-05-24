@@ -8,12 +8,15 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.StoreRequest;
+import com.szeastroc.common.entity.customer.vo.SupplierInfo;
 import com.szeastroc.common.entity.user.vo.UserInfoVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignStoreRelateMemberClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
+import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -33,10 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
@@ -58,6 +58,7 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
     private final FeignStoreRelateMemberClient feignStoreRelateMemberClient;
     private final FeignStoreClient feignStoreClient;
     private final FeignUserClient feignUserClient;
+    private final FeignSupplierClient feignSupplierClient;
 
 
     @Override
@@ -136,7 +137,7 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
     @Override
     public void confirmAccept(IceBoxRelateDmsVo iceBoxRelateDmsVo) {
         IceBoxRelateDms iceBoxRelateDms = iceBoxRelateDmsDao.selectById(iceBoxRelateDmsVo.getId());
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        Map params = new HashMap();
         if(iceBoxRelateDms != null){
             if(iceBoxRelateDms.getPutStoreRelateModelId() != null && iceBoxRelateDms.getPutStoreRelateModelId() > 0){
                 /**
@@ -145,12 +146,14 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
                 PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(iceBoxRelateDms.getPutStoreRelateModelId());
 
                 if(relateModel != null){
-                    params.add("pxtNumber",relateModel.getPutStoreNumber());
-                    if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
-                        throw new ImproperOptionException("商户已签收");
+                    if(relateModel.getSupplierId() != null && relateModel.getSupplierId() > 0){
+                        SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(relateModel.getSupplierId()));
+                        params.put("pxtNumber",supplierInfo.getNumber());
                     }
-                    if(PutStatus.NO_PUT.getStatus().equals(relateModel.getPutStatus())) {
-                        throw new ImproperOptionException("冰柜未投放");
+                    if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
+                        params.put("id",iceBoxRelateDms.getId()+"");
+                        SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/updateBacklogStatus",params);
+                        throw new ImproperOptionException("商户已签收");
                     }
                 }
 
@@ -178,9 +181,17 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
             /**
              * 发送dms送达通知
              */
-            params.add("type", SendDmsIceboxTypeEnum.PUT_ARRIVRD.getCode()+"");
-            params.add("relateCode",iceBoxRelateDms.getId()+"");
-            SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+            IceBoxRelateDms dmsVo = iceBoxRelateDmsDao.selectById(iceBoxRelateDmsVo.getId());
+            params.put("relateCode",iceBoxRelateDms.getId()+"");
+            if(dmsVo.getType() == 1){
+                //投放
+                params.put("type", SendDmsIceboxTypeEnum.PUT_ARRIVRD.getCode()+"");
+                SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+            }else if(dmsVo.getType() == 2){
+                //退还
+                params.put("type", SendDmsIceboxTypeEnum.BACK_ARRIVED.getCode()+"");
+                SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+            }
         }else{
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
         }
@@ -202,97 +213,56 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
 
     @Override
     public void confirmArrvied(IceBoxRelateDmsVo iceBoxRelateDmsVo) {
-        if(iceBoxRelateDmsVo != null && iceBoxRelateDmsVo.getId() != null && iceBoxRelateDmsVo.getId() > 0){
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        if (iceBoxRelateDmsVo != null && StringUtils.isNotEmpty(iceBoxRelateDmsVo.getIceBoxAssetId()) && iceBoxRelateDmsVo.getId() != null && iceBoxRelateDmsVo.getId() > 0) {
+            Map params = new HashMap();
+
             IceBoxRelateDms relateDms = iceBoxRelateDmsDao.selectById(iceBoxRelateDmsVo.getId());
-            if(relateDms != null){
+            if (relateDms != null) {
                 /**
                  * 修改报表状态
                  */
-                if(relateDms.getPutStoreRelateModelId() != null && relateDms.getPutStoreRelateModelId() > 0){
+                if (relateDms.getPutStoreRelateModelId() != null && relateDms.getPutStoreRelateModelId() > 0) {
                     /**
                      * 去putrelatestoremodel找到数据  如果商户已签收就不让接单
                      */
                     PutStoreRelateModel relateModel = putStoreRelateModelDao.selectById(relateDms.getPutStoreRelateModelId());
-                    if(relateModel != null){
-                        params.add("pxtNumber",relateModel.getPutStoreNumber());
-                        if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
-                            throw new ImproperOptionException("商户已签收");
+                    if (relateModel != null) {
+                        if (relateModel.getSupplierId() != null && relateModel.getSupplierId() > 0) {
+                            SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(relateModel.getSupplierId()));
+                            params.put("pxtNumber", supplierInfo.getNumber());
                         }
-                        if(PutStatus.NO_PUT.getStatus().equals(relateModel.getPutStatus())) {
-                            throw new ImproperOptionException("冰柜未投放");
+                        if (PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())) {
+                            params.put("id", relateDms.getId() + "");
+                            SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL + "/drpOpen/pxtAndIceBox/updateBacklogStatus", params);
+                            throw new ImproperOptionException("商户已签收");
                         }
                     }
                     /**
-                     * 逻辑修改 不去修改 报表内容   可以跳过配送直接签收
+                     * 校验是否修改资产编号
                      */
-                    /*PutStoreRelateModel putStoreRelateModel = PutStoreRelateModel.builder()
-                            .id(relateDms.getPutStoreRelateModelId())
-                            .putStatus(PutStatus.IS_ARRIVED.getStatus())
-                            .build();
-                    putStoreRelateModelDao.updateById(putStoreRelateModel);
 
-                    IceBoxPutReport report = new IceBoxPutReport();
-                    report.setPutStoreModelId(relateDms.getPutStoreRelateModelId());
-                    report.setPutStatus(PutStatus.IS_ARRIVED.getStatus());
-                    iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
-                            .eq(IceBoxPutReport::getPutStoreModelId,report.getPutStoreModelId())
-                            .set(IceBoxPutReport::getPutStatus,report.getPutStatus()));*/
-                }
-
-                /**
-                 * 修改冰柜配送表状态和绑定冰柜信息
-                 */
-                if(iceBoxRelateDmsVo.getIceBoxId() != null && iceBoxRelateDmsVo.getIceBoxId() > 0){
-                    IceBox iceBox = iceBoxDao.selectById(iceBoxRelateDmsVo.getIceBoxId());
-                    if(iceBox != null ){
-                        if(iceBox.getIceBoxType() == 0){
-                            if(iceBox.getOldAssetId() != iceBoxRelateDmsVo.getIceBoxAssetId()){
-                                throw new ImproperOptionException("该冰柜编号系统不存在");
-                            }
-                            /**
-                             * 商户可以跳过配送步骤  所以审批完就直接发送通知  不需要这里
-                             */
-                            //旧冰柜发送通知
-                            /*OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
-                            oldIceBoxSignNotice.setApplyNumber(relateDms.getRelateNumber());
-                            oldIceBoxSignNotice.setIceBoxId(iceBox.getId());
-                            oldIceBoxSignNotice.setAssetId(iceBox.getAssetId());
-                            oldIceBoxSignNotice.setPutStoreNumber(relateDms.getPutStoreNumber());
-                            oldIceBoxSignNotice.setCreateTime(new Date());
-                            oldIceBoxSignNoticeDao.insert(oldIceBoxSignNotice);*/
-
-                        }else if(iceBox.getIceBoxType() == 1){
-                            //新冰柜
-                            if(iceBox.getAssetId() != iceBoxRelateDmsVo.getIceBoxAssetId()){
-                                throw new ImproperOptionException("该冰柜编号系统不存在");
-                            }
-                        }
-                        /*relateDms.setIceBoxType(iceBox.getIceBoxType());
-                        iceBox.setPutStatus(PutStatus.IS_ARRIVED.getStatus());
-                        iceBox.setUpdatedTime(new Date());
-                        iceBoxDao.updateById(iceBox);*/
-                    }else{
-                        throw new ImproperOptionException("该冰柜编号系统不存在");
+                    IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getSupplierId,relateDms.getSupplierId()).eq(IceBox::getModelId,relateDms.getModelId()).eq(IceBox::getStatus,1).eq(IceBox::getPutStatus,PutStatus.NO_PUT.getStatus()).eq(IceBox::getAssetId, iceBoxRelateDmsVo.getIceBoxAssetId()).last("limit 1"));
+                    if (iceBox == null) {
+                        throw new ImproperOptionException("该冰柜编号不存在");
                     }
+
+
+                    relateDms.setIceBoxId(iceBoxRelateDmsVo.getIceBoxId());
+                    relateDms.setIceBoxAssetId(iceBoxRelateDmsVo.getIceBoxAssetId());
+                    relateDms.setPutstatus(PutStatus.IS_ARRIVED.getStatus());
+                    relateDms.setUpdateTime(new Date());
+                    relateDms.setArrviedTime(new Date());
+                    iceBoxRelateDmsDao.updateById(relateDms);
+                    /*                /**
+                     * 发送dms送达通知
+                     */
+                    params.put("id", relateDms.getId() + "");
+                    SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL + "/drpOpen/pxtAndIceBox/updateBacklogStatus", params);
+                } else {
+                    throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
                 }
 
-                relateDms.setIceBoxId(iceBoxRelateDmsVo.getIceBoxId());
-                relateDms.setIceBoxAssetId(iceBoxRelateDmsVo.getIceBoxAssetId());
-                relateDms.setPutstatus(PutStatus.IS_ARRIVED.getStatus());
-                relateDms.setUpdateTime(new Date());
-                relateDms.setArrviedTime(new Date());
-                iceBoxRelateDmsDao.updateById(relateDms);
-                /**
-                 * 发送dms送达通知
-                 */
-                params.add("type", SendDmsIceboxTypeEnum.PUT_ARRIVRD.getCode()+"");
-                params.add("relateCode",relateDms.getId()+"");
-                SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
-            }else{
-                throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
             }
-
         }
     }
 }

@@ -21,8 +21,8 @@ public interface MqConstant {
     /**
      * 冰柜投放报表
      */
-    String iceboxReportQueue = "ice_box_report_queue";
-    String iceboxReportKey = "ice_box_report_routing_key";
+    String iceboxReportQueue = "ice_box_report_queue_ajq";
+    String iceboxReportKey = "ice_box_report_routing_key_ajq";
 
     /**
      * 冰柜异常报备报表

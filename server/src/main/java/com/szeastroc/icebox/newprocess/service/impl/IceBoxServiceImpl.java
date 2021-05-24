@@ -3279,7 +3279,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Set<Integer> storeRelateModelIds = Streams.toStream(applyRelatePutStoreModels).map(x -> x.getStoreRelateModelId()).collect(Collectors.toSet());
         if (CollectionUtil.isNotEmpty(storeRelateModelIds)) {
             for (Integer storeRelateModelId : storeRelateModelIds) {
-                MultiValueMap<String, String> params = new LinkedMultiValueMap();
+                Map params = new HashMap();
                 PutStoreRelateModel putStoreRelateModel = putStoreRelateModelDao.selectById(storeRelateModelId);
                 if (putStoreRelateModel == null) {
                     continue;
@@ -3290,7 +3290,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 putStoreRelateModelDao.update(putStoreRelateModel,Wrappers.<PutStoreRelateModel>lambdaUpdate()
                         .eq(PutStoreRelateModel::getId,storeRelateModelId)
                         .set(PutStoreRelateModel::getExamineRemark,iceBoxRequest.getExamineRemark()));
-                params.add("pxtNumber",putStoreRelateModel.getPutStoreNumber());
+                if(putStoreRelateModel.getSupplierId() != null && putStoreRelateModel.getSupplierId() > 0){
+                    SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(putStoreRelateModel.getSupplierId()));
+                    params.put("pxtNumber",supplierInfo.getNumber());
+                }
+
                 /**
                  * 添加配送相关信息
                  */
@@ -3405,8 +3409,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                  * 发送dms通知
                  */
 
-                params.add("type",SendDmsIceboxTypeEnum.PUT_CONFIRM.getCode()+"");
-                params.add("relateCode",iceBoxRelateDms.getId()+"");
+                params.put("type",SendDmsIceboxTypeEnum.PUT_CONFIRM.getCode()+"");
+                params.put("relateCode",iceBoxRelateDms.getId()+"");
                 SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
             }
         }
@@ -3790,7 +3794,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public IceBoxVo getIceBoxByQrcodeNew(String qrcode, String pxtNumber) {
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getQrCode, qrcode));
         IceBox iceBox = iceBoxDao.selectById(Objects.requireNonNull(iceBoxExtend).getId());
-        return iceBoxService.getIceBoxVo(pxtNumber, iceBoxExtend, iceBox);
+        //return iceBoxService.getIceBoxVo(pxtNumber, iceBoxExtend, iceBox);
+        return getIceBoxVoNew(pxtNumber, iceBoxExtend, iceBox);
     }
 
     /**
@@ -3814,8 +3819,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
         PutStoreRelateModel relateModel = relateModelList.get(0);
         ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
-        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, applyRelatePutStoreModel.getApplyNumber()));
-        return  null;
+        return  IceBoxConverter.convertToVo(Objects.requireNonNull(iceBox),
+                Objects.requireNonNull(iceBoxExtend),
+                Objects.requireNonNull(iceModel),
+                Objects.isNull(applyRelatePutStoreModel) ? FreePayTypeEnum.UN_FREE : FreePayTypeEnum.convertVo(applyRelatePutStoreModel.getFreeType()));
     }
 
     @Override
@@ -5207,7 +5214,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     public IceBoxVo getIceBoxById(Integer id, String pxtNumber) {
         IceBox iceBox = iceBoxDao.selectById(id);
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
-        IceBoxVo iceBoxVo = iceBoxService.getIceBoxVo(pxtNumber, iceBoxExtend, iceBox);
+        //IceBoxVo iceBoxVo = iceBoxService.getIceBoxVo(pxtNumber, iceBoxExtend, iceBox);
+        /**
+         * 需求改动  扫码不要绑定冰柜  签到时候再绑定
+         */
+        IceBoxVo iceBoxVo = getIceBoxVoNew(pxtNumber, iceBoxExtend, iceBox);
         return iceBoxVo;
     }
 

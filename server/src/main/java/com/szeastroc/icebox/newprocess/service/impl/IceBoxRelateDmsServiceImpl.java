@@ -18,6 +18,7 @@ import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.icebox.config.DmsUrlConfig;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
@@ -59,6 +60,7 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
     private final FeignStoreClient feignStoreClient;
     private final FeignUserClient feignUserClient;
     private final FeignSupplierClient feignSupplierClient;
+    private final DmsUrlConfig dmsUrlConfig;
 
 
     @Override
@@ -152,7 +154,7 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
                     }
                     if(PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())){
                         params.put("id",iceBoxRelateDms.getId()+"");
-                        SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/updateBacklogStatus",params);
+                        SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/updateBacklogStatus",params);
                         throw new ImproperOptionException("商户已签收");
                     }
                 }
@@ -186,11 +188,11 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
             if(dmsVo.getType() == 1){
                 //投放
                 params.put("type", SendDmsIceboxTypeEnum.PUT_ARRIVRD.getCode()+"");
-                SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+                SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
             }else if(dmsVo.getType() == 2){
                 //退还
                 params.put("type", SendDmsIceboxTypeEnum.BACK_ARRIVED.getCode()+"");
-                SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+                SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
             }
         }else{
             throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
@@ -233,7 +235,7 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
                         }
                         if (PutStatus.FINISH_PUT.getStatus().equals(relateModel.getPutStatus())) {
                             params.put("id", relateDms.getId() + "");
-                            SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL + "/drpOpen/pxtAndIceBox/updateBacklogStatus", params);
+                            SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl() + "/drpOpen/pxtAndIceBox/updateBacklogStatus", params);
                             throw new ImproperOptionException("商户已签收");
                         }
                     }
@@ -257,7 +259,7 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
                      * 发送dms送达通知
                      */
                     params.put("id", relateDms.getId() + "");
-                    SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL + "/drpOpen/pxtAndIceBox/updateBacklogStatus", params);
+                    SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl() + "/drpOpen/pxtAndIceBox/updateBacklogStatus", params);
                 } else {
                     throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
                 }

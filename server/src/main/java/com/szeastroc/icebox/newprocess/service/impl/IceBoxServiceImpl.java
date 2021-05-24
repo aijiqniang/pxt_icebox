@@ -43,6 +43,7 @@ import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.common.utils.Streams;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
+import com.szeastroc.icebox.config.DmsUrlConfig;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
@@ -161,6 +162,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final FeignDeptRuleClient feignDeptRuleClient;
     private final FeignIceBoxExamineUserClient feignIceBoxExamineUserClient;
     private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
+    private final DmsUrlConfig dmsUrlConfig;
     @Autowired
     private IceBoxService iceBoxService;
     @Autowired
@@ -3411,7 +3413,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
                 params.put("type",SendDmsIceboxTypeEnum.PUT_CONFIRM.getCode()+"");
                 params.put("relateCode",iceBoxRelateDms.getId()+"");
-                SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+                SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
             }
         }
 

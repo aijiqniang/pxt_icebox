@@ -43,6 +43,7 @@ import com.szeastroc.common.feign.visit.FeignOutExamineClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.commondb.config.redis.JedisClient;
+import com.szeastroc.icebox.config.DmsUrlConfig;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.constant.IceBoxConstant;
@@ -137,6 +138,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
     private final IceRepairOrderService iceRepairOrderService;
     private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
+
+    private final DmsUrlConfig dmsUrlConfig;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -925,7 +928,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBoxRelateDmsDao.insert(iceBoxRelateDms);
         params.put("type",SendDmsIceboxTypeEnum.BACK_CONFIRM.getCode()+"");
         params.put("relateCode",iceBoxRelateDms.getId()+"");
-        SendRequestUtils.sendPostRequest(IceBoxConstant.SEND_DMS_URL+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+        SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
 
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());

@@ -248,7 +248,12 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
                         throw new ImproperOptionException("该冰柜编号不存在");
                     }
 
-
+                    if(StringUtils.isNotEmpty(iceBoxRelateDmsVo.getRemark())){
+                        relateDms.setRemark(iceBoxRelateDmsVo.getRemark());
+                    }
+                    if(StringUtils.isNotEmpty(iceBoxRelateDmsVo.getPhoto())){
+                        relateDms.setPhoto(iceBoxRelateDmsVo.getPhoto());
+                    }
                     relateDms.setIceBoxId(iceBoxRelateDmsVo.getIceBoxId());
                     relateDms.setIceBoxAssetId(iceBoxRelateDmsVo.getIceBoxAssetId());
                     relateDms.setPutstatus(PutStatus.IS_ARRIVED.getStatus());

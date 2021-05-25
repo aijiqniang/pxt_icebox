@@ -3318,9 +3318,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         .last("limit 1"));
                 if (iceBox != null && IceBoxEnums.TypeEnum.OLD_ICE_BOX.getType().equals(iceBox.getIceBoxType())) {
 
-                    iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
+                    /**
+                     * 需求改动  仅通知 不绑定商户
+                     */
+                    /*iceBox.setPutStatus(PutStatus.DO_PUT.getStatus());
                     iceBox.setUpdatedTime(new Date());
-                    iceBoxDao.updateById(iceBox);
+                    iceBoxDao.updateById(iceBox);*/
 
 
                     OldIceBoxSignNotice oldIceBoxSignNotice = new OldIceBoxSignNotice();
@@ -3345,7 +3348,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if (ruleIceDetailVo != null) {
                     if (!ruleIceDetailVo.getIsSign()) {
 
-                        icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+                       /* icePutApply.setStoreSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
                         icePutApply.setUpdateTime(new Date());
                         icePutApplyDao.updateById(icePutApply);
                         //创建冰柜和投放申请编号的关联关系
@@ -3369,7 +3372,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                             iceBoxExtend.setLastPutTime(icePutApply.getCreatedTime());
                             iceBoxExtend.setLastPutId(icePutApply.getId());
                             iceBoxExtendDao.updateById(iceBoxExtend);
-                        }
+                        }*/
                         IceBoxPutReport report = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, icePutApply.getApplyNumber())
                                 .eq(IceBoxPutReport::getIceBoxModelId, iceBox.getModelId())
                                 .eq(IceBoxPutReport::getSupplierId, iceBox.getSupplierId())
@@ -3384,10 +3387,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                                 report.setExamineUserName(userInfoVo.getRealname());
                                 report.setExamineUserPosion(userInfoVo.getPosion());
                             }
-                            iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
+                            /*iceBoxPutReportDao.update(report,Wrappers.<IceBoxPutReport>lambdaUpdate()
                                     .eq(IceBoxPutReport::getId,report.getId())
                                     .set(IceBoxPutReport::getExamineRemark,iceBoxRequest.getExamineRemark())
-                                    .set(IceBoxPutReport::getExamineUserPosion,report.getExamineUserPosion()));
+                                    .set(IceBoxPutReport::getExamineUserPosion,report.getExamineUserPosion()));*/
                             iceBoxRelateDms.setFreeType(report.getFreeType());
                             iceBoxRelateDms.setDepositMoney(report.getDepositMoney());
                         }

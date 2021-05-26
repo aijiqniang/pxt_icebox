@@ -267,6 +267,12 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
                     if (iceBox == null) {
                         throw new ImproperOptionException("该冰柜编号不存在");
                     }
+                    if(relateDms.getType() == 2){
+                        //退还必有冰柜id
+                        if(!relateDms.getIceBoxId().equals(iceBox.getId())){
+                            throw new ImproperOptionException("该冰柜编号与退还冰柜编号不一致");
+                        }
+                    }
 
                     if(StringUtils.isNotEmpty(iceBoxRelateDmsVo.getRemark())){
                         relateDms.setRemark(iceBoxRelateDmsVo.getRemark());

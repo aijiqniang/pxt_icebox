@@ -104,7 +104,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         /*IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                 .eq(IcePutApplyRelateBox::getApplyNumber, icePutApply.getApplyNumber())
                 .eq(IcePutApplyRelateBox::getBoxId, clientInfoRequest.getIceChestId()));*/
-        PutStoreRelateModel relateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getPutStoreNumber, clientInfoRequest.getClientNumber()).eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus()).eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus()).eq(PutStoreRelateModel::getStatus, 1).orderByDesc(PutStoreRelateModel::getId).last("limit 1"));
+        PutStoreRelateModel relateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getPutStoreNumber, clientInfoRequest.getClientNumber()).eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId()).eq(PutStoreRelateModel::getModelId, iceBox.getModelId()).eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus()).eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus()).eq(PutStoreRelateModel::getStatus, 1).orderByDesc(PutStoreRelateModel::getId).last("limit 1"));
         if(relateModel == null){
             throw new ImproperOptionException("该门店未申请冰柜");
         }

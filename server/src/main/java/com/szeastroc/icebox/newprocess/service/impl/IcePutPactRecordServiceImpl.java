@@ -139,8 +139,9 @@ public class IcePutPactRecordServiceImpl extends ServiceImpl<IcePutPactRecordDao
     public boolean checkPactRecordByBoxId(Integer iceBoxId,String storeNumber,String assetId) {
         // 通过冰柜找到申请投放的门店
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
+        IceBox applyBox = iceBoxDao.selectById(iceBoxId);
         //IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, iceBoxExtend.getLastApplyNumber()));
-        PutStoreRelateModel relateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getPutStoreNumber, storeNumber).eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus()).eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus()).eq(PutStoreRelateModel::getStatus, 1).orderByDesc(PutStoreRelateModel::getId).last("limit 1"));
+        PutStoreRelateModel relateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getSupplierId,applyBox.getSupplierId()).eq(PutStoreRelateModel::getModelId,applyBox.getModelId()).eq(PutStoreRelateModel::getPutStoreNumber, storeNumber).eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus()).eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus()).eq(PutStoreRelateModel::getStatus, 1).orderByDesc(PutStoreRelateModel::getId).last("limit 1"));
         if(relateModel == null){
             throw new ImproperOptionException("该门店未申请冰柜");
         }

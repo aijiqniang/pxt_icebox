@@ -282,6 +282,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
         wrapper.eq(PutStoreRelateModel::getModelId, iceBox.getModelId());
         wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
         wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
+        wrapper.orderByDesc(PutStoreRelateModel::getId);
         List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);
         if (CollectionUtil.isNotEmpty(relateModelList)) {
             for (PutStoreRelateModel relateModel : relateModelList) {

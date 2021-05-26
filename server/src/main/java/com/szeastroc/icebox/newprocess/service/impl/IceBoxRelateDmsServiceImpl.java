@@ -5,10 +5,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.BeanProperty;
 import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
-import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
-import com.szeastroc.common.entity.customer.vo.StoreRequest;
-import com.szeastroc.common.entity.customer.vo.SupplierInfo;
+import com.szeastroc.common.entity.customer.vo.*;
+import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
 import com.szeastroc.common.entity.user.vo.UserInfoVo;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
@@ -81,43 +79,65 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
                 }
             }
             if(StringUtils.isNotEmpty(iceBoxRelateDms.getPutStoreNumber())){
-                //门店信息
+
                 List<String> storeNumbers = new ArrayList<>();
                 storeNumbers.add(iceBoxRelateDms.getPutStoreNumber());
-                CommonResponse<Map<String, StoreInfoDtoVo>> response = feignStoreClient.getMapByStoreNumbers(new StoreRequest(storeNumbers));
-                if(response != null && response.getData() != null){
-                    Map<String, StoreInfoDtoVo> map = response.getData();
-                    StoreInfoDtoVo storeInfoDtoVo = map.get(iceBoxRelateDms.getPutStoreNumber());
-                    if(storeInfoDtoVo != null){
-                        returnVo.setPutStoreName(storeInfoDtoVo.getStoreName());
-                        returnVo.setAddress(storeInfoDtoVo.getAddress());
+                if(iceBoxRelateDms.getPutStoreNumber().contains("C0")){
+                    //门店信息
+                    CommonResponse<Map<String, StoreInfoDtoVo>> response = feignStoreClient.getMapByStoreNumbers(new StoreRequest(storeNumbers));
+                    if(response != null && response.getData() != null){
+                        Map<String, StoreInfoDtoVo> map = response.getData();
+                        StoreInfoDtoVo storeInfoDtoVo = map.get(iceBoxRelateDms.getPutStoreNumber());
+                        if(storeInfoDtoVo != null){
+                            returnVo.setPutStoreName(storeInfoDtoVo.getStoreName());
+                            returnVo.setAddress(storeInfoDtoVo.getAddress());
+                        }
                     }
-                }
-                //店主信息
-                CommonResponse<MemberInfoVo> keeperResponse = feignStoreRelateMemberClient.getShopKeeperByStoreNumber(iceBoxRelateDms.getPutStoreNumber());
-                if(keeperResponse != null && keeperResponse.getData() != null){
-                    MemberInfoVo memberInfoVo = keeperResponse.getData();
-                    if(memberInfoVo != null){
-                        returnVo.setShopkeeper(memberInfoVo.getName());
-                        returnVo.setShopkeeperPhoneNumber(memberInfoVo.getMobile());
+                    //店主信息
+                    CommonResponse<MemberInfoVo> keeperResponse = feignStoreRelateMemberClient.getShopKeeperByStoreNumber(iceBoxRelateDms.getPutStoreNumber());
+                    if(keeperResponse != null && keeperResponse.getData() != null){
+                        MemberInfoVo memberInfoVo = keeperResponse.getData();
+                        if(memberInfoVo != null){
+                            returnVo.setShopkeeper(memberInfoVo.getName());
+                            returnVo.setShopkeeperPhoneNumber(memberInfoVo.getMobile());
+                        }
                     }
-                }
-                //主业务员信息
-                CommonResponse<Integer> mainSaleManResponse = feignStoreClient.getMainSaleManId(iceBoxRelateDms.getPutStoreNumber());
-                if(mainSaleManResponse != null && mainSaleManResponse.getData() != null){
-                    Integer mainSaleManId = mainSaleManResponse.getData();
-                    if(mainSaleManId != null && mainSaleManId > 0){
-                        CommonResponse<UserInfoVo> userResponse = feignUserClient.findById(mainSaleManId);
-                        if(userResponse != null && userResponse.getData() != null){
-                            UserInfoVo mainSaleMan = userResponse.getData();
-                            returnVo.setSaleManId(mainSaleManId);
-                            if(mainSaleMan != null){
-                                returnVo.setSaleManName(mainSaleMan.getRealname());
-                                returnVo.setSaleManPhoneNumber(mainSaleMan.getMobile());
+                    //主业务员信息
+                    CommonResponse<Integer> mainSaleManResponse = feignStoreClient.getMainSaleManId(iceBoxRelateDms.getPutStoreNumber());
+                    if(mainSaleManResponse != null && mainSaleManResponse.getData() != null){
+                        Integer mainSaleManId = mainSaleManResponse.getData();
+                        if(mainSaleManId != null && mainSaleManId > 0){
+                            CommonResponse<UserInfoVo> userResponse = feignUserClient.findById(mainSaleManId);
+                            if(userResponse != null && userResponse.getData() != null){
+                                UserInfoVo mainSaleMan = userResponse.getData();
+                                returnVo.setSaleManId(mainSaleManId);
+                                if(mainSaleMan != null){
+                                    returnVo.setSaleManName(mainSaleMan.getRealname());
+                                    returnVo.setSaleManPhoneNumber(mainSaleMan.getMobile());
+                                }
                             }
                         }
                     }
+                }else {
+                    //非门店
+                    SubordinateInfoVo subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBoxRelateDms.getPutStoreNumber()));
+                    if(subordinateInfoVo != null ){
+                        returnVo.setPutStoreName(subordinateInfoVo.getName());
+                        returnVo.setAddress(subordinateInfoVo.getAddress());
+                        returnVo.setShopkeeper(subordinateInfoVo.getLinkman());
+                        returnVo.setShopkeeperPhoneNumber(subordinateInfoVo.getLinkmanMobile());
+                        //主业务员信息
+                        Integer mainSaleManId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(subordinateInfoVo.getNumber()));
+                        SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(mainSaleManId));
+                        if(simpleUserInfoVo != null){
+                            returnVo.setSaleManId(simpleUserInfoVo.getId());
+                            returnVo.setSaleManName(simpleUserInfoVo.getRealname());
+                            returnVo.setSaleManPhoneNumber(simpleUserInfoVo.getMobile());
+                        }
+                    }
+
                 }
+
             }
             if(iceBoxRelateDms.getPutStoreRelateModelId() != null && iceBoxRelateDms.getPutStoreRelateModelId() > 0){
                 IceBoxPutReport report = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getPutStoreModelId,iceBoxRelateDms.getPutStoreRelateModelId()).last("limit 1"));

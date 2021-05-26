@@ -68,6 +68,13 @@ public class IceBoxExtendController {
     }
 
     /**
+     * 定时同步冰柜管理报表数据
+     */
+    public void syncIceManagerReport(){
+
+    }
+
+    /**
      * @Date: 2020/9/7 17:36 xiao
      * 二维码生成器
      */

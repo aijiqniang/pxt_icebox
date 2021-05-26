@@ -1038,6 +1038,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .applyNumber(applyNumber)
                 .backStoreNumber(putStoreNumber)
                 .oldPutId(icePutApplyRelateBox.getId())
+                .userId(userId)
                 .build();
 
         this.generateBackReport(iceBox, applyNumber, putStoreNumber,icePutApplyRelateBox.getFreeType());

@@ -3416,7 +3416,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
                 params.put("type",SendDmsIceboxTypeEnum.PUT_CONFIRM.getCode()+"");
                 params.put("relateCode",iceBoxRelateDms.getId()+"");
-                SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+                CompletableFuture.runAsync(()->SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params), ExecutorServiceFactory.getInstance());
+
             }
         }
 

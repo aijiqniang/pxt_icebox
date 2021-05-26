@@ -928,7 +928,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBoxRelateDmsDao.insert(iceBoxRelateDms);
         params.put("type",SendDmsIceboxTypeEnum.BACK_CONFIRM.getCode()+"");
         params.put("relateCode",iceBoxRelateDms.getId()+"");
-        SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params);
+        CompletableFuture.runAsync(()->SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params), ExecutorServiceFactory.getInstance());
+
 
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());

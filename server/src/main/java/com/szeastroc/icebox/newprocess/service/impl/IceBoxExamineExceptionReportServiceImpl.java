@@ -7,8 +7,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
 import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
@@ -59,11 +61,22 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
     private JedisClient jedis;
     @Autowired
     private FeignExportRecordsClient feignExportRecordsClient;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
     @Override
     public IPage<IceBoxExamineExceptionReport> findByPage(IceBoxExamineExceptionReportMsg reportMsg) {
         LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = fillWrapper(reportMsg);
         IPage<IceBoxExamineExceptionReport> page = iceBoxExamineExceptionReportDao.selectPage(reportMsg, wrapper);
+        page.convert(iceBoxExamineExceptionReport -> {
+            if(iceBoxExamineExceptionReport != null && StringUtils.isNotEmpty(iceBoxExamineExceptionReport.getPutCustomerNumber())){
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBoxExamineExceptionReport.getPutCustomerNumber()));
+                if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
+                    iceBoxExamineExceptionReport.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                }
+            }
+            return iceBoxExamineExceptionReport;
+        });
         return page;
     }
 

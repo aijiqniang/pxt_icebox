@@ -173,4 +173,9 @@ public class IceBoxPutReportVo {
      *冰柜签收日期
      */
     private Date signTime;
+
+    /**
+     * 商户编号
+     */
+    private String merchantNumber;
 }

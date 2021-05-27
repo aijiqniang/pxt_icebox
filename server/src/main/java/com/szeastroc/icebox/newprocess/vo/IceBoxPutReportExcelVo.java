@@ -136,4 +136,6 @@ public class IceBoxPutReportExcelVo {
      *冰柜签收日期
      */
     private String signTime;
+
+    private String merchantNumber;
 }

@@ -2244,6 +2244,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("level", level); // 客户等级
             map.put("belongObjStr", belongObjStr); // 客户类型
             map.put("id", iceBox.getId());
+            StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(number));
+            if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
+                map.put("merchantNumber",storeInfoDtoVo.getMerchantNumber());
+            }
             String fullDept = "";
             if(StringUtils.isNoneBlank(businessDeptName)){
                 fullDept = businessDeptName;
@@ -4039,6 +4043,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExcelVo.setDqStr(storeMap.get("regionDeptName")); // 大区
                     iceBoxExcelVo.setFwcStr(storeMap.get("serviceDeptName")); // 服务处
                     iceBoxExcelVo.setGroupStr(storeMap.get("groupDeptName")); // 组
+                    StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                    if(storeInfoDtoVo != null  && storeInfoDtoVo.getMerchantNumber() != null){
+                        iceBoxExcelVo.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                    }
                 }
 
                 iceBoxExcelVo.setAssetId(iceBox.getAssetId());
@@ -4067,7 +4075,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 }
                 /**
                  * 5.18导入加入新字段
-                 */
+                 *//*
                 Map<String, Object> equipMap = readEquipNews(iceBox.getId());
                 iceBoxExcelVo.setTotalSum((Integer) equipMap.get("totalSum"));
                 iceBoxExcelVo.setMonthSum((Integer) equipMap.get("monthSum"));
@@ -4105,7 +4113,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if(!Double.isNaN(cusLat) && !Double.isNaN(cusLng)){
                     distance = getDistance(iceboxLat,iceboxLng,cusLat,cusLng);
                 }
-                iceBoxExcelVo.setDistance(distance);
+                iceBoxExcelVo.setDistance(distance);*/
 
                 iceBoxExcelVoList.add(iceBoxExcelVo);
             }

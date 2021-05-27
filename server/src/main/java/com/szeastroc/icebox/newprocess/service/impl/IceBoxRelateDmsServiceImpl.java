@@ -76,6 +76,7 @@ public class IceBoxRelateDmsServiceImpl extends ServiceImpl<IceBoxRelateDmsDao, 
                     returnVo.setModelName(iceBox.getModelName());
                     returnVo.setChestNorm(iceBox.getChestNorm());
                     returnVo.setBrandName(iceBox.getBrandName());
+                    returnVo.setIceBoxType(iceBox.getIceBoxType());
                 }
             }
             if(StringUtils.isNotEmpty(iceBoxRelateDms.getPutStoreNumber())){

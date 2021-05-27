@@ -10,13 +10,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.entity.customer.vo.BaseDistrictVO;
-import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
-import com.szeastroc.common.entity.customer.vo.SessionStoreInfoVo;
-import com.szeastroc.common.entity.customer.vo.SimpleSupplierInfoVo;
-import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
-import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
-import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
+import com.szeastroc.common.entity.customer.vo.*;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.transfer.enums.ResourceTypeEnum;
 import com.szeastroc.common.entity.transfer.enums.WechatPayTypeEnum;
@@ -49,16 +43,17 @@ import com.szeastroc.common.feign.visit.FeignOutExamineClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.commondb.config.redis.JedisClient;
+import com.szeastroc.icebox.config.DmsUrlConfig;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.config.XcxConfig;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.enums.*;
 import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
+import com.szeastroc.icebox.enums.PutStatus;
+import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.BackType;
-import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.ServiceType;
 import com.szeastroc.icebox.newprocess.service.IceBackApplyReportService;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
@@ -72,6 +67,7 @@ import com.szeastroc.icebox.rabbitMQ.DataPack;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
 import com.szeastroc.icebox.rabbitMQ.MethodNameOfMQ;
 import com.szeastroc.icebox.util.NewExcelUtil;
+import com.szeastroc.icebox.util.SendRequestUtils;
 import com.szeastroc.icebox.util.wechatpay.WeiXinConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,6 +80,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -139,6 +137,9 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final FeignIceBoxExamineUserClient feignIceBoxExamineUserClient;
 
     private final IceRepairOrderService iceRepairOrderService;
+    private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
+
+    private final DmsUrlConfig dmsUrlConfig;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -840,6 +841,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
     private JSONObject doTransfer(String applyNumber) {
 
+        IceBoxRelateDms iceBoxRelateDms = new IceBoxRelateDms();
+        Map params = new HashMap();
         IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
         IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, applyNumber));
 
@@ -871,6 +874,16 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         if (iceBackOrder != null) {
             iceTransferRecord.setTransferMoney(iceBackOrder.getAmount());
         }
+        iceBoxRelateDms.setIceBoxId(iceBoxId);
+        iceBoxRelateDms.setIceBoxType(iceBox.getIceBoxType());
+        iceBoxRelateDms.setIceBoxAssetId(iceBox.getAssetId());
+        iceBoxRelateDms.setSupplierId(iceBox.getSupplierId());
+        iceBoxRelateDms.setModelId(iceBox.getModelId());
+        iceBoxRelateDms.setRelateNumber(applyNumber);
+        iceBoxRelateDms.setType(2);
+        iceBoxRelateDms.setPutStoreNumber(icePutApply.getPutStoreNumber());
+        iceBoxRelateDms.setBackstatus(IceBackStatusEnum.IS_ACEPTD.getType());
+
         // 插入交易记录
         iceTransferRecordDao.insert(iceTransferRecord);
 
@@ -901,10 +914,23 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                             .set(PutStoreRelateModel::getPutStatus, com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus())
                             .set(PutStoreRelateModel::getUpdateTime, new Date())
                             .eq(PutStoreRelateModel::getId, storeRelateModelId));
+                    iceBoxRelateDms.setPutStoreRelateModelId(putStoreRelateModel.getId());
+                    if(putStoreRelateModel.getSupplierId() != null && putStoreRelateModel.getSupplierId() > 0){
+                        SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(putStoreRelateModel.getSupplierId()));
+                        params.put("pxtNumber",supplierInfo.getNumber());
+                    }
                     break;
                 }
             }
         }
+
+        //  2021/5/12 加入dms通知
+        iceBoxRelateDmsDao.insert(iceBoxRelateDms);
+        params.put("type",SendDmsIceboxTypeEnum.BACK_CONFIRM.getCode()+"");
+        params.put("relateCode",iceBoxRelateDms.getId()+"");
+        CompletableFuture.runAsync(()->SendRequestUtils.sendPostRequest(dmsUrlConfig.getToDmsUrl()+"/drpOpen/pxtAndIceBox/pxtToDmsIceBoxMsg",params), ExecutorServiceFactory.getInstance());
+
+
         // 更新冰柜状态
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
         iceBox.setPutStoreNumber("0");
@@ -1012,6 +1038,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .applyNumber(applyNumber)
                 .backStoreNumber(putStoreNumber)
                 .oldPutId(icePutApplyRelateBox.getId())
+                .userId(userId)
                 .build();
 
         this.generateBackReport(iceBox, applyNumber, putStoreNumber,icePutApplyRelateBox.getFreeType());

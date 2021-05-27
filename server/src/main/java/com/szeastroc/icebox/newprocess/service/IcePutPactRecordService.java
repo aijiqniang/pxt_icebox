@@ -8,5 +8,5 @@ public interface IcePutPactRecordService extends IService<IcePutPactRecord>{
 
     void createPactRecord(ClientInfoRequest clientInfoRequest);
 
-    boolean checkPactRecordByBoxId(Integer iceBoxId);
+    boolean checkPactRecordByBoxId(Integer iceBoxId,String storeNumber,String assetId);
 }

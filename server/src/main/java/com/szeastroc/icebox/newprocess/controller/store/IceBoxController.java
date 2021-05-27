@@ -250,11 +250,11 @@ public class IceBoxController {
      * @return
      */
     @PostMapping("/checkPactRecordByBoxId")
-    public CommonResponse<Boolean> checkPactRecordByBoxId(Integer iceBoxId) {
-        if (Objects.isNull(iceBoxId)) {
+    public CommonResponse<Boolean> checkPactRecordByBoxId(@RequestParam(value = "iceBoxId") Integer iceBoxId,@RequestParam(value = "storeNumber") String storeNumber,@RequestParam(value = "assetId")String assetId) {
+        if (Objects.isNull(iceBoxId) || Objects.isNull(storeNumber)) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutPactRecordService.checkPactRecordByBoxId(iceBoxId));
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, icePutPactRecordService.checkPactRecordByBoxId(iceBoxId,storeNumber,assetId));
     }
 
     /**

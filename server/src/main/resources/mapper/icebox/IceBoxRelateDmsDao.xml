@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceBoxRelateDmsDao">
+
+    <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IceBoxRelateDms">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="type" column="type" jdbcType="INTEGER"/>
+            <result property="relateNumber" column="relate_number" jdbcType="VARCHAR"/>
+            <result property="putStoreRelateModelId" column="put_store_relate_model_id" jdbcType="INTEGER"/>
+            <result property="iceBoxId" column="ice_box_id" jdbcType="INTEGER"/>
+            <result property="iceBoxType" column="ice_box_type" jdbcType="INTEGER"/>
+            <result property="iceBoxAssetId" column="ice_box_asset_id" jdbcType="VARCHAR"/>
+            <result property="currentPlace" column="current_place" jdbcType="VARCHAR"/>
+            <result property="expectArrviedDate" column="expect_arrvied_date" jdbcType="TIMESTAMP"/>
+            <result property="remark" column="remark" jdbcType="VARCHAR"/>
+            <result property="photo" column="photo" jdbcType="VARCHAR"/>
+            <result property="examineRemark" column="examine_remark" jdbcType="VARCHAR"/>
+            <result property="examineId" column="examine_id" jdbcType="INTEGER"/>
+            <result property="putStoreNumber" column="put_store_number" jdbcType="VARCHAR"/>
+            <result property="supplierId" column="supplier_id" jdbcType="INTEGER"/>
+            <result property="modelId" column="model_id" jdbcType="INTEGER"/>
+            <result property="putstatus" column="putStatus" jdbcType="INTEGER"/>
+            <result property="freeType" column="free_type" jdbcType="INTEGER"/>
+            <result property="depositMoney" column="deposit_money" jdbcType="DECIMAL"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="backstatus" column="backStatus" jdbcType="INTEGER"/>
+
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,type,relate_number,
+        put_store_relate_model_id,ice_box_id,ice_box_type,
+        ice_box_asset_id,current_place,expect_arrvied_date,
+        remark,photo,examine_remark,
+        examine_id,put_store_number,supplier_id,
+        model_id,putStatus,create_time,
+        update_time,backStatus
+    </sql>
+</mapper>

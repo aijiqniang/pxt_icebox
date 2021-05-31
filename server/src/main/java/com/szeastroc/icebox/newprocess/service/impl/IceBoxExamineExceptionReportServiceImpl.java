@@ -106,7 +106,7 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
             rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, reportMsg);
         }, ExecutorServiceFactory.getInstance());
         // 三分钟间隔
-        jedis.set(key, "ex", 3, TimeUnit.SECONDS);
+        jedis.set(key, "ex", 300, TimeUnit.SECONDS);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }

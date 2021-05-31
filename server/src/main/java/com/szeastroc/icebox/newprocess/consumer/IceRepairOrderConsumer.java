@@ -4,7 +4,10 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.utils.ImageUploadUtil;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.IceRepairStatusEnum;
@@ -33,7 +36,8 @@ public class IceRepairOrderConsumer {
     private ImageUploadUtil imageUploadUtil;
     @Autowired
     private FeignExportRecordsClient feignExportRecordsClient;
-
+    @Autowired
+    private FeignStoreClient feignStoreClient;
     @RabbitListener(queues = MqConstant.iceRepairOrderQueue)
     public void task(IceRepairOrderMsg msg) throws Exception {
         selectReport(msg);
@@ -44,7 +48,7 @@ public class IceRepairOrderConsumer {
         Integer count = iceRepairOrderService.selectByExportCount(wrapper);
         // 列
         String[] columnName = {"保修工单号","事业部", "大区", "服务处", "用户姓名","门店名称","手机","行政区域","地址",
-                "资产编号","产品型号","问题描述","备注","报修时间","服务商代码","受理服务商","受理时间","故障原因描述","维修措施","实际服务类型","实际服务方式","中间结果描述","反馈备注","工单状态","完成状态","服务完成时间","工程师"};
+                "资产编号","产品型号","问题描述","备注","报修时间","服务商代码","受理服务商","受理时间","故障原因描述","维修措施","实际服务类型","实际服务方式","中间结果描述","反馈备注","工单状态","完成状态","服务完成时间","工程师","商户编号"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -54,6 +58,15 @@ public class IceRepairOrderConsumer {
                     page.setCurrent(currentPage);
                     page.setSize(pageSize);
                     IPage<IceRepairOrder> reportPage = iceRepairOrderService.page(page, wrapper);
+                    reportPage.convert(iceRepairOrder -> {
+                        if(iceRepairOrder != null && StringUtils.isNotEmpty(iceRepairOrder.getCustomerNumber())){
+                            StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceRepairOrder.getCustomerNumber()));
+                            if(storeInfoDtoVo != null && StringUtils.isNotEmpty(storeInfoDtoVo.getMerchantNumber())){
+                                iceRepairOrder.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                            }
+                        }
+                        return iceRepairOrder;
+                    });
                     List<IceRepairOrder> reports = reportPage.getRecords();
                     if (CollectionUtil.isNotEmpty(reports)) {
                         for (int i = startRowCount; i <= endRowCount; i++) {
@@ -87,6 +100,7 @@ public class IceRepairOrderConsumer {
                                 eachDataRow.createCell(24).setCellValue(report.getFinishStatus());
                                 eachDataRow.createCell(25).setCellValue(Objects.nonNull(report.getFinishTime())?dateFormat.format(report.getFinishTime()):"");
                                 eachDataRow.createCell(26).setCellValue(report.getEngineer());
+                                eachDataRow.createCell(27).setCellValue(report.getMerchantNumber());
                             }
                         }
                     }

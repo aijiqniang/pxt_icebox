@@ -2244,9 +2244,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("level", level); // 客户等级
             map.put("belongObjStr", belongObjStr); // 客户类型
             map.put("id", iceBox.getId());
-            StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(number));
-            if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
-                map.put("merchantNumber",storeInfoDtoVo.getMerchantNumber());
+            if(StringUtils.isNotEmpty(number)){
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(number));
+                if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
+                    map.put("merchantNumber",storeInfoDtoVo.getMerchantNumber());
+                }
             }
             String fullDept = "";
             if(StringUtils.isNoneBlank(businessDeptName)){

@@ -107,4 +107,9 @@ public class IceBoxExamineExceptionReportExcelVo {
      */
     private String examineRemark;
 
+    /**
+     * 商户编号
+     */
+    private String merchantNumber;
+
 }

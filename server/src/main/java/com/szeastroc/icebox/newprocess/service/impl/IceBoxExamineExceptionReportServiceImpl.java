@@ -106,7 +106,7 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
             rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.iceboxExceptionReportKey, reportMsg);
         }, ExecutorServiceFactory.getInstance());
         // 三分钟间隔
-        jedis.set(key, "ex", 300, TimeUnit.SECONDS);
+        jedis.set(key, "ex", 3, TimeUnit.SECONDS);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
@@ -204,6 +204,12 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
                 examineVo.setAssetImage(iceExamine.getAssetImage());
                 examineVo.setExaminMsg(iceExamine.getExaminMsg());
                 examineVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceExamine.getIceStatus()));
+                if(StringUtils.isNotEmpty(examineVo.getPutCustomerNumber())){
+                    StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(examineVo.getPutCustomerNumber()));
+                    if(storeInfoDtoVo != null && StringUtils.isNotEmpty(storeInfoDtoVo.getMerchantNumber())){
+                        examineVo.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                    }
+                }
             }
 //            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
 //            if(iceBox != null){

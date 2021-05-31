@@ -80,4 +80,9 @@ public class IceBoxExamineExcelVo {
      */
     private String examinMsg;
 
+    /**
+     * 杭虎编号
+     */
+    private String merchantNumber;
+
 }

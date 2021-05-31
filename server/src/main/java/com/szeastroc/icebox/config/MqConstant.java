@@ -27,16 +27,16 @@ public interface MqConstant {
     /**
      * 冰柜异常报备报表
      */
-    String iceboxExceptionReportQueue = "ice_box_exception_report_queue";
-    String iceboxExceptionReportKey = "ice_box_exception_report_routing_key";
+    String iceboxExceptionReportQueue = "ice_box_exception_report_queue_ajq";
+    String iceboxExceptionReportKey = "ice_box_exception_report_routing_key_ajq";
     /*****************************  直连模式的参数   *************************************/
 
 
     /**
      * 冰柜退还报表
      */
-    String iceBackApplyReportQueue = "ice_back_apply_report_queue";
-    String iceBackApplyReportKey = "ice_back_apply_report_routing_key";
+    String iceBackApplyReportQueue = "ice_back_apply_report_queue_ajq";
+    String iceBackApplyReportKey = "ice_back_apply_report_routing_key_ajq";
 
 
     /**
@@ -58,8 +58,8 @@ public interface MqConstant {
     /**
      * 冰柜退还报表
      */
-    String iceRepairOrderQueue = "ice_repair_order_queue";
-    String iceRepairOrderKey = "ice_repair_order_routing_key";
+    String iceRepairOrderQueue = "ice_repair_order_queue_ajq";
+    String iceRepairOrderKey = "ice_repair_order_routing_key_ajq";
 
 
     /**

@@ -356,7 +356,7 @@ public class IceOtherSync {
                         Map<Integer, SessionDeptInfoVo> deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(deptId));
                         SessionDeptInfoVo headquarter = deptMap.get(5);
                         SessionDeptInfoVo business = deptMap.get(4);
-                        if(!DeptTypeEnum.BUSINESS_UNIT.getType().equals(business.getDeptType())){
+                        if(Objects.nonNull(business)&&!DeptTypeEnum.BUSINESS_UNIT.getType().equals(business.getDeptType())){
                             business = null;
                             headquarter = deptMap.get(4);
                         }

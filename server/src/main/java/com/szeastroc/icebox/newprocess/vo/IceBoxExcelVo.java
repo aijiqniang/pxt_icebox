@@ -111,4 +111,49 @@ public class IceBoxExcelVo {
     @ExcelProperty(value = "冰柜年份")
     private String iceboxYear;
 
+    /**
+     * 冰柜温度
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "温度")
+    private String temperature;
+
+    /**
+     * 定位地址
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "冰柜GPS定位位置")
+    private String gpsAddress;
+
+    /**
+     * 定位地址
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "最近采集时间")
+    private Date occurrenceTime;
+    /**
+     * 开关门累计总数
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "开关门累计总数")
+    private Integer totalSum;
+    /**
+     * 开关门月累计
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "开关门月累计")
+    private Integer monthSum;
+    /**
+     * 开关门今日累计
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "开关门今日累计")
+    private Integer todaySum;
+    /**
+     * 直线距离
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "直线距离(米)")
+    private double distance;
+
 }

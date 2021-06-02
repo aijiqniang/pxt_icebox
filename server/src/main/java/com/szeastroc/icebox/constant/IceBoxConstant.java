@@ -22,4 +22,5 @@ public class IceBoxConstant {
      */
     public final static String virtual_asset_id = "00000000000";
 
+
 }

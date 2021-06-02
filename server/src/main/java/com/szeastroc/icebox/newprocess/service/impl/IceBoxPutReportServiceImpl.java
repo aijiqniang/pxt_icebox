@@ -33,6 +33,7 @@ import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
+import com.szeastroc.icebox.enums.IsSyncEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.*;
@@ -105,12 +106,16 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
         IPage<IceBoxPutReportVo> pageVo = page.convert(report ->{
             IceBoxPutReportVo reportVo = new IceBoxPutReportVo();
             BeanUtils.copyProperties(report,reportVo);
+            if(!report.getPutStatus().equals(PutStatus.FINISH_PUT.getStatus())){
+                reportVo.setSignTime(null);
+            }
             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, report.getApplyNumber()).last("limit 1"));
             if(icePutApply != null){
+
                 reportVo.setApplyPit(icePutApply.getApplyPit());
-                if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())){
+                /*if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())){
                     reportVo.setSignTime(icePutApply.getUpdateTime());
-                }
+                }*/
             }
             return reportVo;
         });
@@ -353,7 +358,8 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
     public void syncPutDataToReport(List<Integer> ids) {
         List<PutStoreRelateModel> relateModelList = new ArrayList<>();
         if(CollectionUtil.isNotEmpty(ids)){
-            List<PutStoreRelateModel> valids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus()).eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()).in(PutStoreRelateModel::getId, ids));
+            /*List<PutStoreRelateModel> valids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus()).eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()).in(PutStoreRelateModel::getId, ids));*/
+            List<PutStoreRelateModel> valids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()).in(PutStoreRelateModel::getId, ids));
             List<PutStoreRelateModel> inValids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getStatus, CommonStatus.INVALID.getStatus()).in(PutStoreRelateModel::getId, ids));
             if(CollectionUtil.isNotEmpty(valids)){
                 relateModelList.addAll(valids);
@@ -362,7 +368,8 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                 relateModelList.addAll(inValids);
             }
         }else {
-            List<PutStoreRelateModel> valids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus()).eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()));
+            /*List<PutStoreRelateModel> valids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().ne(PutStoreRelateModel::getPutStatus,PutStatus.NO_PUT.getStatus()).eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()));*/
+            List<PutStoreRelateModel> valids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getStatus, CommonStatus.VALID.getStatus()));
             List<PutStoreRelateModel> inValids = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getStatus, CommonStatus.INVALID.getStatus()));
             if(CollectionUtil.isNotEmpty(valids)){
                 relateModelList.addAll(valids);
@@ -380,6 +387,9 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
             ApplyRelatePutStoreModel storeModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getStoreRelateModelId, relateModel.getId()));
             if(storeModel == null){
                 continue;
+            }
+            if(relateModel.getSignTime() != null){
+                putReport.setSignTime(relateModel.getSignTime());
             }
             putReport.setApplyNumber(storeModel.getApplyNumber());
             putReport.setPutStatus(relateModel.getPutStatus());
@@ -531,7 +541,13 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                     }
                 }
             }
+            putReport.setPutStoreModelId(relateModel.getId());
             iceBoxPutReportDao.insert(putReport);
+
+            PutStoreRelateModel model = new PutStoreRelateModel();
+            model.setId(relateModel.getId());
+            model.setIsSync(IsSyncEnum.IS_SYNC.getStatus());
+            putStoreRelateModelDao.updateById(model);
         }
     }
 
@@ -632,6 +648,37 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                     log.info("repairIceBoxCycleType reportId:{} complete , completeCount:{} ",report.getId(),completeCount);
                 }
             }
+        }
+    }
+
+    @Override
+    public void syncPutDataToReportSchedule() {
+
+        List<Integer> ids = new ArrayList<>();
+
+        LambdaQueryWrapper<PutStoreRelateModel>  putStoreRelateModelLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        putStoreRelateModelLambdaQueryWrapper.ne(PutStoreRelateModel::getIsSync,3);
+        List<PutStoreRelateModel>  putStoreRelateModels = putStoreRelateModelDao.selectList(putStoreRelateModelLambdaQueryWrapper);
+        if(putStoreRelateModels.size() > 0){
+            Set<Integer> putStoreRelateModelids = putStoreRelateModels.stream().map(x -> x.getId()).collect(Collectors.toSet());
+            LambdaQueryWrapper<IceBoxPutReport>  iceBoxPutReportLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            iceBoxPutReportLambdaQueryWrapper.in(IceBoxPutReport::getPutStoreModelId,putStoreRelateModelids);
+            List<IceBoxPutReport> reports = iceBoxPutReportDao.selectList(iceBoxPutReportLambdaQueryWrapper);
+
+        /*Map<Integer,List<PutStoreRelateModel>>  putStoreRelateModelMap = putStoreRelateModels.stream().collect(Collectors.groupingBy(PutStoreRelateModel::getIsSync));
+        List<PutStoreRelateModel> isSync1 = putStoreRelateModelMap.get("1");
+        List<PutStoreRelateModel> isSync2 = putStoreRelateModelMap.get("2");*/
+
+            ids.addAll(putStoreRelateModelids);
+            if(reports.size() > 0){
+                /**
+                 * 问题数据
+                 */
+                for(IceBoxPutReport report : reports){
+                    ids.remove(report.getPutStoreModelId());
+                }
+            }
+            syncPutDataToReport(ids);
         }
     }
 }

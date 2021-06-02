@@ -137,8 +137,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 服务处信息查询有误，请核对服务处名称");
                 }
                 iceBox.setDeptId(integer);
-
-                String suppName = null;// 经销商名称
                 // 经销商编号
                 String supplierNumber = oldIceBoxImportVo.getSupplierNumber();
 
@@ -148,7 +146,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
                     }
                     iceBox.setSupplierId(subordinateInfoVo.getSupplierId());
-                    suppName = subordinateInfoVo.getName();
                 }
 
                 IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, modelName));
@@ -256,7 +253,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + index + "行数据 经销商信息查询有误，请核对经销商编号");
                 }
 
-                String suppName = subordinateInfoVo.getName(); // 经销商名称
                 String service = oldIceBoxImportVo.getService();
 
                 Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findMaxIdByName(service));
@@ -280,17 +276,30 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         // 变更当前型号状态
                         IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, lastApplyNumber));
                         if (null != icePutApplyRelateBox) {
-                            ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
-                                    .eq(ApplyRelatePutStoreModel::getApplyNumber, lastApplyNumber)
-                                    .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType())
-                                    .last("limit 1"));
-                            if (null != applyRelatePutStoreModel) {
-                                Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
-                                PutStoreRelateModel putStoreRelateModel = new PutStoreRelateModel();
-                                putStoreRelateModel.setPutStatus(com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus());
-                                putStoreRelateModel.setUpdateTime(new Date());
-                                putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate().eq(PutStoreRelateModel::getId, storeRelateModelId));
+                            List<ApplyRelatePutStoreModel> applyRelatePutStoreModelList = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery()
+                                    .eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber())
+                                    .eq(ApplyRelatePutStoreModel::getFreeType, icePutApplyRelateBox.getFreeType()));
+                            if (CollectionUtil.isNotEmpty(applyRelatePutStoreModelList)) {
+                                Integer modelId = iceBox.getModelId();
+                                for (ApplyRelatePutStoreModel applyRelatePutStoreModel : applyRelatePutStoreModelList) {
+                                    Integer storeRelateModelId = applyRelatePutStoreModel.getStoreRelateModelId();
+                                    PutStoreRelateModel putStoreRelateModel = putStoreRelateModelDao.selectOne(Wrappers.<PutStoreRelateModel>lambdaQuery()
+                                            .eq(PutStoreRelateModel::getId, storeRelateModelId)
+                                            .eq(PutStoreRelateModel::getModelId, modelId)
+                                            .eq(PutStoreRelateModel::getPutStatus, com.szeastroc.icebox.newprocess.enums.PutStatus.FINISH_PUT.getStatus()));
+                                    if (null != putStoreRelateModel) {
+                                        putStoreRelateModelDao.update(putStoreRelateModel, Wrappers.<PutStoreRelateModel>lambdaUpdate()
+                                                .set(PutStoreRelateModel::getPutStatus, com.szeastroc.icebox.newprocess.enums.PutStatus.NO_PUT.getStatus())
+                                                .set(PutStoreRelateModel::getUpdateTime, new Date())
+                                                .eq(PutStoreRelateModel::getId, storeRelateModelId));
+                                        break;
+                                    }
+                                }
                             }
+                            iceBoxExtendDao.update(null, Wrappers.<IceBoxExtend>lambdaUpdate()
+                                    .eq(IceBoxExtend::getId, iceBox.getId())
+                                    .set(IceBoxExtend::getLastPutId, 0)
+                                    .set(IceBoxExtend::getLastApplyNumber, null));
                         }
                     }
                     Integer boxId = iceBox.getId();
@@ -385,7 +394,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                         subordinateInfoVo = feignData;
                     }
                 }
-                String suppName = subordinateInfoVo.getName(); // 经销商名称
                 String service = oldIceBoxImportVo.getService();
 
 
@@ -490,7 +498,6 @@ public class OldIceBoxOptImpl implements OldIceBoxOpt {
                     }
                 }
 
-                String suppName = subordinateInfoVo.getName(); // 经销商名称
                 String service = oldIceBoxImportVo.getService();
 
                 Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findMaxIdByName(service));

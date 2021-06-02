@@ -13,6 +13,7 @@ import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
 import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
 import com.szeastroc.common.entity.visit.SessionExamineVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
@@ -72,6 +73,8 @@ public class IceBoxTransferHistoryServiceImpl extends ServiceImpl<IceBoxTransfer
     private FeignExportRecordsClient feignExportRecordsClient;
     @Autowired
     private DirectProducer directProducer;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
 
     @Override

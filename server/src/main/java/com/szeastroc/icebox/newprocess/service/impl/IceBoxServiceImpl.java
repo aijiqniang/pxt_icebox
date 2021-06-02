@@ -2244,6 +2244,12 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("level", level); // 客户等级
             map.put("belongObjStr", belongObjStr); // 客户类型
             map.put("id", iceBox.getId());
+            if(StringUtils.isNotEmpty(number)){
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(number));
+                if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
+                    map.put("merchantNumber",storeInfoDtoVo.getMerchantNumber());
+                }
+            }
             String fullDept = "";
             if(StringUtils.isNoneBlank(businessDeptName)){
                 fullDept = businessDeptName;
@@ -4035,10 +4041,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     iceBoxExcelVo.setRealName(storeMap.get("realName")); // 负责业务员姓名
 
 
-                    iceBoxExcelVo.setSybStr(storeMap.get("businessDeptName")); // 事业部
-                    iceBoxExcelVo.setDqStr(storeMap.get("regionDeptName")); // 大区
-                    iceBoxExcelVo.setFwcStr(storeMap.get("serviceDeptName")); // 服务处
-                    iceBoxExcelVo.setGroupStr(storeMap.get("groupDeptName")); // 组
+                    if(iceBox.getPutStoreNumber().contains("C0")){
+                        iceBoxExcelVo.setSybStr(storeMap.get("businessDeptName")); // 事业部
+                        iceBoxExcelVo.setDqStr(storeMap.get("regionDeptName")); // 大区
+                        iceBoxExcelVo.setFwcStr(storeMap.get("serviceDeptName")); // 服务处
+                        iceBoxExcelVo.setGroupStr(storeMap.get("groupDeptName")); // 组
+                    }
+                    StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                    if(storeInfoDtoVo != null  && storeInfoDtoVo.getMerchantNumber() != null){
+                        iceBoxExcelVo.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                    }
                 }
 
                 iceBoxExcelVo.setAssetId(iceBox.getAssetId());

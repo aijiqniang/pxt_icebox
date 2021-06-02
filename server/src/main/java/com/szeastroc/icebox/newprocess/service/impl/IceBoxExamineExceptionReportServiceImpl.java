@@ -7,8 +7,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
 import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
@@ -59,11 +61,22 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
     private JedisClient jedis;
     @Autowired
     private FeignExportRecordsClient feignExportRecordsClient;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
     @Override
     public IPage<IceBoxExamineExceptionReport> findByPage(IceBoxExamineExceptionReportMsg reportMsg) {
         LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = fillWrapper(reportMsg);
         IPage<IceBoxExamineExceptionReport> page = iceBoxExamineExceptionReportDao.selectPage(reportMsg, wrapper);
+        page.convert(iceBoxExamineExceptionReport -> {
+            if(iceBoxExamineExceptionReport != null && StringUtils.isNotEmpty(iceBoxExamineExceptionReport.getPutCustomerNumber())){
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBoxExamineExceptionReport.getPutCustomerNumber()));
+                if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
+                    iceBoxExamineExceptionReport.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                }
+            }
+            return iceBoxExamineExceptionReport;
+        });
         return page;
     }
 
@@ -191,6 +204,12 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
                 examineVo.setAssetImage(iceExamine.getAssetImage());
                 examineVo.setExaminMsg(iceExamine.getExaminMsg());
                 examineVo.setStatusStr(IceBoxEnums.StatusEnum.getDesc(iceExamine.getIceStatus()));
+                if(StringUtils.isNotEmpty(examineVo.getPutCustomerNumber())){
+                    StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(examineVo.getPutCustomerNumber()));
+                    if(storeInfoDtoVo != null && StringUtils.isNotEmpty(storeInfoDtoVo.getMerchantNumber())){
+                        examineVo.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                    }
+                }
             }
 //            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()));
 //            if(iceBox != null){

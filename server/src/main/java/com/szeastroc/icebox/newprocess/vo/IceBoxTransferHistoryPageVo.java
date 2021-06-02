@@ -128,4 +128,10 @@ public class IceBoxTransferHistoryPageVo {
      */
     @ExcelProperty(value = "审核日期", index = 18)
     private String reviewTimeStr;
+
+    /**
+     * 商户编号
+     */
+    @ExcelProperty(value = "审核日期",index = 19)
+    private String merchantNumber;
 }

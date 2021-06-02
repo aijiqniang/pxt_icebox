@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.newprocess.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -156,4 +157,10 @@ public class IceBoxExamineExceptionReport {
      *提报单号
      */
     private String toOaNumber;
+
+    /**
+     * 商户编号
+     */
+    @TableField(exist = false)
+    private String merchantNumber;
 }

@@ -7,8 +7,10 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
 import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
@@ -51,11 +53,23 @@ public class IceBackApplyReportServiceImpl extends ServiceImpl<IceBackApplyRepor
     private RabbitTemplate rabbitTemplate;
     @Autowired
     FeignCacheClient feignCacheClient;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
     @Override
     public IPage<IceBackApplyReport> findByPage(IceBackApplyReportMsg reportMsg) {
         LambdaQueryWrapper<IceBackApplyReport> wrapper = this.fillWrapper(reportMsg);
-        return this.page(reportMsg, wrapper);
+        IPage<IceBackApplyReport> page = this.page(reportMsg, wrapper);
+        page.convert(iceBackApplyReport -> {
+            if(iceBackApplyReport != null && StringUtils.isNotEmpty(iceBackApplyReport.getCustomerNumber())){
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBackApplyReport.getCustomerNumber()));
+                if(storeInfoDtoVo != null && StringUtils.isNotEmpty(storeInfoDtoVo.getMerchantNumber())){
+                    iceBackApplyReport.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                }
+            }
+            return iceBackApplyReport;
+        });
+        return page;
     }
 
     @Override

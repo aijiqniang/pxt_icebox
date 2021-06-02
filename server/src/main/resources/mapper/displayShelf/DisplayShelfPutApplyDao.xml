@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.DisplayShelfPutApplyDao">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply">
+        <id column="id" property="id" />
+        <result column="apply_number" property="applyNumber" />
+        <result column="user_id" property="userId" />
+        <result column="put_store_number" property="putStoreNumber" />
+        <result column="store_sign_status" property="storeSignStatus" />
+        <result column="examine_status" property="examineStatus" />
+        <result column="examine_id" property="examineId" />
+        <result column="created_by" property="createdBy" />
+        <result column="created_time" property="createdTime" />
+        <result column="updated_by" property="updatedBy" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, apply_number, user_id, put_store_number, store_sign_status, examine_status, examine_id, created_by, created_time, updated_by, update_time
+    </sql>
+
+</mapper>

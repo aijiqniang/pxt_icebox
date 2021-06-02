@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.DisplayShelfDao">
+
+    <resultMap type="com.szeastroc.icebox.newprocess.entity.DisplayShelf" id="DisplayShelfMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="headquartersDeptId" column="headquarters_dept_id" jdbcType="VARCHAR"/>
+        <result property="headquartersDeptName" column="headquarters_dept_name" jdbcType="VARCHAR"/>
+        <result property="businessDeptId" column="business_dept_id" jdbcType="INTEGER"/>
+        <result property="businessDeptName" column="business_dept_name" jdbcType="VARCHAR"/>
+        <result property="regionDeptId" column="region_dept_id" jdbcType="INTEGER"/>
+        <result property="regionDeptName" column="region_dept_name" jdbcType="VARCHAR"/>
+        <result property="serviceDeptId" column="service_dept_id" jdbcType="INTEGER"/>
+        <result property="serviceDeptName" column="service_dept_name" jdbcType="VARCHAR"/>
+        <result property="groupDeptId" column="group_dept_id" jdbcType="INTEGER"/>
+        <result property="groupDeptName" column="group_dept_name" jdbcType="VARCHAR"/>
+        <result property="supplierNumber" column="supplier_number" jdbcType="VARCHAR"/>
+        <result property="putNumber" column="put_number" jdbcType="VARCHAR"/>
+        <result property="putStatus" column="put_status" jdbcType="INTEGER"/>
+        <result property="signStatus" column="sign_status" jdbcType="INTEGER"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <select id="selectPage" parameterType="com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage"
+            resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
+        select headquarters_dept_name,
+        business_dept_name,
+        region_dept_name,
+        service_dept_name,
+        supplier_name,
+        supplier_number,
+        supplier_type
+        from t_display_shelf
+        <where>
+            <if test="deptId != null ">
+                ( headquarters_dept_id = #{deptId} or business_dept_id = #{deptId} or region_dept_id = #{deptId} or
+                service_dept_id = #{deptId} )
+            </if>
+            <if test="supplierNumber != null and supplierNumber != ''">
+                and supplier_number = #{supplierNumber}
+            </if>
+        </where>
+        group by supplier_number
+    </select>
+
+    <select id="selectDetails" parameterType="com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage"
+            resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
+        select * from t_display_shelf
+        <where>
+            <if test="supplierNumber != '' and supplierNumber != null">
+                and supplier_number = #{supplierNumber}
+            </if>
+            <if test="putNumber != '' and putNumber != null">
+                and put_number = #{putNumber}
+            </if>
+            <if test="putName != '' and putName != null">
+                and put_name like concat('%',#{putName},'%')
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="putStatus != null">
+                and put_status = #{putStatus}
+            </if>
+            <if test="signStatus != null">
+                and sign_status = #{signStatus}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="selectType" parameterType="java.lang.String"
+            resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf$DisplayShelfType">
+        select name as typeName, count(type) as count
+        from t_display_shelf
+        where supplier_number = #{supplierNumber}
+        group by type
+    </select>
+    <select id="noPutShelves" resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
+        select name,type,supplier_number,supplier_name,count(type) as count from t_display_shelf
+        <where>
+            <if test="serviceId != null">
+                and service_dept_id = #{serviceId}
+            </if>
+            and put_status = 0 and status =1
+        </where>
+        group by supplier_number,type
+    </select>
+
+</mapper>
+

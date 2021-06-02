@@ -74,4 +74,9 @@ public interface MqConstant {
     String ICE_BOX_PUT_APPLY_Q = "ice_box_put_apply_queue";
     String ICE_BOX_PUT_APPLY_K = "ice_box_put_apply_key";
 
+
+
+    String SHELF_PUT_APPLY_Q = "shelf_put_apply_queue";
+    String SHELF_PUT_APPLY_K = "shelf_put_apply_key";
+
 }

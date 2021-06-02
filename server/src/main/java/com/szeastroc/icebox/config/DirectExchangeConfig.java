@@ -265,4 +265,31 @@ public class DirectExchangeConfig {
         return BindingBuilder.bind(iceBoxPutApplyQueue).to(storeExportExchange).with(MqConstant.ICE_BOX_PUT_APPLY_K);
     }
 
+
+
+
+
+    /**
+     * 货架申请审批推送
+     */
+    @Bean(name = "shelfPutApplyContainer")
+    public SimpleRabbitListenerContainerFactory shelfPutApplyContainer() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
+
+    // 冰柜申请审批通知
+    @Bean
+    public Queue shelfPutApplyQueue() {
+        return QueueBuilder.durable(MqConstant.SHELF_PUT_APPLY_Q).build();
+    }
+
+    @Bean
+    public Binding shelfPutApplyBinding(Queue shelfPutApplyQueue, DirectExchange storeExportExchange) {
+        return BindingBuilder.bind(shelfPutApplyQueue).to(storeExportExchange).with(MqConstant.SHELF_PUT_APPLY_K);
+    }
+
 }

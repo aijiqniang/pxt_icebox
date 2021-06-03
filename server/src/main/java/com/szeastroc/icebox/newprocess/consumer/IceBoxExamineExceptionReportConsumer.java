@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -60,6 +62,8 @@ public class IceBoxExamineExceptionReportConsumer {
     private IceBoxDao iceBoxDao;
     @Autowired
     private IceExamineDao iceExamineDao;
+    @Autowired
+    private FeignStoreClient feignStoreClient;
 
     //    @RabbitHandler
     @RabbitListener(queues = MqConstant.iceboxExceptionReportQueue, containerFactory = "iceBoxExceptionContainer")
@@ -95,7 +99,7 @@ public class IceBoxExamineExceptionReportConsumer {
         log.warn("当前检索条件下的巡检异常记录总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start, reportMsg.getOperateName());
         // 列
         String[] columnName = {"事业部", "大区", "服务处", "所属经销商编号", "所属经销商名称", "投放客户编号", "投放客户名称", "投放客户类型", "冰柜编号", "冰柜型号", "押金金额", "提报类型", "提交人", "提交日期", "审核人员",
-                "审核日期", "状态", "提报时间", "提报单号","审核人职务","审核备注"};
+                "审核日期", "状态", "提报时间", "提报单号","审核人职务","审核备注","商户编号"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -120,6 +124,12 @@ public class IceBoxExamineExceptionReportConsumer {
                             }
                             if (SupplierTypeEnum.IS_STORE.getType().equals(report.getPutCustomerType())) {
                                 excelVo.setPutCustomerType(SupplierTypeEnum.IS_STORE.getDesc());
+                                if(StringUtils.isNotEmpty(report.getPutCustomerNumber())){
+                                    StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(report.getPutCustomerNumber()));
+                                    if(storeInfoDtoVo != null && StringUtils.isNotEmpty(storeInfoDtoVo.getMerchantNumber())){
+                                        excelVo.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                                    }
+                                }
                             }
                             if (SupplierTypeEnum.IS_POSTMAN.getType().equals(report.getPutCustomerType())) {
                                 excelVo.setPutCustomerType(SupplierTypeEnum.IS_POSTMAN.getDesc());
@@ -159,6 +169,7 @@ public class IceBoxExamineExceptionReportConsumer {
                                     eachDataRow.createCell(18).setCellValue(excelVo.getToOaNumber());
                                     eachDataRow.createCell(19).setCellValue(excelVo.getExamineUserOfficeName());
                                     eachDataRow.createCell(20).setCellValue(excelVo.getExamineRemark());
+                                    eachDataRow.createCell(21).setCellValue(excelVo.getMerchantNumber());
                                 }
                             }
                         }
@@ -174,7 +185,7 @@ public class IceBoxExamineExceptionReportConsumer {
         log.warn("当前检索条件下的巡检记录总数据量为 [{}], 统计总量耗时 [{}],操作人[{}]", count, System.currentTimeMillis() - start, reportMsg.getOperateName());
         // 列
         String[] columnName = {"事业部", "大区", "服务处", "服务组", "冰柜编号", "冰柜型号", "所属经销商编号", "所属经销商名称", "现投放客户编号", "现投放客户名称", "冰柜状态", "巡检人姓名", "巡检人职位", "巡检时间",
-                "资产拍照", "备注信息"};
+                "资产拍照", "备注信息","商户编号"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -206,6 +217,12 @@ public class IceBoxExamineExceptionReportConsumer {
                             if (report.getSubmitTime() != null) {
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
                             }
+                            if(StringUtils.isNotEmpty(report.getPutCustomerNumber())){
+                                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(report.getPutCustomerNumber()));
+                                if(storeInfoDtoVo != null && StringUtils.isNotEmpty(storeInfoDtoVo.getMerchantNumber())){
+                                    excelVo.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                                }
+                            }
                             excelVoList.add(excelVo);
                         }
 //                        excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxExamineExceptionReportExcelVo::)).collect(Collectors.toList());
@@ -231,6 +248,7 @@ public class IceBoxExamineExceptionReportConsumer {
                                     eachDataRow.createCell(13).setCellValue(excelVo.getSubmitTime());
                                     eachDataRow.createCell(14).setCellValue(excelVo.getImageUrl());
                                     eachDataRow.createCell(15).setCellValue(excelVo.getExaminMsg());
+                                    eachDataRow.createCell(16).setCellValue(excelVo.getMerchantNumber());
                                 }
                             }
                         }

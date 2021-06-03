@@ -156,4 +156,10 @@ public class IceBoxExcelVo {
     @ExcelProperty(value = "直线距离(米)")
     private double distance;
 
+    /**
+     * 商户编号
+     */
+    @ColumnWidth(50)
+    @ExcelProperty(value = "商户编号")
+    private String merchantNumber;
 }

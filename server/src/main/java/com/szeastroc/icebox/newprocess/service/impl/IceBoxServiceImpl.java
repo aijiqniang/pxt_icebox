@@ -4080,7 +4080,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 /**
                  * 5.18导入加入新字段
                  */
-                Map<String, Object> equipMap = readEquipNews(iceBox.getId());
+                /*Map<String, Object> equipMap = readEquipNews(iceBox.getId());
                 iceBoxExcelVo.setTotalSum((Integer) equipMap.get("totalSum"));
                 iceBoxExcelVo.setMonthSum((Integer) equipMap.get("monthSum"));
                 iceBoxExcelVo.setTotalSum((Integer) equipMap.get("todaySum"));
@@ -4117,7 +4117,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if(!Double.isNaN(cusLat) && !Double.isNaN(cusLng)){
                     distance = getDistance(iceboxLat,iceboxLng,cusLat,cusLng);
                 }
-                iceBoxExcelVo.setDistance(distance);
+                iceBoxExcelVo.setDistance(distance);*/
 
                 iceBoxExcelVoList.add(iceBoxExcelVo);
             }

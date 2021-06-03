@@ -170,7 +170,7 @@ public class DirectExchangeConfig {
     public SimpleRabbitListenerContainerFactory iceExportExcelContainer() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factoryConfigurer.configure(factory, connectionFactory);
-        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setAcknowledgeMode(AcknowledgeMode.NONE);
         factory.setPrefetchCount(1);
         return factory;
     }

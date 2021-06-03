@@ -221,6 +221,12 @@ public class IceRepairOrderServiceImpl extends ServiceImpl<IceRepairOrderDao, Ic
             if(StringUtils.isNotBlank(one.getFeedback())){
                 one.setFeedback("null".equals(one.getFeedback().trim())?"":one.getFeedback().trim());
             }
+            if(StringUtils.isNotBlank(one.getCustomerNumber())){
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(one.getCustomerNumber()));
+                if(storeInfoDtoVo != null && StringUtils.isNotEmpty(storeInfoDtoVo.getMerchantNumber())){
+                    one.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                }
+            }
             return one;
         });
         return page;

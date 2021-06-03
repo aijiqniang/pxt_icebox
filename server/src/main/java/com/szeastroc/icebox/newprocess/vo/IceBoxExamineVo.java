@@ -92,4 +92,9 @@ public class IceBoxExamineVo {
      * 巡检备注
      */
     private String examinMsg;
+
+    /**
+     * 商户编号
+     */
+    private String merchantNumber;
 }

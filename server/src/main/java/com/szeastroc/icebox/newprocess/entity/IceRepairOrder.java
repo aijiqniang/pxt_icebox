@@ -269,6 +269,8 @@ public class IceRepairOrder extends Model<IceRepairOrder> {
     @ApiModelProperty(value = "工程师")
     private String engineer;
 
+    @TableField(exist = false)
+    private String merchantNumber;
 
     /**
      * 获取主键值

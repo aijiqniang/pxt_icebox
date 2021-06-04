@@ -85,6 +85,11 @@
             <if test="serviceId != null">
                 and service_dept_id = #{serviceId}
             </if>
+            and type in
+            <foreach collection="typeArr" item="item" index="index"
+                     open="(" close=")" separator=",">
+                #{item}
+            </foreach>
             and put_status = 0 and status =1
         </where>
         group by supplier_number,type

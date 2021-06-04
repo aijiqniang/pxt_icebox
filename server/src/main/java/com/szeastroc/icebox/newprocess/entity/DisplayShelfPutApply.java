@@ -86,11 +86,18 @@ public class DisplayShelfPutApply implements Serializable {
     private Integer examineId;
 
     /**
-     * beizhu
+     * remark
      */
     @ApiModelProperty(value = "备注")
     @TableField("remark")
     private String remark;
+
+    /**
+     * 部门id
+     */
+    @ApiModelProperty(value = "部门id")
+    @TableField("dept_id")
+    private Integer deptId;
 
     /**
      * 创建人

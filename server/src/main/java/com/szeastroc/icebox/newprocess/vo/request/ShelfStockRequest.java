@@ -20,6 +20,4 @@ public class ShelfStockRequest {
     @ApiModelProperty("营小区域id")
     private Integer marketAreaId;
 
-    @ApiModelProperty(value = "查询类型",notes = "0已投放 1可供申请 2处理中 ")
-    private Integer type;
 }

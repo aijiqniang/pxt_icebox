@@ -9,6 +9,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
+import com.szeastroc.common.entity.user.session.MatchRuleVo;
+import com.szeastroc.common.entity.user.vo.SysRuleShelfDetailVo;
 import com.szeastroc.common.entity.visit.SessionExamineVo;
 import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.common.exception.NormalOptionException;
@@ -27,7 +29,6 @@ import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApplyRelate;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
-import com.szeastroc.icebox.newprocess.enums.XcxType;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyRelateService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
@@ -35,6 +36,7 @@ import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 import com.szeastroc.icebox.newprocess.vo.request.ShelfStockRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -73,6 +74,8 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
     private FeignDeptClient feignDeptClient;
     @Autowired
     private FeignIceboxQueryClient feignIceboxQueryClient;
+    @Autowired
+    FeignDeptRuleClient feignDeptRuleClient;
 
     @Override
     public IPage<DisplayShelf> selectPage(DisplayShelfPage page) {
@@ -158,8 +161,9 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
 
     @Override
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
-    public void shelfPut(ShelfPutModel model) {
+    public List<SessionExamineVo.VisitExamineNodeVo> shelfPut(ShelfPutModel model) {
         String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+        model.setApplyNumber(applyNumber);
         DisplayShelfPutApply displayShelfPutApply = DisplayShelfPutApply.builder()
                 .applyNumber(applyNumber)
                 .putCustomerNumber(model.getCustomerNumber())
@@ -167,6 +171,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
                 .userId(model.getCreateBy())
                 .createdBy(model.getCreateBy())
                 .remark(model.getRemark())
+                .deptId(model.getMarketAreaId())
                 .build();
         shelfPutApplyService.save(displayShelfPutApply);
         for (ShelfPutModel.ShelfModel shelfModel : model.getShelfModelList()) {
@@ -194,34 +199,44 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
             }
         }
         SessionExamineVo sessionExamineVo = FeignResponseUtil.getFeignData(feignExamineClient.createShelfPut(model));
-        displayShelfPutApply.setExamineId(sessionExamineVo.getExamineInfoId());
-        shelfPutApplyService.updateById(displayShelfPutApply);
-
+        List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+        if(CollectionUtils.isNotEmpty(visitExamineNodes)){
+            displayShelfPutApply.setExamineId(visitExamineNodes.get(0).getExamineId());
+            shelfPutApplyService.updateById(displayShelfPutApply);
+        }
+        return visitExamineNodes;
     }
 
 
     @Override
-    public List<SupplierDisplayShelfVO> noPut(ShelfStockRequest request) {
-        List<SupplierDisplayShelfVO> list = new ArrayList<>();
-        Integer serviceId = FeignResponseUtil.getFeignData(feignDeptClient.getServiceId(request.getMarketAreaId()));
-        //未投放
-        if(XcxType.NO_PUT.getStatus().equals(request.getType())){
-            List<DisplayShelf> shelfList = this.baseMapper.noPutShelves(serviceId);
-            list = shelfList.stream().map(o -> {
-                SupplierDisplayShelfVO vo = new SupplierDisplayShelfVO();
-                BeanUtils.copyProperties(o, vo);
-                SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(o.getSupplierNumber()));
-                vo.setLinkMobile(supplier.getLinkManMobile());
-                vo.setLinkMan(supplier.getLinkMan());
-                vo.setLinkAddress(supplier.getAddress());
-                vo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(request.getCustomerNumber()))));
-                return vo;
-            }).collect(Collectors.toList());
+    public List<SupplierDisplayShelfVO> canPut(ShelfStockRequest request) {
+        //查询货架投放规则
+        MatchRuleVo matchRuleVo = new MatchRuleVo();
+        matchRuleVo.setOpreateType(11);
+        matchRuleVo.setDeptId(request.getMarketAreaId());
+        matchRuleVo.setType(3);
+        SysRuleShelfDetailVo putRule = FeignResponseUtil.getFeignData(feignDeptRuleClient.matchShelfRule(matchRuleVo));
+        if(Objects.isNull(putRule)){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"未设置货架投放规则");
         }
-//        //已投放
-//        if (XcxType.IS_PUTED.getStatus().equals(request.getType())) {
-//
-//        }
+        String shelfType = putRule.getShelfType();
+        if(StringUtils.isBlank(shelfType)){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"货架投放规则未设置货架类型");
+        }
+        Integer serviceId = FeignResponseUtil.getFeignData(feignDeptClient.getServiceId(request.getMarketAreaId()));
+        String[] typeArr = shelfType.split(",");
+        List<DisplayShelf> shelfList = this.baseMapper.noPutShelves(serviceId,typeArr);
+        List<SupplierDisplayShelfVO> list = shelfList.stream().map(o -> {
+            SupplierDisplayShelfVO vo = new SupplierDisplayShelfVO();
+            BeanUtils.copyProperties(o, vo);
+            SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(o.getSupplierNumber()));
+            vo.setLinkMobile(supplier.getLinkManMobile());
+            vo.setLinkMan(supplier.getLinkMan());
+            vo.setLinkAddress(supplier.getAddress());
+            vo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(request.getCustomerNumber()))));
+            return vo;
+        }).collect(Collectors.toList());
+
         return list;
     }
 
@@ -283,5 +298,6 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         this.updateBatchById(displayShelves);
 
     }
+
 
 }

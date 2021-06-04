@@ -8,10 +8,12 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.enums.DisplayShelfTypeEnum;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
+import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
 import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 import com.szeastroc.icebox.newprocess.vo.request.ShelfStockRequest;
+import com.szeastroc.icebox.newprocess.vo.request.SignShelfRequest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +49,8 @@ public class DisplayShelfController {
 
     @Autowired
     private DisplayShelfService displayShelfService;
+    @Autowired
+    private DisplayShelfPutApplyService displayShelfPutApplyService;
 
     @PostMapping("page")
     @ApiOperation(value = "陈列货架分页", notes = "陈列货架分页", produces = "application/json")
@@ -100,21 +104,23 @@ public class DisplayShelfController {
         }).collect(Collectors.toList()));
     }
 
-    @PostMapping("noPutShelves")
+    @PostMapping("canPut")
     @ApiOperation(value = "获取客户可投放货架", notes = "获取客户可投放货架", produces = "application/json")
-    public CommonResponse<List<SupplierDisplayShelfVO>> noPut(@RequestBody ShelfStockRequest request){
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.noPut(request));
+    public CommonResponse<List<SupplierDisplayShelfVO>> canPut(@RequestBody ShelfStockRequest request){
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.canPut(request));
     }
-
 
     @PostMapping("shelfPut")
     @ApiOperation(value = "陈列架投放", notes = "陈列架投放", produces = "application/json")
     public CommonResponse shelfPut(@RequestBody ShelfPutModel model){
-        displayShelfService.shelfPut(model);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.shelfPut(model));
     }
 
-
-
+    @PostMapping("sign")
+    @ApiOperation(value = "签收陈列货架", notes = "签收陈列货架", produces = "application/json")
+    public CommonResponse sign(@RequestBody SignShelfRequest request){
+        displayShelfPutApplyService.sign(request);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
 
 }

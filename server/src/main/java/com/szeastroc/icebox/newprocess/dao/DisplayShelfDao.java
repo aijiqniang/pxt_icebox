@@ -22,5 +22,5 @@ public interface DisplayShelfDao extends BaseMapper<DisplayShelf> {
 
     List<DisplayShelf.DisplayShelfType> selectType(@Param("supplierNumber") String supplierNumber);
 
-    List<DisplayShelf> noPutShelves(@Param("serviceId") Integer serviceId);
+    List<DisplayShelf> noPutShelves(@Param("serviceId") Integer serviceId, @Param("typeArr") String[] typeArr);
 }

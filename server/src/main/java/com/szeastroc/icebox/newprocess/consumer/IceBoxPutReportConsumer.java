@@ -104,7 +104,7 @@ public class IceBoxPutReportConsumer {
         String[] columnName = {"事业部","大区","服务处","省","市","区县", "流程编号"
                 , "所属经销商编号", "所属经销商名称", "提交人","提交人电话","申请日期","签收日期"
                 ,"客户等级", "投放客户编号", "投放客户名称","投放客户类型","客户地址","联系人","联系人电话","拜访频率"
-                , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期","审批备注", "投放状态","投放备注"};
+                , "冰柜型号","冰柜编号", "是否免押", "押金金额","审核人员","审批人职务","审核日期","审批备注", "投放状态","投放备注","商户编号"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -157,6 +157,12 @@ public class IceBoxPutReportConsumer {
                                 excelVo.setPutStatus("已作废");
                             }
                             excelVo.setVisitTypeName(VisitCycleEnum.getDescByCode(report.getVisitType()));
+                            if(StringUtils.isNotEmpty(excelVo.getPutCustomerNumber())){
+                                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(excelVo.getPutCustomerNumber()));
+                                if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
+                                    excelVo.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                                }
+                            }
                             excelVoList.add(excelVo);
                         }
                         excelVoList = excelVoList.stream().sorted(Comparator.comparing(IceBoxPutReportExcelVo::getApplyNumber)).collect(Collectors.toList());
@@ -198,6 +204,7 @@ public class IceBoxPutReportConsumer {
                                     eachDataRow.createCell(28).setCellValue(excelVo.getExamineRemark());
                                     eachDataRow.createCell(29).setCellValue(excelVo.getPutStatus());
                                     eachDataRow.createCell(30).setCellValue(excelVo.getApplyPit());
+                                    eachDataRow.createCell(31).setCellValue(excelVo.getMerchantNumber());
                                 }
                             }
                         }

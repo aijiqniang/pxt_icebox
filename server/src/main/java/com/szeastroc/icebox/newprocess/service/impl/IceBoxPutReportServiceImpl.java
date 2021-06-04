@@ -117,6 +117,12 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                     reportVo.setSignTime(icePutApply.getUpdateTime());
                 }*/
             }
+            if(report.getPutCustomerNumber() != null){
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(report.getPutCustomerNumber()));
+                if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
+                    reportVo.setMerchantNumber(storeInfoDtoVo.getMerchantNumber());
+                }
+            }
             return reportVo;
         });
 

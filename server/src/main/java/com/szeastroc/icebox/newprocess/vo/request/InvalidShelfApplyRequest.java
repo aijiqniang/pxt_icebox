@@ -13,6 +13,11 @@ import lombok.Data;
 @Data
 @ApiModel
 public class InvalidShelfApplyRequest {
+    @ApiModelProperty("用户姓名")
+    private String userName;
+
+    @ApiModelProperty("用户id")
+    private Integer userId;
 
     @ApiModelProperty("申请编号")
     private String applyNumber;

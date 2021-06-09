@@ -27,6 +27,9 @@ public class DisplayShelfPutApplyVo {
     @ApiModelProperty("当前所在地")
     private String customerName;
 
+    @ApiModelProperty("客户编号")
+    private String customerNumber;
+
     @ApiModelProperty("审批节点")
     private List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes;
 

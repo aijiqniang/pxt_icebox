@@ -35,20 +35,20 @@ public class DisplayShelfPutApplyController {
     DisplayShelfPutApplyService shelfPutApplyService;
 
     @GetMapping("putList")
-    @ApiOperation(value = "已投放陈列架", notes = "已投放陈列架", produces = "application/json")
+    @ApiOperation(value = "小程序已投放陈列架", notes = "已投放陈列架", produces = "application/json")
     public CommonResponse<List<DisplayShelfPutApplyVo>> putList(@RequestParam String customerNumber) {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, shelfPutApplyService.putList(customerNumber));
     }
 
 
     @GetMapping("processing")
-    @ApiOperation(value = "处理中陈列架", notes = "处理中陈列架", produces = "application/json")
+    @ApiOperation(value = "小程序处理中陈列架", notes = "处理中陈列架", produces = "application/json")
     public CommonResponse<List<DisplayShelfPutApplyVo>> processing(@RequestParam String customerNumber) {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, shelfPutApplyService.processing(customerNumber));
     }
 
     @PostMapping("invalid")
-    @ApiOperation(value = "作废申请", notes = "作废申请", produces = "application/json")
+    @ApiOperation(value = "小程序作废申请", notes = "作废申请", produces = "application/json")
     public CommonResponse invalidApply(@RequestBody InvalidShelfApplyRequest request){
         shelfPutApplyService.invalid(request);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);

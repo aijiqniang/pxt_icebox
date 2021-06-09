@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.visit.ShelfInspectModel;
 import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.vo.CommonResponse;
@@ -105,22 +106,37 @@ public class DisplayShelfController {
     }
 
     @PostMapping("canPut")
-    @ApiOperation(value = "获取客户可投放货架", notes = "获取客户可投放货架", produces = "application/json")
+    @ApiOperation(value = "小程序获取客户可投放货架", notes = "获取客户可投放货架", produces = "application/json")
     public CommonResponse<List<SupplierDisplayShelfVO>> canPut(@RequestBody ShelfStockRequest request){
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.canPut(request));
     }
 
     @PostMapping("shelfPut")
-    @ApiOperation(value = "陈列架投放", notes = "陈列架投放", produces = "application/json")
+    @ApiOperation(value = "小程序陈列架投放", notes = "陈列架投放", produces = "application/json")
     public CommonResponse shelfPut(@RequestBody ShelfPutModel model){
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.shelfPut(model));
     }
 
     @PostMapping("sign")
-    @ApiOperation(value = "签收陈列货架", notes = "签收陈列货架", produces = "application/json")
+    @ApiOperation(value = "小程序签收陈列货架", notes = "签收陈列货架", produces = "application/json")
     public CommonResponse sign(@RequestBody SignShelfRequest request){
         displayShelfPutApplyService.sign(request);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
+
+    @PostMapping("shelfBack")
+//    @ApiOperation(value = "小程序陈列架退还", notes = "陈列架退还", produces = "application/json")
+    public CommonResponse shelfBack(@RequestBody ShelfPutModel model){
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.shelfPut(model));
+    }
+
+
+
+    @PostMapping("shelfInspect")
+    @ApiOperation(value = "小程序陈列架巡检", notes = "陈列架巡检", produces = "application/json")
+    public CommonResponse shelfInspect(@RequestBody ShelfInspectModel model){
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.shelfInspect(model));
+    }
+
 
 }

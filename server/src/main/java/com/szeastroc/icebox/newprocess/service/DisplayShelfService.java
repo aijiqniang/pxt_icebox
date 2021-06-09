@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.common.entity.visit.SessionExamineVo;
+import com.szeastroc.common.entity.visit.ShelfInspectModel;
 import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
@@ -32,4 +33,5 @@ public interface DisplayShelfService extends IService<DisplayShelf> {
 
     void doPut(String applyNumber);
 
+    List<SessionExamineVo.VisitExamineNodeVo> shelfInspect(ShelfInspectModel model);
 }

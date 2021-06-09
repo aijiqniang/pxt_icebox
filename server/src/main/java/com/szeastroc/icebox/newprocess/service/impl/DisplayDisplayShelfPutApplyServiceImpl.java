@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sun.org.apache.regexp.internal.RE;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.icebox.enums.IceBoxStatus;
@@ -10,10 +11,12 @@ import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.user.session.MatchRuleVo;
 import com.szeastroc.common.entity.user.vo.SysRuleShelfDetailVo;
 import com.szeastroc.common.entity.visit.SessionExamineVo;
+import com.szeastroc.common.entity.visit.SessionVisitExamineBacklog;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignDeptRuleClient;
+import com.szeastroc.common.feign.visit.FeignBacklogClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
@@ -22,6 +25,8 @@ import com.szeastroc.icebox.newprocess.dao.DisplayShelfPutApplyDao;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApplyRelate;
+import com.szeastroc.icebox.newprocess.enums.ExamineNodeStatusEnum;
+import com.szeastroc.icebox.newprocess.enums.ExamineTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
@@ -29,6 +34,7 @@ import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyRelateService
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
+import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
 import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.InvalidShelfApplyRequest;
 import com.szeastroc.icebox.newprocess.vo.request.SignShelfRequest;
@@ -68,6 +74,8 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     private FeignStoreClient feignStoreClient;
     @Autowired
     private FeignIceboxQueryClient feignIceboxQueryClient;
+    @Autowired
+    private FeignBacklogClient feignBacklogClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -92,7 +100,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                     Boolean unableRegister = false;
                     Boolean isBind = false;
                     //无法注册门店 自动签收
-                    if(5 == o.getPutCustomerType() ){
+                    if (5 == o.getPutCustomerType()) {
                         unableRegister = FeignResponseUtil.getFeignData(feignStoreClient.isUnableRegister(o.getPutCustomerNumber()));
                         isBind = FeignResponseUtil.getFeignData(feignStoreClient.isBind(o.getPutCustomerNumber()));
                     }
@@ -120,27 +128,28 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void sign(SignShelfRequest request) {
         DisplayShelfPutApply shelfPutApply = this.getOne(Wrappers.<DisplayShelfPutApply>lambdaQuery().eq(DisplayShelfPutApply::getPutCustomerNumber, request.getCustomerNumber()).eq(DisplayShelfPutApply::getSignStatus, StoreSignStatus.DEFAULT_SIGN));
-        if(Objects.isNull(shelfPutApply)){
-            throw new NormalOptionException(Constants.API_CODE_FAIL,"门店暂无可签收货架");
+        if (Objects.isNull(shelfPutApply)) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "门店暂无可签收货架");
         }
         List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, shelfPutApply.getApplyNumber()));
         Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
         Map<Integer, List<DisplayShelf>> collect = displayShelves.stream().collect(Collectors.groupingBy(DisplayShelf::getType));
         for (SignShelfRequest.Shelf shelf : request.getShelfList()) {
             List<DisplayShelf> shelves = collect.get(shelf.getType());
-            if(CollectionUtils.isNotEmpty(shelves)){
-                if(shelf.getCount()>shelves.size()){
-                    throw new NormalOptionException(Constants.API_CODE_FAIL,"签收失败，"+ DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc()+"已投放"+shelves.size()+"个");
+            if (CollectionUtils.isNotEmpty(shelves)) {
+                if (shelf.getCount() > shelves.size()) {
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc() + "已投放" + shelves.size() + "个");
                 }
                 for (int i = 0; i < shelf.getCount(); i++) {
                     shelves.get(i).setPutStatus(PutStatus.DO_PUT.getStatus());
                     displayShelfService.updateById(shelves.get(i));
                 }
-            }else{
-                throw new NormalOptionException(Constants.API_CODE_FAIL,"签收失败，门店未投放"+ DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc());
+            } else {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，门店未投放" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc());
             }
         }
-        shelfPutApply.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus()).setUpdateTime(new Date());;
+        shelfPutApply.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus()).setUpdateTime(new Date());
+        ;
         this.updateById(shelfPutApply);
     }
 
@@ -162,6 +171,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                 return supplierDisplayShelfVO;
             }).collect(Collectors.toList());
             vo.setShelfList(shelfList);
+            vo.setCustomerNumber(customerNumber);
             return vo;
         }).collect(Collectors.toList());
     }
@@ -197,8 +207,9 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class,transactionManager = "transactionManager")
+    @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     public void invalid(InvalidShelfApplyRequest request) {
+
         List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, request.getApplyNumber()));
         Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
         displayShelves.forEach(shelf -> {
@@ -207,6 +218,27 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
             shelf.setPutName(null);
         });
         displayShelfService.updateBatchById(displayShelves);
-        this.update(Wrappers.<DisplayShelfPutApply>lambdaUpdate().eq(DisplayShelfPutApply::getApplyNumber,request.getApplyNumber()).set(DisplayShelfPutApply::getExamineStatus,0).set(DisplayShelfPutApply::getRemark,request.getRemark()));
+        this.update(Wrappers.<DisplayShelfPutApply>lambdaUpdate().eq(DisplayShelfPutApply::getApplyNumber, request.getApplyNumber()).set(DisplayShelfPutApply::getExamineStatus, 0).set(DisplayShelfPutApply::getRemark, request.getRemark()));
+        SessionVisitExamineBacklog log = new SessionVisitExamineBacklog();
+        log.setCode(request.getApplyNumber());
+        feignBacklogClient.deleteBacklogByCode(log);
+
+        List<SessionExamineVo.VisitExamineNodeVo> examineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(request.getApplyNumber()));
+
+
+        for (SessionExamineVo.VisitExamineNodeVo nodeVo : examineNodeVos) {
+            if (ExamineNodeStatusEnum.IS_PASS.getStatus().equals(nodeVo.getExamineStatus())) {
+                SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
+                backlog.setBacklogName(request.getUserName() + "作废冰柜申请通知信息");
+                backlog.setCode(request.getApplyNumber());
+                backlog.setExamineId(nodeVo.getExamineId());
+                backlog.setExamineStatus(nodeVo.getExamineStatus());
+                backlog.setExamineType(ExamineTypeEnum.ICEBOX_PUT.getType());
+                backlog.setSendType(1);
+                backlog.setSendUserId(nodeVo.getUserId());
+                backlog.setCreateBy(request.getUserId());
+                feignBacklogClient.createBacklog(backlog);
+            }
+        }
     }
 }

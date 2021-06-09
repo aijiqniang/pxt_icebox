@@ -127,5 +127,10 @@ public class DisplayShelfPutApply implements Serializable {
     @TableField("update_time")
     private Date updateTime;
 
-
+    /**
+     * 退还状态
+     */
+    @ApiModelProperty(value = "退还状态 0未退还 1已退还")
+    @TableField("back_status")
+    private Integer backStatus;
 }

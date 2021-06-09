@@ -74,4 +74,8 @@ public interface MqConstant {
     String ICE_BOX_PUT_APPLY_Q = "ice_box_put_apply_queue_ajq";
     String ICE_BOX_PUT_APPLY_K = "ice_box_put_apply_key_ajq";
 
+    /**
+     * 冰柜交接
+     */
+    String ICE_BOX_HANDOVER_QUEUE = "ICE_BOX_HANDOVER_QUEUE";
 }

@@ -2389,13 +2389,16 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         map.put("remark", iceBox.getRemark()); // 保修起算日期
         map.put("supplierId", iceBox.getSupplierId());
         // 营销区域对应得部门  服务处->大区->事业部
-        String deptStr = null;
+
         if (iceBox.getDeptId() != null) {
-            deptStr = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(iceBox.getDeptId()));
+            List<Integer> deptIds = new ArrayList<>();
+            deptIds.add(iceBox.getDeptId());
+            Map<Integer, String> data = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(deptIds));
+            map.put("deptStr", data.get(iceBox.getDeptId())); // 责任部门
         }
         map.put("iceBoxType", iceBox.getIceBoxType());
         map.put("deptId", iceBox.getDeptId());
-        map.put("deptStr", deptStr); // 责任部门
+
 
         String khName = null;
         String khAddress = null;
@@ -2750,6 +2753,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             String supplierNumber = boxVo.getSupplierNumber();
             if (StringUtils.isBlank(supplierNumber)) {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商鹏讯通编号 为空");
+            }
+            SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(supplierNumber));
+            if(supplierInfoSessionVo == null){
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "第" + boxVo.getSerialNumber() + "行:经销商不存在");
             }
             String supplierName = boxVo.getSupplierName(); // 经销商名称
             if (StringUtils.isBlank(supplierName)) {

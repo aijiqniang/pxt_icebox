@@ -1,6 +1,10 @@
 package com.szeastroc.icebox.newprocess.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.szeastroc.common.entity.visit.ShelfPutModel;
+import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutReportMsg;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport;
 
 /**
@@ -11,4 +15,11 @@ import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport;
  */
 public interface DisplayShelfPutReportService extends IService<DisplayShelfPutReport> {
 
+    void build(ShelfPutModel model);
+
+    LambdaQueryWrapper<DisplayShelfPutReport> fillWrapper(ShelfPutReportMsg reportMsg);
+
+    IPage<DisplayShelfPutReport> selectPage(ShelfPutReportMsg reportMsg);
+
+    Object detail(String applyNumber);
 }

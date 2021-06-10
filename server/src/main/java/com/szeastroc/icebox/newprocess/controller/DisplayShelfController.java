@@ -3,18 +3,15 @@ package com.szeastroc.icebox.newprocess.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
-import com.szeastroc.common.entity.visit.ShelfInspectModel;
 import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.enums.DisplayShelfTypeEnum;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
-import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
 import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 import com.szeastroc.icebox.newprocess.vo.request.ShelfStockRequest;
-import com.szeastroc.icebox.newprocess.vo.request.SignShelfRequest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,8 +47,6 @@ public class DisplayShelfController {
 
     @Autowired
     private DisplayShelfService displayShelfService;
-    @Autowired
-    private DisplayShelfPutApplyService displayShelfPutApplyService;
 
     @PostMapping("page")
     @ApiOperation(value = "陈列货架分页", notes = "陈列货架分页", produces = "application/json")
@@ -111,32 +106,15 @@ public class DisplayShelfController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.canPut(request));
     }
 
-    @PostMapping("shelfPut")
-    @ApiOperation(value = "小程序陈列架投放", notes = "陈列架投放", produces = "application/json")
-    public CommonResponse shelfPut(@RequestBody ShelfPutModel model){
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.shelfPut(model));
-    }
 
-    @PostMapping("sign")
-    @ApiOperation(value = "小程序签收陈列货架", notes = "签收陈列货架", produces = "application/json")
-    public CommonResponse sign(@RequestBody SignShelfRequest request){
-        displayShelfPutApplyService.sign(request);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
-    }
+
 
     @PostMapping("shelfBack")
 //    @ApiOperation(value = "小程序陈列架退还", notes = "陈列架退还", produces = "application/json")
     public CommonResponse shelfBack(@RequestBody ShelfPutModel model){
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.shelfPut(model));
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
-
-
-    @PostMapping("shelfInspect")
-    @ApiOperation(value = "小程序陈列架巡检", notes = "陈列架巡检", produces = "application/json")
-    public CommonResponse shelfInspect(@RequestBody ShelfInspectModel model){
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.shelfInspect(model));
-    }
 
 
 }

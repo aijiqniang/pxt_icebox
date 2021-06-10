@@ -2,6 +2,9 @@ package com.szeastroc.icebox.newprocess.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
+import com.szeastroc.common.entity.visit.SessionExamineVo;
+import com.szeastroc.common.entity.visit.ShelfInspectModel;
+import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
 import com.szeastroc.icebox.newprocess.vo.request.InvalidShelfApplyRequest;
@@ -27,4 +30,7 @@ public interface DisplayShelfPutApplyService extends IService<DisplayShelfPutApp
     List<DisplayShelfPutApplyVo> processing(String customerNumber);
 
     void invalid(InvalidShelfApplyRequest request);
+
+    List<SessionExamineVo.VisitExamineNodeVo> shelfPut(ShelfPutModel model);
+
 }

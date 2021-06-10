@@ -1,31 +1,39 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.icebox.vo.ShelfInspectRequest;
+import com.szeastroc.common.entity.visit.SessionExamineVo;
 import com.szeastroc.common.entity.visit.ShelfInspectModel;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
+import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.newprocess.dao.DisplayShelfInspectApplyDao;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfInspectApply;
+import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApplyRelate;
 import com.szeastroc.icebox.newprocess.entity.IceExamine;
+import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfInspectApplyService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyRelateService;
+import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
 import com.szeastroc.icebox.newprocess.vo.request.ShelfInspectPage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +50,8 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
     @Autowired
     private DisplayShelfPutApplyRelateService shelfPutApplyRelateService;
     @Autowired
+    private DisplayShelfPutApplyService displayShelfPutApplyService;
+    @Autowired
     private DisplayShelfService displayShelfService;
     @Autowired
     private FeignStoreClient feignStoreClient;
@@ -49,6 +59,57 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
     FeignSupplierClient feignSupplierClient;
     @Autowired
     FeignUserClient feignUserClient;
+    @Autowired
+    FeignExamineClient feignExamineClient;
+
+    @Override
+    @Transactional(rollbackFor = Exception.class,transactionManager = "transactionManager")
+    public List<SessionExamineVo.VisitExamineNodeVo> shelfInspect(ShelfInspectModel model) {
+        String putNumber = model.getPutNumber();
+        DisplayShelfPutApply putApply = displayShelfPutApplyService.getOne(Wrappers.<DisplayShelfPutApply>lambdaQuery().eq(DisplayShelfPutApply::getApplyNumber, putNumber));
+        String applyNumber = "INS" + IdUtil.simpleUUID().substring(0, 29);
+        model.setApplyNumber(applyNumber);
+        DisplayShelfInspectApply apply = new DisplayShelfInspectApply();
+        apply.setApplyNumber(applyNumber)
+                .setCustomerNumber(putApply.getPutCustomerNumber())
+                .setCustomerType(putApply.getPutCustomerType())
+                .setImageUrl(String.join(",", model.getImageUrls()))
+                .setPutNumber(putNumber)
+                .setCreatedBy(model.getCreateBy())
+                .setCreatedTime(new Date())
+                .setUserId(model.getCreateBy())
+                .setRemark(model.getRemark())
+                .setDeptId(model.getDeptId())
+        ;
+        this.save(apply);
+        //判断货架是否全部正常，巡检状态是否全部正常
+        boolean normal = false;
+        List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, putNumber));
+        Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
+        //不正常数量
+        int count = displayShelfService.count(Wrappers.<DisplayShelf>lambdaQuery().in(DisplayShelf::getId, relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList())).ne(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType()));
+        if (count == 0) {
+            if (CollectionUtils.isNotEmpty(model.getNormalShelves())) {
+                //巡检正常数量
+                int sum = model.getNormalShelves().stream().mapToInt(ShelfInspectModel.NormalShelf::getCount).sum();
+                if (sum == displayShelves.size()) {
+                    normal = true;
+                }
+            }
+        }
+        if (!normal) {
+            SessionExamineVo sessionExamineVo = FeignResponseUtil.getFeignData(feignExamineClient.createShelfInspect(model));
+            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+            if (CollectionUtils.isNotEmpty(visitExamineNodes)) {
+                apply.setExamineId(visitExamineNodes.get(0).getExamineId());
+                this.updateById(apply);
+            }
+            return visitExamineNodes;
+        }
+        apply.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
+        this.updateById(apply);
+        return null;
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
@@ -114,4 +175,6 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
             return o;
         });
     }
+
+
 }

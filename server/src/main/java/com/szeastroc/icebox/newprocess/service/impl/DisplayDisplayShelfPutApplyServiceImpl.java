@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
+import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,29 +10,36 @@ import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.icebox.enums.IceBoxStatus;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.user.session.MatchRuleVo;
+import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
 import com.szeastroc.common.entity.user.vo.SysRuleShelfDetailVo;
 import com.szeastroc.common.entity.visit.SessionExamineVo;
 import com.szeastroc.common.entity.visit.SessionVisitExamineBacklog;
+import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignDeptRuleClient;
+import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignBacklogClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.enums.DisplayShelfTypeEnum;
+import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.newprocess.dao.DisplayShelfPutApplyDao;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApplyRelate;
+import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport;
 import com.szeastroc.icebox.newprocess.enums.ExamineNodeStatusEnum;
 import com.szeastroc.icebox.newprocess.enums.ExamineTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyRelateService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
+import com.szeastroc.icebox.newprocess.service.DisplayShelfPutReportService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
 import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
@@ -76,14 +84,19 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     private FeignIceboxQueryClient feignIceboxQueryClient;
     @Autowired
     private FeignBacklogClient feignBacklogClient;
+    @Autowired
+    private DisplayShelfPutReportService putReportService;
+    @Autowired
+    private FeignUserClient feignUserClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void updateStatus(IceBoxRequest request) {
         DisplayShelfPutApply displayShelfPutApply = this.getOne(Wrappers.<DisplayShelfPutApply>lambdaQuery().eq(DisplayShelfPutApply::getApplyNumber, request.getApplyNumber()));
+        Integer updateBy = request.getUpdateBy();
         Optional.ofNullable(displayShelfPutApply).ifPresent(o -> {
             displayShelfPutApply.setExamineStatus(request.getExamineStatus());
-            displayShelfPutApply.setUpdatedBy(request.getUpdateBy());
+            displayShelfPutApply.setUpdatedBy(updateBy);
             displayShelfPutApply.setUpdateTime(new Date());
             this.updateById(displayShelfPutApply);
         });
@@ -122,6 +135,22 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                 });
             });
         }
+        //报表
+        DisplayShelfPutReport putReport = putReportService.getOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getApplyNumber, request.getApplyNumber()));
+        putReport.setExamineTime(new Date());
+        putReport.setExamineRemark(request.getExamineRemark());
+        putReport.setExamineUserId(updateBy);
+        SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(updateBy));
+        putReport.setExamineUserName(userInfoVo.getRealname());
+        putReport.setExamineUserPosion(userInfoVo.getPosion());
+        if(request.getExamineStatus().equals(ExamineStatusEnum.IS_DEFAULT.getStatus())){
+            putReport.setPutStatus(PutStatus.DO_PUT.getStatus());
+        }else if(request.getExamineStatus().equals(ExamineStatusEnum.IS_PASS.getStatus())){
+            putReport.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+        }else if(request.getExamineStatus().equals(ExamineStatusEnum.UN_PASS.getStatus())){
+            putReport.setPutStatus(PutStatus.NO_PASS.getStatus());
+        }
+        putReportService.updateById(putReport);
     }
 
     @Override
@@ -149,8 +178,10 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
             }
         }
         shelfPutApply.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus()).setUpdateTime(new Date());
-        ;
         this.updateById(shelfPutApply);
+        DisplayShelfPutReport putReport = putReportService.getOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getApplyNumber, shelfPutApply.getApplyNumber()));
+        putReport.setSignTime(new Date());
+        putReportService.updateById(putReport);
     }
 
     @Override
@@ -209,7 +240,6 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     @Override
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     public void invalid(InvalidShelfApplyRequest request) {
-
         List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, request.getApplyNumber()));
         Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
         displayShelves.forEach(shelf -> {
@@ -222,14 +252,11 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
         SessionVisitExamineBacklog log = new SessionVisitExamineBacklog();
         log.setCode(request.getApplyNumber());
         feignBacklogClient.deleteBacklogByCode(log);
-
         List<SessionExamineVo.VisitExamineNodeVo> examineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(request.getApplyNumber()));
-
-
         for (SessionExamineVo.VisitExamineNodeVo nodeVo : examineNodeVos) {
             if (ExamineNodeStatusEnum.IS_PASS.getStatus().equals(nodeVo.getExamineStatus())) {
                 SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
-                backlog.setBacklogName(request.getUserName() + "作废冰柜申请通知信息");
+                backlog.setBacklogName(request.getUserName() + "作废陈列架申请通知信息");
                 backlog.setCode(request.getApplyNumber());
                 backlog.setExamineId(nodeVo.getExamineId());
                 backlog.setExamineStatus(nodeVo.getExamineStatus());
@@ -240,5 +267,62 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                 feignBacklogClient.createBacklog(backlog);
             }
         }
+        DisplayShelfPutReport putReport = putReportService.getOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getApplyNumber, request.getApplyNumber()));
+        putReport.setExamineTime(new Date());
+        putReport.setExamineUserId(request.getUserId());
+        SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(request.getUserId()));
+        putReport.setExamineUserName(userInfoVo.getRealname());
+        putReport.setExamineUserPosion(userInfoVo.getPosion());
+        putReport.setPutStatus(PutStatus.IS_CANCEL.getStatus());
+        putReportService.updateById(putReport);
+    }
+
+    @Override
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
+    public List<SessionExamineVo.VisitExamineNodeVo> shelfPut(ShelfPutModel model) {
+        String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
+        model.setApplyNumber(applyNumber);
+        DisplayShelfPutApply displayShelfPutApply = DisplayShelfPutApply.builder()
+                .applyNumber(applyNumber)
+                .putCustomerNumber(model.getCustomerNumber())
+                .putCustomerType(model.getCustomerType())
+                .userId(model.getCreateBy())
+                .createdBy(model.getCreateBy())
+                .remark(model.getRemark())
+                .deptId(model.getMarketAreaId())
+                .build();
+        this.save(displayShelfPutApply);
+        for (ShelfPutModel.ShelfModel shelfModel : model.getShelfModelList()) {
+            List<DisplayShelf> shelves = displayShelfService.list(
+                    Wrappers.<DisplayShelf>lambdaQuery()
+                            .eq(DisplayShelf::getSupplierNumber, model.getSupplierNumber())
+                            .eq(DisplayShelf::getType, shelfModel.getShelfType())
+                            .eq(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())
+                            .eq(DisplayShelf::getPutStatus, PutStatus.NO_PUT.getStatus())
+                            .last("limit " + shelfModel.getApplyCount())
+            );
+            if (CollectionUtils.isNotEmpty(shelves) && shelves.size() == shelfModel.getApplyCount()) {
+                for (DisplayShelf displayShelf : shelves) {
+                    displayShelf.setPutStatus(PutStatus.LOCK_PUT.getStatus());
+                    displayShelf.setPutNumber(model.getCustomerNumber());
+                    displayShelf.setPutName(model.getCustomerName());
+                    displayShelf.setUpdateTime(new Date());
+                    DisplayShelfPutApplyRelate displayShelfPutApplyRelate = new DisplayShelfPutApplyRelate();
+                    displayShelfPutApplyRelate.setShelfId(displayShelf.getId()).setApplyNumber(applyNumber);
+                    shelfPutApplyRelateService.save(displayShelfPutApplyRelate);
+                    displayShelfService.updateById(displayShelf);
+                }
+            } else {
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "经销商可投放货架不足");
+            }
+        }
+        SessionExamineVo sessionExamineVo = FeignResponseUtil.getFeignData(feignExamineClient.createShelfPut(model));
+        List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
+        if (CollectionUtils.isNotEmpty(visitExamineNodes)) {
+            displayShelfPutApply.setExamineId(visitExamineNodes.get(0).getExamineId());
+            this.updateById(displayShelfPutApply);
+        }
+
+        return visitExamineNodes;
     }
 }

@@ -105,11 +105,6 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
     private String applyNumber;
 
 
-    /**
-     * 所属经销商id
-     */
-
-    private Integer supplierId;
 
 
     /**
@@ -224,7 +219,7 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
      * 拜访频率
      */
 
-    private Integer visitType;
+    private String visitTypeName;
 
 
     /**
@@ -274,6 +269,10 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
      */
 
     private Date signTime;
+
+    private Date createTime;
+
+    private Date updateTime;
 
 
     /**

@@ -1,36 +1,26 @@
 package com.szeastroc.icebox.newprocess.service.impl;
 
-import cn.hutool.core.util.IdUtil;
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
-import com.szeastroc.common.entity.icebox.enums.IceBoxStatus;
 import com.szeastroc.common.entity.user.session.MatchRuleVo;
 import com.szeastroc.common.entity.user.vo.SysRuleShelfDetailVo;
-import com.szeastroc.common.entity.visit.SessionExamineVo;
-import com.szeastroc.common.entity.visit.ShelfInspectModel;
-import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignDeptRuleClient;
-import com.szeastroc.common.feign.visit.FeignExamineClient;
 import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.enums.DisplayShelfTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.DisplayShelfDao;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
-import com.szeastroc.icebox.newprocess.entity.DisplayShelfInspectApply;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApplyRelate;
-import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
-import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
@@ -51,7 +41,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,8 +61,6 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
     private DisplayShelfPutApplyService shelfPutApplyService;
     @Autowired
     private DisplayShelfPutApplyRelateService shelfPutApplyRelateService;
-    @Autowired
-    private FeignExamineClient feignExamineClient;
     @Autowired
     private FeignStoreClient feignStoreClient;
     @Autowired
@@ -114,7 +101,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
             int lemonTeaTotalCount = list.parallelStream().parallel().mapToInt(DisplayShelf.DisplayShelfData::getLemonTeaCount).sum();
             int sodaTotalCount = list.parallelStream().parallel().mapToInt(DisplayShelf.DisplayShelfData::getSodaCount).sum();
             if (energyTotalCount + lemonTeaTotalCount + sodaTotalCount > 10000) {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "每次导入陈列货架总数不能超过5000");
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "每次导入陈列货架总数不能超过10000");
             }
             for (DisplayShelf.DisplayShelfData o : list) {
                 List<DisplayShelf> shelves = new ArrayList<>();
@@ -171,54 +158,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         return displayShelf;
     }
 
-    @Override
-    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
-    public List<SessionExamineVo.VisitExamineNodeVo> shelfPut(ShelfPutModel model) {
-        String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
-        model.setApplyNumber(applyNumber);
-        DisplayShelfPutApply displayShelfPutApply = DisplayShelfPutApply.builder()
-                .applyNumber(applyNumber)
-                .putCustomerNumber(model.getCustomerNumber())
-                .putCustomerType(model.getCustomerType())
-                .userId(model.getCreateBy())
-                .createdBy(model.getCreateBy())
-                .remark(model.getRemark())
-                .deptId(model.getMarketAreaId())
-                .build();
-        shelfPutApplyService.save(displayShelfPutApply);
-        for (ShelfPutModel.ShelfModel shelfModel : model.getShelfModelList()) {
-            List<DisplayShelf> shelves = this.list(
-                    Wrappers.<DisplayShelf>lambdaQuery()
-                            .eq(DisplayShelf::getSupplierNumber, model.getSupplierNumber())
-                            .eq(DisplayShelf::getType, shelfModel.getShelfType())
-                            .eq(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())
-                            .eq(DisplayShelf::getPutStatus, PutStatus.NO_PUT.getStatus())
-                            .last("limit " + shelfModel.getApplyCount())
-            );
-            if (CollectionUtils.isNotEmpty(shelves) && shelves.size() == shelfModel.getApplyCount()) {
-                for (DisplayShelf displayShelf : shelves) {
-                    displayShelf.setPutStatus(PutStatus.LOCK_PUT.getStatus());
-                    displayShelf.setPutNumber(model.getCustomerNumber());
-                    displayShelf.setPutName(model.getCustomerName());
-                    displayShelf.setUpdateTime(new Date());
-                    DisplayShelfPutApplyRelate displayShelfPutApplyRelate = new DisplayShelfPutApplyRelate();
-                    displayShelfPutApplyRelate.setShelfId(displayShelf.getId()).setApplyNumber(applyNumber);
-                    shelfPutApplyRelateService.save(displayShelfPutApplyRelate);
-                    this.updateById(displayShelf);
-                }
-            } else {
-                throw new NormalOptionException(Constants.API_CODE_FAIL, "经销商可投放货架不足");
-            }
-        }
-        SessionExamineVo sessionExamineVo = FeignResponseUtil.getFeignData(feignExamineClient.createShelfPut(model));
-        List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
-        if (CollectionUtils.isNotEmpty(visitExamineNodes)) {
-            displayShelfPutApply.setExamineId(visitExamineNodes.get(0).getExamineId());
-            shelfPutApplyService.updateById(displayShelfPutApply);
-        }
 
-        return visitExamineNodes;
-    }
 
 
     @Override
@@ -239,7 +179,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         Integer serviceId = FeignResponseUtil.getFeignData(feignDeptClient.getServiceId(request.getMarketAreaId()));
         String[] typeArr = shelfType.split(",");
         List<DisplayShelf> shelfList = this.baseMapper.noPutShelves(serviceId, typeArr);
-        List<SupplierDisplayShelfVO> list = shelfList.stream().map(o -> {
+        return shelfList.stream().map(o -> {
             SupplierDisplayShelfVO vo = new SupplierDisplayShelfVO();
             BeanUtils.copyProperties(o, vo);
             SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(o.getSupplierNumber()));
@@ -249,8 +189,6 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
             vo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(request.getCustomerNumber()))));
             return vo;
         }).collect(Collectors.toList());
-
-        return list;
     }
 
 
@@ -309,54 +247,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
             o.setGroupDeptId(groupDeptId);
         });
         this.updateBatchById(displayShelves);
-
     }
 
-    @Override
-    public List<SessionExamineVo.VisitExamineNodeVo> shelfInspect(ShelfInspectModel model) {
-        String putNumber = model.getPutNumber();
-        DisplayShelfPutApply putApply = putApplyService.getOne(Wrappers.<DisplayShelfPutApply>lambdaQuery().eq(DisplayShelfPutApply::getApplyNumber, putNumber));
-        String applyNumber = "INS" + IdUtil.simpleUUID().substring(0, 29);
-        model.setApplyNumber(applyNumber);
-        DisplayShelfInspectApply apply = new DisplayShelfInspectApply();
-        apply.setApplyNumber(applyNumber)
-                .setCustomerNumber(putApply.getPutCustomerNumber())
-                .setCustomerType(putApply.getPutCustomerType())
-                .setImageUrl(String.join(",", model.getImageUrls()))
-                .setPutNumber(putNumber)
-                .setCreatedBy(model.getCreateBy())
-                .setCreatedTime(new Date())
-                .setUserId(model.getCreateBy())
-                .setRemark(model.getRemark())
-                .setDeptId(model.getDeptId())
-        ;
-        inspectApplyService.save(apply);
-        //判断货架是否全部正常，巡检状态是否全部正常
-        boolean normal = false;
-        List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, putNumber));
-        Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
-        //不正常数量
-        int count = displayShelfService.count(Wrappers.<DisplayShelf>lambdaQuery().in(DisplayShelf::getId, relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList())).ne(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType()));
-        if (count == 0) {
-            if (CollectionUtils.isNotEmpty(model.getNormalShelves())) {
-                //巡检正常数量
-                int sum = model.getNormalShelves().stream().mapToInt(ShelfInspectModel.NormalShelf::getCount).sum();
-                if (sum == displayShelves.size()) {
-                    normal = true;
-                }
-            }
-        }
-        if (!normal) {
-            SessionExamineVo sessionExamineVo = FeignResponseUtil.getFeignData(feignExamineClient.createShelfInspect(model));
-            List<SessionExamineVo.VisitExamineNodeVo> visitExamineNodes = sessionExamineVo.getVisitExamineNodes();
-            if (CollectionUtils.isNotEmpty(visitExamineNodes)) {
-                apply.setExamineId(visitExamineNodes.get(0).getExamineId());
-                inspectApplyService.updateById(apply);
-            }
-            return visitExamineNodes;
-        }
-        apply.setExamineStatus(ExamineStatus.PASS_EXAMINE.getStatus());
-        inspectApplyService.updateById(apply);
-        return null;
-    }
+
 }

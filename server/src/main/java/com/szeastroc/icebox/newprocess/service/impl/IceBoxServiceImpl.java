@@ -2268,6 +2268,22 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 map.put("deptStr", fullDept); // 营销区域
             }
 //            map.put("belongObjStr", iceBox.getPutStatus().equals(0) ? "经销商" : "门店"); // 所在客户类型
+            if(StringUtils.isNotEmpty(iceBox.getPutStoreNumber())){
+                if(iceBox.getPutStoreNumber().startsWith("C0")){
+                    Integer data = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(iceBox.getPutStoreNumber()));
+                    SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(data));
+                    if(simpleUserInfoVo != null){
+                        map.put("mainSaleMan",simpleUserInfoVo.getRealname());
+                    }
+
+                }else {
+                    Integer data = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(iceBox.getPutStoreNumber()));
+                    SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(data));
+                    if(simpleUserInfoVo != null){
+                        map.put("mainSaleMan",simpleUserInfoVo.getRealname());
+                    }
+                }
+            }
             list.add(map);
         }
         return new Page(iceBoxPage.getCurrent(), iceBoxPage.getSize(), iceBoxPage.getTotal()).setRecords(list);

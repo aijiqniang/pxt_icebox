@@ -135,7 +135,7 @@ implements IceBoxHandoverService{
                             thirdMap.put("modelName",iceBox.getModelName());
                             thirdMap.put("depositMoney", 0);
                             thirdMap.put("putStatus",iceBox.getPutStatus());
-                            thirdMap.put("iceBoxStatus",iceBox.getStatus());
+                            thirdMap.put("iceBoxStatus",iceBox.getPutStatus());
                             thirdMap.put("freeType",FreePayTypeEnum.UN_FREE.getType());
                             IceBoxExtend iceBoxExtend = iceBoxExtenddao.selectById(iceBox.getId());
                             if(StringUtils.isNotEmpty(iceBoxExtend.getLastApplyNumber())){
@@ -224,7 +224,7 @@ implements IceBoxHandoverService{
                             thirdMap.put("modelName",iceBox.getModelName());
                             thirdMap.put("depositMoney", 0);
                             thirdMap.put("putStatus",iceBox.getPutStatus());
-                            thirdMap.put("iceBoxStatus",iceBox.getStatus());
+                            thirdMap.put("iceBoxStatus",iceBox.getPutStatus());
                             thirdMap.put("freeType",FreePayTypeEnum.UN_FREE.getType());
                             IceBoxExtend iceBoxExtend = iceBoxExtenddao.selectById(iceBox.getId());
                             if(StringUtils.isNotEmpty(iceBoxExtend.getLastApplyNumber())){
@@ -441,7 +441,10 @@ implements IceBoxHandoverService{
             wrapper.like(IceBoxHandover::getSendUserName,iceBoxHandoverPage.getSendUserName());
         }
         if(StringUtils.isNotEmpty(iceBoxHandoverPage.getReceiveUserName())){
-            wrapper.like(IceBoxHandover::getReceiveUserId,iceBoxHandoverPage.getReceiveUserName());
+            wrapper.like(IceBoxHandover::getReceiveUserName,iceBoxHandoverPage.getReceiveUserName());
+        }
+        if(iceBoxHandoverPage.getIceboxStatus() != null){
+            wrapper.eq(IceBoxHandover::getIceboxStatus,iceBoxHandoverPage.getIceboxStatus());
         }
         if(iceBoxHandoverPage.getStartTime() != null){
             wrapper.ge(IceBoxHandover::getHandoverTime,iceBoxHandoverPage.getStartTime());

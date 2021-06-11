@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceBoxHandoverDao">
+
+    <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IceBoxHandover">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="iceBoxId" column="ice_box_id" jdbcType="INTEGER"/>
+        <result property="iceBoxAssetid" column="ice_box_assetid" jdbcType="VARCHAR"/>
+        <result property="iceboxStatus" column="icebox_status" jdbcType="INTEGER"/>
+        <result property="headquartersDeptId" column="headquarters_dept_id" jdbcType="INTEGER"/>
+        <result property="headquartersDeptName" column="headquarters_dept_name" jdbcType="VARCHAR"/>
+        <result property="businessDeptId" column="business_dept_id" jdbcType="INTEGER"/>
+        <result property="businessDeptName" column="business_dept_name" jdbcType="VARCHAR"/>
+        <result property="regionDeptId" column="region_dept_id" jdbcType="INTEGER"/>
+        <result property="regionDeptName" column="region_dept_name" jdbcType="VARCHAR"/>
+        <result property="serviceDeptId" column="service_dept_id" jdbcType="INTEGER"/>
+        <result property="serviceDeptName" column="service_dept_name" jdbcType="VARCHAR"/>
+        <result property="groupDeptId" column="group_dept_id" jdbcType="INTEGER"/>
+        <result property="groupDeptName" column="group_dept_name" jdbcType="VARCHAR"/>
+        <result property="sendUserId" column="send_user_id" jdbcType="INTEGER"/>
+        <result property="sendUserName" column="send_user_name" jdbcType="VARCHAR"/>
+        <result property="receiveUserId" column="receive_user_id" jdbcType="INTEGER"/>
+        <result property="receiveUserName" column="receive_user_name" jdbcType="VARCHAR"/>
+        <result property="storeNumber" column="store_number" jdbcType="VARCHAR"/>
+        <result property="supplierId" column="supplier_id" jdbcType="INTEGER"/>
+        <result property="supplierName" column="supplier_name" jdbcType="VARCHAR"/>
+        <result property="modelId" column="model_id" jdbcType="INTEGER"/>
+        <result property="modelName" column="model_name" jdbcType="VARCHAR"/>
+        <result property="freetype" column="freeType" jdbcType="INTEGER"/>
+        <result property="depositMoney" column="deposit_money" jdbcType="DECIMAL"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="handoverStatus" column="handover_status" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="handoverTime" column="handover_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,ice_box_id,ice_box_assetid,
+        icebox_status,headquarters_dept_id,headquarters_dept_name,
+        business_dept_id,business_dept_name,region_dept_id,
+        region_dept_name,service_dept_id,service_dept_name,
+        group_dept_id,group_dept_name,send_user_id,
+        send_user_name,receive_user_id,receive_user_name,
+        store_number,supplier_id,supplier_name,
+        model_id,model_name,freeType,
+        deposit_money,status,handover_status,
+        create_time,handover_time,update_time
+    </sql>
+</mapper>

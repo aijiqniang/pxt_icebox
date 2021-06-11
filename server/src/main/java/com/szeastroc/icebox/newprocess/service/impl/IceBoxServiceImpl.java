@@ -4014,8 +4014,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 //                IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBoxId);
                 IceBoxExtend iceBoxExtend = boxExtendMap.get(iceBoxId);
                 IceBoxExcelVo iceBoxExcelVo = new IceBoxExcelVo();
-                if(iceBoxExcelVo.getResponseMan() != null){
-                    iceBoxExcelVo.setResponseMan(iceBoxExcelVo.getResponseMan());
+                if(iceBox.getResponseMan() != null){
+                    iceBoxExcelVo.setResponseMan(iceBox.getResponseMan());
                 }
                 if (deptMap != null) {
                     String deptStr = deptMap.get(iceBox.getDeptId());

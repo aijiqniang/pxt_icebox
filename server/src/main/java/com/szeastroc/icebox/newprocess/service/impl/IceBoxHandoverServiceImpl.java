@@ -710,10 +710,10 @@ implements IceBoxHandoverService{
             wrapper.eq(IceBoxHandover::getIceboxStatus,iceBoxHandoverPage.getIceboxStatus());
         }
         if(iceBoxHandoverPage.getStartTime() != null){
-            wrapper.ge(IceBoxHandover::getHandoverTime,iceBoxHandoverPage.getStartTime());
+            wrapper.ge(IceBoxHandover::getCreateTime,iceBoxHandoverPage.getStartTime());
         }
         if(iceBoxHandoverPage.getEndTime() != null){
-            wrapper.le(IceBoxHandover::getHandoverTime,iceBoxHandoverPage.getEndTime());
+            wrapper.le(IceBoxHandover::getCreateTime,iceBoxHandoverPage.getEndTime());
         }
         if(iceBoxHandoverPage.getHandoverStatus() != null && iceBoxHandoverPage.getHandoverStatus() > 0){
             wrapper.eq(IceBoxHandover::getHandoverStatus,iceBoxHandoverPage.getHandoverStatus());

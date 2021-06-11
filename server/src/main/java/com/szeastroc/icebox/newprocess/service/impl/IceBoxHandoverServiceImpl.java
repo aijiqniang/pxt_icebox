@@ -463,7 +463,7 @@ implements IceBoxHandoverService{
                     thirdMap.put("modelId",iceBox.getModelId());
                     IceModel iceModel = iceModelDao.selectById(iceBox.getModelId());
                     if(iceModel != null){
-                        thirdMap.put("modelName",iceModel.getChestName());
+                        thirdMap.put("modelName",iceModel.getChestModel());
                     }
                     thirdMap.put("depositMoney", iceBox.getDepositMoney());
                     thirdMap.put("putStatus",iceBox.getPutStatus());

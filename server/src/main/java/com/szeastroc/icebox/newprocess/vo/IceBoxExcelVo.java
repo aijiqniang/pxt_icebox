@@ -162,4 +162,8 @@ public class IceBoxExcelVo {
     @ColumnWidth(50)
     @ExcelProperty(value = "商户编号")
     private String merchantNumber;
+
+    @ColumnWidth(50)
+    @ExcelProperty(value = "冰柜责任人")
+    private String responseMan;
 }

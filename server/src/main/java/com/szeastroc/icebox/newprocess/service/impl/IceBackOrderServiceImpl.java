@@ -935,6 +935,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBox.setPutStatus(PutStatus.NO_PUT.getStatus());
         iceBox.setPutStoreNumber("0");
         iceBox.setSupplierId(iceBackApplyRelateBox.getBackSupplierId());
+        iceBox.setResponseMan(null);
+        iceBox.setResponseManId(0);
         iceBoxDao.updateById(iceBox);
         JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"doTransfer");
 //         免押时, 不校验订单, 直接跳过

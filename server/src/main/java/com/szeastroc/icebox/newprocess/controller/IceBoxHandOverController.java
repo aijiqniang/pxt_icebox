@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.controller;
 import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxHandover;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  *
@@ -42,11 +44,11 @@ public class IceBoxHandOverController {
      */
     @ApiOperation(value = "sfa交接列表")
     @GetMapping("/findByUserid")
-    public CommonResponse<Map<String, List<Map<String,Object>>>> findByUserid(@RequestParam("sendUserId")Integer sendUserId,@RequestParam(value = "receiveUserId",required = false)Integer receiveUserId ,@RequestParam(value = "storeName",required = false)String storeName){
+    public CommonResponse<Map<String, List<Map<String,Object>>>> findByUserid(@RequestParam("sendUserId")Integer sendUserId,@RequestParam(value = "receiveUserId",required = false)Integer receiveUserId ,@RequestParam(value = "storeName",required = false)String storeName,@RequestParam(value = "relateCode",required = false)String relateCode){
         if(sendUserId == null  || sendUserId == 0){
             return new CommonResponse<>(Constants.API_CODE_FAIL, "业务员编号不能为空",null);
         }
-        Map<String, List<Map<String,Object>>> map = iceBoxHandoverService.findByUserid(sendUserId,receiveUserId,storeName);
+        Map<String, List<Map<String,Object>>> map = iceBoxHandoverService.findByUseridNew(sendUserId,receiveUserId,storeName,relateCode);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,map);
     }
 
@@ -117,5 +119,19 @@ public class IceBoxHandOverController {
         }
         iceBoxHandoverService.rejectHandOverRequest(ids);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,null);
+    }
+    /**
+     * 更新冰柜责任人
+     * @param iceboxIds
+     * @return
+     */
+    @PostMapping("/updateResponseMan")
+    public CommonResponse updateResponseMan(@RequestBody List<Integer> iceboxIds){
+        try {
+            CompletableFuture.runAsync(()->iceBoxHandoverService.updateResponseMan(iceboxIds), ExecutorServiceFactory.getInstance());
+        }catch (Exception e){
+            return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
+        }
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 }

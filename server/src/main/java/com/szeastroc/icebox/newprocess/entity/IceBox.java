@@ -146,6 +146,14 @@ public class IceBox {
     @TableField(value = "old_asset_id")
     private String oldAssetId;
 
+    @TableField(value = "responseMan_id")
+    private Integer responseManId;
+    /**
+     * 责任人
+     */
+    @TableField(value = "responseMan")
+    private String responseMan;
+
     public static IceBoxBuilder builder() {
         return new IceBoxBuilder();
     }

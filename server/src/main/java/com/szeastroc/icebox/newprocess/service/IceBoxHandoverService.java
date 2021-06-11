@@ -25,4 +25,8 @@ public interface IceBoxHandoverService extends IService<IceBoxHandover> {
     IPage<IceBoxHandover> findByPage(IceBoxHandoverPage iceBoxHandoverPage);
 
     CommonResponse exportIceHandover(IceBoxHandoverPage iceBoxHandoverPage);
+
+    Map<String, List<Map<String, Object>>> findByUseridNew(Integer sendUserId, Integer receiveUserId, String storeName,String relateCode);
+
+    void updateResponseMan(List<Integer> iceboxIds);
 }

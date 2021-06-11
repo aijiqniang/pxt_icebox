@@ -166,9 +166,11 @@ public class IceBoxHandover implements Serializable {
     private Date handoverTime;
 
     /**
-     * 
+     *
      */
     private Date updateTime;
+
+    private String relateCode;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

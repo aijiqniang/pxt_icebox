@@ -2170,11 +2170,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         List<Map<String, Object>> list = new ArrayList<>();
         for (IceBox iceBox : iceBoxList) {
+
             // t_ice_box 的id 和 t_ice_box_extend 的id是一一对应的
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
             Map<String, Object> map = new HashMap<>(32);
             map.put("statusStr", IceBoxEnums.StatusEnum.getDesc(iceBox.getStatus())); // 设备状态
             map.put("putStatusStr", PutStatus.convertEnum(iceBox.getPutStatus()).getDesc());
+            if(iceBox != null && StringUtils.isNotEmpty(iceBox.getResponseMan())){
+                map.put("mainSaleMan",iceBox.getResponseMan());
+            }
             String deptStr = null;
             if (deptMap != null) {
                 deptStr = deptMap.get(iceBox.getDeptId()); // 营销区域
@@ -2268,22 +2272,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 map.put("deptStr", fullDept); // 营销区域
             }
 //            map.put("belongObjStr", iceBox.getPutStatus().equals(0) ? "经销商" : "门店"); // 所在客户类型
-            if(StringUtils.isNotEmpty(iceBox.getPutStoreNumber())){
-                if(iceBox.getPutStoreNumber().startsWith("C0")){
-                    Integer data = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(iceBox.getPutStoreNumber()));
-                    SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(data));
-                    if(simpleUserInfoVo != null){
-                        map.put("mainSaleMan",simpleUserInfoVo.getRealname());
-                    }
-
-                }else {
-                    Integer data = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(iceBox.getPutStoreNumber()));
-                    SimpleUserInfoVo simpleUserInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findSimpleUserById(data));
-                    if(simpleUserInfoVo != null){
-                        map.put("mainSaleMan",simpleUserInfoVo.getRealname());
-                    }
-                }
-            }
             list.add(map);
         }
         return new Page(iceBoxPage.getCurrent(), iceBoxPage.getSize(), iceBoxPage.getTotal()).setRecords(list);

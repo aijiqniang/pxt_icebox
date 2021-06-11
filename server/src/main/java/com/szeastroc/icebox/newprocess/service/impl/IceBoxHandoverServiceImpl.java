@@ -30,10 +30,12 @@ import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
 import com.szeastroc.icebox.newprocess.enums.HandOverEnum;
+import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.service.IceBoxHandoverService;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxHandoverPage;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -67,6 +69,8 @@ implements IceBoxHandoverService{
     private final FeignExportRecordsClient feignExportRecordsClient;
     private final JedisClient jedis;
     private final RabbitTemplate rabbitTemplate;
+    private final IceModelDao iceModelDao;
+    private final IceExamineDao iceExamineDao;
 
     @Override
     public Map<String, List<Map<String,Object>>> findByUserid(Integer userId,Integer receiveUserId, String storeName) {
@@ -272,6 +276,9 @@ implements IceBoxHandoverService{
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
     public void sendHandOverRequest(List<IceBoxHandover> iceBoxHandovers) {
+        DateTime date = new DateTime();
+        String prefix = date.toString("yyyyMMddHHmmss");
+        String relateCode = "";
         for(IceBoxHandover iceBoxHandover : iceBoxHandovers){
             IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, iceBoxHandover.getIceBoxId()).orderByDesc(IceBackApplyRelateBox::getId).last("limit 1"));
             if(iceBackApplyRelateBox != null){
@@ -326,16 +333,19 @@ implements IceBoxHandoverService{
                 iceBoxHandover.setReceiveUserName(receiveUserInfoVo.getRealname());
                 iceBoxHandover.setReceiveUserOfficeName(receiveUserInfoVo.getOfficeName());
             }
+            relateCode = iceBoxHandovers.get(0).getSendUserId()+"_"+iceBoxHandovers.get(0).getReceiveUserId()+"_"+prefix;
             iceBoxHandover.setStatus(1);
             iceBoxHandover.setHandoverStatus(1);
             iceBoxHandover.setCreateTime(new Date());
             iceBoxHandover.setHandoverStatus(HandOverEnum.DO_HANDOVER.getType());
+            iceBoxHandover.setRelateCode(relateCode);
             iceBoxHandoverDao.insert(iceBoxHandover);
         }
+
         NoticeBacklogRequestVo noticeBacklogRequestVo = NoticeBacklogRequestVo.builder()
                 .backlogName(NoticeTypeEnum.ICEBOX_HANDOVER_CONFIRM.getDesc()+":"+iceBoxHandovers.get(0).getSendUserName()+"==>"+iceBoxHandovers.get(0).getReceiveUserName())
                 .noticeTypeEnum(NoticeTypeEnum.ICEBOX_HANDOVER_CONFIRM)
-                .relateCode(iceBoxHandovers.get(0).getSendUserId()+"_"+iceBoxHandovers.get(0).getReceiveUserId())
+                .relateCode(relateCode)
                 .sendUserId(iceBoxHandovers.get(0).getReceiveUserId())
                 .build();
         // 创建通知
@@ -353,7 +363,11 @@ implements IceBoxHandoverService{
                 iceBoxHandover.setHandoverTime(new Date());
                 iceBoxHandoverDao.updateById(iceBoxHandover);
 
-                if(StringUtils.isNotEmpty(iceBoxHandover.getStoreNumber())){
+                IceBox iceBox = iceBoxDao.selectById(iceBoxHandover.getIceBoxId());
+                iceBox.setResponseManId(iceBoxHandover.getReceiveUserId());
+                iceBox.setResponseMan(iceBoxHandover.getReceiveUserName());
+                iceBoxDao.updateById(iceBox);
+                /*if(StringUtils.isNotEmpty(iceBoxHandover.getStoreNumber())){
                     if(iceBoxHandover.getStoreNumber().contains("C0")){
                         //门店
                         feignStoreClient.updateStoreMainSaleMan(iceBoxHandover.getStoreNumber(),iceBoxHandover.getReceiveUserId());
@@ -361,7 +375,7 @@ implements IceBoxHandoverService{
                         //邮差经销商等
                         feignSupplierClient.updateMainSaleMan(iceBoxHandover.getStoreNumber(),iceBoxHandover.getReceiveUserId());
                     }
-                }
+                }*/
             }
 
         }
@@ -415,6 +429,255 @@ implements IceBoxHandoverService{
         jedis.set(key, "ex", 180, TimeUnit.SECONDS);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null);
+    }
+
+    @Override
+    public Map<String, List<Map<String, Object>>> findByUseridNew(Integer sendUserId, Integer receiveUserId, String storeName,String relateCode) {
+        Map<String, List<Map<String,Object>>> map = new HashMap<>(16);
+        Map<String, List<Map<String,Object>>> likeMap = new HashMap<>(16);
+        List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getResponseManId, sendUserId).isNotNull(IceBox::getPutStoreNumber).eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()));
+        if(iceBoxes.size() == 0){
+            return map;
+        }
+        Map<String, List<IceBox>> collect = iceBoxes.stream().collect(Collectors.groupingBy(iceBox -> iceBox.getPutStoreNumber()));
+        for (String storeNumber : collect.keySet()){
+            List<IceBox> list = collect.get(storeNumber);
+            MemberInfoVo memberInfoVo = null;
+            StoreInfoDtoVo storeInfoDtoVo = null;
+            SubordinateInfoVo subordinateInfoVo = null;
+            if(StringUtils.isNotEmpty(storeNumber)){
+                if(storeNumber.startsWith("C0")){
+                    memberInfoVo = FeignResponseUtil.getFeignData(feignStoreRelateMemberClient.getShopKeeper(storeNumber));
+                    storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(storeNumber));
+                }else{
+                    subordinateInfoVo = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(storeNumber));
+                }
+            }
+            if(list.size() > 0){
+                List<Map<String,Object>> secondList = new ArrayList<>();
+                for(IceBox iceBox : list){
+
+                    Map<String,Object> thirdMap = new HashMap(8);
+                    thirdMap.put("iceBoxId",iceBox.getId());
+                    thirdMap.put("iceBoxAssetId", iceBox.getAssetId());
+                    thirdMap.put("modelId",iceBox.getModelId());
+                    IceModel iceModel = iceModelDao.selectById(iceBox.getModelId());
+                    if(iceModel != null){
+                        thirdMap.put("modelName",iceModel.getChestName());
+                    }
+                    thirdMap.put("depositMoney", iceBox.getDepositMoney());
+                    thirdMap.put("putStatus",iceBox.getPutStatus());
+                    thirdMap.put("iceBoxStatus",iceBox.getPutStatus());
+                    IceBoxExtend iceBoxExtend = iceBoxExtenddao.selectById(iceBox.getId());
+                    if(iceBoxExtend != null && StringUtils.isNotEmpty(iceBoxExtend.getLastApplyNumber())){
+                        ApplyRelatePutStoreModel applyRelatePutStoreModel = applyRelatePutStoreModelDao.selectOne(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, iceBoxExtend.getLastApplyNumber()).last("limit 1"));
+                        if(applyRelatePutStoreModel != null){
+                            thirdMap.put("freeType",applyRelatePutStoreModel.getFreeType());
+                        }
+
+                    }
+                    SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getId()));
+                    thirdMap.put("supplierId", iceBox.getSupplierId());
+                    thirdMap.put("supplierName",supplierInfo.getName());
+                    /**
+                     * 是否存在退押中状态(0:未审核 1:审核中 2:通过 3:驳回)
+                     */
+                    thirdMap.put("backStatus",2);
+                    IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, iceBox.getId()).orderByDesc(IceBackApplyRelateBox::getId).last("limit 1"));
+                    if(iceBackApplyRelateBox != null){
+                        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, iceBackApplyRelateBox.getApplyNumber()));
+                        if(iceBackApply != null){
+                            thirdMap.put("backStatus",iceBackApply.getExamineStatus());
+                        }
+                    }
+                    /**
+                     * 传了接收人 是在通知那里进来的
+                     */
+                    if(receiveUserId != null && receiveUserId > 0){
+                        IceBoxHandover iceBoxHandover1 = iceBoxHandoverDao.selectOne(Wrappers.<IceBoxHandover>lambdaQuery().eq(IceBoxHandover::getRelateCode,relateCode).eq(IceBoxHandover::getIceBoxId, iceBox.getId()).eq(IceBoxHandover::getSendUserId, sendUserId).orderByDesc(IceBoxHandover::getId).eq(IceBoxHandover::getReceiveUserId,receiveUserId).eq(IceBoxHandover::getHandoverStatus,1).last("limit 1"));
+                        if(iceBoxHandover1 == null){
+                            continue;
+                        }else{
+                            thirdMap.put("handoverStatus",iceBoxHandover1.getHandoverStatus());
+                            thirdMap.put("handoverId",iceBoxHandover1.getId());
+                        }
+                    }else{
+                        /**
+                         * 1交接中 2已交接 3已驳回  0就是未交接
+                         */
+                        thirdMap.put("handoverStatus",0);
+                        IceBoxHandover iceBoxHandover = iceBoxHandoverDao.selectOne(Wrappers.<IceBoxHandover>lambdaQuery().eq(IceBoxHandover::getIceBoxId, iceBox.getId()).eq(IceBoxHandover::getSendUserId, sendUserId).orderByDesc(IceBoxHandover::getId).eq(IceBoxHandover::getHandoverStatus,1).last("limit 1"));
+                        if(iceBoxHandover != null){
+                            thirdMap.put("handoverStatus",iceBoxHandover.getHandoverStatus());
+                            thirdMap.put("handoverId",iceBoxHandover.getId());
+                        }
+                    }
+                    if(StringUtils.isNotEmpty(iceBox.getPutStoreNumber())){
+                        if(iceBox.getPutStoreNumber().startsWith("C0")){
+                            thirdMap.put("shopKeeper",memberInfoVo.getName());
+                            thirdMap.put("shopKeeperMobile",memberInfoVo.getMobile());
+                            thirdMap.put("address",storeInfoDtoVo.getAddress());
+                            thirdMap.put("storeName",storeInfoDtoVo.getStoreName());
+                        }else {
+                            thirdMap.put("shopKeeper",subordinateInfoVo.getLinkman());
+                            thirdMap.put("shopKeeperMobile",subordinateInfoVo.getLinkmanMobile());
+                            thirdMap.put("address",subordinateInfoVo.getAddress());
+                            thirdMap.put("storeName",subordinateInfoVo.getName());
+                        }
+                    }
+                    secondList.add(thirdMap);
+                }
+                map.put(storeNumber,secondList);
+            }
+        }
+        if(StringUtils.isNotEmpty(storeName)){
+            List<String> storeNumbers = FeignResponseUtil.getFeignData(feignStoreClient.findStoesByRelateUser(sendUserId));
+
+            StoreInfoDtoVo requestVo = new StoreInfoDtoVo();
+            requestVo.setStoreName(storeName);
+            List<StoreInfoDtoVo> feignData = FeignResponseUtil.getFeignData(feignStoreClient.findStoreInfoVoByNameAndNumber(storeName));
+            if(feignData.size()>0){
+                for (StoreInfoDtoVo storeVo : feignData){
+                    if(storeNumbers.contains(storeVo.getStoreNumber()) ){
+                        likeMap.put(storeVo.getStoreNumber(),map.get(storeVo.getStoreNumber()));
+                    }
+                }
+            }
+            List<SimpleSupplierInfoVo> feignData1 = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierInfoVoByNameOrNumber(storeName));
+            if(feignData1.size()>0){
+                for (SimpleSupplierInfoVo storeVo : feignData1){
+                    if(storeNumbers.contains(storeVo.getNumber()) ){
+                        likeMap.put(storeVo.getNumber(),map.get(storeVo.getNumber()));
+                    }
+                }
+            }
+
+            return likeMap;
+        }
+        return map;
+    }
+
+    @Override
+    public void updateResponseMan(List<Integer> iceboxIds) {
+        if(iceboxIds.size()>0){
+            for(Integer id : iceboxIds){
+                IceBox iceBox = iceBoxDao.selectById(id);
+                if(iceBox != null && StringUtils.isNotEmpty(iceBox.getPutStoreNumber()) && PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
+                    if(iceBox.getPutStoreNumber().startsWith("C0")){
+                        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                        if(storeInfoDtoVo != null){
+                            if(storeInfoDtoVo.getMainSaleManId() != null && storeInfoDtoVo.getMainSaleManId() > 0){
+                                //有主业务员
+                                iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
+                                UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(storeInfoDtoVo.getMainSaleManId()));
+                                if(userInfoVo != null){
+                                    iceBox.setResponseMan(userInfoVo.getRealname());
+                                    iceBoxDao.updateById(iceBox);
+                                }
+                            }else{
+                                //无主业务员
+                                IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
+                                if(iceExamine != null && iceExamine.getCreateBy() != null){
+                                    iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
+                                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
+                                    if(userInfoVo != null){
+                                        iceBox.setResponseMan(userInfoVo.getRealname());
+                                    }
+                                    iceBoxDao.updateById(iceBox);
+                                }
+
+                            }
+                        }
+
+                    }else{
+                        SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
+                        if(supplierInfoSessionVo != null){
+                            if(supplierInfoSessionVo.getMainSalesmanId() != null && supplierInfoSessionVo.getMainSalesmanId() > 0){
+                                //有主业务员
+                                iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
+                                UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(supplierInfoSessionVo.getMainSalesmanId()));
+                                if(userInfoVo != null){
+                                    iceBox.setResponseMan(userInfoVo.getRealname());
+                                }
+                                iceBoxDao.updateById(iceBox);
+                            }else {
+                                //无主业务员
+                                IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
+                                if(iceExamine != null && iceExamine.getCreateBy() != null){
+                                    iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
+                                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
+                                    if(userInfoVo != null){
+                                        iceBox.setResponseMan(userInfoVo.getRealname());
+                                    }
+                                    iceBoxDao.updateById(iceBox);
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        }else {
+            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()));
+            for(IceBox iceBox : iceBoxes){
+                if(iceBox != null && StringUtils.isNotEmpty(iceBox.getPutStoreNumber()) && PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
+                    if(iceBox.getPutStoreNumber().startsWith("C0")){
+                        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                        if(storeInfoDtoVo != null){
+                            if(storeInfoDtoVo.getMainSaleManId() != null && storeInfoDtoVo.getMainSaleManId() > 0){
+                                //有主业务员
+                                iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
+                                UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(storeInfoDtoVo.getMainSaleManId()));
+                                if(userInfoVo != null){
+                                    iceBox.setResponseMan(userInfoVo.getRealname());
+                                }
+                                iceBoxDao.updateById(iceBox);
+                            }else{
+                                //无主业务员
+                                IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
+                                if(iceExamine != null && iceExamine.getCreateBy() != null){
+                                    iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
+                                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
+                                    if(userInfoVo != null){
+                                        iceBox.setResponseMan(userInfoVo.getRealname());
+                                    }
+                                    iceBoxDao.updateById(iceBox);
+                                }
+
+                            }
+                        }
+
+                    }else{
+                        SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
+                        if(supplierInfoSessionVo != null){
+                            if(supplierInfoSessionVo.getMainSalesmanId() != null && supplierInfoSessionVo.getMainSalesmanId() > 0){
+                                //有主业务员
+                                iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
+                                UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(supplierInfoSessionVo.getMainSalesmanId()));
+                                if(userInfoVo != null){
+                                    iceBox.setResponseMan(userInfoVo.getRealname());
+                                }
+                                iceBoxDao.updateById(iceBox);
+
+                            }else {
+                                //无主业务员
+                                IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
+                                if(iceExamine != null && iceExamine.getCreateBy() != null){
+                                    iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
+                                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
+                                    if(userInfoVo != null){
+                                        iceBox.setResponseMan(userInfoVo.getRealname());
+                                    }
+                                    iceBoxDao.updateById(iceBox);
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            }
     }
 
     private LambdaQueryWrapper<IceBoxHandover> fillWrapper(IceBoxHandoverPage iceBoxHandoverPage) {

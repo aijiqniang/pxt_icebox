@@ -10,10 +10,13 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.CodeVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
@@ -30,7 +33,9 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -65,13 +70,6 @@ public class IceBoxExtendController {
         Integer exportRecordId = setExportRecord(iceBoxPage, prefix, jobName);
         rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.EXPORT_EXCEL_QUEUE, exportRecordId);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
-    }
-
-    /**
-     * 定时同步冰柜管理报表数据
-     */
-    public void syncIceManagerReport(){
-
     }
 
     /**

@@ -984,7 +984,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     }
 
 
-    private void doBack(Integer iceBoxId) {
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
+    public void doBack(Integer iceBoxId) {
         // 退还编号
         String applyNumber = "BAC" + IdUtil.simpleUUID().substring(0, 29);
 

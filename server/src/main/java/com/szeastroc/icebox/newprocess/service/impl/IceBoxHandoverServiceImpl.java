@@ -157,7 +157,7 @@ implements IceBoxHandoverService{
                                     }
                                 }
                             }
-                            SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getId()));
+                            SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
                             thirdMap.put("supplierId", iceBox.getSupplierId());
                             thirdMap.put("supplierName",supplierInfo.getName());
 
@@ -247,7 +247,7 @@ implements IceBoxHandoverService{
                                 }
 
                             }
-                            SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getId()));
+                            SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
                             thirdMap.put("supplierId", iceBox.getSupplierId());
                             thirdMap.put("supplierName",supplierInfo.getName());
 
@@ -476,7 +476,7 @@ implements IceBoxHandoverService{
                         }
 
                     }
-                    SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getId()));
+                    SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
                     thirdMap.put("supplierId", iceBox.getSupplierId());
                     thirdMap.put("supplierName",supplierInfo.getName());
                     /**

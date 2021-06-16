@@ -157,9 +157,11 @@ implements IceBoxHandoverService{
                                     }
                                 }
                             }
-                            SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
+                            if(iceBox.getSupplierId()>0){
+                                SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
+                                thirdMap.put("supplierName",supplierInfo.getName());
+                            }
                             thirdMap.put("supplierId", iceBox.getSupplierId());
-                            thirdMap.put("supplierName",supplierInfo.getName());
 
 
                             /**
@@ -247,9 +249,11 @@ implements IceBoxHandoverService{
                                 }
 
                             }
-                            SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
+                            if(iceBox.getSupplierId()>0){
+                                SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
+                                thirdMap.put("supplierName",supplierInfo.getName());
+                            }
                             thirdMap.put("supplierId", iceBox.getSupplierId());
-                            thirdMap.put("supplierName",supplierInfo.getName());
 
                             /**
                              * 是否存在退押中状态(0:未审核 1:审核中 2:通过 3:驳回)
@@ -476,9 +480,12 @@ implements IceBoxHandoverService{
                         }
 
                     }
-                    SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
+                    if(iceBox.getSupplierId()>0){
+                        SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(iceBox.getSupplierId()));
+                        thirdMap.put("supplierName",supplierInfo.getName());
+                    }
                     thirdMap.put("supplierId", iceBox.getSupplierId());
-                    thirdMap.put("supplierName",supplierInfo.getName());
+
                     /**
                      * 是否存在退押中状态(0:未审核 1:审核中 2:通过 3:驳回)
                      */

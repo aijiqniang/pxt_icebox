@@ -37,12 +37,6 @@ public class DisplayShelfInspectApply extends Model<DisplayShelfInspectApply> {
     private String applyNumber;
 
     /**
-     * 投放编号
-     */
-    private String putNumber;
-
-
-    /**
      * 业务员id
      */
 

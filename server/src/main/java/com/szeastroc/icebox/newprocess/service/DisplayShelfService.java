@@ -28,4 +28,7 @@ public interface DisplayShelfService extends IService<DisplayShelf> {
 
     void doPut(String applyNumber);
 
+    List<DisplayShelf.DisplayShelfType> customerTotalCount(String customerNumber);
+
+    List<DisplayShelf.DisplayShelfType> customerDetail(String customerNumber);
 }

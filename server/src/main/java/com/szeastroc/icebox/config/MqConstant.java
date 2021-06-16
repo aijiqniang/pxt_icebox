@@ -79,4 +79,17 @@ public interface MqConstant {
     String SHELF_PUT_APPLY_Q = "shelf_put_apply_queue";
     String SHELF_PUT_APPLY_K = "shelf_put_apply_key";
 
+
+    /**
+     * 陈列架投放报表
+     */
+    String shelfPutReportQueue = "shelf_put_report_queue";
+    String shelfPutReportKey = "shelf_put_report_routing_key";
+
+
+    /**
+     * 陈列架投放报表
+     */
+    String shelfInspectReportQueue = "shelf_inspect_report_queue";
+    String shelfInspectReportKey = "shelf_inspect_report_routing_key";
 }

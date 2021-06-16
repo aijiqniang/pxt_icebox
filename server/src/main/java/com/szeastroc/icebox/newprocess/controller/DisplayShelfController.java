@@ -106,7 +106,17 @@ public class DisplayShelfController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.canPut(request));
     }
 
+    @GetMapping("customerTotalCount")
+    @ApiOperation(value = "小程序获取客户投放统计", notes = "小程序获取客户投放统计", produces = "application/json")
+    public CommonResponse customerTotalCount(@RequestParam String customerNumber){
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.customerTotalCount(customerNumber));
+    }
 
+    @GetMapping("customerDetail")
+    @ApiOperation(value = "小程序获取客户投放详情", notes = "小程序获取客户投放详情", produces = "application/json")
+    public CommonResponse customerDetail(String customerNumber){
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.customerDetail(customerNumber));
+    }
 
 
     @PostMapping("shelfBack")

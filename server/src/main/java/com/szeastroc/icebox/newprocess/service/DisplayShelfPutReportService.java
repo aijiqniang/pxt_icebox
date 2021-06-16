@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.common.entity.visit.ShelfPutModel;
+import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutReportMsg;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport;
 
@@ -22,4 +23,8 @@ public interface DisplayShelfPutReportService extends IService<DisplayShelfPutRe
     IPage<DisplayShelfPutReport> selectPage(ShelfPutReportMsg reportMsg);
 
     Object detail(String applyNumber);
+
+    CommonResponse export(ShelfPutReportMsg reportMsg);
+
+    Integer selectByExportCount(LambdaQueryWrapper<DisplayShelfPutReport> wrapper);
 }

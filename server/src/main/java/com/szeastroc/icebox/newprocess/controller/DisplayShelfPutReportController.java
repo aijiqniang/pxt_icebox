@@ -5,12 +5,13 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutReportMsg;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutReportService;
-import freemarker.core.CommonTemplateMarkupOutputModel;
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -30,22 +31,19 @@ public class DisplayShelfPutReportController {
     @Autowired
     private DisplayShelfPutReportService displayShelfPutReportService;
 
-
     @PostMapping("page")
-    public CommonResponse page(ShelfPutReportMsg reportMsg){
+    public CommonResponse page(@RequestBody ShelfPutReportMsg reportMsg){
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,displayShelfPutReportService.selectPage(reportMsg));
     }
 
     @GetMapping("detail")
-    public CommonResponse detail(String applyNumber){
+    public CommonResponse detail(@RequestParam String applyNumber){
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,displayShelfPutReportService.detail(applyNumber));
     }
 
     @PostMapping("export")
-    public CommonResponse export(){
-        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    public CommonResponse export(@RequestBody ShelfPutReportMsg reportMsg){
+        return displayShelfPutReportService.export(reportMsg);
     }
-
-
 
 }

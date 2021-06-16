@@ -44,6 +44,7 @@ public class DisplayShelfInspectApplyController {
 
 
     @PostMapping("history")
+    @ApiOperation(value = "小程序陈列架巡检历史记录", notes = "小程序陈列架巡检历史记录", produces = "application/json")
     public CommonResponse history(@RequestBody ShelfInspectPage page){
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,displayShelfInspectApplyService.history(page));
     }

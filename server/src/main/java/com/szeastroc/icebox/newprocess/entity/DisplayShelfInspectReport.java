@@ -9,20 +9,21 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.io.Serializable;
 
-import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
- * (DisplayShelfPutReport)表实体类
+ * (DisplayShelfInspectReport)表实体类
  *
  * @author chenchao
- * @since 2021-06-07 10:26:35
+ * @since 2021-06-11 09:38:03
  */
 @SuppressWarnings("serial")
 @Data
-@Builder
-@TableName("t_display_shelf_put_report")
-public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
+@Accessors(chain = true)
+@TableName("t_display_shelf_inspect_report")
+public class DisplayShelfInspectReport extends Model<DisplayShelfInspectReport> {
+
 
     @TableId(type = IdType.AUTO)
     private Integer id;
@@ -99,12 +100,10 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
 
 
     /**
-     * 申请编号
+     * 巡检编号
      */
 
     private String applyNumber;
-
-
 
 
     /**
@@ -119,6 +118,13 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
      */
 
     private String supplierName;
+
+
+    /**
+     * 所属经销商类型
+     */
+
+    private Integer supplierType;
 
 
     /**
@@ -148,6 +154,9 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
 
     private String putCustomerNumber;
 
+    /**
+     * 商户编号
+     */
     private String shNumber;
 
 
@@ -165,6 +174,9 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
     private Integer putCustomerType;
 
 
+    private String putCustomerLevel;
+
+
     /**
      * 审核人id
      */
@@ -179,77 +191,28 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
     private String examineUserName;
 
 
+    /**
+     * 审核人职务
+     */
+
+    private String examineUserOfficeName;
+
+
     private Date examineTime;
 
 
     /**
-     * 投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放
+     * 状态 0:报备中 1:可提报  2:已提报 3:已报备 4：已驳回
      */
 
-    private Integer putStatus;
+    private Integer status;
 
 
     /**
-     * 省份
+     * 提交人职位
      */
 
-    private String provinceName;
-
-
-    /**
-     * 城市
-     */
-
-    private String cityName;
-
-
-    /**
-     * 区县
-     */
-
-    private String districtName;
-
-
-    /**
-     * 客户地址
-     */
-
-    private String customerAddress;
-
-
-    /**
-     * 拜访频率
-     */
-
-    private String visitTypeName;
-
-
-    /**
-     * 提交人电话
-     */
-
-    private String submitterMobile;
-
-
-    /**
-     * 联系人
-     */
-
-    private String linkmanName;
-
-
-    /**
-     * 联系人电话
-     */
-
-    private String linkmanMobile;
-
-
-    /**
-     * 审批人职务
-     */
-
-    private String examineUserPosion;
+    private String submitterPosition;
 
 
     /**
@@ -258,25 +221,11 @@ public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
 
     private String examineRemark;
 
-
-    /**
-     * 投放客户等级
-     */
-
-    private String putCustomerLevel;
-
-
-    /**
-     * 签收时间
-     */
-
-    private Date signTime;
+    private String inspectRemark;
 
     private Date createTime;
 
     private Date updateTime;
-
-    private String putRemark;
 
 
     /**

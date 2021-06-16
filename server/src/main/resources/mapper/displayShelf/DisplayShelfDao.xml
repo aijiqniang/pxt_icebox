@@ -94,6 +94,20 @@
         </where>
         group by supplier_number,type
     </select>
+    <select id="typeCount" resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf$DisplayShelfType">
+        select name as typeName, count(type) as count
+        from t_display_shelf
+        where put_number = #{customerNumber}
+        group by type
+    </select>
+
+
+    <select id="customerDetail" resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf$DisplayShelfType">
+        select name as typeName, count(type) as count,status
+        from t_display_shelf
+        where put_number = #{customerNumber}
+        group by type,status
+    </select>
 
 </mapper>
 

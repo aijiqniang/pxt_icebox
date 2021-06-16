@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 import org.apache.ibatis.annotations.Param;
+import org.apache.shiro.crypto.hash.Hash;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -23,4 +25,9 @@ public interface DisplayShelfDao extends BaseMapper<DisplayShelf> {
     List<DisplayShelf.DisplayShelfType> selectType(@Param("supplierNumber") String supplierNumber);
 
     List<DisplayShelf> noPutShelves(@Param("serviceId") Integer serviceId, @Param("typeArr") String[] typeArr);
+
+    List<DisplayShelf.DisplayShelfType> typeCount(@Param("customerNumber") String customerNumber);
+
+    List<DisplayShelf.DisplayShelfType> customerDetail(@Param("customerNumber") String customerNumber);
+
 }

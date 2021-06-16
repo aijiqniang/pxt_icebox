@@ -249,5 +249,15 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         this.updateBatchById(displayShelves);
     }
 
+    @Override
+    public List<DisplayShelf.DisplayShelfType> customerTotalCount(String customerNumber) {
+        return this.baseMapper.typeCount(customerNumber);
+    }
+
+    @Override
+    public List<DisplayShelf.DisplayShelfType> customerDetail(String customerNumber) {
+        return this.baseMapper.customerDetail(customerNumber);
+    }
+
 
 }

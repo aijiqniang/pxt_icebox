@@ -292,4 +292,31 @@ public class DirectExchangeConfig {
         return BindingBuilder.bind(shelfPutApplyQueue).to(storeExportExchange).with(MqConstant.SHELF_PUT_APPLY_K);
     }
 
+
+    @Bean(name = "shelfPutReportQueue")
+    public Queue shelfPutReportQueue() {
+        Queue queue = new Queue(MqConstant.shelfPutReportQueue);
+        return queue;
+    }
+
+    @Bean
+    public Binding bindShelfPutReportQueue() {
+        Binding binding = BindingBuilder.bind(shelfPutReportQueue()).to(directExchange()).with(MqConstant.shelfPutReportKey);
+        return binding;
+    }
+
+
+
+    @Bean(name = "shelfInspectReportQueue")
+    public Queue shelfInspectReportQueue() {
+        Queue queue = new Queue(MqConstant.shelfInspectReportQueue);
+        return queue;
+    }
+
+    @Bean
+    public Binding bindShelfInspectReportQueue() {
+        Binding binding = BindingBuilder.bind(shelfInspectReportQueue()).to(directExchange()).with(MqConstant.shelfInspectReportKey);
+        return binding;
+    }
+
 }

@@ -70,6 +70,8 @@ public class DisplayShelf extends Model<DisplayShelf> {
     private String putNumber;
     @ApiModelProperty("投放客户名称")
     private String putName;
+    @ApiModelProperty("客户类型")
+    private Integer customerType;
     /**
      * 投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放
      */
@@ -104,6 +106,8 @@ public class DisplayShelf extends Model<DisplayShelf> {
         private String typeName;
         @ApiModelProperty("数量")
         private Integer count;
+        @ApiModelProperty("状态")
+        private Integer status;
     }
 
     @Data

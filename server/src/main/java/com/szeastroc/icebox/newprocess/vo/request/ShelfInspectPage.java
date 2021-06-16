@@ -13,10 +13,10 @@ import java.util.Date;
 public class ShelfInspectPage extends Page<DisplayShelfInspectApply> {
 
     /**
-     * 投放编号
+     * 客户编号
      */
-    @NotEmpty(message = "投放编号不能为空")
-    private String putNumber;
+    @NotEmpty(message = "客户编号不能为空")
+    private String customerNumber;
 
     /**
      * 业务员id

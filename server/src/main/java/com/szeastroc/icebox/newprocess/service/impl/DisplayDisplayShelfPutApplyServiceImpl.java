@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sun.org.apache.regexp.internal.RE;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.icebox.enums.IceBoxStatus;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -241,6 +243,9 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
     public void invalid(InvalidShelfApplyRequest request) {
         List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, request.getApplyNumber()));
+        if(CollectionUtils.isEmpty(relates)){
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "本次申请不包含陈列架");
+        }
         Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
         displayShelves.forEach(shelf -> {
             shelf.setPutStatus(PutStatus.NO_PUT.getStatus());
@@ -282,10 +287,19 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     public List<SessionExamineVo.VisitExamineNodeVo> shelfPut(ShelfPutModel model) {
         String applyNumber = "PUT" + IdUtil.simpleUUID().substring(0, 29);
         model.setApplyNumber(applyNumber);
+        Integer customerType;
+        StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(model.getCustomerNumber()));
+        if(Objects.nonNull(store)){
+            customerType = 5;
+        }else{
+            SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(model.getCustomerNumber()));
+            customerType = supplier.getSupplierType();
+        }
+        model.setCustomerType(customerType);
         DisplayShelfPutApply displayShelfPutApply = DisplayShelfPutApply.builder()
                 .applyNumber(applyNumber)
                 .putCustomerNumber(model.getCustomerNumber())
-                .putCustomerType(model.getCustomerType())
+                .putCustomerType(customerType)
                 .userId(model.getCreateBy())
                 .createdBy(model.getCreateBy())
                 .remark(model.getRemark())
@@ -305,6 +319,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                 for (DisplayShelf displayShelf : shelves) {
                     displayShelf.setPutStatus(PutStatus.LOCK_PUT.getStatus());
                     displayShelf.setPutNumber(model.getCustomerNumber());
+                    displayShelf.setCustomerType(customerType);
                     displayShelf.setPutName(model.getCustomerName());
                     displayShelf.setUpdateTime(new Date());
                     DisplayShelfPutApplyRelate displayShelfPutApplyRelate = new DisplayShelfPutApplyRelate();
@@ -322,7 +337,9 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
             displayShelfPutApply.setExamineId(visitExamineNodes.get(0).getExamineId());
             this.updateById(displayShelfPutApply);
         }
-
+        CompletableFuture.runAsync(()->{
+            putReportService.build(model);
+        });
         return visitExamineNodes;
     }
 }

@@ -5258,8 +5258,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         boolean modifyDept = iceBoxManagerVo.isModifyDept();
         boolean modifySupplier = iceBoxManagerVo.isModifySupplier();
         boolean modifyCustomer = iceBoxManagerVo.isModifyCustomer();
-        if (modifyDept && (!modifySupplier || !modifyCustomer)) {
-            throw new NormalOptionException(Constants.API_CODE_FAIL, "变更部门必须变更经销商和当前所在客户");
+        if (modifyDept && !modifySupplier) {
+            throw new NormalOptionException(Constants.API_CODE_FAIL, "变更部门必须变更经销商");
         }
         boolean result = iceBoxManagerVo.validateMain();
         if (!result) {

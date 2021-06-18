@@ -4776,8 +4776,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         IceBox oldIceBox = iceBoxDao.selectById(iceBoxId);
         Integer oldPutStatus = oldIceBox.getPutStatus();
         String oldPutStoreNumber = oldIceBox.getPutStoreNumber();
-        if (PutStatus.LOCK_PUT.getStatus().equals(oldPutStatus) || PutStatus.DO_PUT.getStatus().equals(oldPutStatus)) {
-            throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_ICEBOX.getCode(), "不能变更申请中及投放中的冰柜");
+        if (PutStatus.LOCK_PUT.getStatus().equals(oldPutStatus) || PutStatus.DO_PUT.getStatus().equals(oldPutStatus) || PutStatus.FINISH_PUT.getStatus().equals(equals(oldPutStatus))) {
+            throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_ICEBOX.getCode(), "不能变更申请中、投放中及已投放的冰柜");
         }
         Integer count = iceBoxExamineExceptionReportDao.selectCount(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery()
                 .eq(IceBoxExamineExceptionReport::getIceBoxAssetId, oldIceBox.getAssetId())

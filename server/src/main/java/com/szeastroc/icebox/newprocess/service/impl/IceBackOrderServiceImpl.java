@@ -140,6 +140,8 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
 
     private final DmsUrlConfig dmsUrlConfig;
+    @Autowired
+    private  IceBackOrderServiceImpl iceBackOrderServiceImpl;
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
@@ -177,7 +179,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             if (examineStatus.equals(ExamineStatusEnum.IS_PASS.getStatus()) || examineStatus.equals(ExamineStatusEnum.UN_PASS.getStatus())) {
                 log.info("该冰柜最后一次申请退还已经通过或者驳回,冰柜id-->[{}]", iceBoxId);
                 // 退还编号
-                doBack(iceBoxId);
+                iceBackOrderServiceImpl.doBack(iceBoxId);
             } else {
 
                 log.info("该冰柜最后一次申请退还已经未通过或者未驳回,冰柜id-->[{}]", iceBoxId);
@@ -185,7 +187,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             }
         } else {
             // 该冰柜第一次进行退还
-            doBack(iceBoxId);
+            iceBackOrderServiceImpl.doBack(iceBoxId);
         }
 
 
@@ -1019,8 +1021,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .relateCode(relateCode)
                 .sendUserId(userId) //
                 .build();
-        // 创建通知
-        feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
+
 
         IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                 .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
@@ -1047,6 +1048,9 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         this.generateBackReport(iceBox, applyNumber, putStoreNumber,icePutApplyRelateBox.getFreeType());
         iceBackApplyRelateBoxDao.insert(iceBackApplyRelateBox);
         iceBackApplyDao.insert(iceBackApply);
+
+        // 创建通知
+        feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
 
         if (icePutApplyRelateBox.getFreeType().equals(FreePayTypeEnum.UN_FREE.getType())) {
             // 非免押

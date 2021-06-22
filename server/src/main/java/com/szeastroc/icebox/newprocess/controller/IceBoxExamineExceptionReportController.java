@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -57,6 +58,21 @@ public class IceBoxExamineExceptionReportController {
     public CommonResponse<IPage<IceBoxExamineVo>> findIceExamineByPage(@RequestBody IceBoxExamineExceptionReportMsg reportMsg){
         IPage<IceBoxExamineVo> reportIPage = iceBoxExamineExceptionReportService.findIceExamineByPage(reportMsg);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS,null, reportIPage);
+    }
+
+    /**
+     * 添加冰柜导入时间
+     * @return
+     */
+    @RequestMapping("updateIceboxImportTime")
+    public CommonResponse<Void> updateIceboxImportTime(){
+
+        try {
+            CompletableFuture.runAsync(()->iceBoxExamineExceptionReportService.updateIceboxImportTime(), ExecutorServiceFactory.getInstance());
+        }catch (Exception e){
+            return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
+        }
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 
     /**

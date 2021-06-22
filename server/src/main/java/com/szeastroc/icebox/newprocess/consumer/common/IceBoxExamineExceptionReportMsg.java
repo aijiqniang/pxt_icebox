@@ -184,4 +184,12 @@ public class IceBoxExamineExceptionReportMsg extends Page implements Serializabl
      * 报表类型：1-异常报备，2-冰柜巡检
      */
     private Integer reportType;
+    /**
+     * 冰柜导入时间
+     */
+    private Date iceBoxImportTime;
+
+    private Date iceBoxImportStartTime;
+
+    private Date iceBoxImportEndTime;
 }

@@ -97,4 +97,9 @@ public class IceBoxExamineVo {
      * 商户编号
      */
     private String merchantNumber;
+
+    /**
+     * 冰柜导入时间
+     */
+    private Date iceBoxImportTime;
 }

@@ -166,4 +166,8 @@ public class IceBoxExcelVo {
     @ColumnWidth(50)
     @ExcelProperty(value = "冰柜责任人")
     private String responseMan;
+
+    @ColumnWidth(50)
+    @ExcelProperty(value = "导入日期")
+    private Date createTime;
 }

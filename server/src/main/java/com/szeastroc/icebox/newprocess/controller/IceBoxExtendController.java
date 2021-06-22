@@ -10,10 +10,13 @@ import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
+import com.szeastroc.icebox.newprocess.service.IceBoxService;
 import com.szeastroc.icebox.newprocess.vo.CodeVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.rabbitMQ.DirectProducer;
@@ -30,7 +33,9 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -156,7 +161,7 @@ public class IceBoxExtendController {
         // 塞入数据到下载列表中  exportRecordId
         String param = JSON.toJSONString(iceBoxPage);
         String redisKey=key+"exp";
-        jedisClient.set(redisKey, param, 10, TimeUnit.SECONDS);
+        jedisClient.set(redisKey, param, 180, TimeUnit.SECONDS);
         Integer integer = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecordsRedis(userId, userName, redisKey, jobName));
         return integer;
     }

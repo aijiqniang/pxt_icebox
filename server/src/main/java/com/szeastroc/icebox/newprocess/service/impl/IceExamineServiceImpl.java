@@ -239,6 +239,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
                 report.setIceBoxModelId(iceBox.getModelId());
                 report.setIceBoxModelName(iceBox.getModelName());
                 report.setIceBoxAssetId(iceBox.getAssetId());
+                report.setIceBoxImportTime(iceBox.getCreatedTime());
                 SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(iceBox.getSupplierId()));
                 report.setSupplierId(iceBox.getSupplierId());
                 if (supplier != null) {
@@ -296,11 +297,12 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
         Integer createBy = iceExamineRequest.getCreateBy();
 
-        if (createBy == null) {
-            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+//        if (createBy == null) {
+//            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+//        }
+        if(createBy != null){
+            wrapper.eq(IceExamine::getCreateBy, createBy);
         }
-
-        wrapper.eq(IceExamine::getCreateBy, createBy);
 
         String storeNumber = iceExamineRequest.getStoreNumber();
         if (StringUtils.isBlank(storeNumber)) {
@@ -326,8 +328,6 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
             List<Integer> collect = records.stream().map(IceExamine::getCreateBy).distinct().collect(Collectors.toList());
 
-            Map<Integer, SessionUserInfoVo> map = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(collect));
-
             StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(storeNumber));
 
             String storeName = "";
@@ -343,7 +343,9 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             String finalStoreName = storeName;
             page = iPage.convert(iceExamine -> {
 
-                SessionUserInfoVo sessionUserInfoVo = map.get(createBy);
+                Map<Integer, SessionUserInfoVo> map = FeignResponseUtil.getFeignData(feignUserClient.getSessionUserInfoVoByIds(collect));
+
+                SessionUserInfoVo sessionUserInfoVo = map.get(iceExamine.getCreateBy());
 
                 return iceExamine.convert(iceExamine, sessionUserInfoVo.getRealname(), finalStoreName, storeNumber);
 

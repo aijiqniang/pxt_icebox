@@ -4017,6 +4017,9 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 if(iceBox.getResponseMan() != null){
                     iceBoxExcelVo.setResponseMan(iceBox.getResponseMan());
                 }
+                if(iceBox.getCreatedTime() != null){
+                    iceBoxExcelVo.setCreateTime(iceBox.getCreatedTime());
+                }
                 if (deptMap != null) {
                     String deptStr = deptMap.get(iceBox.getDeptId());
                     if (StringUtils.isNotBlank(deptStr)) {

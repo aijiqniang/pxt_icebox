@@ -186,6 +186,7 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
         if(StringUtils.isNotEmpty(reportMsg.getToOaNumber())){
             wrapper.eq(IceBoxExamineExceptionReport::getToOaNumber,reportMsg.getToOaNumber());
         }
+
         return wrapper;
     }
 
@@ -271,6 +272,22 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
         }
     }
 
+    @Override
+    public void updateIceboxImportTime() {
+        List<IceBoxExamineExceptionReport> iceBoxExamineExceptionReports = iceBoxExamineExceptionReportDao.selectList(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery());
+        if(iceBoxExamineExceptionReports.size()>0){
+            for(IceBoxExamineExceptionReport report : iceBoxExamineExceptionReports){
+                if(report.getIceBoxImportTime() == null){
+                    IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, report.getIceBoxAssetId()).last("limit 1"));
+                    if(iceBox != null && iceBox.getCreatedTime() !=null){
+                        report.setIceBoxImportTime(iceBox.getCreatedTime());
+                        iceBoxExamineExceptionReportDao.updateById(report);
+                    }
+                }
+            }
+        }
+    }
+
     private LambdaQueryWrapper<IceBoxExamineExceptionReport> fillExamineWrapper(IceBoxExamineExceptionReportMsg reportMsg) {
         LambdaQueryWrapper<IceBoxExamineExceptionReport> wrapper = Wrappers.<IceBoxExamineExceptionReport>lambdaQuery();
         if (reportMsg.getGroupDeptId() != null) {
@@ -328,7 +345,15 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
             }
 
         }
-
+        if(reportMsg.getIceBoxImportStartTime() != null){
+            wrapper.ge(IceBoxExamineExceptionReport::getIceBoxImportTime,reportMsg.getIceBoxImportStartTime());
+        }
+        if(reportMsg.getIceBoxImportEndTime() != null){
+            wrapper.le(IceBoxExamineExceptionReport::getIceBoxImportTime,reportMsg.getIceBoxImportEndTime());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getIceBoxAssetId())){
+            wrapper.eq(IceBoxExamineExceptionReport::getIceBoxAssetId,reportMsg.getIceBoxAssetId());
+        }
         return wrapper;
     }
 }

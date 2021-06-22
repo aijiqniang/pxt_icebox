@@ -25,6 +25,7 @@ public interface IceBoxExamineExceptionReportService extends IService<IceBoxExam
 
     void updateExamineUserOfficeName();
 
+    void updateIceboxImportTime();
 }
 
 

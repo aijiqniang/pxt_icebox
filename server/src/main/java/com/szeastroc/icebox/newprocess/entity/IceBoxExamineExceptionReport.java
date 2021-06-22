@@ -163,4 +163,10 @@ public class IceBoxExamineExceptionReport {
      */
     @TableField(exist = false)
     private String merchantNumber;
+
+    /**
+     * 冰柜导入时间
+     */
+    @TableField(value = "ice_box_importTime")
+    private Date iceBoxImportTime;
 }

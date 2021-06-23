@@ -253,7 +253,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 iceBox.setDeptId(supplier.getMarketAreaId());
             }
         }
-        iceBoxDao.updateById(iceBox);
+
 
         iceBoxExtend.setLastApplyNumber(icePutApply.getApplyNumber());
         iceBoxExtend.setLastPutTime(icePutApply.getCreatedTime());
@@ -375,8 +375,13 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                         putReport.setIceBoxModelId(iceBox.getModelId());
                         putReport.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                         putReport.setSignTime(new Date());
+                        if(putReport.getSubmitterId() != null && StringUtils.isNotEmpty(putReport.getSubmitterName())){
+                            iceBox.setResponseManId(putReport.getSubmitterId());
+                            iceBox.setResponseMan(putReport.getSubmitterName());
+                        }
                         iceBoxPutReportDao.updateById(putReport);
                     }
+
 
                     //发送mq消息,同步申请数据到报表
 //                    CompletableFuture.runAsync(() -> {
@@ -392,6 +397,7 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 }
             }
         }
+        iceBoxDao.updateById(iceBox);
         OrderPayResponse orderPayResponse = new OrderPayResponse(FreePayTypeEnum.IS_FREE.getType());
 
         JSONObject jsonObject = iceBoxService.setAssetReportJson(iceBox,"createByFree");

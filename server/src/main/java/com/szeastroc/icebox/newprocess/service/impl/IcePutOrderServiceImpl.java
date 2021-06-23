@@ -585,19 +585,8 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         //修改冰柜投放信息
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
-        //修改冰柜部门为投放客户的部门
-        if(iceBox.getPutStoreNumber().startsWith("C0")){
-            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
-            if(store != null){
-                iceBox.setDeptId(store.getMarketArea());
-            }
-        }else {
-            SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(iceBox.getPutStoreNumber()));
-            if(supplier != null){
-                iceBox.setDeptId(supplier.getMarketAreaId());
-            }
-        }
-        iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate().set(IceBox::getPutStatus,PutStatus.FINISH_PUT.getStatus()).eq(IceBox::getId,iceBox.getId()));
+
+        //iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate().set(IceBox::getPutStatus,PutStatus.FINISH_PUT.getStatus()).eq(IceBox::getId,iceBox.getId()));
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
         wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
@@ -610,6 +599,21 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
             relateModel.setUpdateTime(new Date());
             relateModel.setSignTime(new Date());
             putStoreRelateModelDao.updateById(relateModel);
+            if(StringUtils.isNotEmpty(relateModel.getPutStoreNumber())){
+                iceBox.setPutStoreNumber(relateModel.getPutStoreNumber());
+                //修改冰柜部门为投放客户的部门
+                if(relateModel.getPutStoreNumber().startsWith("C0")){
+                    StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(relateModel.getPutStoreNumber()));
+                    if(store != null){
+                        iceBox.setDeptId(store.getMarketArea());
+                    }
+                }else {
+                    SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.findByNumber(relateModel.getPutStoreNumber()));
+                    if(supplier != null){
+                        iceBox.setDeptId(supplier.getMarketAreaId());
+                    }
+                }
+            }
         }
 //        iceBoxDao.updateById(iceBox);
         //todo 这里冰柜改为已投放
@@ -668,9 +672,16 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
                 putReport.setIceBoxModelId(iceBox.getModelId());
                 putReport.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                 putReport.setSignTime(new Date());
+                if(putReport.getSubmitterId() != null){
+                    iceBox.setResponseManId(putReport.getSubmitterId());
+                }
+                if(StringUtils.isNotEmpty(putReport.getSubmitterName())){
+                    iceBox.setResponseMan(putReport.getSubmitterName());
+                }
                 iceBoxPutReportDao.updateById(putReport);
             }
         }
+        iceBoxDao.updateById(iceBox);
         //发送mq消息,同步申请数据到报表
 //        CompletableFuture.runAsync(() -> {
 //            IceBoxPutReportMsg report = new IceBoxPutReportMsg();

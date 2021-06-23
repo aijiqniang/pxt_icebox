@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -129,6 +130,22 @@ public class IceBoxHandOverController {
     public CommonResponse updateResponseMan(@RequestBody List<Integer> iceboxIds){
         try {
             CompletableFuture.runAsync(()->iceBoxHandoverService.updateResponseMan(iceboxIds), ExecutorServiceFactory.getInstance());
+        }catch (Exception e){
+            return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
+        }
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
+    /**
+     * 定时更新冰柜责任人
+     *
+     * @return
+     */
+    @GetMapping("/updateResponseManSchedule")
+    public CommonResponse<Void> updateResponseManSchedule (){
+        try {
+            List<Integer> ids = new ArrayList<>();
+            CompletableFuture.runAsync(()->iceBoxHandoverService.updateResponseMan(ids), ExecutorServiceFactory.getInstance());
         }catch (Exception e){
             return new CommonResponse(Constants.API_CODE_FAIL,e.getMessage());
         }

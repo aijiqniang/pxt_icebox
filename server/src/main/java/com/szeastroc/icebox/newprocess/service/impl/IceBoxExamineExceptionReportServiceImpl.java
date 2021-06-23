@@ -282,6 +282,12 @@ public class IceBoxExamineExceptionReportServiceImpl extends ServiceImpl<IceBoxE
                     if(iceBox != null && iceBox.getCreatedTime() !=null){
                         report.setIceBoxImportTime(iceBox.getCreatedTime());
                         iceBoxExamineExceptionReportDao.updateById(report);
+                    }else{
+                        IceBox oldIceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getOldAssetId, report.getIceBoxAssetId()).last("limit 1"));
+                        if(oldIceBox != null && oldIceBox.getCreatedTime() !=null){
+                            report.setIceBoxImportTime(oldIceBox.getCreatedTime());
+                            iceBoxExamineExceptionReportDao.updateById(report);
+                        }
                     }
                 }
             }

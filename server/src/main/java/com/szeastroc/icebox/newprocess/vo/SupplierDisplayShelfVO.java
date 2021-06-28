@@ -43,4 +43,19 @@ public class SupplierDisplayShelfVO {
     @ApiModelProperty("拜访频率")
     private String visitTypeName;
 
+    @ApiModelProperty("客户名称")
+    private String customerName;
+
+    @ApiModelProperty("客户等级")
+    private String customerLevel;
+
+    @ApiModelProperty("客户联系人")
+    private String customerLinkMan;
+
+    @ApiModelProperty("客户联系人")
+    private String customerLinkMobile;
+
+    @ApiModelProperty("客户联系人")
+    private String customerLinkAddress;
+
 }

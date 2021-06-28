@@ -5,12 +5,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.user.session.MatchRuleVo;
 import com.szeastroc.common.entity.user.vo.SysRuleShelfDetailVo;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignStoreRelateMemberClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignDeptClient;
 import com.szeastroc.common.feign.user.FeignDeptRuleClient;
@@ -75,6 +77,8 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
     DisplayShelfInspectApplyService inspectApplyService;
     @Autowired
     DisplayShelfService displayShelfService;
+    @Autowired
+    FeignStoreRelateMemberClient storeRelateMemberClient;
 
     @Override
     public IPage<DisplayShelf> selectPage(DisplayShelfPage page) {
@@ -179,6 +183,41 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         Integer serviceId = FeignResponseUtil.getFeignData(feignDeptClient.getServiceId(request.getMarketAreaId()));
         String[] typeArr = shelfType.split(",");
         List<DisplayShelf> shelfList = this.baseMapper.noPutShelves(serviceId, typeArr);
+        String customerLevel;
+        String customerName;
+        String customerLinkMobile;
+        String customerLinkAddress;
+        String customerLinkMan;
+        StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(request.getCustomerNumber()));
+        if(Objects.nonNull(store)){
+            customerLevel = store.getStoreLevel();
+            customerLinkAddress = store.getAddress();
+            customerName = store.getStoreName();
+            MemberInfoVo shopKeeper = FeignResponseUtil.getFeignData(storeRelateMemberClient.getShopKeeper(request.getCustomerNumber()));
+            if(Objects.isNull(shopKeeper)){
+                MemberInfoVo member = FeignResponseUtil.getFeignData(storeRelateMemberClient.getMemberByStoreNumber(request.getCustomerNumber()));
+                if(Objects.isNull(member)){
+                    throw new NormalOptionException(Constants.API_CODE_FAIL, "该门店没有联系人");
+                }
+                customerLinkMan = member.getName();
+                customerLinkMobile = member.getMobile();
+            }else{
+                customerLinkMan = shopKeeper.getName();
+                customerLinkMobile = shopKeeper.getMobile();
+            }
+
+        }else{
+            SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(request.getCustomerNumber()));
+            if(Objects.nonNull(supplier)){
+                customerLevel = supplier.getLevel();
+                customerName = supplier.getName();;
+                customerLinkAddress = supplier.getAddress();
+                customerLinkMan = supplier.getLinkMan();
+                customerLinkMobile = supplier.getLinkManMobile();
+            }else{
+                throw new NormalOptionException(Constants.API_CODE_FAIL, "当前投放客户找不到");
+            }
+        }
         return shelfList.stream().map(o -> {
             SupplierDisplayShelfVO vo = new SupplierDisplayShelfVO();
             BeanUtils.copyProperties(o, vo);
@@ -187,6 +226,11 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
             vo.setLinkMan(supplier.getLinkMan());
             vo.setLinkAddress(supplier.getAddress());
             vo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(request.getCustomerNumber()))));
+            vo.setCustomerLevel(customerLevel);
+            vo.setCustomerLinkAddress(customerLinkAddress);
+            vo.setCustomerLinkMan(customerLinkMan);
+            vo.setCustomerName(customerName);
+            vo.setCustomerLinkMobile(customerLinkMobile);
             return vo;
         }).collect(Collectors.toList());
     }

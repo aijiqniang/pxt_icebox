@@ -55,12 +55,9 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -585,11 +582,28 @@ public class IcePutOrderServiceImpl extends ServiceImpl<IcePutOrderDao, IcePutOr
 
         //修改冰柜投放信息
         iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+        /**
+         * 6.29fix：付了押金之后这个地方  通过icebox查找storenumber是有问题的  改为从applrelatemodel表去查   同时修改iceboxextend信息
+         */
+        IceBoxExtend extend = new IceBoxExtend();
+        extend.setId(iceBox.getId());
+        extend.setLastPutId(icePutApply.getId());
+        extend.setLastApplyNumber(icePutApply.getApplyNumber());
+        iceBoxExtendDao.updateById(extend);
+
+        List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, icePutOrder.getApplyNumber()).eq(ApplyRelatePutStoreModel::getFreeType, FreePayTypeEnum.UN_FREE.getType()));
+        if(applyRelatePutStoreModels.size() == 0){
+            log.info("异常:订单成功回调,丢失冰柜applyrelatemodel记录信息-> {}", JSON.toJSONString(icePutOrder));
+            throw new ImproperOptionException(Constants.ErrorMsg.CAN_NOT_FIND_RECORD);
+        }
+        List<Integer> storeRelateModelIds = applyRelatePutStoreModels.stream().map(x->x.getStoreRelateModelId()).collect(Collectors.toList());
 
         //iceBoxDao.update(null,Wrappers.<IceBox>lambdaUpdate().set(IceBox::getPutStatus,PutStatus.FINISH_PUT.getStatus()).eq(IceBox::getId,iceBox.getId()));
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
-        wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
+        //wrapper.eq(PutStoreRelateModel::getPutStoreNumber, iceBox.getPutStoreNumber());
         wrapper.eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId());
+        wrapper.eq(PutStoreRelateModel::getModelId,iceBox.getModelId());
+        wrapper.in(PutStoreRelateModel::getId,storeRelateModelIds);
         wrapper.eq(PutStoreRelateModel::getPutStatus, PutStatus.DO_PUT.getStatus());
         wrapper.eq(PutStoreRelateModel::getExamineStatus, ExamineStatusEnum.IS_PASS.getStatus());
         List<PutStoreRelateModel> relateModelList = putStoreRelateModelDao.selectList(wrapper);

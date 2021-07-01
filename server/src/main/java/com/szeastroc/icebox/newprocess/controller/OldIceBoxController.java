@@ -208,14 +208,14 @@ public class OldIceBoxController {
     public CommonResponse<Void> importOrUpdate(@RequestParam("excelFile") MultipartFile file) throws IOException, ImproperOptionException {
 
         log.info("开始读取数据");
-        List<OldIceBoxImportVo> oldIceBoxImportVoList = EasyExcel.read(file.getInputStream()).head(OldIceBoxImportVo.class).sheet().doReadSync();
+        /*List<OldIceBoxImportVo> oldIceBoxImportVoList = EasyExcel.read(file.getInputStream()).head(OldIceBoxImportVo.class).sheet().doReadSync();
         if (CollectionUtil.isNotEmpty(oldIceBoxImportVoList)) {
             List<JSONObject> lists = oldIceBoxOpt.opt(oldIceBoxImportVoList);
 
-            /**
+            *//**
              * @Date: 2020/10/19 14:50 xiao
              *  将报表中导入数据库中的数据异步更新到报表中
-             */
+             *//*
             if (CollectionUtils.isNotEmpty(lists)) {
                 ExecutorServiceFactory.getInstance().execute(() -> {
                     for (JSONObject jsonObject : lists) {
@@ -224,7 +224,7 @@ public class OldIceBoxController {
                     }
                 });
             }
-        }
+        }*/
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 

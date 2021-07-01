@@ -4859,8 +4859,11 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // 正常的冰柜改为异常的冰柜时 不能变更使用客户
             throw new NormalOptionException(ResultEnum.CANNOT_CHANGE_CUSTOMER.getCode(), ResultEnum.CANNOT_CHANGE_CUSTOMER.getMessage());
         }
-
-        if (modifyCustomer && null != modifyCustomerType) {
+        /**
+         * 禁用直接变更门店
+         */
+        //if (modifyCustomer && null != modifyCustomerType) {
+        if(false){
             // 客户类型：1-经销商，2-分销商，3-邮差，4-批发商  5-门店
             String customerNumber = iceBoxManagerVo.getCustomerNumber();
             if (modifyCustomerType == 1) {

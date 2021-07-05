@@ -411,13 +411,15 @@ public class IceBoxPutReportServiceImpl extends ServiceImpl<IceBoxPutReportDao, 
                         for(IceBox iceBox:iceBoxList){
                             if(PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus()) && iceBox.getModelId().equals(relateModel.getModelId())
                                     && iceBox.getSupplierId().equals(relateModel.getSupplierId())){
-                                IceBoxPutReport isExistPutReport = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getIceBoxAssetId, iceBox.getAssetId())
-                                        .eq(IceBoxPutReport::getApplyNumber, storeModel.getApplyNumber()));
-                                if(isExistPutReport == null){
+                                //IceBoxPutReport isExistPutReport = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getApplyNumber, storeModel.getApplyNumber()));
+                                //if(isExistPutReport == null){
+                                /**
+                                 * 补充没有的数据这时候  冰柜是没有资产id   会导致补数据都缺失冰柜id和资产id
+                                 */
                                     putReport.setIceBoxId(iceBox.getId());
                                     putReport.setIceBoxAssetId(iceBox.getAssetId());
                                     break;
-                                }
+                                //}
                             }
                         }
                     }

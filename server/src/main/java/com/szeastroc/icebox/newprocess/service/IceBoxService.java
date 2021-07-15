@@ -144,6 +144,8 @@ public interface IceBoxService extends IService<IceBox> {
     void createOldIceBoxSignNotice(IceBox iceBox, String applyNumber, String storeNumber);
 
     Map<String, Object> checkApplyStatus(List<IceBoxRequestVo> iceBoxRequestVos);
+
+    void helpSignIcebox(String assestId, String applyNumber);
 }
 
 

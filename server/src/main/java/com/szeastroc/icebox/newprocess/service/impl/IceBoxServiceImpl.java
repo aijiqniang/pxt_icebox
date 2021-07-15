@@ -5769,7 +5769,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             throw new NormalOptionException(Constants.API_CODE_FAIL,"投放申请关联记录不存在");
         }
         List<Integer> storeRelateModelIds = applyRelatePutStoreModels.stream().map(o -> o.getStoreRelateModelId()).collect(Collectors.toList());
-        List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getModelId, iceBox.getModelId()).eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId()).in(PutStoreRelateModel::getId, storeRelateModelIds).orderByDesc(PutStoreRelateModel::getId));
+        List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getModelId, iceBox.getModelId()).eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId()).in(PutStoreRelateModel::getId, storeRelateModelIds).ne(PutStoreRelateModel::getPutStatus,PutStatus.FINISH_PUT.getStatus()).orderByDesc(PutStoreRelateModel::getId));
         if (putStoreRelateModels.size()==0){
             throw new NormalOptionException(Constants.API_CODE_FAIL,"投放申请主记录不存在");
         }

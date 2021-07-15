@@ -579,4 +579,11 @@ public class IceBoxController {
             return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null, Boolean.FALSE);
         }
     }
+
+
+    @GetMapping("helpSignIcebox")
+    public CommonResponse<String> helpSignIcebox(@RequestParam("assestId")String assestId,@RequestParam("applyNumber") String applyNumber){
+        iceBoxService.helpSignIcebox(assestId,applyNumber);
+        return new CommonResponse<String>(Constants.API_CODE_SUCCESS, null, null);
+    }
 }

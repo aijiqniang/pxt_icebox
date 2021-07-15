@@ -179,7 +179,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
 
     private void saveHisensePushEvent(HisenseDTO hisenseDTO) {
         //查询是否有对应冰箱数据
-        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getExternalId, hisenseDTO.getControlId()));
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getExternalId, hisenseDTO.getControlId()).last("limit 1"));
 
         if (null == iceBoxExtend) {
             log.info("无效设备信息,参数为-->[{}]", JSON.toJSONString(hisenseDTO));

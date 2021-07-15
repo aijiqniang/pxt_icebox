@@ -89,6 +89,7 @@ import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -5742,6 +5743,80 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
         return responseMap;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
+    public void helpSignIcebox(String assestId, String applyNumber) {
+        if(StringUtils.isEmpty(assestId) || StringUtils.isEmpty(assestId)){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"参数不能为空");
+        }
+        IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, assestId));
+        if(iceBox == null){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"冰柜不存在");
+        }
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getAssetId, assestId));
+        if(iceBoxExtend == null){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"冰柜拓展信息不存在");
+        }
+        IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getBoxId,iceBox.getId()).eq(IcePutApplyRelateBox::getApplyNumber,applyNumber));
+        IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, applyNumber));
+        if(icePutApply == null){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"投放申请不存在");
+        }
+        List<ApplyRelatePutStoreModel> applyRelatePutStoreModels = applyRelatePutStoreModelDao.selectList(Wrappers.<ApplyRelatePutStoreModel>lambdaQuery().eq(ApplyRelatePutStoreModel::getApplyNumber, applyNumber));
+        if(applyRelatePutStoreModels.size()==0){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"投放申请关联记录不存在");
+        }
+        List<Integer> storeRelateModelIds = applyRelatePutStoreModels.stream().map(o -> o.getStoreRelateModelId()).collect(Collectors.toList());
+        List<PutStoreRelateModel> putStoreRelateModels = putStoreRelateModelDao.selectList(Wrappers.<PutStoreRelateModel>lambdaQuery().eq(PutStoreRelateModel::getModelId, iceBox.getModelId()).eq(PutStoreRelateModel::getSupplierId, iceBox.getSupplierId()).in(PutStoreRelateModel::getId, storeRelateModelIds).orderByDesc(PutStoreRelateModel::getId));
+        if (putStoreRelateModels.size()==0){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"投放申请主记录不存在");
+        }
+        PutStoreRelateModel putStoreRelateModel = putStoreRelateModels.get(0);
+        IceBoxPutReport report = iceBoxPutReportDao.selectOne(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getPutStoreModelId,putStoreRelateModel.getId()));
+
+        /**更新数据
+         *
+         */
+        iceBox.setPutStatus(PutStatus.FINISH_PUT.getStatus()).setPutStoreNumber(putStoreRelateModel.getPutStoreNumber());
+        iceBoxDao.updateById(iceBox);
+        log.info("icebox update id【{}】",iceBox.getId());
+
+        iceBoxExtend.setLastPutId(icePutApply.getId()).setLastApplyNumber(applyNumber);
+        iceBoxExtendDao.updateById(iceBoxExtend);
+
+        icePutApply.setStoreSignStatus(1);
+        icePutApplyDao.updateById(icePutApply);
+
+        putStoreRelateModel.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+        putStoreRelateModel.setExamineStatus(2);
+        putStoreRelateModel.setUpdateTime(new Date());
+        putStoreRelateModel.setSignTime(new Date());
+        if(putStoreRelateModel.getStatus().equals(0)){
+            log.info("putStoreRelateModel记录无效,id为->{}",putStoreRelateModel.getId());
+            putStoreRelateModel.setStatus(1);
+        }
+        putStoreRelateModelDao.updateById(putStoreRelateModel);
+
+        if(report != null){
+            report.setIceBoxId(iceBox.getId());
+            report.setIceBoxAssetId(iceBox.getAssetId());
+            report.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+            report.setSignTime(new Date());
+            iceBoxPutReportDao.updateById(report);
+        }
+
+        if(relateBox == null){
+            IcePutApplyRelateBox newRelateBox = IcePutApplyRelateBox.builder()
+                    .applyNumber(applyNumber)
+                    .boxId(iceBox.getId())
+                    .modelId(iceBox.getModelId())
+                    .freeType(applyRelatePutStoreModels.get(0).getFreeType())
+                    .build();
+            icePutApplyRelateBoxDao.insert(newRelateBox);
+            log.info("icePutApplyRelateBox insert id:{}",newRelateBox.getId());
+        }
     }
 
 }

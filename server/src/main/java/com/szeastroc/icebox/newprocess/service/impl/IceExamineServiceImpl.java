@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
@@ -12,6 +13,9 @@ import com.google.common.collect.Lists;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SubordinateInfoVo;
+import com.szeastroc.common.entity.incentive.IndexCompleteVO;
+import com.szeastroc.common.entity.incentive.enums.IndexCodeEnum;
+import com.szeastroc.common.entity.incentive.enums.IndexTypeEnum;
 import com.szeastroc.common.entity.user.session.MatchRuleVo;
 import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
 import com.szeastroc.common.entity.user.vo.SessionUserInfoVo;
@@ -544,6 +548,14 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 //            buildReportAndSendMq(iceExamine,ExamineExceptionStatusEnums.is_reporting.getStatus(),new Date());
 //        }, ExecutorServiceFactory.getInstance());
         iceBoxDao.updateById(iceBox);
+
+        IndexCompleteVO indexCompleteVO = new IndexCompleteVO();
+        indexCompleteVO.setIndexType(IndexTypeEnum.INSPECTION.getType());
+        indexCompleteVO.setIndexCode(IndexCodeEnum.INSPECTION.getCode());
+        indexCompleteVO.setStoreNumber(iceBox.getPutStoreNumber());
+        indexCompleteVO.setUserId(iceExamineVo.getCreateBy());
+        indexCompleteVO.setDayTime(new Date());
+        rabbitTemplate.convertAndSend(MqConstant.INDEX_COMPLETE_EXCHANGE, MqConstant.K_ADD_INDEX_COMPLETE, JSONObject.toJSONString(indexCompleteVO));
         return map;
     }
 

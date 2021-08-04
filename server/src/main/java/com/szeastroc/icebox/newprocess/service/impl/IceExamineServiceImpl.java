@@ -555,6 +555,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         indexCompleteVO.setStoreNumber(iceBox.getPutStoreNumber());
         indexCompleteVO.setUserId(iceExamineVo.getCreateBy());
         indexCompleteVO.setDayTime(new Date());
+        indexCompleteVO.setIceBoxAssetId(iceBox.getAssetId());
         rabbitTemplate.convertAndSend(MqConstant.INDEX_COMPLETE_EXCHANGE, MqConstant.K_ADD_INDEX_COMPLETE, JSONObject.toJSONString(indexCompleteVO));
         return map;
     }

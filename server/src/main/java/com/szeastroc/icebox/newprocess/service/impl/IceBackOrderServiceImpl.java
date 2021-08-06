@@ -1101,10 +1101,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         }
         SessionDeptInfoVo business = deptMap.get(4);
         SessionDeptInfoVo headquarters = deptMap.get(5);
-        if(!DeptTypeEnum.BUSINESS_UNIT.getType().equals(business.getDeptType())){
+        /*if(!DeptTypeEnum.BUSINESS_UNIT.getType().equals(business.getDeptType())){
             business = null;
             headquarters = deptMap.get(4);
-        }
+        }*/
         if(Objects.nonNull(business)){
             businessId = business.getId();
             businessName = business.getName();

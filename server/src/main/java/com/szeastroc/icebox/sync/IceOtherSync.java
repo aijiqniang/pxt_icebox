@@ -269,7 +269,7 @@ public class IceOtherSync {
         iceBoxExtendService.updateBatchById(updateIceBoxExtends);
     }
 
-    
+
     public void syncIceBoxDept() {
         log.info("开始更新部门信息");
         List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().isNotNull(IceBox::getSupplierId).groupBy(IceBox::getSupplierId));

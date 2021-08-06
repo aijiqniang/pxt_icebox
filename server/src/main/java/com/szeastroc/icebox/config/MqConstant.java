@@ -78,4 +78,11 @@ public interface MqConstant {
      * 冰柜交接
      */
     String ICE_BOX_HANDOVER_QUEUE = "ICE_BOX_HANDOVER_QUEUE";
+
+    /**
+     * 冰柜埋点
+     */
+    String INDEX_COMPLETE_EXCHANGE = "INDEX_COMPLETE_K_CHANGE";
+    String Q_ADD_INDEX_COMPLETE = "ADD_INDEX_COMPLETE";
+    String K_ADD_INDEX_COMPLETE = "ADD_INDEX_COMPLETE_K";
 }

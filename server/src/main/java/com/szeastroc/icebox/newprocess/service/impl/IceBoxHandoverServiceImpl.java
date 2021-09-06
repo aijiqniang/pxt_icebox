@@ -521,15 +521,21 @@ implements IceBoxHandoverService{
                     }
                     if(StringUtils.isNotEmpty(iceBox.getPutStoreNumber())){
                         if(iceBox.getPutStoreNumber().startsWith("C0")){
-                            thirdMap.put("shopKeeper",memberInfoVo.getName());
-                            thirdMap.put("shopKeeperMobile",memberInfoVo.getMobile());
-                            thirdMap.put("address",storeInfoDtoVo.getAddress());
-                            thirdMap.put("storeName",storeInfoDtoVo.getStoreName());
+                            if(memberInfoVo != null){
+                                thirdMap.put("shopKeeper",memberInfoVo.getName());
+                                thirdMap.put("shopKeeperMobile",memberInfoVo.getMobile());
+                            }
+                            if(storeInfoDtoVo != null){
+                                thirdMap.put("address",storeInfoDtoVo.getAddress());
+                                thirdMap.put("storeName",storeInfoDtoVo.getStoreName());
+                            }
                         }else {
-                            thirdMap.put("shopKeeper",subordinateInfoVo.getLinkman());
-                            thirdMap.put("shopKeeperMobile",subordinateInfoVo.getLinkmanMobile());
-                            thirdMap.put("address",subordinateInfoVo.getAddress());
-                            thirdMap.put("storeName",subordinateInfoVo.getName());
+                            if(subordinateInfoVo != null){
+                                thirdMap.put("shopKeeper",subordinateInfoVo.getLinkman());
+                                thirdMap.put("shopKeeperMobile",subordinateInfoVo.getLinkmanMobile());
+                                thirdMap.put("address",subordinateInfoVo.getAddress());
+                                thirdMap.put("storeName",subordinateInfoVo.getName());
+                            }
                         }
                     }
                     secondList.add(thirdMap);

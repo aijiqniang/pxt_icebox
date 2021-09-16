@@ -146,6 +146,8 @@ public interface IceBoxService extends IService<IceBox> {
     Map<String, Object> checkApplyStatus(List<IceBoxRequestVo> iceBoxRequestVos);
 
     void helpSignIcebox(String assestId, String applyNumber);
+
+    List<IceBox> getByResponsmanId(Integer userId);
 }
 
 

@@ -16,11 +16,7 @@ import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -306,6 +302,17 @@ public class MyIceBoxController {
     @RequestMapping("getBoxById")
     public CommonResponse<IceBox> getBoxById(@RequestParam Integer iceBoxId){
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,iceBoxService.getById(iceBoxId));
+    }
+
+    /**
+     * 冰柜责任人找冰柜
+     * @param userId
+     * @return
+     */
+    @GetMapping("getByResponsmanId")
+    public CommonResponse<List<IceBox>> getByResponsmanId(@RequestParam Integer userId){
+        List<IceBox> boxList = iceBoxService.getByResponsmanId(userId);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,boxList);
     }
 
 }

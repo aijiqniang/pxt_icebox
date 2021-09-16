@@ -5819,4 +5819,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         }
     }
 
+    @Override
+    public List<IceBox> getByResponsmanId(Integer userId) {
+        List<IceBox> boxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getResponseManId, userId).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1));
+        return boxList;
+    }
+
 }

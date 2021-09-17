@@ -21,22 +21,22 @@ public interface MqConstant {
     /**
      * 冰柜投放报表
      */
-    String iceboxReportQueue = "ice_box_report_queue";
-    String iceboxReportKey = "ice_box_report_routing_key";
+    String iceboxReportQueue = "ice_box_report_queue_ajq";
+    String iceboxReportKey = "ice_box_report_routing_key_ajq";
 
     /**
      * 冰柜异常报备报表
      */
-    String iceboxExceptionReportQueue = "ice_box_exception_report_queue";
-    String iceboxExceptionReportKey = "ice_box_exception_report_routing_key";
+    String iceboxExceptionReportQueue = "ice_box_exception_report_queue_ajq";
+    String iceboxExceptionReportKey = "ice_box_exception_report_routing_key_ajq";
     /*****************************  直连模式的参数   *************************************/
 
 
     /**
      * 冰柜退还报表
      */
-    String iceBackApplyReportQueue = "ice_back_apply_report_queue";
-    String iceBackApplyReportKey = "ice_back_apply_report_routing_key";
+    String iceBackApplyReportQueue = "ice_back_apply_report_queue_ajq";
+    String iceBackApplyReportKey = "ice_back_apply_report_routing_key_ajq";
 
 
     /**
@@ -52,14 +52,14 @@ public interface MqConstant {
     String E_STORE_CHANGE_EXCHANGE = "E_STORE_CHANGE_EXCHANGE";
 
     String Q_STORE_CHANGE_ICEBOX_DEPT = "Q_STORE_CHANGE_ICEBOX_DEPT";
-    String EXPORT_EXCEL_QUEUE = "export_excel_queue";
+    String EXPORT_EXCEL_QUEUE = "export_excel_queue_ajq";
     String EXPORT_CHANGE_RECORD_QUEUE = "export_change_record_queue";
 //  http://10.136.15.102:15672/#/exchanges/pxt/pxt_mq_exchange
     /**
      * 冰柜退还报表
      */
-    String iceRepairOrderQueue = "ice_repair_order_queue";
-    String iceRepairOrderKey = "ice_repair_order_routing_key";
+    String iceRepairOrderQueue = "ice_repair_order_queue_ajq";
+    String iceRepairOrderKey = "ice_repair_order_routing_key_ajq";
 
 
     /**
@@ -71,8 +71,8 @@ public interface MqConstant {
      * 冰柜申请审批
      */
     String E_EXCHANGE = "EXPORT_FXBILL";
-    String ICE_BOX_PUT_APPLY_Q = "ice_box_put_apply_queue";
-    String ICE_BOX_PUT_APPLY_K = "ice_box_put_apply_key";
+    String ICE_BOX_PUT_APPLY_Q = "ice_box_put_apply_queue_ajq";
+    String ICE_BOX_PUT_APPLY_K = "ice_box_put_apply_key_ajq";
 
     /**
      * 冰柜交接

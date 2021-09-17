@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 public class IceBoxRelateDms implements Serializable {
     /**
      *
+     *
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
@@ -42,6 +43,7 @@ public class IceBoxRelateDms implements Serializable {
     private String relateNumber;
 
     /**
+     *
      *
      */
     private Integer putStoreRelateModelId;
@@ -113,10 +115,12 @@ public class IceBoxRelateDms implements Serializable {
 
     /**
      *
+     *
      */
     private Date createTime;
 
     /**
+     *
      *
      */
     private Date updateTime;

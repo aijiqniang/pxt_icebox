@@ -558,7 +558,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         indexCompleteVO.setIceBoxAssetId(iceBox.getAssetId());
         rabbitTemplate.convertAndSend(MqConstant.INDEX_COMPLETE_EXCHANGE, MqConstant.K_ADD_INDEX_COMPLETE, JSONObject.toJSONString(indexCompleteVO));
 
-        IndexCompleteVO indexComplete1VO = new IndexCompleteVO();
+        /*IndexCompleteVO indexComplete1VO = new IndexCompleteVO();
         indexComplete1VO.setIndexType(IndexTypeEnum.INSPECTION.getType());
         indexComplete1VO.setIndexCode(IndexCodeEnum.INSPECTION_NO.getCode());
         indexComplete1VO.setStoreNumber(iceBox.getPutStoreNumber());
@@ -574,7 +574,7 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         indexComplete2VO.setUserId(iceExamineVo.getCreateBy());
         indexComplete2VO.setDayTime(new Date());
         indexComplete2VO.setIceBoxAssetId(iceBox.getAssetId());
-        rabbitTemplate.convertAndSend(MqConstant.INDEX_COMPLETE_EXCHANGE, MqConstant.K_ADD_INDEX_COMPLETE, JSONObject.toJSONString(indexComplete2VO));
+        rabbitTemplate.convertAndSend(MqConstant.INDEX_COMPLETE_EXCHANGE, MqConstant.K_ADD_INDEX_COMPLETE, JSONObject.toJSONString(indexComplete2VO));*/
 
         return map;
     }

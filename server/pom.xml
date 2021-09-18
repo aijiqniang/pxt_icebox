@@ -99,6 +99,11 @@
             <groupId>com.szeastroc</groupId>
             <artifactId>common-feign</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>sharding-jdbc-core</artifactId>
+            <version>4.1.1</version>
+        </dependency>
 
     </dependencies>
 

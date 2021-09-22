@@ -22,7 +22,7 @@
         <pxt.common>0.5.10</pxt.common>
         <pxt.common.db>0.5.2</pxt.common.db>
         <!-- feign服务 -->
-        <common.feign.version>0.0.1-SNAPSHOT</common.feign.version>
+        <common.feign.version>0.3.5</common.feign.version>
     </properties>
 
     <parent>

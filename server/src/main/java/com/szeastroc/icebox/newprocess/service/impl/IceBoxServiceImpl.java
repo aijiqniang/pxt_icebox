@@ -2129,6 +2129,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
         // 获取当前登陆人可查看的部门
         List<Integer> deptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptInfoIdsBySessionUser());
+        log.info("findDeptInfoIdsBySessionUser：success");
         iceBoxPage.setDeptIdList(deptIdList);
         // 处理请求数据
         if (dealIceBoxPage(iceBoxPage)) {
@@ -2143,6 +2144,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<Integer, String> deptMap = null;
         if (CollectionUtils.isNotEmpty(deptIds)) {
             deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getForMarketAreaName(deptIds));
+            log.info("getForMarketAreaName:success");
         }
         // 设备型号
         List<IceModel> iceModels = iceModelDao.selectList(Wrappers.<IceModel>lambdaQuery()
@@ -2159,18 +2161,21 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         Map<Integer, Map<String, String>> suppMaps = null;
         if (CollectionUtils.isNotEmpty(suppIds)) {
             suppMaps = FeignResponseUtil.getFeignData(feignSupplierClient.getSimpledataByIdList(suppIds));
+            log.info("getSimpledataByIdList:success");
         }
         // 投放对象-- 门店/批发商/邮差等 集合      非未投放状态时,有可能在 门店/批发商/邮差手上
         Map<String, Map<String, String>> storeMaps = null;
         List<String> storeNumbers = iceBoxList.stream().map(IceBox::getPutStoreNumber).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(storeNumbers)) {
             storeMaps = FeignResponseUtil.getFeignData(feignStoreClient.getSimpledataByNumber(storeNumbers));
+            log.info("getSimpledataByNumber:success");
         }
         // 有可能是非门店,所以去查下  t_cus_supplier_info  表
         storeMaps = getSuppMap(storeMaps, storeNumbers);
 
         List<Map<String, Object>> list = new ArrayList<>();
         for (IceBox iceBox : iceBoxList) {
+            log.info("iceboxid:"+iceBox.getId());
 
             // t_ice_box 的id 和 t_ice_box_extend 的id是一一对应的
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
@@ -2251,6 +2256,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             map.put("id", iceBox.getId());
             if(StringUtils.isNotEmpty(number)){
                 StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(number));
+                log.info("getByStoreNumber:success");
                 if(storeInfoDtoVo != null && storeInfoDtoVo.getMerchantNumber() != null){
                     map.put("merchantNumber",storeInfoDtoVo.getMerchantNumber());
                 }
@@ -2296,6 +2302,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         if (deptId != null) {
             // 查询出当前部门下面的服务处
             List<Integer> searchDeptIdList = FeignResponseUtil.getFeignData(feignDeptClient.findDeptIdsByParentIds(Ints.asList(deptId)));
+            log.info("findDeptIdsByParentIds：success");
             if (CollectionUtils.isEmpty(searchDeptIdList)) {
                 return true;
             }
@@ -2320,6 +2327,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             // status 状态：0-禁用，1-启用
             if (StringUtils.isNotBlank(belongObjNumber)) { // 用 number 去查
                 List<SubordinateInfoVo> infoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.getByNameOrNumber(null, belongObjNumber, null, 1, limit));
+                log.info("getByNameOrNumber：success");
                 Optional.ofNullable(infoVoList).ifPresent(list -> {
                     list.forEach(i -> {
                         supplierIdList.add(i.getId());

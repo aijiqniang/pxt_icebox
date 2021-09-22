@@ -581,7 +581,8 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
 
     @Override
     public void dealIceExamineCheck(String redisKey, Integer status, Integer updateBy,String examineRemark) {
-        String str = jedisClient.get(redisKey);
+        //String str = jedisClient.get(redisKey);
+        String str = feignExamineClient.getByKey(redisKey);
         if(StringUtils.isBlank(str)){
             throw new NormalOptionException(Constants.API_CODE_FAIL, "审批失败,找不到冰柜巡检信息！");
         }

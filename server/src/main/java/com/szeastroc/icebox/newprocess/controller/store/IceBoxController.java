@@ -23,6 +23,7 @@ import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IcePutOrder;
+import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.OrderSourceEnums;
 import com.szeastroc.icebox.newprocess.service.IceBackOrderService;
 import com.szeastroc.icebox.newprocess.service.IceBoxExtendService;
@@ -573,6 +574,23 @@ public class IceBoxController {
     CommonResponse<Boolean> judgeCustomerBindIceBox(@RequestParam("number") String number) {
 
         int count = iceBoxService.count(new LambdaQueryWrapper<IceBox>().eq(IceBox::getPutStoreNumber, number).eq(IceBox::getPutStatus, IceBoxStatus.IS_PUTED.getStatus()));
+        if (count > 0) {
+            return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null, Boolean.TRUE);
+        } else {
+            return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null, Boolean.FALSE);
+        }
+    }
+
+    /**
+     * 判断客户是否存在绑定的冰柜（排除遗失的冰柜）
+     * @param number
+     * @return
+     */
+    @GetMapping("/judge/customer/bindIceBoxExcludeLose")
+    CommonResponse<Boolean> judgeCustomerBindIceBoxExcludeLose(@RequestParam("number") String number) {
+
+        int count = iceBoxService.count(new LambdaQueryWrapper<IceBox>().eq(IceBox::getPutStoreNumber, number)
+                .eq(IceBox::getPutStatus, IceBoxStatus.IS_PUTED.getStatus()).ne(IceBox::getStatus, IceBoxEnums.StatusEnum.LOSE.getType()));
         if (count > 0) {
             return new CommonResponse<Boolean>(Constants.API_CODE_SUCCESS, null, Boolean.TRUE);
         } else {

@@ -19,7 +19,8 @@ import lombok.Data;
 @Data
 public class IceBoxHandover implements Serializable {
     /**
-     * 
+     *
+     *
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
@@ -35,7 +36,8 @@ public class IceBoxHandover implements Serializable {
     private String iceBoxAssetid;
 
     /**
-     * 
+     *
+     *
      */
     private Integer iceboxStatus;
     /**
@@ -141,7 +143,8 @@ public class IceBoxHandover implements Serializable {
     private Integer freetype;
 
     /**
-     * 押金 
+     * 押金
+     * 押金
      */
     private BigDecimal depositMoney;
 
@@ -156,7 +159,8 @@ public class IceBoxHandover implements Serializable {
     private Integer handoverStatus;
 
     /**
-     * 
+     *
+     *
      */
     private Date createTime;
 

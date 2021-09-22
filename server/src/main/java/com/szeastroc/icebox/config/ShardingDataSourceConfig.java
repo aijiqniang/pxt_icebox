@@ -42,47 +42,21 @@ public class ShardingDataSourceConfig {
 
         shardingRuleConfig.setBindingTableGroups(Arrays.asList("t_task_point"));
         //shardingRuleConfig.getTableRuleConfigs().addAll(Arrays.asList(getTaskPointTableRuleConfiguration(),getIncentiveTaskIndexUserTableRuleConfiguration(),getIncentiveIndexCompleteTableRuleConfiguration(),getIncentiveTaskIndexUserDetailTableRuleConfiguration()));
-        shardingRuleConfig.getTableRuleConfigs().addAll(Arrays.asList(getTaskPointTableRuleConfiguration());
+        shardingRuleConfig.getTableRuleConfigs().addAll(Arrays.asList((getEventRuleConfiguration())));
         shardingRuleConfig.setMasterSlaveRuleConfigs(masterSlaveRuleConfigs);
         // 获取数据源对象
         DataSource dataSource = ShardingDataSourceFactory.createDataSource(dataSourceMap, shardingRuleConfig, new Properties());
 
         return dataSource;
     }
-/*
+
     @Bean
-    public TableRuleConfiguration getTaskPointTableRuleConfiguration() {
-        TableRuleConfiguration result = new TableRuleConfiguration("t_task_point","ds_master_slave.t_task_point_${0..9}");
-        StandardShardingStrategyConfiguration standardStrategy = new StandardShardingStrategyConfiguration("user_id",new TaskPointShardingTableAlgorithm());
+    public TableRuleConfiguration getEventRuleConfiguration() {
+        TableRuleConfiguration result = new TableRuleConfiguration("t_ice_event_record","ds_master_slave.t_ice_event_record_${2021..2030}_${1..12}_${1..31}");
+        StandardShardingStrategyConfiguration standardStrategy = new StandardShardingStrategyConfiguration("occurrence_time",new EventShardingTableAlgorithm());
         result.setTableShardingStrategyConfig(standardStrategy);
         return result;
     }
-
-    @Bean
-    public TableRuleConfiguration getIncentiveTaskIndexUserTableRuleConfiguration() {
-        TableRuleConfiguration result = new TableRuleConfiguration("t_incentive_task_index_user","ds_master_slave.t_incentive_task_index_user_${0..9}");
-        StandardShardingStrategyConfiguration configuration = new StandardShardingStrategyConfiguration("task_id", new IncentiveTaskIndexUserShardingTableAlgorithm());
-        result.setTableShardingStrategyConfig(configuration);
-        return result;
-    }
-    @Bean
-    public TableRuleConfiguration getIncentiveIndexCompleteTableRuleConfiguration() {
-        TableRuleConfiguration result = new TableRuleConfiguration("t_sys_index_complete","ds_master_slave.t_sys_index_complete_${0..9}");
-        StandardShardingStrategyConfiguration configuration = new StandardShardingStrategyConfiguration("user_id", new IndexCompleteShardingTableAlgorithm());
-        //result.setKeyGeneratorConfig(new KeyGeneratorConfiguration("SNOWFLAKE","id"));
-        result.setTableShardingStrategyConfig(configuration);
-        return result;
-    }
-
-    @Bean
-    public TableRuleConfiguration getIncentiveTaskIndexUserDetailTableRuleConfiguration() {
-        TableRuleConfiguration result = new TableRuleConfiguration("t_incentive_task_index_user_detail","ds_master_slave.t_incentive_task_index_user_detail_${0..15}");
-        StandardShardingStrategyConfiguration configuration = new StandardShardingStrategyConfiguration("task_id", new IncentiveTaskIndexUserDetailShardingTableAlgorithm());
-        result.setTableShardingStrategyConfig(configuration);
-        return result;
-    }
-*/
-
 
     @Primary
     @Bean(name = "shardingTransactionManager")

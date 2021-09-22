@@ -1,11 +1,13 @@
 package com.szeastroc.icebox.config;
 
 
+import com.szeastroc.commondb.config.mybatis.Datasources;
 import org.apache.shardingsphere.api.config.masterslave.MasterSlaveRuleConfiguration;
 import org.apache.shardingsphere.api.config.sharding.ShardingRuleConfiguration;
 import org.apache.shardingsphere.api.config.sharding.TableRuleConfiguration;
 import org.apache.shardingsphere.api.config.sharding.strategy.StandardShardingStrategyConfiguration;
 import org.apache.shardingsphere.shardingjdbc.api.ShardingDataSourceFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -20,8 +22,12 @@ import java.util.*;
 public class ShardingDataSourceConfig {
 
     @Resource
+    @Qualifier(Datasources.MASTER_DB)
     private DataSource masterDB;
 
+    @Resource
+    @Qualifier(Datasources.SLAVE_DB)
+    private DataSource slaveDB;
 
     @Bean(name = "shardingDataSource")
     public DataSource shardingDataSource() throws SQLException {
@@ -31,6 +37,9 @@ public class ShardingDataSourceConfig {
 
         // 配置主库
         dataSourceMap.put("ds_master", masterDB);
+
+        // 配置第一个从库
+        dataSourceMap.put("ds_slave0", masterDB);
 
         // 配置读写分离规则
         MasterSlaveRuleConfiguration masterSlaveRuleConfig = new MasterSlaveRuleConfiguration("ds_master_slave", "ds_master", Arrays.asList("ds_slave0"));

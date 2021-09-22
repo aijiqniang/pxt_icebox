@@ -19,8 +19,8 @@ import java.util.Date;
 @TableName(value = "t_ice_event_record")
 public class IceEventRecord {
 
-    @TableId(type = IdType.AUTO)
-    private Integer id;
+    @TableId(type = IdType.ID_WORKER)
+    private Long id;
 
     private Integer type;
 

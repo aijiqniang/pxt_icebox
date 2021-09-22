@@ -16,7 +16,7 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
-@MapperScan(basePackages = {"com.szeastroc.incentive.dao"}, sqlSessionFactoryRef = "shardingSqlSessionFactory")
+@MapperScan(basePackages = {"com.szeastroc.icebox.newprocess.dao"}, sqlSessionFactoryRef = "shardingSqlSessionFactory")
 public class ShardingMybatisConfig {
 
     @Autowired

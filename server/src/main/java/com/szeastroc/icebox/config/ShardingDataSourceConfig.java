@@ -40,7 +40,7 @@ public class ShardingDataSourceConfig {
         // 配置分片规则
         ShardingRuleConfiguration shardingRuleConfig = new ShardingRuleConfiguration();
 
-        shardingRuleConfig.setBindingTableGroups(Arrays.asList("t_task_point"));
+        shardingRuleConfig.setBindingTableGroups(Arrays.asList("t_ice_event_record"));
         //shardingRuleConfig.getTableRuleConfigs().addAll(Arrays.asList(getTaskPointTableRuleConfiguration(),getIncentiveTaskIndexUserTableRuleConfiguration(),getIncentiveIndexCompleteTableRuleConfiguration(),getIncentiveTaskIndexUserDetailTableRuleConfiguration()));
         shardingRuleConfig.getTableRuleConfigs().addAll(Arrays.asList((getEventRuleConfiguration())));
         shardingRuleConfig.setMasterSlaveRuleConfigs(masterSlaveRuleConfigs);
@@ -52,7 +52,7 @@ public class ShardingDataSourceConfig {
 
     @Bean
     public TableRuleConfiguration getEventRuleConfiguration() {
-        TableRuleConfiguration result = new TableRuleConfiguration("t_ice_event_record","ds_master_slave.t_ice_event_record_${2021..2030}_${1..12}_${1..31}");
+        TableRuleConfiguration result = new TableRuleConfiguration("t_ice_event_record","ds_master_slave.t_ice_event_record_${2021..2030}${1..12}${1..31}");
         StandardShardingStrategyConfiguration standardStrategy = new StandardShardingStrategyConfiguration("occurrence_time",new EventShardingTableAlgorithm());
         result.setTableShardingStrategyConfig(standardStrategy);
         return result;

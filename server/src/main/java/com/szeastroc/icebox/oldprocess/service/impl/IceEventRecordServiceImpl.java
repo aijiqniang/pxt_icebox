@@ -17,6 +17,7 @@ import com.szeastroc.icebox.oldprocess.vo.HisenseDTO;
 import com.szeastroc.icebox.util.MD5;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -120,6 +124,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
             String sign = createSign(buildMap(hisenseDTO));
             String submitSign = hisenseDTO.getSign();
             log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
+            //saveHisensePushEvent(hisenseDTO);
             if (!sign.equals(submitSign)) {
                 log.info("签名数据错误,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
             } else {
@@ -127,6 +132,37 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                 log.info("推送数据入库");
             }
         }
+    }
+
+    @Override
+    public void createTable(String startTime, String endTime) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        try{
+            Date dateOne = sdf.parse(startTime);
+            Date dateTwo = sdf.parse(endTime);
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(dateOne);
+
+            try{
+                iceEventRecordDao.createTableMySelf("t_ice_event_record_"+startTime);
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+            while(calendar.getTime().before(dateTwo)){
+                //倒序时间,顺序after改before其他相应的改动。
+                calendar.add(Calendar.DAY_OF_MONTH, 1);
+                try{
+                    iceEventRecordDao.createTableMySelf("t_ice_event_record_"+sdf.format(calendar.getTime()));
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
+
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
     }
 
 

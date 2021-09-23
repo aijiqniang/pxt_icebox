@@ -15,4 +15,6 @@ public interface IceEventRecordService extends IService<IceEventRecord> {
     void newEventPush(List<HisenseDTO> hisenseDTOList);
 
     void eventPushConsumer(HisenseDTO hisenseDTO);
+
+    void createTable(String startTime, String endTime);
 }

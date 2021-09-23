@@ -7,6 +7,8 @@ import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.oldprocess.service.IceEventRecordService;
 import com.szeastroc.icebox.oldprocess.vo.HisenseDTO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.annotations.Param;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +32,12 @@ public class IceboxEventController {
 
         iceEventRecordService.newEventPush(hisenseDTOList);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, "推送成功");
+    }
+
+    @GetMapping("/createTable")
+    public CommonResponse<Void> createTable(@Param("startTime")String startTime,@Param("endTime") String endTime){
+        iceEventRecordService.createTable(startTime,endTime);
+        return  new CommonResponse<Void>();
     }
 
 

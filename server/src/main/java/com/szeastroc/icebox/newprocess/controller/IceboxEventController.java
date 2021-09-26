@@ -3,15 +3,15 @@ package com.szeastroc.icebox.newprocess.controller;
 
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.icebox.newprocess.vo.IceEventVo;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
 import com.szeastroc.icebox.oldprocess.service.IceEventRecordService;
 import com.szeastroc.icebox.oldprocess.vo.HisenseDTO;
+import io.swagger.annotations.Api;
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -19,6 +19,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/event")
+@Api(tags = "智能冰柜")
 public class IceboxEventController {
 
 
@@ -40,5 +41,8 @@ public class IceboxEventController {
         return  new CommonResponse<Void>();
     }
 
-
+    @GetMapping("/xfaList")
+    public CommonResponse<IceEventVo.IceboxList> xfaList(@RequestParam("userId")Integer userId,@RequestParam(required = false,value = "assetId")String assetId){
+        `   `
+    }
 }

@@ -18,6 +18,8 @@ public class SignShelfRequest {
 
     @ApiModelProperty("客户编号")
     private String customerNumber;
+    @ApiModelProperty("申请编号")
+    private String applyNumber;
     @ApiModelProperty("货架数量")
     private List<Shelf> shelfList;
 
@@ -29,6 +31,9 @@ public class SignShelfRequest {
 
         @ApiModelProperty("货架类型")
         private Integer type;
+
+        @ApiModelProperty("尺寸大小")
+        private Integer size;
 
     }
 

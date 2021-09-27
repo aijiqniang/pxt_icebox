@@ -17,7 +17,7 @@ public class ShelfStockRequest {
     @ApiModelProperty("客户编号")
     private String customerNumber;
 
-    @ApiModelProperty("营小区域id")
+    @ApiModelProperty("营销区域id")
     private Integer marketAreaId;
 
 }

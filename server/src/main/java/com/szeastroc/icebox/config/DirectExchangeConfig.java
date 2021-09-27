@@ -281,6 +281,18 @@ public class DirectExchangeConfig {
         return factory;
     }
 
+    /**
+     * 陈列架退还审批推送
+     */
+    @Bean(name = "shelfBackApplyContainer")
+    public SimpleRabbitListenerContainerFactory shelfBackApplyContainer() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
+
     // 冰柜申请审批通知
     @Bean
     public Queue shelfPutApplyQueue() {
@@ -292,6 +304,16 @@ public class DirectExchangeConfig {
         return BindingBuilder.bind(shelfPutApplyQueue).to(storeExportExchange).with(MqConstant.SHELF_PUT_APPLY_K);
     }
 
+    //陈列架退还
+    @Bean
+    public Queue shelfBackApplyQueue() {
+        return QueueBuilder.durable(MqConstant.SHELF_RETURN_APPLY_Q).build();
+    }
+
+    @Bean
+    public Binding shelfBackApplyBinding(Queue shelfBackApplyQueue, DirectExchange storeExportExchange) {
+        return BindingBuilder.bind(shelfBackApplyQueue).to(storeExportExchange).with(MqConstant.SHELF_RETURN_APPLY_K);
+    }
 
     @Bean(name = "shelfPutReportQueue")
     public Queue shelfPutReportQueue() {

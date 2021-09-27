@@ -24,29 +24,27 @@
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
-    <select id="selectPage" parameterType="com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage"
+    <select id="selectDetails"
             resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
         select headquarters_dept_name,
+        headquarters_dept_id,
         business_dept_name,
+        business_dept_id,
         region_dept_name,
+        region_dept_id,
         service_dept_name,
-        supplier_name,
-        supplier_number,
-        supplier_type
+        service_dept_id,
+        name,
+        put_status,
+        status,
+        count(size) count,
+        size
         from t_display_shelf
-        <where>
-            <if test="deptId != null ">
-                ( headquarters_dept_id = #{deptId} or business_dept_id = #{deptId} or region_dept_id = #{deptId} or
-                service_dept_id = #{deptId} )
-            </if>
-            <if test="supplierNumber != null and supplierNumber != ''">
-                and supplier_number = #{supplierNumber}
-            </if>
-        </where>
-        group by supplier_number
+
+        group by name,size,put_status HAVING size is not null and put_status in(0,3)
     </select>
 
-    <select id="selectDetails" parameterType="com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage"
+    <select id="selectPage" parameterType="com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage"
             resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
         select * from t_display_shelf
         <where>
@@ -80,7 +78,7 @@
         group by type
     </select>
     <select id="noPutShelves" resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
-        select name,type,supplier_number,supplier_name,count(type) as count from t_display_shelf
+        select name,type,size,service_dept_id,service_dept_name,count(type) as count from t_display_shelf
         <where>
             <if test="serviceId != null">
                 and service_dept_id = #{serviceId}
@@ -92,7 +90,7 @@
             </foreach>
             and put_status = 0 and status =1
         </where>
-        group by supplier_number,type
+        group by size,type
     </select>
     <select id="typeCount" resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf$DisplayShelfType">
         select name as typeName, count(type) as count
@@ -103,10 +101,10 @@
 
 
     <select id="customerDetail" resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf$DisplayShelfType">
-        select name as typeName, count(type) as count,status
+        select name as typeName, count(type) as count,sign_status,type,size,response_man_id,response_man
         from t_display_shelf
-        where put_number = #{customerNumber}
-        group by type,status
+        where put_number = #{customerNumber} and status = 1 and sign_status = 1
+        group by type,sign_status,size
     </select>
 
 </mapper>

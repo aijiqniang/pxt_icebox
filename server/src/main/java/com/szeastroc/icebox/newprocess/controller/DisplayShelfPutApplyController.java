@@ -5,6 +5,8 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.visit.ShelfInspectModel;
 import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.icebox.newprocess.entity.ShelfSign;
+import com.szeastroc.icebox.newprocess.entity.ShelfSignInform;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
 import com.szeastroc.icebox.newprocess.vo.request.InvalidShelfApplyRequest;
@@ -69,5 +71,23 @@ public class DisplayShelfPutApplyController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+    @GetMapping("ShelfSign")
+    public CommonResponse shelfSign(@RequestParam String applyNumber){
+        shelfPutApplyService.shelfSign(applyNumber);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
+    @GetMapping("signInform")
+    @ApiOperation(value = "陈列架签收待办通知", notes = "陈列架签收待办通知", produces = "application/json")
+    public CommonResponse<List<ShelfSign>> signInform(@RequestParam String customerNumber){
+        List<ShelfSign> shelfSignInforms = shelfPutApplyService.signInform(customerNumber);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,shelfSignInforms);
+    }
+
+    @GetMapping("customerTotal")
+    @ApiOperation(value = "客户投放统计", notes = "客户投放统计", produces = "application/json")
+    public CommonResponse customerTotal(@RequestParam String applyNumber){
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,shelfPutApplyService.customerTotal(applyNumber));
+    }
 }
 

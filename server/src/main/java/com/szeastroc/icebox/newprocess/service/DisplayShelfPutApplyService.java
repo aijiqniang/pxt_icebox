@@ -5,7 +5,10 @@ import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.visit.SessionExamineVo;
 import com.szeastroc.common.entity.visit.ShelfInspectModel;
 import com.szeastroc.common.entity.visit.ShelfPutModel;
+import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
+import com.szeastroc.icebox.newprocess.entity.ShelfSign;
+import com.szeastroc.icebox.newprocess.entity.ShelfSignInform;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
 import com.szeastroc.icebox.newprocess.vo.request.InvalidShelfApplyRequest;
 import com.szeastroc.icebox.newprocess.vo.request.SignShelfRequest;
@@ -33,4 +36,9 @@ public interface DisplayShelfPutApplyService extends IService<DisplayShelfPutApp
 
     List<SessionExamineVo.VisitExamineNodeVo> shelfPut(ShelfPutModel model);
 
+    void shelfSign(String applyNumber);
+
+    List<ShelfSign> signInform(String customerNumber);
+
+    List<DisplayShelf.DisplayShelfType> customerTotal(String applyNumber);
 }

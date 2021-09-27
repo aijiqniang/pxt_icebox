@@ -18,9 +18,9 @@ import java.util.List;
  */
 public interface DisplayShelfDao extends BaseMapper<DisplayShelf> {
 
-    IPage<DisplayShelf> selectPage(DisplayShelfPage page);
+    List<DisplayShelf> selectDetails();
 
-    IPage<DisplayShelf> selectDetails(DisplayShelfPage page);
+    IPage<DisplayShelf> selectPage(DisplayShelfPage page);
 
     List<DisplayShelf.DisplayShelfType> selectType(@Param("supplierNumber") String supplierNumber);
 

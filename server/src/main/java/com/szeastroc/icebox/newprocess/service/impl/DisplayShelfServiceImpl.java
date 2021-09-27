@@ -5,10 +5,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
+import com.szeastroc.common.entity.customer.vo.BaseDistrictVO;
 import com.szeastroc.common.entity.customer.vo.MemberInfoVo;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
 import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
 import com.szeastroc.common.entity.user.session.MatchRuleVo;
+import com.szeastroc.common.entity.user.vo.DeptInfoConnectParentVo;
+import com.szeastroc.common.entity.user.vo.DeptNameRequest;
+import com.szeastroc.common.entity.user.vo.SessionDeptInfoVo;
 import com.szeastroc.common.entity.user.vo.SysRuleShelfDetailVo;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.feign.customer.FeignStoreClient;
@@ -20,16 +24,19 @@ import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.icebox.enums.DisplayShelfTypeEnum;
 import com.szeastroc.icebox.newprocess.dao.DisplayShelfDao;
+import com.szeastroc.icebox.newprocess.dao.DisplayShelfPutApplyDao;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApplyRelate;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
+import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfInspectApplyService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyRelateService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
+import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
 import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 import com.szeastroc.icebox.newprocess.vo.request.ShelfStockRequest;
@@ -41,11 +48,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import javax.annotation.Resource;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -79,21 +83,18 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
     DisplayShelfService displayShelfService;
     @Autowired
     FeignStoreRelateMemberClient storeRelateMemberClient;
+    @Resource
+    private DisplayShelfPutApplyDao displayShelfPutApplyDao;
 
     @Override
-    public IPage<DisplayShelf> selectPage(DisplayShelfPage page) {
-        IPage<DisplayShelf> selectPage = this.baseMapper.selectPage(page);
-        selectPage.convert(o -> {
-            List<DisplayShelf.DisplayShelfType> shelfTypes = this.baseMapper.selectType(o.getSupplierNumber());
-            o.setList(shelfTypes);
-            return o;
-        });
-        return selectPage;
+    public List<DisplayShelf> selectDetails() {
+        List<DisplayShelf> selectDetails = this.baseMapper.selectDetails();
+        return selectDetails;
     }
 
     @Override
-    public IPage<DisplayShelf> selectDetails(DisplayShelfPage page) {
-        return this.baseMapper.selectDetails(page);
+    public IPage<DisplayShelf> selectPage(DisplayShelfPage page) {
+        return this.baseMapper.selectPage(page);
     }
 
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
@@ -101,48 +102,41 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
     public void importData(MultipartFile file) {
         try {
             List<DisplayShelf.DisplayShelfData> list = EasyExcel.read(file.getInputStream()).head(DisplayShelf.DisplayShelfData.class).sheet().doReadSync();
-            int energyTotalCount = list.parallelStream().parallel().mapToInt(DisplayShelf.DisplayShelfData::getEnergyCount).sum();
-            int lemonTeaTotalCount = list.parallelStream().parallel().mapToInt(DisplayShelf.DisplayShelfData::getLemonTeaCount).sum();
-            int sodaTotalCount = list.parallelStream().parallel().mapToInt(DisplayShelf.DisplayShelfData::getSodaCount).sum();
-            if (energyTotalCount + lemonTeaTotalCount + sodaTotalCount > 10000) {
+            int repertoryCount = list.parallelStream().parallel().mapToInt(DisplayShelf.DisplayShelfData::getRepertoryCount).sum();
+            if (repertoryCount > 10000) {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "每次导入陈列货架总数不能超过10000");
             }
+
             for (DisplayShelf.DisplayShelfData o : list) {
                 List<DisplayShelf> shelves = new ArrayList<>();
-                SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(o.getSupplierNumber()));
-                Optional.ofNullable(o.getEnergyCount()).ifPresent(count -> {
-                    if (count > 0) {
-                        DisplayShelf displayShelf = buildData(o, supplier);
-                        displayShelf.setName(DisplayShelfTypeEnum.ENERGY_FOUR.getDesc());
-                        displayShelf.setType(DisplayShelfTypeEnum.ENERGY_FOUR.getType());
-                        for (int i = 0; i < count; i++) {
-                            shelves.add(displayShelf);
-                        }
+                DeptNameRequest dep = new DeptNameRequest();
+                dep.setDeptName(o.getServiceDeptName());
+                List<DeptInfoConnectParentVo> deptInfoVos = FeignResponseUtil.getFeignData(feignDeptClient.findFullDeptInfoByName(dep));
+                if(DisplayShelfTypeEnum.ENERGY_FOUR.getDesc().equals(o.getShelfType())){
+                    DisplayShelf displayShelf = buildData(o,deptInfoVos);
+                    displayShelf.setSize(o.getSize());
+                    displayShelf.setName(o.getShelfType());
+                    displayShelf.setType(DisplayShelfTypeEnum.ENERGY_FOUR.getType());
+                    for (int i = 0; i < o.getRepertoryCount(); i++) {
+                        shelves.add(displayShelf);
                     }
-
-                });
-                Optional.ofNullable(o.getLemonTeaCount()).ifPresent(count -> {
-                    if (count > 0) {
-                        DisplayShelf displayShelf = buildData(o, supplier);
-                        displayShelf.setName(DisplayShelfTypeEnum.LEMON_TEA_FOUR.getDesc());
-                        displayShelf.setType(DisplayShelfTypeEnum.LEMON_TEA_FOUR.getType());
-                        for (int i = 0; i < count; i++) {
-                            shelves.add(displayShelf);
-                        }
+                }else if(DisplayShelfTypeEnum.LEMON_TEA_FOUR.getDesc().equals(o.getShelfType())){
+                    DisplayShelf displayShelf = buildData(o,deptInfoVos);
+                    displayShelf.setSize(o.getSize());
+                    displayShelf.setName(o.getShelfType());
+                    displayShelf.setType(DisplayShelfTypeEnum.ENERGY_FOUR.getType());
+                    for (int i = 0; i < o.getRepertoryCount(); i++) {
+                        shelves.add(displayShelf);
                     }
-
-                });
-                Optional.ofNullable(o.getSodaCount()).ifPresent(count -> {
-                    if (count > 0) {
-                        DisplayShelf displayShelf = buildData(o, supplier);
-                        displayShelf.setName(DisplayShelfTypeEnum.SODA_FOUR.getDesc());
-                        displayShelf.setType(DisplayShelfTypeEnum.SODA_FOUR.getType());
-                        for (int i = 0; i < count; i++) {
-                            shelves.add(displayShelf);
-                        }
+                }else if(DisplayShelfTypeEnum.SODA_FOUR.getDesc().equals(o.getShelfType())){
+                    DisplayShelf displayShelf = buildData(o,deptInfoVos);
+                    displayShelf.setSize(o.getSize());
+                    displayShelf.setName(o.getShelfType());
+                    displayShelf.setType(DisplayShelfTypeEnum.ENERGY_FOUR.getType());
+                    for (int i = 0; i < o.getRepertoryCount(); i++) {
+                        shelves.add(displayShelf);
                     }
-
-                });
+                }
                 this.saveBatch(shelves);
             }
         } catch (Exception e) {
@@ -150,15 +144,19 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         }
     }
 
-    private DisplayShelf buildData(DisplayShelf.DisplayShelfData o, SupplierInfoSessionVo supplier) {
+    private DisplayShelf buildData(DisplayShelf.DisplayShelfData o, List<DeptInfoConnectParentVo> deptInfoVos) {
+        DeptInfoConnectParentVo deptInfoConnectParentVo = deptInfoVos.get(0);
+        SessionDeptInfoVo service = deptInfoConnectParentVo.getSessionDeptInfoVos().get(0);
+        SessionDeptInfoVo region = deptInfoConnectParentVo.getSessionDeptInfoVos().get(1);
+        SessionDeptInfoVo business = deptInfoConnectParentVo.getSessionDeptInfoVos().get(2);
+        SessionDeptInfoVo headquarters = deptInfoConnectParentVo.getSessionDeptInfoVos().get(3);
         DisplayShelf displayShelf = new DisplayShelf();
         BeanUtils.copyProperties(o, displayShelf);
-        displayShelf.setHeadquartersDeptId(supplier.getHeadquartersDeptId());
-        displayShelf.setHeadquartersDeptName(supplier.getHeadquartersDeptName());
-        displayShelf.setBusinessDeptId(supplier.getBusinessDeptId());
-        displayShelf.setRegionDeptId(supplier.getRegionDeptId());
-        displayShelf.setServiceDeptId(supplier.getServiceDeptId());
-        displayShelf.setSupplierType(supplier.getType());
+        displayShelf.setHeadquartersDeptId(headquarters.getId());
+        displayShelf.setHeadquartersDeptName(headquarters.getName());
+        displayShelf.setBusinessDeptId(business.getId());
+        displayShelf.setRegionDeptId(region.getId());
+        displayShelf.setServiceDeptId(service.getId());
         return displayShelf;
     }
 
@@ -221,10 +219,10 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         return shelfList.stream().map(o -> {
             SupplierDisplayShelfVO vo = new SupplierDisplayShelfVO();
             BeanUtils.copyProperties(o, vo);
-            SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(o.getSupplierNumber()));
+            /*SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(o.getSupplierNumber()));
             vo.setLinkMobile(supplier.getLinkManMobile());
             vo.setLinkMan(supplier.getLinkMan());
-            vo.setLinkAddress(supplier.getAddress());
+            vo.setLinkAddress(supplier.getAddress());*/
             vo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(request.getCustomerNumber()))));
             vo.setCustomerLevel(customerLevel);
             vo.setCustomerLinkAddress(customerLinkAddress);
@@ -298,9 +296,42 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         return this.baseMapper.typeCount(customerNumber);
     }
 
+
     @Override
     public List<DisplayShelf.DisplayShelfType> customerDetail(String customerNumber) {
         return this.baseMapper.customerDetail(customerNumber);
+    }
+
+    @Override
+    public List<DisplayShelfPutApplyVo> examineDetails(String code) {
+        DisplayShelfPutApplyVo vo = new DisplayShelfPutApplyVo();
+        List<DisplayShelfPutApplyVo> list = new ArrayList<>();
+        DisplayShelfPutApply displayShelfPutApply = displayShelfPutApplyDao.selectOne(Wrappers.<DisplayShelfPutApply>lambdaQuery()
+                .eq(DisplayShelfPutApply::getApplyNumber, code)
+                .eq(DisplayShelfPutApply::getSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()));
+        if(Objects.nonNull(displayShelfPutApply)){
+            vo.setApplyNumber(displayShelfPutApply.getApplyNumber());
+            vo.setCreateTime(displayShelfPutApply.getCreatedTime());
+        }
+        List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, code));
+        Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
+        Map<String, List<DisplayShelf>> listMap = displayShelves.stream().collect(Collectors.groupingBy(groups -> groups.getType()+"_"+groups.getSize()));
+        List<SupplierDisplayShelfVO> shelfList = listMap.entrySet().stream().map(e -> {
+            String[] temp = e.getKey().split("_");
+            String type = temp[0];
+            String size = temp[1];
+            SupplierDisplayShelfVO supplierDisplayShelfVO = new SupplierDisplayShelfVO();
+            supplierDisplayShelfVO.setCount(e.getValue().size());
+            supplierDisplayShelfVO.setType(e.getValue().get(0).getType());
+            supplierDisplayShelfVO.setName(e.getValue().get(0).getName());
+            supplierDisplayShelfVO.setSize(e.getValue().get(0).getSize());
+            supplierDisplayShelfVO.setServiceDeptId(e.getValue().get(0).getServiceDeptId());
+            supplierDisplayShelfVO.setServiceDeptName(e.getValue().get(0).getServiceDeptName());
+            return supplierDisplayShelfVO;
+        }).collect(Collectors.toList());
+        vo.setShelfList(shelfList);
+        list.add(vo);
+        return list;
     }
 
 

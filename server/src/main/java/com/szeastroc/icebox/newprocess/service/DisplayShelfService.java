@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
+import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
 import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 import com.szeastroc.icebox.newprocess.vo.request.ShelfStockRequest;
@@ -18,9 +19,9 @@ import java.util.List;
  */
 public interface DisplayShelfService extends IService<DisplayShelf> {
 
-    IPage<DisplayShelf> selectPage(DisplayShelfPage page);
+    List<DisplayShelf> selectDetails();
 
-    IPage<DisplayShelf> selectDetails(DisplayShelfPage page);
+    IPage<DisplayShelf> selectPage(DisplayShelfPage page);
 
     void importData(MultipartFile file);
 
@@ -31,4 +32,6 @@ public interface DisplayShelfService extends IService<DisplayShelf> {
     List<DisplayShelf.DisplayShelfType> customerTotalCount(String customerNumber);
 
     List<DisplayShelf.DisplayShelfType> customerDetail(String customerNumber);
+
+    List<DisplayShelfPutApplyVo> examineDetails(String code);
 }

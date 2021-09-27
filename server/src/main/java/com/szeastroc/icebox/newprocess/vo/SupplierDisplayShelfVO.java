@@ -31,6 +31,12 @@ public class SupplierDisplayShelfVO {
     @ApiModelProperty("经销商联系地址")
     private String linkAddress;
 
+    @ApiModelProperty("服务处id")
+    private Integer serviceDeptId;
+
+    @ApiModelProperty("服务处名称")
+    private String serviceDeptName;
+
     @ApiModelProperty("货架名称")
     private String name;
 
@@ -39,6 +45,9 @@ public class SupplierDisplayShelfVO {
 
     @ApiModelProperty("货架数量")
     private Integer count;
+
+    @ApiModelProperty("尺寸大小")
+    private String size;
 
     @ApiModelProperty("拜访频率")
     private String visitTypeName;

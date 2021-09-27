@@ -1,10 +1,7 @@
 package com.szeastroc.icebox.newprocess.entity;
 
 import com.alibaba.excel.annotation.ExcelProperty;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -39,6 +36,8 @@ public class DisplayShelf extends Model<DisplayShelf> {
      */
     @ApiModelProperty("货架类型 1东鹏特饮四层陈列架 2由柑柠檬茶四层陈列架 3东鹏加気四层陈列架")
     private Integer type;
+    @ApiModelProperty("货架的尺寸")
+    private String size;
     private Integer headquartersDeptId;
     @ApiModelProperty("本部")
     private String headquartersDeptName;
@@ -71,7 +70,9 @@ public class DisplayShelf extends Model<DisplayShelf> {
     @ApiModelProperty("投放客户名称")
     private String putName;
     @ApiModelProperty("客户类型")
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private Integer customerType;
+
     /**
      * 投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放
      */
@@ -87,6 +88,10 @@ public class DisplayShelf extends Model<DisplayShelf> {
      */
     @ApiModelProperty("0异常 1正常")
     private Integer status;
+    @ApiModelProperty("责任人id")
+    private Integer responseManId;
+    @ApiModelProperty("责任人姓名")
+    private String responseMan;
     private Date createTime;
     private Date updateTime;
 
@@ -108,6 +113,12 @@ public class DisplayShelf extends Model<DisplayShelf> {
         private Integer count;
         @ApiModelProperty("状态")
         private Integer status;
+        @ApiModelProperty("签收状态")
+        private Integer signStatus;
+        @ApiModelProperty("尺寸")
+        private String size;
+        @ApiModelProperty("类型")
+        private Integer type;
     }
 
     @Data
@@ -119,16 +130,12 @@ public class DisplayShelf extends Model<DisplayShelf> {
         private String regionDeptName;
         @ExcelProperty("服务处*")
         private String serviceDeptName;
-        @ExcelProperty("所属经销商编号*")
-        private String supplierNumber;
-        @ExcelProperty("所属经销商名称*")
-        private String supplierName;
-        @ExcelProperty("东鹏特饮四层陈列架（数量）")
-        private Integer energyCount;
-        @ExcelProperty("由柑柠檬茶四层陈列架（数量）")
-        private Integer lemonTeaCount;
-        @ExcelProperty("东鹏加気四层陈列架（数量）")
-        private Integer sodaCount;
+        @ExcelProperty("尺寸*")
+        private String size;
+        @ExcelProperty("货架类型*")
+        private String shelfType;
+        @ExcelProperty("数量")
+        private Integer repertoryCount;
 
     }
 

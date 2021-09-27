@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -152,7 +154,9 @@ public class DisplayShelfBackReport {
     private String city;
 
     private String area;
-
+    //退还备注
+    private String backRemarks;
+    //审批备注
     private String reason;
     /**
      * 创建时间
@@ -166,6 +170,9 @@ public class DisplayShelfBackReport {
     /**
      * 商户编号
      */
-    @TableField(exist = false)
     private String merchantNumber;
+
+    private Integer dptyShelf;
+    private Integer ygnmcShelf;
+    private Integer dpjqShelf;
 }

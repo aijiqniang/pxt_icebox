@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.entity;
 
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -15,21 +16,17 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * <p>
- * 业务员申请表
- * </p>
+ * 业务员退还表
  *
- * @author 陈超
- * @since 2021-06-01
- */
+ *
+ * */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @Builder
-@TableName("t_display_shelf_put_apply")
-@ApiModel(value = "ShelfPutApply对象", description = "业务员申请表 ")
-public class DisplayShelfPutApply implements Serializable {
-
+@TableName("t_display_shelf_back_apply")
+@ApiModel(value = "ShelfBackModel对象", description = "业务员退还表 ")
+public class DisplayShelfBackApply implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
@@ -128,9 +125,9 @@ public class DisplayShelfPutApply implements Serializable {
     private Date updateTime;
 
     /**
-     * 投放状态
+     * 退还状态
      */
-    @ApiModelProperty(value = "投放状态 0: 未投放 1:已锁定(被业务员申请)  2:投放中 3:已投放 4:已作废")
-    @TableField("put_status")
-    private Integer putStatus;
+    @ApiModelProperty(value = "退还状态 0未退还 1已退还")
+    @TableField("back_status")
+    private Integer backStatus;
 }

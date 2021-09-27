@@ -24,7 +24,7 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("t_display_shelf_put_apply_relate")
-@ApiModel(value = "ShelfPutApplyRelate对象", description = "业务员申请关联冰柜表 ")
+@ApiModel(value = "ShelfPutApplyRelate对象", description = "业务员申请关联陈列架表 ")
 public class DisplayShelfPutApplyRelate implements Serializable {
 
     private static final long serialVersionUID = 1L;

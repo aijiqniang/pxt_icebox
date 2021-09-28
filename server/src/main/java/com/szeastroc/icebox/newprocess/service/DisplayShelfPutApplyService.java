@@ -8,6 +8,7 @@ import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
 import com.szeastroc.icebox.newprocess.entity.ShelfSign;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
+import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.InvalidShelfApplyRequest;
 import com.szeastroc.icebox.newprocess.vo.request.SignShelfRequest;
 
@@ -26,7 +27,7 @@ public interface DisplayShelfPutApplyService extends IService<DisplayShelfPutApp
 
     void sign(SignShelfRequest request);
 
-    List<DisplayShelfPutApplyVo> putList(String customerNumber);
+    List<SupplierDisplayShelfVO> putList(String customerNumber);
 
     List<DisplayShelfPutApplyVo> processing(String customerNumber);
 

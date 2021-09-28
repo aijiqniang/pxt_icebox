@@ -7,6 +7,7 @@ import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.ShelfSign;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
+import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.InvalidShelfApplyRequest;
 import com.szeastroc.icebox.newprocess.vo.request.SignShelfRequest;
 import io.swagger.annotations.Api;
@@ -47,7 +48,7 @@ public class DisplayShelfPutApplyController {
 
     @GetMapping("putList")
     @ApiOperation(value = "小程序已投放陈列架", notes = "已投放陈列架", produces = "application/json")
-    public CommonResponse<List<DisplayShelfPutApplyVo>> putList(@RequestParam String customerNumber) {
+    public CommonResponse<List<SupplierDisplayShelfVO>> putList(@RequestParam String customerNumber) {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, shelfPutApplyService.putList(customerNumber));
     }
 

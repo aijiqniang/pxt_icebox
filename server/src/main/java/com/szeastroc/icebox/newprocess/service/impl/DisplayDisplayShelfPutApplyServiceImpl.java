@@ -169,12 +169,11 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     public void sign(SignShelfRequest request) {
         DisplayShelfPutApply shelfPutApply = this.getOne(Wrappers.<DisplayShelfPutApply>lambdaQuery()
                 .eq(DisplayShelfPutApply::getPutCustomerNumber, request.getCustomerNumber())
-                .eq(DisplayShelfPutApply::getApplyNumber,request.getApplyNumber())
-                .eq(DisplayShelfPutApply::getSignStatus, StoreSignStatus.DEFAULT_SIGN));
+                .eq(DisplayShelfPutApply::getApplyNumber,request.getApplyNumber()));
         if (Objects.isNull(shelfPutApply)) {
             throw new NormalOptionException(Constants.API_CODE_FAIL, "门店暂无可签收货架");
         }
-        List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, shelfPutApply.getApplyNumber()));
+        List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, request.getApplyNumber()));
         Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
         Map<String, List<DisplayShelf>> collect = displayShelves.stream().collect(Collectors.groupingBy(groups -> groups.getType()+"_"+groups.getSize()));
         for (SignShelfRequest.Shelf shelf : request.getShelfList()) {
@@ -203,10 +202,10 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，门店未投放" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc());
             }
         }
-        List<ShelfSign> shelfSigns = shelfSignDao.selectList(Wrappers.<ShelfSign>lambdaQuery().eq(ShelfSign::getApplyNumber, request.getApplyNumber()).eq(ShelfSign::getSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()));
-        if(CollectionUtils.isEmpty(shelfSigns)){
+//        List<ShelfSign> shelfSigns = shelfSignDao.selectList(Wrappers.<ShelfSign>lambdaQuery().eq(ShelfSign::getApplyNumber, request.getApplyNumber()).eq(ShelfSign::getSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()));
+//        if(CollectionUtils.isEmpty(shelfSigns)){
             shelfPutApply.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus()).setUpdateTime(new Date());
-        }
+//        }
         this.updateById(shelfPutApply);
         /*DisplayShelfPutReport putReport = putReportService.getOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getApplyNumber, shelfPutApply.getApplyNumber()));
         putReport.setSignTime(new Date());
@@ -214,18 +213,17 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     }
 
     @Override
-    public List<DisplayShelfPutApplyVo> putList(String customerNumber) {
-        List<DisplayShelfPutApply> list = this.list(Wrappers.<DisplayShelfPutApply>lambdaQuery().eq(DisplayShelfPutApply::getPutCustomerNumber, customerNumber).eq(DisplayShelfPutApply::getSignStatus, StoreSignStatus.ALREADY_SIGN.getStatus()));
-        return list.stream().map(o -> {
+    public List<SupplierDisplayShelfVO> putList(String customerNumber) {
+        List<DisplayShelf> list = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().eq(DisplayShelf::getPutNumber, customerNumber));
+
             DisplayShelfPutApplyVo vo = new DisplayShelfPutApplyVo();
-            vo.setApplyNumber(o.getApplyNumber());
-            vo.setCreateTime(o.getCreatedTime());
-            List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, o.getApplyNumber()));
+
             //获取已经签收的投放陈列架的id
-            Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
+            List<Integer> collect = list.stream().map(DisplayShelf::getId).collect(Collectors.toList());
+            List<DisplayShelf> displayShelves = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().eq(DisplayShelf::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()).in(DisplayShelf::getId, collect));
             //根据类型进行分组
-            Map<String, List<DisplayShelf>> collect = displayShelves.stream().collect(Collectors.groupingBy(groups -> groups.getType()+"_"+groups.getSize()));
-            List<SupplierDisplayShelfVO> shelfList = collect.entrySet().stream().map(e -> {
+            Map<String, List<DisplayShelf>> collect1 = displayShelves.stream().collect(Collectors.groupingBy(groups -> groups.getType()+"_"+groups.getSize()));
+            List<SupplierDisplayShelfVO> shelfList = collect1.entrySet().stream().map(e -> {
                 SupplierDisplayShelfVO supplierDisplayShelfVO = new SupplierDisplayShelfVO();
                 supplierDisplayShelfVO.setCount(e.getValue().size());
                 supplierDisplayShelfVO.setType(e.getValue().get(0).getType());
@@ -235,10 +233,9 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                 supplierDisplayShelfVO.setServiceDeptName(e.getValue().get(0).getServiceDeptName());
                 return supplierDisplayShelfVO;
             }).collect(Collectors.toList());
-            vo.setShelfList(shelfList);
-            vo.setCustomerNumber(customerNumber);
-            return vo;
-        }).collect(Collectors.toList());
+
+           return shelfList;
+
     }
 
     @Override
@@ -436,18 +433,18 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     @Override
     public List<DisplayShelf.DisplayShelfType> customerTotal(String applyNumber) {
         List<DisplayShelf.DisplayShelfType> typeList = new ArrayList<>();
-        List<DisplayShelfPutApply> list = this.list(Wrappers.<DisplayShelfPutApply>lambdaQuery()
-                .eq(DisplayShelfPutApply::getApplyNumber, applyNumber)
-                .eq(DisplayShelfPutApply::getSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus())
-                .in(DisplayShelfPutApply::getPutStatus,1,2));
-        if(CollectionUtils.isNotEmpty(list)){
-            for (DisplayShelfPutApply displayShelfPutApply : list) {
-                List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber,displayShelfPutApply.getApplyNumber()));
+        //投放一次  就只有一条数据
+        DisplayShelfPutApply displayShelfPutApply = this.getOne(Wrappers.<DisplayShelfPutApply>lambdaQuery()
+                .eq(DisplayShelfPutApply::getApplyNumber, applyNumber));
+                /*.eq(DisplayShelfPutApply::getSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus())
+                .in(DisplayShelfPutApply::getPutStatus,1,2));*/
+
+
+        if(displayShelfPutApply != null){
+                List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber,applyNumber));
                 if(CollectionUtils.isNotEmpty(relates)){
                     List<Integer> collect = relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList());
                     List<DisplayShelf> displayShelves = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().in(DisplayShelf::getId, collect).groupBy(DisplayShelf::getSize,DisplayShelf::getType));
-
-
                     List<DisplayShelf> displays = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().in(DisplayShelf::getId, collect));
                     int signCount = 0;
                     int notSignCount = 0;
@@ -483,7 +480,6 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
 
                     }
                 }
-            }
         }
         return typeList;
     }

@@ -32,10 +32,7 @@ import com.szeastroc.icebox.newprocess.enums.BackEnum;
 import com.szeastroc.icebox.newprocess.enums.IceBoxEnums;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.StoreSignStatus;
-import com.szeastroc.icebox.newprocess.service.DisplayShelfBackApplyService;
-import com.szeastroc.icebox.newprocess.service.DisplayShelfBackReportService;
-import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyRelateService;
-import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
+import com.szeastroc.icebox.newprocess.service.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -70,6 +67,8 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
     private ShelfBackDao shelfBackDao;
     @Autowired
     private DisplayShelfBackApplyService displayShelfBackApplyService;
+    @Autowired
+    private DisplayShelfPutApplyService displayShelfPutApplyService;
 
 
     @Override
@@ -159,21 +158,19 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
                 matchRuleVo.setType(3);
                 SysRuleShelfDetailVo approvalRule = FeignResponseUtil.getFeignData(feignDeptRuleClient.matchShelfRule(matchRuleVo));
                 Optional.ofNullable(approvalRule).ifPresent(rule -> {
-                    DisplayShelfBackApply applyServiceOne = displayShelfBackApplyService.getOne(Wrappers.<DisplayShelfBackApply>lambdaQuery().eq(DisplayShelfBackApply::getApplyNumber, request.getApplyNumber()));
-                    applyServiceOne.setBackStatus(1);
-                    displayShelfBackApplyService.updateById(applyServiceOne);
                     List<ShelfBack> shelfs = shelfBackDao.selectList(Wrappers.<ShelfBack>lambdaQuery()
                             .eq(ShelfBack::getUuid, request.getApplyNumber())
                             .eq(ShelfBack::getSignStatus, 0)
                             .groupBy(ShelfBack::getShelfType,ShelfBack::getShelfSize));
                     List<Integer> collect = shelfs.stream().map(ShelfBack::getShelfId).collect(Collectors.toList());
+                    String customerNumber = shelfs.get(0).getCustomerNumber();
                     //将投放状态信息修改成未投放
                     List<DisplayShelf> displayShelfList = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery()
-                            .eq(DisplayShelf::getPutNumber, applyServiceOne.getPutCustomerNumber())
                             .eq(DisplayShelf::getPutStatus, PutStatus.DO_BACK.getStatus())
                             .in(DisplayShelf::getId,collect));
                     displayShelfList.forEach(displayShelf -> {
                         displayShelf.setPutStatus(PutStatus.NO_PUT.getStatus());
+                        displayShelf.setSignStatus(StoreSignStatus.DEFAULT_SIGN.getStatus());
                         displayShelf.setPutNumber("");
                         displayShelf.setCustomerType(null);
                         displayShelf.setPutName("");
@@ -182,13 +179,21 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
                     });
                     displayShelfService.updateBatchById(displayShelfList);
 
-                    List<ShelfBack> shelfBacks = shelfBackDao.selectList(Wrappers.<ShelfBack>lambdaQuery().in(ShelfBack::getCustomerNumber, applyServiceOne.getPutCustomerNumber()));
+
+                    /*DisplayShelfPutApply applyServiceOne = displayShelfPutApplyService.getOne(Wrappers.<DisplayShelfPutApply>lambdaQuery().eq(DisplayShelfPutApply::getPutCustomerNumber, customerNumber));
+                    //已退还
+                    applyServiceOne.setSignStatus(3);
+                    displayShelfPutApplyService.updateById(applyServiceOne);*/
+
+
+
+                    /*List<ShelfBack> shelfBacks = shelfBackDao.selectList(Wrappers.<ShelfBack>lambdaQuery().in(ShelfBack::getCustomerNumber, applyServiceOne.getPutCustomerNumber()));
                     shelfBacks.forEach(shelfBack -> {
                         shelfBackDao.update(shelfBack,Wrappers.<ShelfBack>lambdaUpdate()
                                 .set(ShelfBack::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus())
                                 .eq(ShelfBack::getSignStatus,StoreSignStatus.DEFAULT_SIGN.getStatus())
                                 .eq(ShelfBack::getCustomerNumber,applyServiceOne.getPutCustomerNumber()));
-                    });
+                    });*/
 
                 });
 
@@ -210,7 +215,7 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
             displayShelfService.updateBatchById(displayShelfList);
         }
 
-        //报表
+        /*//报表
         DisplayShelfBackReport backReport = backReportService.getOne(Wrappers.<DisplayShelfBackReport>lambdaQuery()
                 .eq(DisplayShelfBackReport::getApplyNumber, request.getApplyNumber()));
         backReport.setCheckDate(new Date());
@@ -225,7 +230,7 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
             backReport.setExamineStatus(BackEnum.WAIT_ORDER.getStatus());
         }else if(request.getExamineStatus().equals(ExamineStatusEnum.UN_PASS.getStatus())){
             backReport.setExamineStatus(BackEnum.UN_PASS.getStatus());
-        }
+        }*/
     }
 
     @Override

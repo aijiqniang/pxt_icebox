@@ -41,7 +41,7 @@
         size
         from t_display_shelf
 
-        group by name,size,put_status HAVING size is not null and put_status in(0,3)
+        group by name,size,put_status,service_dept_id,region_dept_id,business_dept_id,headquarters_dept_id HAVING size is not null and put_status in(0,3)
     </select>
 
     <select id="selectPage" parameterType="com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage"

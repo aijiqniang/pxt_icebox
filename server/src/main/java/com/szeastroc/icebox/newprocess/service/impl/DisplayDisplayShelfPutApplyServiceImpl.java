@@ -146,7 +146,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
             });
             displayShelfService.updateBatchById(displayShelves);
         }
-        //报表
+       /* //报表
         DisplayShelfPutReport putReport = putReportService.getOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getApplyNumber, request.getApplyNumber()));
         putReport.setExamineTime(new Date());
         putReport.setExamineRemark(request.getExamineRemark());
@@ -161,7 +161,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
         }else if(request.getExamineStatus().equals(ExamineStatusEnum.UN_PASS.getStatus())){
             putReport.setPutStatus(PutStatus.NO_PASS.getStatus());
         }
-        putReportService.updateById(putReport);
+        putReportService.updateById(putReport);*/
     }
 
     @Override
@@ -215,15 +215,18 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     @Override
     public List<SupplierDisplayShelfVO> putList(String customerNumber) {
         List<DisplayShelf> list = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().eq(DisplayShelf::getPutNumber, customerNumber));
-
+        List<SupplierDisplayShelfVO> shelfList = new ArrayList<>();
             DisplayShelfPutApplyVo vo = new DisplayShelfPutApplyVo();
 
             //获取已经签收的投放陈列架的id
             List<Integer> collect = list.stream().map(DisplayShelf::getId).collect(Collectors.toList());
+            if(CollectionUtils.isEmpty(collect)){
+                return shelfList;
+            }
             List<DisplayShelf> displayShelves = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().eq(DisplayShelf::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()).in(DisplayShelf::getId, collect));
             //根据类型进行分组
             Map<String, List<DisplayShelf>> collect1 = displayShelves.stream().collect(Collectors.groupingBy(groups -> groups.getType()+"_"+groups.getSize()));
-            List<SupplierDisplayShelfVO> shelfList = collect1.entrySet().stream().map(e -> {
+            shelfList = collect1.entrySet().stream().map(e -> {
                 SupplierDisplayShelfVO supplierDisplayShelfVO = new SupplierDisplayShelfVO();
                 supplierDisplayShelfVO.setCount(e.getValue().size());
                 supplierDisplayShelfVO.setType(e.getValue().get(0).getType());

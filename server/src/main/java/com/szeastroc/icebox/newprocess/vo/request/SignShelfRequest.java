@@ -33,7 +33,7 @@ public class SignShelfRequest {
         private Integer type;
 
         @ApiModelProperty("尺寸大小")
-        private Integer size;
+        private String size;
 
     }
 

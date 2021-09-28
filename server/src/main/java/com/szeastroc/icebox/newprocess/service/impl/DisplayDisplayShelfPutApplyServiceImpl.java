@@ -253,10 +253,10 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
             vo.setCreateTime(o.getCreatedTime());
             List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, o.getApplyNumber()));
             List<Integer> collect = relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList());
-            List<DisplayShelf> displayShelves = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().in(DisplayShelf::getId, collect));
-            if(CollectionUtils.isEmpty(displayShelves)){
+            if(CollectionUtils.isEmpty(collect)){
                 return null;
             }
+            List<DisplayShelf> displayShelves = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().in(DisplayShelf::getId, collect));
             Map<String, List<DisplayShelf>> listMap = displayShelves.stream().collect(Collectors.groupingBy(groups -> groups.getType()+"_"+groups.getSize()));
             List<SupplierDisplayShelfVO> shelfList = listMap.entrySet().stream().map(e -> {
 
@@ -302,7 +302,8 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
         SessionVisitExamineBacklog log = new SessionVisitExamineBacklog();
         log.setCode(request.getApplyNumber());
         feignBacklogClient.deleteBacklogByCode(log);
-        List<SessionExamineVo.VisitExamineNodeVo> examineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(request.getApplyNumber()));
+
+        /*List<SessionExamineVo.VisitExamineNodeVo> examineNodeVos = FeignResponseUtil.getFeignData(feignExamineClient.getExamineNodesByRelateCode(request.getApplyNumber()));
         for (SessionExamineVo.VisitExamineNodeVo nodeVo : examineNodeVos) {
             if (ExamineNodeStatusEnum.IS_PASS.getStatus().equals(nodeVo.getExamineStatus())) {
                 SessionVisitExamineBacklog backlog = new SessionVisitExamineBacklog();
@@ -316,15 +317,15 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                 backlog.setCreateBy(request.getUserId());
                 feignBacklogClient.createBacklog(backlog);
             }
-        }
-        DisplayShelfPutReport putReport = putReportService.getOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getApplyNumber, request.getApplyNumber()));
+        }*/
+       /* DisplayShelfPutReport putReport = putReportService.getOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getApplyNumber, request.getApplyNumber()));
         putReport.setExamineTime(new Date());
         putReport.setExamineUserId(request.getUserId());
         SimpleUserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findUserById(request.getUserId()));
         putReport.setExamineUserName(userInfoVo.getRealname());
         putReport.setExamineUserPosion(userInfoVo.getPosion());
         putReport.setPutStatus(PutStatus.IS_CANCEL.getStatus());
-        putReportService.updateById(putReport);
+        putReportService.updateById(putReport);*/
     }
 
     @Override

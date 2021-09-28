@@ -124,7 +124,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
                     DisplayShelf displayShelf = buildData(o,deptInfoVos);
                     displayShelf.setSize(o.getSize());
                     displayShelf.setName(o.getShelfType());
-                    displayShelf.setType(DisplayShelfTypeEnum.ENERGY_FOUR.getType());
+                    displayShelf.setType(DisplayShelfTypeEnum.LEMON_TEA_FOUR.getType());
                     for (int i = 0; i < o.getRepertoryCount(); i++) {
                         shelves.add(displayShelf);
                     }
@@ -132,7 +132,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
                     DisplayShelf displayShelf = buildData(o,deptInfoVos);
                     displayShelf.setSize(o.getSize());
                     displayShelf.setName(o.getShelfType());
-                    displayShelf.setType(DisplayShelfTypeEnum.ENERGY_FOUR.getType());
+                    displayShelf.setType(DisplayShelfTypeEnum.LEMON_TEA_FOUR.getType());
                     for (int i = 0; i < o.getRepertoryCount(); i++) {
                         shelves.add(displayShelf);
                     }

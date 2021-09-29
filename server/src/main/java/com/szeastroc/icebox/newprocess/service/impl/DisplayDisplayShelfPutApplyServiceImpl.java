@@ -195,7 +195,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc() + "只投放" + shelves.size() + "个");
                 }
                 int count = 0;
-                /*for (DisplayShelf displayShelf : shelves) {
+                for (DisplayShelf displayShelf : shelves) {
                     if(displayShelf.getSignStatus() == 1){
                         count = count +1;
                         continue;
@@ -208,9 +208,9 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                                 .set(ShelfSign::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()));
                         displayShelfService.updateById(shelves.get(i));
                     }
-                }*/
+                }
 
-                for (DisplayShelf displayShelf : shelves) {
+                /*for (DisplayShelf displayShelf : shelves) {
                     if(displayShelf.getSignStatus() == 1){
 //                        count = count +1;
                         continue;
@@ -223,7 +223,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                             .set(ShelfSign::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()));
                     displayShelfService.updateById(displayShelf);
 //                    }
-                }
+                }*/
             } else {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，门店未投放" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc());
             }

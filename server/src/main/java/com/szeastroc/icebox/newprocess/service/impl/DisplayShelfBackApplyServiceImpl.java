@@ -201,11 +201,17 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
                     .eq(DisplayShelf::getPutStatus, PutStatus.DO_BACK.getStatus())
                     .in(DisplayShelf::getId,collect));
 
-            displayShelfList.forEach(displayShelf -> {
+            for (DisplayShelf displayShelf : displayShelfList) {
+                displayShelfService.update(Wrappers.<DisplayShelf>lambdaUpdate().eq(DisplayShelf::getId,displayShelf.getId())
+                        .set(DisplayShelf::getPutStatus,PutStatus.FINISH_PUT.getStatus())
+                        .set(DisplayShelf::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()));
+            }
+
+            /*displayShelfList.forEach(displayShelf -> {
                 displayShelf.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                 displayShelf.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
             });
-            displayShelfService.updateBatchById(displayShelfList);
+            displayShelfService.updateBatchById(displayShelfList);*/
         }
 
         /*//报表

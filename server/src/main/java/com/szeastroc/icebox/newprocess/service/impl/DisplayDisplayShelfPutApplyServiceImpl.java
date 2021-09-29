@@ -80,6 +80,8 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
     private FeignUserClient feignUserClient;
     @Autowired
     private ShelfSignDao shelfSignDao;
+    @Autowired
+    private DisplayShelfPutApplyService shelfPutApplyService;
 
     @Override
     @Transactional(rollbackFor = Exception.class, value = "transactionManager")
@@ -135,7 +137,17 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
             });
         }else if(IceBoxStatus.NO_PUT.getStatus().equals(request.getStatus())){
             List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, request.getApplyNumber()));
-            Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
+            List<Integer> collect = relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList());
+            Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(collect);
+
+            DisplayShelfPutApplyRelate displayShelfPutApplyRelateOne = shelfPutApplyRelateService.getOne(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery()
+                    .in(DisplayShelfPutApplyRelate::getShelfId, collect).orderByDesc(DisplayShelfPutApplyRelate::getUpdateTime)
+                    .last("limit 1"));
+
+            shelfPutApplyService.update(Wrappers.<DisplayShelfPutApply>lambdaUpdate()
+                    .eq(DisplayShelfPutApply::getApplyNumber, displayShelfPutApplyRelateOne.getApplyNumber())
+                    .set(DisplayShelfPutApply::getPutStatus,PutStatus.NO_PASS.getStatus()));
+
             displayShelves.forEach(shelf -> {
                 shelf.setPutStatus(PutStatus.NO_PUT.getStatus());
                 shelf.setPutNumber("");
@@ -183,7 +195,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc() + "只投放" + shelves.size() + "个");
                 }
                 int count = 0;
-                for (DisplayShelf displayShelf : shelves) {
+                /*for (DisplayShelf displayShelf : shelves) {
                     if(displayShelf.getSignStatus() == 1){
                         count = count +1;
                         continue;
@@ -196,8 +208,22 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                                 .set(ShelfSign::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()));
                         displayShelfService.updateById(shelves.get(i));
                     }
-                }
+                }*/
 
+                for (DisplayShelf displayShelf : shelves) {
+                    if(displayShelf.getSignStatus() == 1){
+//                        count = count +1;
+                        continue;
+                    }
+//                    for (int i = count; i < shelf.getCount() + count; i++) {
+                    displayShelf.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                    displayShelf.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+                    ShelfSign shelfSign = new ShelfSign();
+                    shelfSignDao.update(shelfSign,new LambdaUpdateWrapper<ShelfSign>().eq(ShelfSign::getShelfId, displayShelf.getId())
+                            .set(ShelfSign::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()));
+                    displayShelfService.updateById(displayShelf);
+//                    }
+                }
             } else {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，门店未投放" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc());
             }

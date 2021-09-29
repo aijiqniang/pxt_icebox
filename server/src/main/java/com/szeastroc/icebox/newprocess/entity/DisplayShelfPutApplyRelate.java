@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * <p>
@@ -46,5 +47,8 @@ public class DisplayShelfPutApplyRelate implements Serializable {
     @TableField("shelf_id")
     private Integer shelfId;
 
+    @ApiModelProperty(value = "插入数据的时间")
+    @TableField("update_time")
+    private Date updateTime;
 
 }

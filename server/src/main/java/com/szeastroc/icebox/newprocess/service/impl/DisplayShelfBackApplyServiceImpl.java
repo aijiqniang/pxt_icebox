@@ -151,33 +151,26 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
 
         if (IceBoxStatus.NO_PUT.getStatus().equals(request.getStatus())) {
             Optional.ofNullable(displayShelfBackApply).ifPresent(o -> {
-                //查询货架投放规则
-                MatchRuleVo matchRuleVo = new MatchRuleVo();
-                matchRuleVo.setOpreateType(12);
-                matchRuleVo.setDeptId(displayShelfBackApply.getDeptId());
-                matchRuleVo.setType(3);
-                SysRuleShelfDetailVo approvalRule = FeignResponseUtil.getFeignData(feignDeptRuleClient.matchShelfRule(matchRuleVo));
-                Optional.ofNullable(approvalRule).ifPresent(rule -> {
                     List<ShelfBack> shelfs = shelfBackDao.selectList(Wrappers.<ShelfBack>lambdaQuery()
                             .eq(ShelfBack::getUuid, request.getApplyNumber())
-                            .eq(ShelfBack::getSignStatus, 0)
-                            .groupBy(ShelfBack::getShelfType,ShelfBack::getShelfSize));
+                            .eq(ShelfBack::getSignStatus, 0));
                     List<Integer> collect = shelfs.stream().map(ShelfBack::getShelfId).collect(Collectors.toList());
-                    String customerNumber = shelfs.get(0).getCustomerNumber();
                     //将投放状态信息修改成未投放
                     List<DisplayShelf> displayShelfList = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery()
                             .eq(DisplayShelf::getPutStatus, PutStatus.DO_BACK.getStatus())
                             .in(DisplayShelf::getId,collect));
-                    displayShelfList.forEach(displayShelf -> {
-                        displayShelf.setPutStatus(PutStatus.NO_PUT.getStatus());
-                        displayShelf.setSignStatus(StoreSignStatus.DEFAULT_SIGN.getStatus());
-                        displayShelf.setPutNumber("");
-                        displayShelf.setCustomerType(null);
-                        displayShelf.setPutName("");
-                        displayShelf.setResponseManId(null);
-                        displayShelf.setResponseMan("");
-                    });
-                    displayShelfService.updateBatchById(displayShelfList);
+                for (DisplayShelf displayShelf : displayShelfList) {
+                    displayShelfService.update(Wrappers.<DisplayShelf>lambdaUpdate()
+                            .eq(DisplayShelf::getId,displayShelf.getId())
+                            .set(DisplayShelf::getPutStatus,PutStatus.NO_PUT.getStatus())
+                            .set(DisplayShelf::getPutNumber,"")
+                            .set(DisplayShelf::getPutName,"")
+                            .set(DisplayShelf::getCustomerType,null)
+                            .set(DisplayShelf::getResponseManId,null)
+                            .set(DisplayShelf::getPutStatus,PutStatus.NO_PUT.getStatus())
+                            .set(DisplayShelf::getSignStatus,StoreSignStatus.DEFAULT_SIGN.getStatus()));
+                }
+
 
 
                     /*DisplayShelfPutApply applyServiceOne = displayShelfPutApplyService.getOne(Wrappers.<DisplayShelfPutApply>lambdaQuery().eq(DisplayShelfPutApply::getPutCustomerNumber, customerNumber));
@@ -195,7 +188,6 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
                                 .eq(ShelfBack::getCustomerNumber,applyServiceOne.getPutCustomerNumber()));
                     });*/
 
-                });
 
             });
         }else if(IceBoxStatus.IS_PUTED.getStatus().equals(request.getStatus())){
@@ -205,9 +197,11 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
                     .groupBy(ShelfBack::getShelfType,ShelfBack::getShelfSize));
             List<Integer> collect = shelfs.stream().map(ShelfBack::getShelfId).collect(Collectors.toList());
 
+
             List<DisplayShelf> displayShelfList = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery()
                     .eq(DisplayShelf::getPutStatus, PutStatus.DO_BACK.getStatus())
                     .in(DisplayShelf::getId,collect));
+
             displayShelfList.forEach(displayShelf -> {
                 displayShelf.setPutStatus(PutStatus.FINISH_PUT.getStatus());
                 displayShelf.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());

@@ -193,8 +193,7 @@ public class DisplayShelfBackApplyServiceImpl extends ServiceImpl<DisplayShelfBa
         }else if(IceBoxStatus.IS_PUTED.getStatus().equals(request.getStatus())){
             List<ShelfBack> shelfs = shelfBackDao.selectList(Wrappers.<ShelfBack>lambdaQuery()
                     .eq(ShelfBack::getUuid, request.getApplyNumber())
-                    .eq(ShelfBack::getSignStatus, 0)
-                    .groupBy(ShelfBack::getShelfType,ShelfBack::getShelfSize));
+                    .eq(ShelfBack::getSignStatus, 0));
             List<Integer> collect = shelfs.stream().map(ShelfBack::getShelfId).collect(Collectors.toList());
 
 

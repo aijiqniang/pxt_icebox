@@ -186,7 +186,10 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
             throw new NormalOptionException(Constants.API_CODE_FAIL, "门店暂无可签收货架");
         }
         List<DisplayShelfPutApplyRelate> relates = shelfPutApplyRelateService.list(Wrappers.<DisplayShelfPutApplyRelate>lambdaQuery().eq(DisplayShelfPutApplyRelate::getApplyNumber, request.getApplyNumber()));
-        Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
+
+//        Collection<DisplayShelf> displayShelves = displayShelfService.listByIds(relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList()));
+        List<DisplayShelf> displayShelves = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().eq(DisplayShelf::getSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus())
+                .in(DisplayShelf::getId, relates.stream().map(DisplayShelfPutApplyRelate::getShelfId).collect(Collectors.toList())));
         Map<String, List<DisplayShelf>> collect = displayShelves.stream().collect(Collectors.groupingBy(groups -> groups.getType()+"_"+groups.getSize()));
         for (SignShelfRequest.Shelf shelf : request.getShelfList()) {
             List<DisplayShelf> shelves = collect.get(shelf.getType()+ "_" + shelf.getSize());
@@ -194,43 +197,22 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
                 if (shelf.getCount() > shelves.size()) {
                     throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc() + "只投放" + shelves.size() + "个");
                 }
-                int count = 0;
-                for (DisplayShelf displayShelf : shelves) {
-                    if(displayShelf.getSignStatus() == 1){
-                        count = count +1;
-                        continue;
-                    }
-                    for (int i = count; i < shelf.getCount() + count; i++) {
-                        shelves.get(i).setPutStatus(PutStatus.FINISH_PUT.getStatus());
-                        shelves.get(i).setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
+                    for (int i = 0; i < shelf.getCount(); i++) {
+                        DisplayShelf displayShelf = shelves.get(i);
+                        displayShelf.setPutStatus(PutStatus.FINISH_PUT.getStatus());
+                        displayShelf.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
                         ShelfSign shelfSign = new ShelfSign();
-                        shelfSignDao.update(shelfSign,new LambdaUpdateWrapper<ShelfSign>().eq(ShelfSign::getShelfId, shelves.get(i).getId())
-                                .set(ShelfSign::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()));
-                        displayShelfService.updateById(shelves.get(i));
+                        shelfSignDao.update(shelfSign, new LambdaUpdateWrapper<ShelfSign>().eq(ShelfSign::getShelfId, displayShelf.getId())
+                                .set(ShelfSign::getSignStatus, StoreSignStatus.ALREADY_SIGN.getStatus()));
+                        displayShelfService.updateById(displayShelf);
                     }
-                }
-
-                /*for (DisplayShelf displayShelf : shelves) {
-                    if(displayShelf.getSignStatus() == 1){
-//                        count = count +1;
-                        continue;
-                    }
-//                    for (int i = count; i < shelf.getCount() + count; i++) {
-                    displayShelf.setPutStatus(PutStatus.FINISH_PUT.getStatus());
-                    displayShelf.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus());
-                    ShelfSign shelfSign = new ShelfSign();
-                    shelfSignDao.update(shelfSign,new LambdaUpdateWrapper<ShelfSign>().eq(ShelfSign::getShelfId, displayShelf.getId())
-                            .set(ShelfSign::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()));
-                    displayShelfService.updateById(displayShelf);
-//                    }
-                }*/
             } else {
                 throw new NormalOptionException(Constants.API_CODE_FAIL, "签收失败，门店未投放" + DisplayShelfTypeEnum.getByType(shelf.getType()).getDesc());
             }
         }
 //        List<ShelfSign> shelfSigns = shelfSignDao.selectList(Wrappers.<ShelfSign>lambdaQuery().eq(ShelfSign::getApplyNumber, request.getApplyNumber()).eq(ShelfSign::getSignStatus, StoreSignStatus.DEFAULT_SIGN.getStatus()));
 //        if(CollectionUtils.isEmpty(shelfSigns)){
-            shelfPutApply.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus()).setUpdateTime(new Date());
+        shelfPutApply.setSignStatus(StoreSignStatus.ALREADY_SIGN.getStatus()).setUpdateTime(new Date());
 //        }
         this.updateById(shelfPutApply);
         /*DisplayShelfPutReport putReport = putReportService.getOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getApplyNumber, shelfPutApply.getApplyNumber()));

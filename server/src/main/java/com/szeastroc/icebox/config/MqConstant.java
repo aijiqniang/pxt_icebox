@@ -85,4 +85,26 @@ public interface MqConstant {
     String INDEX_COMPLETE_EXCHANGE = "INDEX_COMPLETE_K_CHANGE";
     String Q_ADD_INDEX_COMPLETE = "ADD_INDEX_COMPLETE";
     String K_ADD_INDEX_COMPLETE = "ADD_INDEX_COMPLETE_K";
+
+    String SHELF_PUT_APPLY_Q = "shelf_put_apply_queue";
+    String SHELF_PUT_APPLY_K = "shelf_put_apply_key";
+
+    /**
+     * 陈列架回退审批
+     * */
+    String SHELF_RETURN_APPLY_Q = "shelf_return_apply_queue";
+    String SHELF_RETURN_APPLY_K = "shelf_return_apply_key";
+
+    /**
+     * 陈列架投放报表
+     */
+    String shelfPutReportQueue = "shelf_put_report_queue";
+    String shelfPutReportKey = "shelf_put_report_routing_key";
+
+
+    /**
+     * 陈列架投放报表
+     */
+    String shelfInspectReportQueue = "shelf_inspect_report_queue";
+    String shelfInspectReportKey = "shelf_inspect_report_routing_key";
 }

@@ -32,4 +32,6 @@ public class RedisConstant {
     public final static String ICE_BOX_REPAIR_ORDER_KEY = "ICE_BOX_REPAIR_ORDER_KEY_";
 
     public final static String ICE_BOX_HANDOVER_KEY = "ICE_BOX_HANDOVER_";
+
+    public final static String SHELF_PUT_REPORT_EXPORT_KEY = "SHELF_PUT_REPORT_EXPORT_KEY";
 }

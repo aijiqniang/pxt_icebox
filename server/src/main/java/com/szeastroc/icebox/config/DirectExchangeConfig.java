@@ -286,4 +286,76 @@ public class DirectExchangeConfig {
         factory.setPrefetchCount(1);
         return factory;
     }
+
+    /**
+     * 货架申请审批推送
+     */
+    @Bean(name = "shelfPutApplyContainer")
+    public SimpleRabbitListenerContainerFactory shelfPutApplyContainer() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
+
+    /**
+     * 陈列架退还审批推送
+     */
+    @Bean(name = "shelfBackApplyContainer")
+    public SimpleRabbitListenerContainerFactory shelfBackApplyContainer() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
+
+    // 冰柜申请审批通知
+    @Bean
+    public Queue shelfPutApplyQueue() {
+        return QueueBuilder.durable(MqConstant.SHELF_PUT_APPLY_Q).build();
+    }
+
+    @Bean
+    public Binding shelfPutApplyBinding(Queue shelfPutApplyQueue, DirectExchange storeExportExchange) {
+        return BindingBuilder.bind(shelfPutApplyQueue).to(storeExportExchange).with(MqConstant.SHELF_PUT_APPLY_K);
+    }
+
+    //陈列架退还
+    @Bean
+    public Queue shelfBackApplyQueue() {
+        return QueueBuilder.durable(MqConstant.SHELF_RETURN_APPLY_Q).build();
+    }
+
+    @Bean
+    public Binding shelfBackApplyBinding(Queue shelfBackApplyQueue, DirectExchange storeExportExchange) {
+        return BindingBuilder.bind(shelfBackApplyQueue).to(storeExportExchange).with(MqConstant.SHELF_RETURN_APPLY_K);
+    }
+
+    @Bean(name = "shelfPutReportQueue")
+    public Queue shelfPutReportQueue() {
+        Queue queue = new Queue(MqConstant.shelfPutReportQueue);
+        return queue;
+    }
+
+    @Bean
+    public Binding bindShelfPutReportQueue() {
+        Binding binding = BindingBuilder.bind(shelfPutReportQueue()).to(directExchange()).with(MqConstant.shelfPutReportKey);
+        return binding;
+    }
+
+
+
+    @Bean(name = "shelfInspectReportQueue")
+    public Queue shelfInspectReportQueue() {
+        Queue queue = new Queue(MqConstant.shelfInspectReportQueue);
+        return queue;
+    }
+
+    @Bean
+    public Binding bindShelfInspectReportQueue() {
+        Binding binding = BindingBuilder.bind(shelfInspectReportQueue()).to(directExchange()).with(MqConstant.shelfInspectReportKey);
+        return binding;
+    }
 }

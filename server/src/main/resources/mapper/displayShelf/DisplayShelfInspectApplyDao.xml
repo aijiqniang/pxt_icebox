@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.DisplayShelfInspectApplyDao">
+
+    <resultMap type="com.szeastroc.icebox.newprocess.entity.DisplayShelfInspectApply" id="DisplayShelfInspectApplyMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="applyNumber" column="apply_number" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="INTEGER"/>
+        <result property="putCustomerNumber" column="put_customer_number" jdbcType="VARCHAR"/>
+        <result property="putCustomerType" column="put_customer_type" jdbcType="INTEGER"/>
+        <result property="signStatus" column="sign_status" jdbcType="INTEGER"/>
+        <result property="examineStatus" column="examine_status" jdbcType="INTEGER"/>
+        <result property="examineId" column="examine_id" jdbcType="INTEGER"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
+        <result property="deptId" column="dept_id" jdbcType="INTEGER"/>
+        <result property="createdBy" column="created_by" jdbcType="INTEGER"/>
+        <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
+        <result property="updatedBy" column="updated_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+</mapper>
+

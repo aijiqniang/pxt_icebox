@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.DisplayShelfPutReportDao">
+
+    <resultMap type="com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport" id="DisplayShelfPutReportMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="headquartersDeptId" column="headquarters_dept_id" jdbcType="INTEGER"/>
+        <result property="headquartersDeptName" column="headquarters_dept_name" jdbcType="VARCHAR"/>
+        <result property="businessDeptId" column="business_dept_id" jdbcType="INTEGER"/>
+        <result property="businessDeptName" column="business_dept_name" jdbcType="VARCHAR"/>
+        <result property="regionDeptId" column="region_dept_id" jdbcType="INTEGER"/>
+        <result property="regionDeptName" column="region_dept_name" jdbcType="VARCHAR"/>
+        <result property="serviceDeptId" column="service_dept_id" jdbcType="INTEGER"/>
+        <result property="serviceDeptName" column="service_dept_name" jdbcType="VARCHAR"/>
+        <result property="groupDeptId" column="group_dept_id" jdbcType="INTEGER"/>
+        <result property="groupDeptName" column="group_dept_name" jdbcType="VARCHAR"/>
+        <result property="applyNumber" column="apply_number" jdbcType="VARCHAR"/>
+        <result property="supplierId" column="supplier_id" jdbcType="INTEGER"/>
+        <result property="supplierNumber" column="supplier_number" jdbcType="VARCHAR"/>
+        <result property="supplierName" column="supplier_name" jdbcType="VARCHAR"/>
+        <result property="submitterId" column="submitter_id" jdbcType="INTEGER"/>
+        <result property="submitterName" column="submitter_name" jdbcType="VARCHAR"/>
+        <result property="submitTime" column="submit_time" jdbcType="TIMESTAMP"/>
+        <result property="putCustomerNumber" column="put_customer_number" jdbcType="VARCHAR"/>
+        <result property="putCustomerName" column="put_customer_name" jdbcType="VARCHAR"/>
+        <result property="putCustomerType" column="put_customer_type" jdbcType="INTEGER"/>
+        <result property="examineUserId" column="examine_user_id" jdbcType="INTEGER"/>
+        <result property="examineUserName" column="examine_user_name" jdbcType="VARCHAR"/>
+        <result property="examineTime" column="examine_time" jdbcType="TIMESTAMP"/>
+        <result property="putStatus" column="put_status" jdbcType="INTEGER"/>
+        <result property="provinceName" column="province_name" jdbcType="VARCHAR"/>
+        <result property="cityName" column="city_name" jdbcType="VARCHAR"/>
+        <result property="districtName" column="district_name" jdbcType="VARCHAR"/>
+        <result property="customerAddress" column="customer_address" jdbcType="VARCHAR"/>
+        <result property="visitType" column="visit_type" jdbcType="INTEGER"/>
+        <result property="submitterMobile" column="submitter_mobile" jdbcType="VARCHAR"/>
+        <result property="linkmanName" column="linkman_name" jdbcType="VARCHAR"/>
+        <result property="linkmanMobile" column="linkman_mobile" jdbcType="VARCHAR"/>
+        <result property="examineUserPosion" column="examine_user_posion" jdbcType="VARCHAR"/>
+        <result property="examineRemark" column="examine_remark" jdbcType="VARCHAR"/>
+        <result property="putCustomerLevel" column="put_customer_level" jdbcType="VARCHAR"/>
+        <result property="signTime" column="sign_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+</mapper>
+

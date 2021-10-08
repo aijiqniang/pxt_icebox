@@ -16,6 +16,7 @@ public enum PutStatus {
     DO_PUT(2, "投放中"),
     FINISH_PUT(3, "已投放"),
     NO_PASS(4, "已驳回"),
+    DO_BACK(5,"退还中"),
     /**
      * 投放报表使用
      */

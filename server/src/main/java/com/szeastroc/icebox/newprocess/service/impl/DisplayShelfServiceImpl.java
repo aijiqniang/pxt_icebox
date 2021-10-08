@@ -136,6 +136,22 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
                     for (int i = 0; i < o.getRepertoryCount(); i++) {
                         shelves.add(displayShelf);
                     }
+                }else if(DisplayShelfTypeEnum.LARGE_DISPLAY_RACK.getDesc().equals(o.getShelfType())){
+                    DisplayShelf displayShelf = buildData(o,deptInfoVos);
+                    displayShelf.setSize(o.getSize());
+                    displayShelf.setName(o.getShelfType());
+                    displayShelf.setType(DisplayShelfTypeEnum.LARGE_DISPLAY_RACK.getType());
+                    for (int i = 0; i < o.getRepertoryCount(); i++) {
+                        shelves.add(displayShelf);
+                    }
+                }else if(DisplayShelfTypeEnum.MEDIUM_DISPLAY_SHELF.getDesc().equals(o.getShelfType())){
+                    DisplayShelf displayShelf = buildData(o,deptInfoVos);
+                    displayShelf.setSize(o.getSize());
+                    displayShelf.setName(o.getShelfType());
+                    displayShelf.setType(DisplayShelfTypeEnum.MEDIUM_DISPLAY_SHELF.getType());
+                    for (int i = 0; i < o.getRepertoryCount(); i++) {
+                        shelves.add(displayShelf);
+                    }
                 }
                 this.saveBatch(shelves);
             }

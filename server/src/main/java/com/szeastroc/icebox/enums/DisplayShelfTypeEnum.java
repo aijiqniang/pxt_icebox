@@ -14,7 +14,9 @@ public enum DisplayShelfTypeEnum {
 
     ENERGY_FOUR(1, "东鹏特饮四层陈列架"),
     LEMON_TEA_FOUR(2, "由柑柠檬茶四层陈列架"),
-    SODA_FOUR(3, "东鹏加気四层陈列架");
+    SODA_FOUR(3, "东鹏加気四层陈列架"),
+    LARGE_DISPLAY_RACK(4, "大号陈列货架"),
+    MEDIUM_DISPLAY_SHELF(5, "中号陈列货架");
 
     @Getter
     private final Integer type;

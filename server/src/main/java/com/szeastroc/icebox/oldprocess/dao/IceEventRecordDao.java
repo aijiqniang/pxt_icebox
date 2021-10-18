@@ -1,6 +1,7 @@
 package com.szeastroc.icebox.oldprocess.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.szeastroc.icebox.newprocess.vo.IceEventVo;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -8,6 +9,7 @@ import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
+import java.util.List;
 
 @Repository
 public interface IceEventRecordDao extends BaseMapper<IceEventRecord> {
@@ -34,7 +36,11 @@ public interface IceEventRecordDao extends BaseMapper<IceEventRecord> {
             "        PRIMARY KEY (`id`) USING BTREE,\n" +
             "        KEY `asset_index` (`asset_id`) USING BTREE,\n" +
             "        KEY `occurrence_index` (`occurrence_time`) USING BTREE,\n" +
-            "        KEY `type_index` (`type`) USING BTREE\n" +
+            "        KEY `type_index` (`type`) USING BTREE,\n" +
+            "        KEY `asset_id` (`asset_id`,`occurrence_time`) USING BTREE\n" +
             "      ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_german2_ci COMMENT='设备信息记录表';")
     void createTableMySelf(@Param("tn") String tn);
+
+    List<IceEventVo.IceboxList> getIntelIceboxs(@Param("userId") Integer userId,@Param("assetId") String assetId);
+
 }

@@ -46,7 +46,7 @@ public class ShardingMybatisConfig {
         sqlSessionFactoryBean.setConfiguration(configuration);
 
         ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        sqlSessionFactoryBean.setMapperLocations(resolver.getResources("classpath*:mapper/*.xml"));
+        sqlSessionFactoryBean.setMapperLocations(resolver.getResources("classpath*:mapper/**/*.xml"));
         return sqlSessionFactoryBean;
 
     }

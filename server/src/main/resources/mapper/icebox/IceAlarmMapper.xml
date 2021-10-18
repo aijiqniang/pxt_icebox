@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.IceAlarmMapper">
+
+    <resultMap id="BaseResultMap" type="com.szeastroc.icebox.newprocess.entity.IceAlarm">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="iceBoxId" column="ice_box_id" jdbcType="INTEGER"/>
+            <result property="iceBoxAssetid" column="ice_box_assetid" jdbcType="INTEGER"/>
+            <result property="alarmType" column="alarm_type" jdbcType="INTEGER"/>
+            <result property="relateCode" column="relate_code" jdbcType="VARCHAR"/>
+            <result property="sendUserId" column="send_user_id" jdbcType="INTEGER"/>
+            <result property="status" column="status" jdbcType="INTEGER"/>
+            <result property="feedback" column="feedback" jdbcType="VARCHAR"/>
+            <result property="feedbackImg" column="feedback_img" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,ice_box_id,ice_box_assetid,
+        alarm_type,relate_code,send_user_id,
+        status,feedback,feedback_img,
+        create_time,update_time
+    </sql>
+</mapper>

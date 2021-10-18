@@ -62,7 +62,7 @@ public class ShardingDataSourceConfig {
     @Bean
     public TableRuleConfiguration getEventRuleConfiguration() {
         TableRuleConfiguration result = new TableRuleConfiguration("t_ice_event_record","ds_master_slave.t_ice_event_record_${2021..2030}${1..12}${1..31}");
-        StandardShardingStrategyConfiguration standardStrategy = new StandardShardingStrategyConfiguration("occurrence_time",new EventShardingTableAlgorithm());
+        StandardShardingStrategyConfiguration standardStrategy = new StandardShardingStrategyConfiguration("occurrence_time",new EventShardingTableAlgorithm(),new EventShardingRangeAlgorithm());
         result.setTableShardingStrategyConfig(standardStrategy);
         return result;
     }

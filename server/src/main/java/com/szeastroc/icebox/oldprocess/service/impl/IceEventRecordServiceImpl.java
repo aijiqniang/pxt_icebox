@@ -2,13 +2,30 @@ package com.szeastroc.icebox.oldprocess.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
+import com.szeastroc.common.entity.customer.vo.SupplierInfoSessionVo;
+import com.szeastroc.common.entity.visit.NoticeBacklogRequestVo;
+import com.szeastroc.common.entity.visit.enums.NoticeTypeEnum;
 import com.szeastroc.common.exception.DongPengException;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.visit.FeignOutBacklogClient;
+import com.szeastroc.common.utils.FeignResponseUtil;
+import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
+import com.szeastroc.icebox.newprocess.dao.IceAlarmMapper;
+import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
+import com.szeastroc.icebox.newprocess.entity.IceAlarm;
+import com.szeastroc.icebox.newprocess.entity.IceBox;
 import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
+import com.szeastroc.icebox.newprocess.enums.IceAlarmStatusEnum;
+import com.szeastroc.icebox.newprocess.enums.IceAlarmTypeEnum;
+import com.szeastroc.icebox.newprocess.vo.IceEventVo;
 import com.szeastroc.icebox.oldprocess.dao.IceChestInfoDao;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
 import com.szeastroc.icebox.oldprocess.entity.IceEventRecord;
@@ -18,16 +35,22 @@ import com.szeastroc.icebox.util.MD5;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
+import org.gavaghan.geodesy.Ellipsoid;
+import org.gavaghan.geodesy.GeodeticCalculator;
+import org.gavaghan.geodesy.GlobalCoordinates;
+import org.joda.time.DateTime;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -57,7 +80,17 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
 
     @Resource
     private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private IceBoxDao iceBoxDao;
 
+    @Resource
+    private FeignStoreClient feignStoreClient;
+    @Resource
+    private FeignSupplierClient feignSupplierClient;
+    @Resource
+    private IceAlarmMapper iceAlarmMapper;
+    @Resource
+    private FeignOutBacklogClient feignOutBacklogClient;
 
     /**
      * 冰箱数据推送业务处理
@@ -124,7 +157,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
             String sign = createSign(buildMap(hisenseDTO));
             String submitSign = hisenseDTO.getSign();
             log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
-            //saveHisensePushEvent(hisenseDTO);
+            saveHisensePushEvent(hisenseDTO);
             if (!sign.equals(submitSign)) {
                 log.info("签名数据错误,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
             } else {
@@ -165,6 +198,165 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
 
     }
 
+    @Override
+    public List<IceEventVo.IceboxList> xfaList(Integer userId, String assetId) {
+        List<IceEventVo.IceboxList> iceboxLists = iceEventRecordDao.getIntelIceboxs(userId,assetId);
+        Optional.ofNullable(iceboxLists).ifPresent(list->{
+            list.forEach(oneBox->{
+                List<IceAlarm> iceAlarms = iceAlarmMapper.selectList(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getIceBoxAssetid, oneBox.getAssetId()).eq(IceAlarm::getSendUserId, userId).eq(IceAlarm::getStatus, IceAlarmStatusEnum.NEWALARM.getType()));
+                if (iceAlarms.size() > 0){
+                    oneBox.setAlarmList(iceAlarms);
+                }
+            });
+        });
+        return iceboxLists;
+    }
+
+    @Override
+    public IceEventVo.IceboxDetail boxDetail(String assetId) {
+        IceEventVo.IceboxDetail detail = new IceEventVo.IceboxDetail();
+        IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId,assetId).last("limit 1"));
+        String lat = "";
+        String lng = "";
+        if(iceBox != null && iceBox.getPutStatus()==3 && StringUtils.isNotEmpty(iceBox.getPutStoreNumber())){
+            if(iceBox.getPutStoreNumber().startsWith("C0")){
+                StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                if(storeInfoDtoVo != null){
+                    lat = storeInfoDtoVo.getLatitude();
+                    lng = storeInfoDtoVo.getLongitude();
+                    detail.setStoreName(storeInfoDtoVo.getStoreName());
+                    detail.setAddress(storeInfoDtoVo.getAddress());
+                }
+            }else {
+                SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
+                if(supplierInfoSessionVo != null){
+                    lat = supplierInfoSessionVo.getLatitude();
+                    lng = supplierInfoSessionVo.getLongitude();
+                    detail.setStoreName(supplierInfoSessionVo.getName());
+                    detail.setAddress(supplierInfoSessionVo.getAddress());
+                }
+            }
+        }
+        SimpleDateFormat dayFormat = new SimpleDateFormat("yyyyMMdd");
+        String nyr = dayFormat.format(new Date());
+        SimpleDateFormat forMatter = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+        Date taskDate = new Date();
+        try{
+            taskDate = forMatter.parse(nyr + " 00:00:00");
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery().eq(IceEventRecord::getAssetId, iceBox.getAssetId()).ge(IceEventRecord::getOccurrenceTime,taskDate).le(IceEventRecord::getOccurrenceTime, new Date()).orderByDesc(IceEventRecord::getId).last("limit 1"));
+        if(iceEventRecord != null && StringUtils.isNotEmpty(iceEventRecord.getLat()) && StringUtils.isNotEmpty(iceEventRecord.getLng()) && StringUtils.isNotEmpty(lat) && StringUtils.isNotEmpty(lng)){
+            double distance = getDistance(Double.parseDouble(iceEventRecord.getLat()), Double.parseDouble(iceEventRecord.getLng()), Double.parseDouble(lat), Double.parseDouble(lng));
+            detail.setDistance(distance);
+        }else{
+            detail.setDistance(0.0);
+        }
+        return detail;
+    }
+
+    @Override
+    public void sychAlarm(Integer alarmId) {
+        LambdaQueryWrapper<IceAlarm> wrapper =  Wrappers.<IceAlarm>lambdaQuery();
+        wrapper.eq(IceAlarm::getStatus,IceAlarmStatusEnum.NEWALARM.getType());
+        if(alarmId != null && alarmId > 0){
+            wrapper.eq(IceAlarm::getId,alarmId);
+        }
+        List<IceAlarm> iceAlarms = iceAlarmMapper.selectList(wrapper);
+
+        SimpleDateFormat dateFmt = new SimpleDateFormat("yyyyMMdd HH:mm:ss");//格式化一下时间
+        Date dNow = new Date(); //当前时间
+        Date dBefore = new Date();
+        Calendar calendar = Calendar.getInstance(); //得到日历
+        calendar.setTime(dNow);//把当前时间赋给日历
+        calendar.add(Calendar.DAY_OF_MONTH, -1); //设置为前一天
+        dBefore = calendar.getTime(); //得到前一天的时间
+        String defaultStartDate = dateFmt.format(dBefore); //格式化前一天
+        defaultStartDate = defaultStartDate.substring(0,9)+" 00:00:00";
+        String defaultEndDate = defaultStartDate.substring(0,9)+" 23:59:59";
+        Date startDate = new Date();
+        Date endDate = new Date();
+        try {
+            startDate = dateFmt.parse(defaultStartDate);
+            endDate = dateFmt.parse(defaultEndDate);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        for(IceAlarm alarm : iceAlarms){
+            try {
+                IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery().ge(IceEventRecord::getOccurrenceTime, startDate).le(IceEventRecord::getOccurrenceTime, endDate).eq(IceEventRecord::getAssetId, alarm.getIceBoxAssetid()).orderByDesc(IceEventRecord::getId).last("limit 1"));
+                if(iceEventRecord != null){
+                    if(IceAlarmTypeEnum.OUTLINE.getType() == alarm.getAlarmType()){
+                        //上线
+                        if(StringUtils.isNotEmpty(iceEventRecord.getLng()) && StringUtils.isNotEmpty(iceEventRecord.getLat()) && StringUtils.isNotEmpty(iceEventRecord.getDetailAddress())){
+                            alarm.setStatus(IceAlarmStatusEnum.AUTO.getType());
+                            alarm.setAlarmRemoveTime(new Date());
+                            iceAlarmMapper.updateById(alarm);
+                            feignOutBacklogClient.updateIceAlarmStatus(alarm.getRelateCode());
+                        }
+                    }else if(IceAlarmTypeEnum.DISTANCE.getType() == alarm.getAlarmType()){
+                        if(StringUtils.isNotEmpty(iceEventRecord.getLng()) && StringUtils.isNotEmpty(iceEventRecord.getLat()) && StringUtils.isNotEmpty(iceEventRecord.getDetailAddress())){
+                            IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId,alarm.getIceBoxAssetid()).last("limit 1"));
+                            String lat = "";
+                            String lng = "";
+                            if(iceBox != null && iceBox.getPutStatus()==3 && StringUtils.isNotEmpty(iceBox.getPutStoreNumber())){
+                                if(iceBox.getPutStoreNumber().startsWith("C0")){
+                                    StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                                    if(storeInfoDtoVo != null){
+                                        lat = storeInfoDtoVo.getLatitude();
+                                        lng = storeInfoDtoVo.getLongitude();
+                                    }
+                                }else {
+                                    SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
+                                    if(supplierInfoSessionVo != null){
+                                        lat = supplierInfoSessionVo.getLatitude();
+                                        lng = supplierInfoSessionVo.getLongitude();
+                                    }
+                                }
+                                double distance = getDistance(Double.parseDouble(iceEventRecord.getLat()), Double.parseDouble(iceEventRecord.getLng()), Double.parseDouble(lat), Double.parseDouble(lng));
+                                BigDecimal limit = BigDecimal.valueOf(200);
+                                if(limit.compareTo(BigDecimal.valueOf(distance)) > -1){
+                                    alarm.setStatus(IceAlarmStatusEnum.AUTO.getType());
+                                    alarm.setAlarmRemoveTime(new Date());
+                                    iceAlarmMapper.updateById(alarm);
+                                    feignOutBacklogClient.updateIceAlarmStatus(alarm.getRelateCode());
+                                }
+                            }
+                        }
+                    }
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void createTableMonth() {
+        String firstDayOfNextMonth = getFirstDayOfNextMonth();
+        String lastDayOfNextMonth = getLastDayOfNextMonth();
+        createTable(firstDayOfNextMonth,lastDayOfNextMonth);
+    }
+
+
+    public static String getFirstDayOfNextMonth() {
+        SimpleDateFormat dft = new SimpleDateFormat("yyyyMMdd");
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MONTH, 1);
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
+        return dft.format(calendar.getTime());
+    }
+
+    public static String getLastDayOfNextMonth() {
+        SimpleDateFormat dft = new SimpleDateFormat("yyyyMMdd");
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendar.add(Calendar.MONTH, 1);
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+        return dft.format(calendar.getTime());
+    }
 
     private SortedMap<String, String> buildMap(HisenseDTO hisenseDTO) {
         SortedMap<String, String> map = new TreeMap<>();
@@ -243,7 +435,94 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
             }
             updateIceBoxExtend.setOpenTotal(openTotal + hisenseDTO.getOpenCloseCount());
             iceBoxExtendDao.updateById(updateIceBoxExtend);
+
+            //增加报警
+            IceBox iceBox = iceBoxDao.selectById(iceBoxExtend.getId());
+            String lat = "";
+            String lng = "";
+            String putStoreNumber = "";
+            String putStoreName = "";
+            if(iceBox != null && iceBox.getPutStatus() == 3 && StringUtils.isNotEmpty(iceBox.getPutStoreNumber())) {
+                if (iceBox.getPutStoreNumber().startsWith("C0")) {
+                    //门店
+                    StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                    if (storeInfoDtoVo != null && StringUtils.isNotEmpty(storeInfoDtoVo.getLatitude()) && StringUtils.isNotEmpty(storeInfoDtoVo.getLongitude())) {
+                        lat = storeInfoDtoVo.getLatitude();
+                        lng = storeInfoDtoVo.getLongitude();
+                        putStoreName = storeInfoDtoVo.getStoreName();
+                        putStoreNumber = storeInfoDtoVo.getStoreNumber();
+                    }
+                } else {
+                    //批发邮差
+                    SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
+                    if (supplierInfoSessionVo != null && StringUtils.isNotEmpty(supplierInfoSessionVo.getLatitude()) && StringUtils.isNotEmpty(supplierInfoSessionVo.getLongitude())) {
+                        lat = supplierInfoSessionVo.getLatitude();
+                        lng = supplierInfoSessionVo.getLongitude();
+                        putStoreName = supplierInfoSessionVo.getName();
+                        putStoreNumber = supplierInfoSessionVo.getNumber();
+                    }
+                }
+            }
+            if(hisenseDTO.getLat().equals("") && hisenseDTO.getLng().equals("") && hisenseDTO.getDetailAddress().equals("")){
+                //冰柜离线
+                IceAlarm alarm = iceAlarmMapper.selectOne(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getPutStoreNumber, putStoreNumber).eq(IceAlarm::getIceBoxAssetid, iceBox.getAssetId()).eq(IceAlarm::getSendUserId, iceBox.getResponseManId()).eq(IceAlarm::getAlarmType,IceAlarmTypeEnum.OUTLINE.getType()).last("limit 1"));
+                if(alarm != null){
+                    return;
+                }
+                DateTime date = new DateTime();
+                String prefix = date.toString("yyyyMMddHHmmss");
+                String relateCode = iceBox.getResponseManId()+"_"+iceBox.getAssetId()+"_"+prefix;
+                IceAlarm iceAlarm = new IceAlarm();
+                iceAlarm.setPutStoreName(putStoreName).setPutStoreNumber(putStoreNumber).setRelateCode(relateCode).setIceBoxId(iceBox.getId()).setIceBoxAssetid(iceBox.getAssetId()).setAlarmType(IceAlarmTypeEnum.OUTLINE.getType()).setSendUserId(iceBox.getResponseManId()).setStatus(IceAlarmStatusEnum.NEWALARM.getType()).setCreateTime(new Date()).setUpdateTime(new Date());
+                iceAlarmMapper.insert(iceAlarm);
+                //发送代办
+                NoticeBacklogRequestVo noticeBacklogRequestVo = NoticeBacklogRequestVo.builder()
+                        .backlogName(iceBox.getAssetId()+"_冰柜报警:"+IceAlarmTypeEnum.OUTLINE.getDesc())
+                        .noticeTypeEnum(NoticeTypeEnum.ICEBOX_ALARM)
+                        .relateCode(relateCode)
+                        .sendUserId(iceBox.getResponseManId())
+                        .build();
+                // 创建通知
+                feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
+            }
+            if(StringUtils.isNotEmpty(hisenseDTO.getLat()) && StringUtils.isNotEmpty(hisenseDTO.getLng())){
+                //距离门店超过200m
+                if(StringUtils.isNotEmpty(lat) && StringUtils.isNotEmpty(lng)){
+
+                    IceAlarm alarm = iceAlarmMapper.selectOne(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getPutStoreNumber, putStoreNumber).eq(IceAlarm::getIceBoxAssetid, iceBox.getAssetId()).eq(IceAlarm::getSendUserId, iceBox.getResponseManId()).eq(IceAlarm::getAlarmType,IceAlarmTypeEnum.DISTANCE.getType()).last("limit 1"));
+                    if(alarm != null){
+                        return;
+                    }
+                    double distance = getDistance(Double.parseDouble(hisenseDTO.getLat()), Double.parseDouble(hisenseDTO.getLng()), Double.parseDouble(lat), Double.parseDouble(lng));
+                    BigDecimal dis = BigDecimal.valueOf(distance);
+                    BigDecimal limit = BigDecimal.valueOf(200);
+                    if(dis.compareTo(limit) > -1){
+                        DateTime date = new DateTime();
+                        String prefix = date.toString("yyyyMMddHHmmss");
+                        String relateCode = iceBox.getResponseManId()+"_"+iceBox.getAssetId()+"_"+prefix;
+                        IceAlarm iceAlarm = new IceAlarm();
+                        iceAlarm.setPutStoreName(putStoreName).setPutStoreNumber(putStoreNumber).setRelateCode(relateCode).setIceBoxId(iceBox.getId()).setIceBoxAssetid(iceBox.getAssetId()).setAlarmType(IceAlarmTypeEnum.DISTANCE.getType()).setSendUserId(iceBox.getResponseManId()).setStatus(IceAlarmStatusEnum.NEWALARM.getType()).setCreateTime(new Date()).setUpdateTime(new Date());
+                        iceAlarmMapper.insert(iceAlarm);
+                        //发送代办
+                        NoticeBacklogRequestVo noticeBacklogRequestVo = NoticeBacklogRequestVo.builder()
+                                .backlogName(iceBox.getAssetId()+"_冰柜报警:"+IceAlarmTypeEnum.DISTANCE.getDesc())
+                                .noticeTypeEnum(NoticeTypeEnum.ICEBOX_ALARM)
+                                .relateCode(relateCode)
+                                .sendUserId(iceBox.getResponseManId())
+                                .build();
+                        // 创建通知
+                        feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
+                    }
+                }
+            }
         }
+    }
+
+    public static double getDistance(double longitudeFrom, double latitudeFrom, double longitudeTo, double latitudeTo) {
+        GlobalCoordinates source = new GlobalCoordinates(latitudeFrom, longitudeFrom);
+        GlobalCoordinates target = new GlobalCoordinates(latitudeTo, longitudeTo);
+
+        return new GeodeticCalculator().calculateGeodeticCurve(Ellipsoid.Sphere, source, target).getEllipsoidalDistance();
     }
 
 }

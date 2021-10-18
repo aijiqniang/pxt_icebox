@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao">
+
+    <select id="getIntelIceboxs" resultType="com.szeastroc.icebox.newprocess.vo.IceEventVo$IceboxList">
+        SELECT a.id iceboxId,b.external_id externalId , c.chest_model chestModel,c.chest_name chestName,b.last_put_time lastPutTime,a.deposit_money depositMoney,
+        a.status,a.asset_id assetId,b.repair_begin_time repairBeginTime,a.created_time createTime
+        FROM t_ice_box a
+        left join t_ice_box_extend b on a.id = b.id
+        left join t_ice_model c on a.model_id = c.id
+        where a.responseMan_id = #{userId} and b.external_id is not null
+        <if test="assetId != null and assetId != ''">
+            and a.asset_id=#{assetId}
+        </if>
+    </select>
+</mapper>

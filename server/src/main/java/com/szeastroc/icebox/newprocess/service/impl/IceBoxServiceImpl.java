@@ -2520,18 +2520,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Override
     public Map<String, Object> readEquipNews(Integer id) {
+        DateTime now = new DateTime();
+        Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+        Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
 
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
         IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery()
-                .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId()).orderByDesc(IceEventRecord::getId)
+                .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId()).between(IceEventRecord::getOccurrenceTime,todayStart,todayEnd).orderByDesc(IceEventRecord::getId)
                 .last(" limit 1"));
         Map<String, Object> map = Maps.newHashMap();
         Optional.ofNullable(iceEventRecord).ifPresent(info -> {
             map.put("temperature", info.getTemperature()); // 温度
             String assetId = iceBoxExtend.getAssetId();
-            DateTime now = new DateTime();
             // 开关门次数 -- 累计总数
-            Integer totalSum = iceEventRecordDao.sumTotalOpenCloseCount(assetId);
+            //Integer totalSum = iceEventRecordDao.sumTotalOpenCloseCount(assetId);
 
             // 开关门次数 -- 月累计
             Date monStart = now.dayOfMonth().withMinimumValue().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
@@ -2539,11 +2541,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Integer monthSum = iceEventRecordDao.sumOpenCloseCount(assetId, monStart, monEnd);
 
             // 开关门次数 -- 今日累计
-            Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
-            Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
+
             Integer todaySum = iceEventRecordDao.sumOpenCloseCount(assetId, todayStart, todayEnd);
 
-            map.put("totalSum", totalSum);
+            //map.put("totalSum", totalSum);
             map.put("monthSum", monthSum);
             map.put("todaySum", todaySum);
             String address = info.getDetailAddress();

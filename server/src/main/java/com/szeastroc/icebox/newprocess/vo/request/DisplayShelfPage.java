@@ -16,7 +16,7 @@ import lombok.Data;
 @ApiModel
 public class DisplayShelfPage extends Page<DisplayShelf> {
 
-    @ApiModelProperty(value = "部门id")
+    /*@ApiModelProperty(value = "部门id")
     private Integer deptId;
     @ApiModelProperty(value = "经销商编号")
     private String supplierNumber;
@@ -29,5 +29,14 @@ public class DisplayShelfPage extends Page<DisplayShelf> {
     @ApiModelProperty(value = "投放状态")
     private Integer putStatus;
     @ApiModelProperty(value = "签收状态")
-    private Integer signStatus;
+    private Integer signStatus;*/
+
+    //deptType  1:服务处 2:大区 3:事业部 4:本部 5:组
+    @ApiModelProperty(value = "部门类型")
+    private Integer deptType;
+    @ApiModelProperty(value = "营销区域")
+    private Integer marketAreaId;
+    @ApiModelProperty(value = "货架类型")
+    private String shelfType;
+
 }

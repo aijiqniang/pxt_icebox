@@ -333,6 +333,30 @@ public class DirectExchangeConfig {
         return BindingBuilder.bind(shelfBackApplyQueue).to(storeExportExchange).with(MqConstant.SHELF_RETURN_APPLY_K);
     }
 
+    /**
+     * 陈列架投放导出详情
+     */
+    @Bean(name = "shelfPutDetailsContainer")
+    public SimpleRabbitListenerContainerFactory shelfPutDetailsContainer() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factoryConfigurer.configure(factory, connectionFactory);
+        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
+
+    //陈列架投放导出详情
+    @Bean(name = "shelfPutDetailsQueue")
+    public Queue shelfPutDetailsQueue() {
+        return QueueBuilder.durable(MqConstant.SHELF_PUT_DETAILS_Q).build();
+    }
+
+    @Bean
+    public Binding shelfPutDetailsBinding(Queue shelfPutDetailsQueue, DirectExchange storeExportExchange) {
+        return BindingBuilder.bind(shelfPutDetailsQueue).to(storeExportExchange).with(MqConstant.SHELF_PUT_DETAILS_K);
+    }
+
+
     @Bean(name = "shelfPutReportQueue")
     public Queue shelfPutReportQueue() {
         Queue queue = new Queue(MqConstant.shelfPutReportQueue);

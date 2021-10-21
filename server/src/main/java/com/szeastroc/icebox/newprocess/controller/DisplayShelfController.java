@@ -7,6 +7,7 @@ import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.common.exception.NormalOptionException;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.enums.DisplayShelfTypeEnum;
+import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutDetailsMsg;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
@@ -55,10 +56,11 @@ public class DisplayShelfController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.examineDetails(code));
     }
 
-    @GetMapping("details")
+    @PostMapping("details")
     @ApiOperation(value = "陈列货架详情列表", notes = "陈列货架详情列表", produces = "application/json")
-    public CommonResponse<List<DisplayShelf>> details(){
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfService.selectDetails());
+    public CommonResponse<IPage<DisplayShelf>> details(@RequestBody(required=false) DisplayShelfPage page){
+        IPage<DisplayShelf> displayShelfList = displayShelfService.selectDetails(page);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,displayShelfList);
     }
 
     @PostMapping("page")
@@ -96,6 +98,12 @@ public class DisplayShelfController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+    @GetMapping("exportShelf")
+    @ApiOperation(value = "导出陈列架数据", notes = "导出陈列架数据", produces = "application/json")
+    public CommonResponse exportShelf(ShelfPutDetailsMsg shelfPutDetailsMsg){
+        displayShelfService.exportShelf(shelfPutDetailsMsg);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
 
     @GetMapping("types")
     @ApiOperation(value = "获取陈列货架类型", notes = "获取陈列货架类型", produces = "application/json")

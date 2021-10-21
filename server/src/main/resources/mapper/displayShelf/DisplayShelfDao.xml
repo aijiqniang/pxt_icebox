@@ -38,10 +38,30 @@
         put_status,
         status,
         count(size) count,
+        COUNT(if(put_status = 3, 1, null)) AS putCount,
         size
         from t_display_shelf
-
-        group by name,size,put_status,service_dept_id,region_dept_id,business_dept_id,headquarters_dept_id HAVING size is not null and put_status in(0,3)
+        <where>
+            put_status IN (0, 3)
+            <if test="deptType != '' and deptType != null">
+                <if test="deptType == 1">
+                    and service_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 2">
+                    and region_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 3">
+                    and business_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 4">
+                    and headquarters_dept_id = #{marketAreaId}
+                </if>
+            </if>
+            <if test="shelfType != '' and shelfType != null">
+                and name like concat('%',#{shelfType},'%')
+            </if>
+        </where>
+        group by name,size,service_dept_id,region_dept_id,business_dept_id,headquarters_dept_id
     </select>
 
     <select id="selectPage" parameterType="com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage"
@@ -105,6 +125,34 @@
         from t_display_shelf
         where put_number = #{customerNumber} and status = 1 and sign_status = 1
         group by type,sign_status,size
+    </select>
+
+
+    <select id="selectByExportCount" resultType="java.lang.Integer">
+        select count(1) from t_display_shelf
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test='ew.sqlSegment!=null'>
+                and ${ew.sqlSegment}
+            </if>
+        </trim>
+    </select>
+
+    <insert id="insertExportRecords">
+        INSERT INTO `t_export_records` (`serial_num`, `job_name`, `user_id`, `user_name`, `type`, `request_time`,`param`)
+        VALUES(#{serialNum},#{jobName},#{userId},#{userName},#{type},#{requestTime},#{param})
+    </insert>
+
+    <update id="updateExportRecords">
+        UPDATE `t_export_records` SET `type`=1, `net_path` = #{netPath}, `end_request_time` = #{endRequestTime} WHERE `serial_num` = #{serialNum};
+    </update>
+
+    <select id="selectByExportCount" resultType="java.lang.Integer">
+        select count(1) from t_display_shelf
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test='ew.sqlSegment!=null'>
+                and ${ew.sqlSegment}
+            </if>
+        </trim>
     </select>
 
 </mapper>

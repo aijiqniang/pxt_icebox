@@ -1,8 +1,12 @@
 package com.szeastroc.icebox.newprocess.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.szeastroc.common.vo.CommonResponse;
+import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutDetailsMsg;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
+import com.szeastroc.icebox.newprocess.entity.DisplayShelfInspectReport;
 import com.szeastroc.icebox.newprocess.vo.DisplayShelfPutApplyVo;
 import com.szeastroc.icebox.newprocess.vo.SupplierDisplayShelfVO;
 import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
@@ -19,11 +23,13 @@ import java.util.List;
  */
 public interface DisplayShelfService extends IService<DisplayShelf> {
 
-    List<DisplayShelf> selectDetails();
+    IPage<DisplayShelf> selectDetails(DisplayShelfPage page);
 
     IPage<DisplayShelf> selectPage(DisplayShelfPage page);
 
     void importData(MultipartFile file);
+
+    CommonResponse exportShelf(ShelfPutDetailsMsg shelfPutDetailsMsg);
 
     List<SupplierDisplayShelfVO> canPut(ShelfStockRequest request);
 
@@ -34,4 +40,6 @@ public interface DisplayShelfService extends IService<DisplayShelf> {
     List<DisplayShelf.DisplayShelfType> customerDetail(String customerNumber);
 
     List<DisplayShelfPutApplyVo> examineDetails(String code);
+
+    Integer selectByExportCount(LambdaQueryWrapper<DisplayShelf> wrapper);
 }

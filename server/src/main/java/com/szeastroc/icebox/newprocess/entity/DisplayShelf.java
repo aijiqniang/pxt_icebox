@@ -96,8 +96,12 @@ public class DisplayShelf extends Model<DisplayShelf> {
     private Date updateTime;
 
     @TableField(exist = false)
-    @ApiModelProperty("货架数量")
+    @ApiModelProperty("总货架数量")
     private Integer count;
+
+    @TableField(exist = false)
+    @ApiModelProperty("已投放货架数量")
+    private Integer putCount;
 
     @TableField(exist = false)
     @ApiModelProperty("类型集合")

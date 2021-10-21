@@ -101,8 +101,7 @@ public class DisplayShelfController {
     @GetMapping("exportShelf")
     @ApiOperation(value = "导出陈列架数据", notes = "导出陈列架数据", produces = "application/json")
     public CommonResponse exportShelf(ShelfPutDetailsMsg shelfPutDetailsMsg){
-        displayShelfService.exportShelf(shelfPutDetailsMsg);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+        return displayShelfService.exportShelf(shelfPutDetailsMsg);
     }
 
     @GetMapping("types")

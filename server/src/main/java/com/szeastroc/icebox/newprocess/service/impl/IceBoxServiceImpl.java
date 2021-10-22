@@ -21,6 +21,7 @@ import com.google.common.primitives.Ints;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.dto.CustomerLabelDetailDto;
 import com.szeastroc.common.entity.customer.vo.*;
+import com.szeastroc.common.entity.customer.vo.label.CusLabelDetailVo;
 import com.szeastroc.common.entity.icebox.enums.IceBoxStatus;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.icebox.vo.IceBoxTransferHistoryVo;
@@ -2261,6 +2262,25 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     map.put("merchantNumber",storeInfoDtoVo.getMerchantNumber());
                 }
             }
+            List<CusLabelDetailVo> labelDetailVos = new ArrayList<>();
+            if(map.get("number") != null) {
+                labelDetailVos = FeignResponseUtil.getFeignData(feignCusLabelClient.queryLabelsByCustomerNumber((String) map.get("number")));
+            }
+            String label = "";
+            if(labelDetailVos != null){
+                //只需要自动标签
+                List<CusLabelDetailVo> autoDetails = labelDetailVos.stream().filter(x->x.getLabelFlag()==1).collect(Collectors.toList());
+                if(autoDetails != null){
+                    for(CusLabelDetailVo detailVo : autoDetails){
+                        if(StringUtils.isNotBlank(label)){
+                            label += "," + detailVo.getLabelName();
+                        }else {
+                            label = detailVo.getLabelName();
+                        }
+                    }
+                }
+            }
+            map.put("label",label);
             String fullDept = "";
             if(StringUtils.isNoneBlank(businessDeptName)){
                 fullDept = businessDeptName;
@@ -4072,6 +4092,24 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                         iceBoxExcelVo.setDqStr(storeMap.get("regionDeptName")); // 大区
                         iceBoxExcelVo.setFwcStr(storeMap.get("serviceDeptName")); // 服务处
                         iceBoxExcelVo.setGroupStr(storeMap.get("groupDeptName")); // 组
+                        //加入自动标签
+                        List<CusLabelDetailVo> labelDetailVos = new ArrayList<>();
+                        labelDetailVos = FeignResponseUtil.getFeignData(feignCusLabelClient.queryLabelsByCustomerNumber(iceBox.getPutStoreNumber()));
+                        String label = "";
+                        if(labelDetailVos != null){
+                            //只需要自动标签
+                            List<CusLabelDetailVo> autoDetails = labelDetailVos.stream().filter(x->x.getLabelFlag()==1).collect(Collectors.toList());
+                            if(autoDetails != null){
+                                for(CusLabelDetailVo detailVo : autoDetails){
+                                    if(StringUtils.isNotBlank(label)){
+                                        label += "," + detailVo.getLabelName();
+                                    }else {
+                                        label = detailVo.getLabelName();
+                                    }
+                                }
+                            }
+                        }
+                        iceBoxExcelVo.setLabel(label);
                     }
                     StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
                     if(storeInfoDtoVo != null  && storeInfoDtoVo.getMerchantNumber() != null){

@@ -8,6 +8,7 @@ import lombok.*;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.util.List;
 
 
 @Getter
@@ -16,7 +17,7 @@ import java.io.Serializable;
 public class ShelfPutDetailsMsg implements Serializable {
     private static final long serialVersionUID = 1L;
     private LambdaQueryWrapper<DisplayShelf> shelfLambdaQueryWrapper;
-    private IPage<DisplayShelf> displayShelfIPage;
+    private List<DisplayShelf> displayShelfList;
     private Integer userId;
     private String realName;
     private String serialNum;

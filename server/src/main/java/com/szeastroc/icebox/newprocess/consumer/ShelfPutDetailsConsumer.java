@@ -49,18 +49,13 @@ public class ShelfPutDetailsConsumer {
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
         PoiUtil.exportReportExcelToLocalPath(count, columnName, tmpPath, imageUploadUtil, feignExportRecordsClient, shelfPutDetailsMsg.getRecordsId(),
                 (wb, eachSheet, startRowCount, endRowCount, currentPage, pageSize) -> {
-                   /* List<DisplayShelf> displayShelfList = displayShelfDao.selectList(shelfPutDetailsMsg.getShelfLambdaQueryWrapper());
-                    Page<DisplayShelf> page = new Page<>();
-                    page.setCurrent(currentPage);
-                    page.setSize(pageSize);
-                    IPage<DisplayShelf> reportPage = displayShelfService.page(page, shelfPutDetailsMsg.getShelfLambdaQueryWrapper());*/
-                    IPage<DisplayShelf> displayShelfIPage = shelfPutDetailsMsg.getDisplayShelfIPage();
-                    List<DisplayShelf> reports = displayShelfIPage.getRecords();
-                    if (CollectionUtil.isNotEmpty(reports)) {
+                    List<DisplayShelf> displayShelfList = shelfPutDetailsMsg.getDisplayShelfList();
+//                    List<DisplayShelf> reports = displayShelfIPage.getRecords();
+                    if (CollectionUtil.isNotEmpty(displayShelfList)) {
                         for (int i = startRowCount; i <= endRowCount; i++) {
                             SXSSFRow eachDataRow = eachSheet.createRow(i);
-                            if ((i - startRowCount) < reports.size()) {
-                                DisplayShelf report = reports.get(i - startRowCount);
+                            if ((i - startRowCount) < displayShelfList.size()) {
+                                DisplayShelf report = displayShelfList.get(i - startRowCount);
                                 eachDataRow.createCell(0).setCellValue(report.getHeadquartersDeptName());
                                 eachDataRow.createCell(1).setCellValue(report.getBusinessDeptName());
                                 eachDataRow.createCell(2).setCellValue(report.getRegionDeptName());

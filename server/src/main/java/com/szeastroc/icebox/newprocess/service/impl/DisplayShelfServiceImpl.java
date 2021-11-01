@@ -111,63 +111,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
 
     @Override
     public IPage<DisplayShelf> selectDetails(DisplayShelfPage page) {
-        IPage<DisplayShelf> selectDetails = this.baseMapper.selectDetails(page);
-       /* List<DisplayShelf> records = selectDetails.getRecords();
-        List<DisplayShelf> list = new ArrayList<>();
-        Map<String, DisplayShelf> map = new HashMap<>();
-        for (DisplayShelf record : records) {
-            String v = record.getName() + record.getSize();
-            if(map.containsKey(v)){
-                DisplayShelf displayShelf = map.get(v);
-                displayShelf.setCount(displayShelf.getCount() + record.getCount());
-                map.put(v, displayShelf);
-            }{
-                map.put(v, record);
-            }*/
-//            for (DisplayShelf displayShelf : records) {
-//                //如果投放陈列架的名称和大小和状态都一样  是同一条数据
-//                if(record.getName().equals(displayShelf.getName()) && record.getSize().equals(displayShelf.getSize()) && record.getPutStatus().equals(displayShelf.getPutStatus())){
-//                    continue;
-//                //如果名称和大小一样 状态不一样  表示是同一种投放数据  需要合并
-//                }else if(record.getName().equals(displayShelf.getName()) && record.getSize().equals(displayShelf.getSize()) && !record.getPutStatus().equals(displayShelf.getPutStatus())){
-//                    record.setCount(record.getCount() + displayShelf.getCount());
-//                    record.setPutCount(displayShelf.getCount());
-//                    list.add(record);
-//                    break;
-//                }
-//            }
-        /*}
-        records.addAll(list);
-        selectDetails.setRecords(records);*/
-       /* //--------------------------------
-        LambdaQueryWrapper<DisplayShelf> wrapper = Wrappers.lambdaQuery();
-        if(page != null) {
-            if (page.getDeptType() != null && page.getMarketAreaId() != null) {
-                switch (page.getDeptType()) {
-                    //deptType  1:服务处 2:大区 3:事业部 4:本部
-                    case 1:
-                        wrapper.eq(DisplayShelf::getServiceDeptId, page.getMarketAreaId());
-                        break;
-                    case 2:
-                        wrapper.eq(DisplayShelf::getRegionDeptId, page.getMarketAreaId());
-                        break;
-                    case 3:
-                        wrapper.eq(DisplayShelf::getBusinessDeptId, page.getMarketAreaId());
-                        break;
-                    case 4:
-                        wrapper.eq(DisplayShelf::getHeadquartersDeptId, page.getMarketAreaId());
-                        break;
-                }
-            }
-        }
-        if(StringUtils.isNotEmpty(page.getShelfType())){
-            wrapper.like(DisplayShelf::getName,page.getShelfType());
-        }
-        wrapper.groupBy(DisplayShelf::getName,DisplayShelf::getSize,DisplayShelf::getPutStatus,
-                DisplayShelf::getServiceDeptId,DisplayShelf::getRegionDeptId,DisplayShelf::getBusinessDeptId,DisplayShelf::getHeadquartersDeptId)
-                .in(DisplayShelf::getPutStatus,0,3);*/
-//        IPage<DisplayShelf> selectDetails = displayShelfDao.selectPage(page, wrapper);
-        //--------------------------------
+        IPage<DisplayShelf> selectDetails = this.baseMapper.selectDetailsPage(page);
         return selectDetails;
     }
 
@@ -264,18 +208,8 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
         if (0 == count) {
             return new CommonResponse<>(Constants.API_CODE_FAIL, "暂无可导出的数据");
         }
-        /*// 生成下载任务编号
-        String serialNum = String.format("shelf%s", System.currentTimeMillis());
-        displayShelfDao.insertExportRecords(serialNum, "陈列架投放信息详情-导出", userManageVo.getSessionUserInfoVo().getId(),
-                userManageVo.getSessionUserInfoVo().getRealname(), ExportRecordTypeEnum.PROCESSING.getType(), new Date(), JSON.toJSONString(page));
-        // 发送消息
-        CompletableFuture.runAsync(() -> rabbitTemplate.convertAndSend(MqConstant.directExchange, MqConstant.SHELF_PUT_DETAILS_K,
-                new ShelfPutDetailsMsg().setShelfLambdaQueryWrapper(shelfLambdaQueryWrapper).setSerialNum(serialNum)
-                        .setUserId(userManageVo.getSessionUserInfoVo().getId())
-                        .setRealName(userManageVo.getSessionUserInfoVo().getRealname())));*/
-        DisplayShelfPage page = new DisplayShelfPage();
-        BeanUtils.copyProperties(shelfPutDetailsMsg, page);
-        IPage<DisplayShelf> displayShelfIPage = displayShelfDao.selectDetails(page);
+
+        List<DisplayShelf> displayShelfList = displayShelfDao.selectDetails(shelfPutDetailsMsg);
         // 生成下载任务
         Integer recordsId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userManageVo.getSessionUserInfoVo().getId(),
                 userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(shelfPutDetailsMsg), "陈列架投放信息详情-导出"));
@@ -284,7 +218,7 @@ public class DisplayShelfServiceImpl extends ServiceImpl<DisplayShelfDao, Displa
 
         CompletableFuture.runAsync(() -> {
             shelfPutDetailsMsg.setRecordsId(recordsId);
-            shelfPutDetailsMsg.setDisplayShelfIPage(displayShelfIPage);
+            shelfPutDetailsMsg.setDisplayShelfList(displayShelfList);
             rabbitTemplate.convertAndSend(MqConstant.E_EXCHANGE, MqConstant.SHELF_PUT_DETAILS_K, shelfPutDetailsMsg);
         });
 

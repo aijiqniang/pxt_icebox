@@ -24,6 +24,47 @@
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
+    <select id="selectDetailsPage"
+            resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
+        select headquarters_dept_name,
+        headquarters_dept_id,
+        business_dept_name,
+        business_dept_id,
+        region_dept_name,
+        region_dept_id,
+        service_dept_name,
+        service_dept_id,
+        name,
+        put_status,
+        status,
+        count(size) count,
+        COUNT(if(put_status = 3, 1, null)) AS putCount,
+        size
+        from t_display_shelf
+        <where>
+            put_status IN (0, 3)
+            <if test="deptType != '' and deptType != null">
+                <if test="deptType == 1">
+                    and service_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 2">
+                    and region_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 3">
+                    and business_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 4">
+                    and headquarters_dept_id = #{marketAreaId}
+                </if>
+            </if>
+            <if test="shelfType != '' and shelfType != null">
+                and name like concat('%',#{shelfType},'%')
+            </if>
+        </where>
+        group by name,size,service_dept_id,region_dept_id,business_dept_id,headquarters_dept_id
+    </select>
+
+
     <select id="selectDetails"
             resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
         select headquarters_dept_name,
@@ -63,6 +104,7 @@
         </where>
         group by name,size,service_dept_id,region_dept_id,business_dept_id,headquarters_dept_id
     </select>
+
 
     <select id="selectPage" parameterType="com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage"
             resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">

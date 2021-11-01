@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutDetailsMsg;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport;
 import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
@@ -25,7 +26,9 @@ import java.util.List;
 @Repository
 public interface DisplayShelfDao extends BaseMapper<DisplayShelf> {
 
-    IPage<DisplayShelf> selectDetails(DisplayShelfPage page);
+    IPage<DisplayShelf> selectDetailsPage(DisplayShelfPage page);
+
+    List<DisplayShelf> selectDetails(ShelfPutDetailsMsg shelfPutDetailsMsg);
 
     IPage<DisplayShelf> selectPage(DisplayShelfPage page);
 

@@ -74,15 +74,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -1521,9 +1513,12 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             return Lists.newArrayList();
         }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.in(IceExamine::getIceBoxId,boxIds)
+        /*wrapper.in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
-                .groupBy(IceExamine::getIceBoxId);
+                .groupBy(IceExamine::getIceBoxId);*/
+        String monthFirstDay = getMonthFirstDay();
+        String monthLastDay = getMonthLastDay();
+        wrapper.in(IceExamine::getIceBoxId,boxIds).between(IceExamine::getCreateTime,monthFirstDay,monthLastDay).groupBy(IceExamine::getIceBoxId);
         return iceExamineDao.selectList(wrapper);
     }
 
@@ -1534,9 +1529,12 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
             return 0;
         }
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
-        wrapper.in(IceExamine::getIceBoxId,boxIds)
+        /*wrapper.in(IceExamine::getIceBoxId,boxIds)
                 .apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'")
-                .groupBy(IceExamine::getIceBoxId);
+                .groupBy(IceExamine::getIceBoxId);*/
+        String monthFirstDay = getMonthFirstDay();
+        String monthLastDay = getMonthLastDay();
+        wrapper.in(IceExamine::getIceBoxId,boxIds).between(IceExamine::getCreateTime,monthFirstDay,monthLastDay).groupBy(IceExamine::getIceBoxId);
         int size = iceExamineDao.selectCount(wrapper);
         return putCount-size;
     }
@@ -1705,7 +1703,32 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
     @Override
     public int getExamineCount(Integer boxId) {
         LambdaQueryWrapper<IceExamine> wrapper = Wrappers.lambdaQuery();
-        wrapper.eq(IceExamine::getIceBoxId,boxId).apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'");
+        //wrapper.eq(IceExamine::getIceBoxId,boxId).apply("date_format(create_time,'%Y-%m') = '" + new DateTime().toString("yyyy-MM")+"'");
+        String firstTime = getMonthFirstDay();
+        String lastTime = getMonthLastDay();
+        wrapper.eq(IceExamine::getIceBoxId,boxId).between(IceExamine::getCreateTime,firstTime,lastTime);
         return this.baseMapper.selectCount(wrapper);
     }
+
+
+
+    private String getMonthFirstDay() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        Calendar currentMonth = Calendar.getInstance();
+        currentMonth.set(currentMonth.get(Calendar.YEAR), currentMonth.get(Calendar.MONTH), 1);
+        String firstTime = sdf.format(currentMonth.getTime().getTime());
+        return firstTime;
+    }
+
+    private String getMonthLastDay() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        Calendar currentMonth = Calendar.getInstance();
+        currentMonth.set(currentMonth.get(Calendar.YEAR), currentMonth.get(Calendar.MONTH) + 1, 0);
+        String lastTime = sdf.format(currentMonth.getTime().getTime());
+        return lastTime;
+    }
+
+
 }

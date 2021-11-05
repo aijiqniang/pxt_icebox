@@ -152,17 +152,16 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
     @Override
     public void eventPushConsumer(HisenseDTO hisenseDTO) {
         if (hisenseDTO.validate()) {
-            log.info("参数错误-->[{}]", JSON.toJSONString(hisenseDTO));
+            //log.info("参数错误-->[{}]", JSON.toJSONString(hisenseDTO));
         }else {
             String sign = createSign(buildMap(hisenseDTO));
             String submitSign = hisenseDTO.getSign();
-            log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
-            saveHisensePushEvent(hisenseDTO);
+            //log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
             if (!sign.equals(submitSign)) {
-                log.info("签名数据错误,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
+                //log.info("签名数据错误,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
             } else {
                 saveHisensePushEvent(hisenseDTO);
-                log.info("推送数据入库");
+                //log.info("推送数据入库");
             }
         }
     }

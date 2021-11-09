@@ -49,7 +49,7 @@ public interface MqConstant {
      * 客户信息变更，变更冰柜营销区域
      */
 
-    String E_STORE_CHANGE_EXCHANGE = "E_STORE_CHANGE_EXCHANGE";
+    String E_STORE_CHANGE_EXCHANGE = "E_CUSTOMER_CHANGE_EXCHANGE";
 
     String Q_STORE_CHANGE_ICEBOX_DEPT = "Q_STORE_CHANGE_ICEBOX_DEPT";
     String EXPORT_EXCEL_QUEUE = "export_excel_queue";

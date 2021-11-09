@@ -144,7 +144,7 @@ public class ChangeIceboxDeptConsumer {
             try {
                 report.setGroupDeptId(groupId);
                 report.setGroupDeptName(groupName);
-                report.setServiceDeptId(serviceDeptId);
+                report.setServiceDeptId(serviceId);
                 report.setServiceDeptName(serviceName);
                 report.setRegionDeptId(regionId);
                 report.setRegionDeptName(regionName);
@@ -165,7 +165,7 @@ public class ChangeIceboxDeptConsumer {
             try {
                 examineExceptionReport.setGroupDeptId(groupId);
                 examineExceptionReport.setGroupDeptName(groupName);
-                examineExceptionReport.setServiceDeptId(serviceDeptId);
+                examineExceptionReport.setServiceDeptId(serviceId);
                 examineExceptionReport.setServiceDeptName(serviceName);
                 examineExceptionReport.setRegionDeptId(regionId);
                 examineExceptionReport.setRegionDeptName(regionName);
@@ -186,7 +186,7 @@ public class ChangeIceboxDeptConsumer {
             try {
                 handover.setGroupDeptId(groupId);
                 handover.setGroupDeptName(groupName);
-                handover.setServiceDeptId(serviceDeptId);
+                handover.setServiceDeptId(serviceId);
                 handover.setServiceDeptName(serviceName);
                 handover.setRegionDeptId(regionId);
                 handover.setRegionDeptName(regionName);
@@ -207,7 +207,7 @@ public class ChangeIceboxDeptConsumer {
             try {
                 putReport.setGroupDeptId(groupId);
                 putReport.setGroupDeptName(groupName);
-                putReport.setServiceDeptId(serviceDeptId);
+                putReport.setServiceDeptId(serviceId);
                 putReport.setServiceDeptName(serviceName);
                 putReport.setRegionDeptId(regionId);
                 putReport.setRegionDeptName(regionName);
@@ -228,7 +228,7 @@ public class ChangeIceboxDeptConsumer {
             try {
                 transferHistory.setGroupDeptId(groupId);
                 transferHistory.setGroupDeptName(groupName);
-                transferHistory.setServiceDeptId(serviceDeptId);
+                transferHistory.setServiceDeptId(serviceId);
                 transferHistory.setServiceDeptName(serviceName);
                 transferHistory.setRegionDeptId(regionId);
                 transferHistory.setRegionDeptName(regionName);
@@ -249,7 +249,7 @@ public class ChangeIceboxDeptConsumer {
             try {
                 order.setGroupDeptId(groupId);
                 order.setGroupDeptName(groupName);
-                order.setServiceDeptId(serviceDeptId);
+                order.setServiceDeptId(serviceId);
                 order.setServiceDeptName(serviceName);
                 order.setRegionDeptId(regionId);
                 order.setRegionDeptName(regionName);

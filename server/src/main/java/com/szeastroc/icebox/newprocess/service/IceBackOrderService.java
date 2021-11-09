@@ -14,6 +14,10 @@ public interface IceBackOrderService extends IService<IceBackOrder> {
 
     void takeBackOrder(Integer iceBoxId);
 
+    void doBackOrder(SimpleIceBoxDetailVo simpleIceBoxDetailVo);
+
+    void confirm(String applyNumber);
+
     void doRefund(SimpleIceBoxDetailVo simpleIceBoxDetailVo);
 
     void updateExamineStatus(IceBoxRequest iceBoxRequest);

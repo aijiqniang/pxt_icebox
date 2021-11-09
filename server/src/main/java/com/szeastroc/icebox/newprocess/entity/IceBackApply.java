@@ -82,4 +82,22 @@ public class IceBackApply {
      */
     @TableField(value = "updated_time")
     private Date updatedTime;
+
+    /**
+     * 退还原因
+     */
+    @TableField(value = "back_reason")
+    private String backReason;
+
+    /**
+     * 退还备注
+     */
+    @TableField(value = "back_remark")
+    private String backRemark;
+
+    /**
+     * 是否需要物流接入 0--是 1--否
+     */
+    @TableField(value = "is_logistics")
+    private Integer isLogistics;
 }

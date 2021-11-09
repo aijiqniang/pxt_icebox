@@ -359,6 +359,20 @@ public class IceBoxController {
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
+    /**
+     * 新的需求：商户无法退还时，业代可以发起退还
+     * @param iceBoxId
+     * @return
+     */
+    @RequestMapping("/doBackIceBox")
+    public CommonResponse<String> doBackIceBox(Integer iceBoxId){
+        if (iceBoxId == null) {
+            throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
+        }
+        iceBackOrderService.takeBackOrder(iceBoxId);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+    }
+
 
     /**
      * 退回冰柜

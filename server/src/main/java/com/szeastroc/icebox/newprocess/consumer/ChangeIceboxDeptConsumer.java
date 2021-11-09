@@ -154,7 +154,7 @@ public class ChangeIceboxDeptConsumer {
                 report.setHeadquartersDeptName(headquartersName);
                 iceBackApplyReportDao.updateById(report);
             }catch (Exception e){
-                log.info("冰柜退还报表更新失败，id：{}->营销区域:{}",report.getId(),groupId+groupName+serviceDeptId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
+                log.info("冰柜退还报表更新失败，id：{}->营销区域:{}",report.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
             }
         }
@@ -175,7 +175,7 @@ public class ChangeIceboxDeptConsumer {
                 examineExceptionReport.setHeadquartersDeptName(headquartersName);
                 iceBoxExamineExceptionReportDao.updateById(examineExceptionReport);
             }catch (Exception e){
-                log.info("冰柜巡检报表更新失败，id：{}->营销区域:{}",examineExceptionReport.getId(),groupId+groupName+serviceDeptId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
+                log.info("冰柜巡检报表更新失败，id：{}->营销区域:{}",examineExceptionReport.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
             }
         }
@@ -196,7 +196,7 @@ public class ChangeIceboxDeptConsumer {
                 handover.setHeadquartersDeptName(headquartersName);
                 iceBoxHandoverDao.updateById(handover);
             }catch (Exception e){
-                log.info("冰柜交接报表更新失败，id：{}->营销区域:{}",handover.getId(),groupId+groupName+serviceDeptId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
+                log.info("冰柜交接报表更新失败，id：{}->营销区域:{}",handover.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
             }
         }
@@ -217,7 +217,7 @@ public class ChangeIceboxDeptConsumer {
                 putReport.setHeadquartersDeptName(headquartersName);
                 iceBoxPutReportDao.updateById(putReport);
             }catch (Exception e){
-                log.info("冰柜投放报表更新失败，id：{}->营销区域:{}",putReport.getId(),groupId+groupName+serviceDeptId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
+                log.info("冰柜投放报表更新失败，id：{}->营销区域:{}",putReport.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
             }
         }
@@ -238,7 +238,7 @@ public class ChangeIceboxDeptConsumer {
                 transferHistory.setHeadquartersDeptName(headquartersName);
                 iceBoxTransferHistoryDao.updateById(transferHistory);
             }catch (Exception e){
-                log.info("冰柜变更报表更新失败，id：{}->营销区域:{}",transferHistory.getId(),groupId+groupName+serviceDeptId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
+                log.info("冰柜变更报表更新失败，id：{}->营销区域:{}",transferHistory.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
             }
         }
@@ -259,7 +259,7 @@ public class ChangeIceboxDeptConsumer {
                 order.setHeadquartersDeptName(headquartersName);
                 iceRepairOrderDao.updateById(order);
             }catch (Exception e){
-                log.info("冰柜维修订单报表更新失败，id：{}->营销区域:{}",order.getId(),groupId+groupName+serviceDeptId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
+                log.info("冰柜维修订单报表更新失败，id：{}->营销区域:{}",order.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
             }
         }

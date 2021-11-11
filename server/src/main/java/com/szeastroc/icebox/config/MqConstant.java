@@ -113,4 +113,10 @@ public interface MqConstant {
      */
     String shelfInspectReportQueue = "shelf_inspect_report_queue";
     String shelfInspectReportKey = "shelf_inspect_report_routing_key";
+
+    /**
+     * 陈列架营销区域更新
+     */
+    String SHELF_CUSTOMER_CHANGE = "E_CUSTOMER_CHANGE_EXCHANGE";
+    String Q_SHELF_UPDATE = "Q_SHELF_UPDATE";
 }

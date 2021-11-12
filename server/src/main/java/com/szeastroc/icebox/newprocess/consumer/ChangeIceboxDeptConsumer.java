@@ -148,6 +148,8 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBackApplyReport::getServiceDeptName, serviceName)
                         .set(IceBackApplyReport::getGroupDeptId, groupId)
                         .set(IceBackApplyReport::getGroupDeptName, groupName)
+                        .set(IceBackApplyReport::getHeadquartersDeptId,headquartersId)
+                        .set(IceBackApplyReport::getHeadquartersDeptName,headquartersName)
                 );
             }catch (Exception e){
                 log.info("冰柜退还报表更新失败，id：{}->营销区域:{}",report.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
@@ -168,8 +170,9 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBoxExamineExceptionReport::getServiceDeptName, serviceName)
                         .set(IceBoxExamineExceptionReport::getGroupDeptId, groupId)
                         .set(IceBoxExamineExceptionReport::getGroupDeptName, groupName)
+                        .set(IceBoxExamineExceptionReport::getHeadquartersDeptId,headquartersId)
+                        .set(IceBoxExamineExceptionReport::getHeadquartersDeptName,headquartersName)
                 );
-
             }catch (Exception e){
                 log.info("冰柜巡检报表更新失败，id：{}->营销区域:{}",examineExceptionReport.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
@@ -189,6 +192,8 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBoxHandover::getServiceDeptName, serviceName)
                         .set(IceBoxHandover::getGroupDeptId, groupId)
                         .set(IceBoxHandover::getGroupDeptName, groupName)
+                        .set(IceBoxHandover::getHeadquartersDeptId,headquartersId)
+                        .set(IceBoxHandover::getHeadquartersDeptName,headquartersName)
                 );
 
             }catch (Exception e){
@@ -210,6 +215,8 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBoxPutReport::getServiceDeptName, serviceName)
                         .set(IceBoxPutReport::getGroupDeptId, groupId)
                         .set(IceBoxPutReport::getGroupDeptName, groupName)
+                        .set(IceBoxPutReport::getHeadquartersDeptId,headquartersId)
+                        .set(IceBoxPutReport::getHeadquartersDeptName,headquartersName)
                 );
 
             }catch (Exception e){
@@ -231,6 +238,8 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBoxTransferHistory::getServiceDeptName, serviceName)
                         .set(IceBoxTransferHistory::getGroupDeptId, groupId)
                         .set(IceBoxTransferHistory::getGroupDeptName, groupName)
+                        .set(IceBoxTransferHistory::getHeadquartersDeptId,headquartersId)
+                        .set(IceBoxTransferHistory::getHeadquartersDeptName,headquartersName)
                 );
 
             }catch (Exception e){
@@ -252,6 +261,8 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceRepairOrder::getServiceDeptName, serviceName)
                         .set(IceRepairOrder::getGroupDeptId, groupId)
                         .set(IceRepairOrder::getGroupDeptName, groupName)
+                        .set(IceRepairOrder::getHeadquartersDeptId,headquartersId)
+                        .set(IceRepairOrder::getHeadquartersDeptName,headquartersName)
                 );
 
             }catch (Exception e){

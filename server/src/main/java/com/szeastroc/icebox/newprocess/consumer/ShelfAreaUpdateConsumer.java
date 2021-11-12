@@ -1,5 +1,6 @@
 package com.szeastroc.icebox.newprocess.consumer;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.szeastroc.common.entity.customer.msg.CustomerChangeMsg;
@@ -31,6 +32,7 @@ public class ShelfAreaUpdateConsumer {
     private DisplayShelfDao displayShelfDao;
     @RabbitHandler
     public void task(CustomerChangeMsg customerChangeMsg) throws Exception {
+        log.info("陈列架消费开始：" + JSONObject.toJSONString(customerChangeMsg));
           if(customerChangeMsg.getIsStore()){
               StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(customerChangeMsg.getCustomerNumber()));
               DisplayShelfPutReport displayShelfPutReport = new DisplayShelfPutReport();
@@ -54,5 +56,6 @@ public class ShelfAreaUpdateConsumer {
                       .set(DisplayShelf::getHeadquartersDeptId,store.getHeadquartersDeptId()).set(DisplayShelf::getHeadquartersDeptName,store.getHeadquartersDeptName())
                       .set(DisplayShelf::getPutName,store.getStoreName()).set(DisplayShelf::getCustomerType,store.getStoreType()));
           }
+        log.info("陈列架消费结束：" + JSONObject.toJSONString(customerChangeMsg));
     }
 }

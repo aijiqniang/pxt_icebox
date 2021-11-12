@@ -32,8 +32,8 @@ public class DirectExchangeConfig {
     }
     //陈列架营销区域修改交换机
     @Bean
-    public DirectExchange shelfCustomerChange(){
-        return (DirectExchange)ExchangeBuilder.directExchange(MqConstant.SHELF_CUSTOMER_CHANGE).durable(true).build();
+    public FanoutExchange shelfCustomerChange(){
+        return (FanoutExchange)ExchangeBuilder.fanoutExchange(MqConstant.SHELF_CUSTOMER_CHANGE).durable(true).build();
     }
 
     // 定义交队列
@@ -59,7 +59,7 @@ public class DirectExchangeConfig {
 
     @Bean
     public Binding bindingShelfUpdateExchange() {
-        Binding binding = BindingBuilder.bind(shelfUpdateQueue()).to(shelfCustomerChange()).with(MqConstant.Q_SHELF_UPDATE);
+        Binding binding = BindingBuilder.bind(shelfUpdateQueue()).to(shelfCustomerChange());
         return binding;
     }
 

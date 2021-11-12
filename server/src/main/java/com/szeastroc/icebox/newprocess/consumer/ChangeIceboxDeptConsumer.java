@@ -2,6 +2,7 @@ package com.szeastroc.icebox.newprocess.consumer;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.szeastroc.common.entity.customer.msg.CustomerChangeMsg;
 import com.szeastroc.common.entity.customer.vo.StoreInfoDtoVo;
@@ -138,17 +139,16 @@ public class ChangeIceboxDeptConsumer {
         List<IceBackApplyReport> iceBackApplyReports = iceBackApplyReportDao.selectList(Wrappers.<IceBackApplyReport>lambdaQuery().eq(IceBackApplyReport::getCustomerNumber, changeMsg.getCustomerNumber()));
         for(IceBackApplyReport report : iceBackApplyReports){
             try {
-                report.setGroupDeptId(groupId);
-                report.setGroupDeptName(groupName);
-                report.setServiceDeptId(serviceId);
-                report.setServiceDeptName(serviceName);
-                report.setRegionDeptId(regionId);
-                report.setRegionDeptName(regionName);
-                report.setBusinessDeptId(businessId);
-                report.setBusinessDeptName(businessName);
-                report.setHeadquartersDeptId(headquartersId);
-                report.setHeadquartersDeptName(headquartersName);
-                iceBackApplyReportDao.updateById(report);
+                iceBackApplyReportDao.update(null, new LambdaUpdateWrapper<IceBackApplyReport>()
+                        .set(IceBackApplyReport::getBusinessDeptId, businessId)
+                        .set(IceBackApplyReport::getBusinessDeptName, businessName)
+                        .set(IceBackApplyReport::getRegionDeptId, regionId)
+                        .set(IceBackApplyReport::getRegionDeptName, regionName)
+                        .set(IceBackApplyReport::getServiceDeptId, serviceId)
+                        .set(IceBackApplyReport::getServiceDeptName, serviceName)
+                        .set(IceBackApplyReport::getGroupDeptId, groupId)
+                        .set(IceBackApplyReport::getGroupDeptName, groupName)
+                );
             }catch (Exception e){
                 log.info("冰柜退还报表更新失败，id：{}->营销区域:{}",report.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
@@ -159,17 +159,17 @@ public class ChangeIceboxDeptConsumer {
         List<IceBoxExamineExceptionReport> examineExceptionReports = iceBoxExamineExceptionReportDao.selectList(Wrappers.<IceBoxExamineExceptionReport>lambdaQuery().eq(IceBoxExamineExceptionReport::getPutCustomerNumber, changeMsg.getCustomerNumber()));
         for(IceBoxExamineExceptionReport examineExceptionReport : examineExceptionReports){
             try {
-                examineExceptionReport.setGroupDeptId(groupId);
-                examineExceptionReport.setGroupDeptName(groupName);
-                examineExceptionReport.setServiceDeptId(serviceId);
-                examineExceptionReport.setServiceDeptName(serviceName);
-                examineExceptionReport.setRegionDeptId(regionId);
-                examineExceptionReport.setRegionDeptName(regionName);
-                examineExceptionReport.setBusinessDeptId(businessId);
-                examineExceptionReport.setBusinessDeptName(businessName);
-                examineExceptionReport.setHeadquartersDeptId(headquartersId);
-                examineExceptionReport.setHeadquartersDeptName(headquartersName);
-                iceBoxExamineExceptionReportDao.updateById(examineExceptionReport);
+                iceBoxExamineExceptionReportDao.update(null, new LambdaUpdateWrapper<IceBoxExamineExceptionReport>()
+                        .set(IceBoxExamineExceptionReport::getBusinessDeptId, businessId)
+                        .set(IceBoxExamineExceptionReport::getBusinessDeptName, businessName)
+                        .set(IceBoxExamineExceptionReport::getRegionDeptId, regionId)
+                        .set(IceBoxExamineExceptionReport::getRegionDeptName, regionName)
+                        .set(IceBoxExamineExceptionReport::getServiceDeptId, serviceId)
+                        .set(IceBoxExamineExceptionReport::getServiceDeptName, serviceName)
+                        .set(IceBoxExamineExceptionReport::getGroupDeptId, groupId)
+                        .set(IceBoxExamineExceptionReport::getGroupDeptName, groupName)
+                );
+
             }catch (Exception e){
                 log.info("冰柜巡检报表更新失败，id：{}->营销区域:{}",examineExceptionReport.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
@@ -180,17 +180,17 @@ public class ChangeIceboxDeptConsumer {
         List<IceBoxHandover> iceBoxHandovers = iceBoxHandoverDao.selectList(Wrappers.<IceBoxHandover>lambdaQuery().eq(IceBoxHandover::getStoreNumber, changeMsg.getCustomerNumber()));
         for(IceBoxHandover handover : iceBoxHandovers){
             try {
-                handover.setGroupDeptId(groupId);
-                handover.setGroupDeptName(groupName);
-                handover.setServiceDeptId(serviceId);
-                handover.setServiceDeptName(serviceName);
-                handover.setRegionDeptId(regionId);
-                handover.setRegionDeptName(regionName);
-                handover.setBusinessDeptId(businessId);
-                handover.setBusinessDeptName(businessName);
-                handover.setHeadquartersDeptId(headquartersId);
-                handover.setHeadquartersDeptName(headquartersName);
-                iceBoxHandoverDao.updateById(handover);
+                iceBoxHandoverDao.update(null, new LambdaUpdateWrapper<IceBoxHandover>()
+                        .set(IceBoxHandover::getBusinessDeptId, businessId)
+                        .set(IceBoxHandover::getBusinessDeptName, businessName)
+                        .set(IceBoxHandover::getRegionDeptId, regionId)
+                        .set(IceBoxHandover::getRegionDeptName, regionName)
+                        .set(IceBoxHandover::getServiceDeptId, serviceId)
+                        .set(IceBoxHandover::getServiceDeptName, serviceName)
+                        .set(IceBoxHandover::getGroupDeptId, groupId)
+                        .set(IceBoxHandover::getGroupDeptName, groupName)
+                );
+
             }catch (Exception e){
                 log.info("冰柜交接报表更新失败，id：{}->营销区域:{}",handover.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
@@ -201,17 +201,17 @@ public class ChangeIceboxDeptConsumer {
         List<IceBoxPutReport> iceBoxPutReports = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().eq(IceBoxPutReport::getPutCustomerNumber, changeMsg.getCustomerNumber()));
         for(IceBoxPutReport putReport : iceBoxPutReports){
             try {
-                putReport.setGroupDeptId(groupId);
-                putReport.setGroupDeptName(groupName);
-                putReport.setServiceDeptId(serviceId);
-                putReport.setServiceDeptName(serviceName);
-                putReport.setRegionDeptId(regionId);
-                putReport.setRegionDeptName(regionName);
-                putReport.setBusinessDeptId(businessId);
-                putReport.setBusinessDeptName(businessName);
-                putReport.setHeadquartersDeptId(headquartersId);
-                putReport.setHeadquartersDeptName(headquartersName);
-                iceBoxPutReportDao.updateById(putReport);
+                iceBoxPutReportDao.update(null, new LambdaUpdateWrapper<IceBoxPutReport>()
+                        .set(IceBoxPutReport::getBusinessDeptId, businessId)
+                        .set(IceBoxPutReport::getBusinessDeptName, businessName)
+                        .set(IceBoxPutReport::getRegionDeptId, regionId)
+                        .set(IceBoxPutReport::getRegionDeptName, regionName)
+                        .set(IceBoxPutReport::getServiceDeptId, serviceId)
+                        .set(IceBoxPutReport::getServiceDeptName, serviceName)
+                        .set(IceBoxPutReport::getGroupDeptId, groupId)
+                        .set(IceBoxPutReport::getGroupDeptName, groupName)
+                );
+
             }catch (Exception e){
                 log.info("冰柜投放报表更新失败，id：{}->营销区域:{}",putReport.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
@@ -222,17 +222,17 @@ public class ChangeIceboxDeptConsumer {
         List<IceBoxTransferHistory> iceBoxTransferHistories = iceBoxTransferHistoryDao.selectList(Wrappers.<IceBoxTransferHistory>lambdaQuery().eq(IceBoxTransferHistory::getOldSupplierNumber, changeMsg.getCustomerNumber()));
         for(IceBoxTransferHistory transferHistory : iceBoxTransferHistories){
             try {
-                transferHistory.setGroupDeptId(groupId);
-                transferHistory.setGroupDeptName(groupName);
-                transferHistory.setServiceDeptId(serviceId);
-                transferHistory.setServiceDeptName(serviceName);
-                transferHistory.setRegionDeptId(regionId);
-                transferHistory.setRegionDeptName(regionName);
-                transferHistory.setBusinessDeptId(businessId);
-                transferHistory.setBusinessDeptName(businessName);
-                transferHistory.setHeadquartersDeptId(headquartersId);
-                transferHistory.setHeadquartersDeptName(headquartersName);
-                iceBoxTransferHistoryDao.updateById(transferHistory);
+                iceBoxTransferHistoryDao.update(null, new LambdaUpdateWrapper<IceBoxTransferHistory>()
+                        .set(IceBoxTransferHistory::getBusinessDeptId, businessId)
+                        .set(IceBoxTransferHistory::getBusinessDeptName, businessName)
+                        .set(IceBoxTransferHistory::getRegionDeptId, regionId)
+                        .set(IceBoxTransferHistory::getRegionDeptName, regionName)
+                        .set(IceBoxTransferHistory::getServiceDeptId, serviceId)
+                        .set(IceBoxTransferHistory::getServiceDeptName, serviceName)
+                        .set(IceBoxTransferHistory::getGroupDeptId, groupId)
+                        .set(IceBoxTransferHistory::getGroupDeptName, groupName)
+                );
+
             }catch (Exception e){
                 log.info("冰柜变更报表更新失败，id：{}->营销区域:{}",transferHistory.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();
@@ -243,17 +243,17 @@ public class ChangeIceboxDeptConsumer {
         List<IceRepairOrder> iceRepairOrders = iceRepairOrderDao.selectList(Wrappers.<IceRepairOrder>lambdaQuery().eq(IceRepairOrder::getCustomerNumber, changeMsg.getCustomerNumber()));
         for(IceRepairOrder order : iceRepairOrders){
             try {
-                order.setGroupDeptId(groupId);
-                order.setGroupDeptName(groupName);
-                order.setServiceDeptId(serviceId);
-                order.setServiceDeptName(serviceName);
-                order.setRegionDeptId(regionId);
-                order.setRegionDeptName(regionName);
-                order.setBusinessDeptId(businessId);
-                order.setBusinessDeptName(businessName);
-                order.setHeadquartersDeptId(headquartersId);
-                order.setHeadquartersDeptName(headquartersName);
-                iceRepairOrderDao.updateById(order);
+                iceRepairOrderDao.update(null, new LambdaUpdateWrapper<IceRepairOrder>()
+                        .set(IceRepairOrder::getBusinessDeptId, businessId)
+                        .set(IceRepairOrder::getBusinessDeptName, businessName)
+                        .set(IceRepairOrder::getRegionDeptId, regionId)
+                        .set(IceRepairOrder::getRegionDeptName, regionName)
+                        .set(IceRepairOrder::getServiceDeptId, serviceId)
+                        .set(IceRepairOrder::getServiceDeptName, serviceName)
+                        .set(IceRepairOrder::getGroupDeptId, groupId)
+                        .set(IceRepairOrder::getGroupDeptName, groupName)
+                );
+
             }catch (Exception e){
                 log.info("冰柜维修订单报表更新失败，id：{}->营销区域:{}",order.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
                 e.printStackTrace();

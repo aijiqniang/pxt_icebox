@@ -63,10 +63,6 @@ public class ChangeIceboxDeptConsumer {
         log.info("修改冰柜营销区域信息的请求参数---》【{}】", JSON.toJSONString(changeMsg));
         List<IceBox> iceBoxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStoreNumber, changeMsg.getCustomerNumber()));
 
-        if(CollectionUtil.isEmpty(iceBoxList) ){
-            return;
-        }
-
         Integer serviceDeptId = null;
         StoreInfoDtoVo storeInfo = new StoreInfoDtoVo();
         SupplierInfoSessionVo supplierInfo = new SupplierInfoSessionVo();

@@ -150,6 +150,7 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBackApplyReport::getGroupDeptName, groupName)
                         .set(IceBackApplyReport::getHeadquartersDeptId,headquartersId)
                         .set(IceBackApplyReport::getHeadquartersDeptName,headquartersName)
+                        .eq(IceBackApplyReport::getId,report.getId())
                 );
             }catch (Exception e){
                 log.info("冰柜退还报表更新失败，id：{}->营销区域:{}",report.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
@@ -172,6 +173,7 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBoxExamineExceptionReport::getGroupDeptName, groupName)
                         .set(IceBoxExamineExceptionReport::getHeadquartersDeptId,headquartersId)
                         .set(IceBoxExamineExceptionReport::getHeadquartersDeptName,headquartersName)
+                        .eq(IceBoxExamineExceptionReport::getId,examineExceptionReport.getId())
                 );
             }catch (Exception e){
                 log.info("冰柜巡检报表更新失败，id：{}->营销区域:{}",examineExceptionReport.getId(),groupId+groupName+serviceId+serviceName+regionId+regionName+businessId+businessName+headquartersId+headquartersName);
@@ -194,6 +196,7 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBoxHandover::getGroupDeptName, groupName)
                         .set(IceBoxHandover::getHeadquartersDeptId,headquartersId)
                         .set(IceBoxHandover::getHeadquartersDeptName,headquartersName)
+                        .eq(IceBoxHandover::getId,handover.getId())
                 );
 
             }catch (Exception e){
@@ -217,6 +220,7 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBoxPutReport::getGroupDeptName, groupName)
                         .set(IceBoxPutReport::getHeadquartersDeptId,headquartersId)
                         .set(IceBoxPutReport::getHeadquartersDeptName,headquartersName)
+                        .eq(IceBoxPutReport::getId,putReport.getId())
                 );
 
             }catch (Exception e){
@@ -240,6 +244,7 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceBoxTransferHistory::getGroupDeptName, groupName)
                         .set(IceBoxTransferHistory::getHeadquartersDeptId,headquartersId)
                         .set(IceBoxTransferHistory::getHeadquartersDeptName,headquartersName)
+                        .eq(IceBoxTransferHistory::getId,transferHistory.getId())
                 );
 
             }catch (Exception e){
@@ -263,6 +268,7 @@ public class ChangeIceboxDeptConsumer {
                         .set(IceRepairOrder::getGroupDeptName, groupName)
                         .set(IceRepairOrder::getHeadquartersDeptId,headquartersId)
                         .set(IceRepairOrder::getHeadquartersDeptName,headquartersName)
+                        .eq(IceRepairOrder::getId,order.getId())
                 );
 
             }catch (Exception e){

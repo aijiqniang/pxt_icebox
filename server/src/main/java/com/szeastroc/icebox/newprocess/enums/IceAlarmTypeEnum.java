@@ -13,8 +13,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum IceAlarmTypeEnum {
-    DISTANCE(1, "冰柜距离门店超过200m"),
-    OUTLINE(2, "冰柜离线");
+    DISTANCE(1, "位移报警"),
+    OUTLINE(2, "断电报警"),
+    OVER_TEMPERTURE(3,"超温报警"),
+    PERSON(4,"人流量报警");
 
     private int type;
     private String desc;

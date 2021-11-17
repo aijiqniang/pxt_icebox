@@ -68,12 +68,35 @@ public class ChangeIceboxDeptConsumer {
         StoreInfoDtoVo storeInfo = new StoreInfoDtoVo();
         SupplierInfoSessionVo supplierInfo = new SupplierInfoSessionVo();
 
+
+        Integer groupId = null;
+        String groupName = null;
+        Integer serviceId = null;
+        String serviceName = null;
+        Integer regionId = null;
+        String regionName = null;
+        Integer businessId = null;
+        String businessName = null;
+        Integer headquartersId = null;
+        String headquartersName = null;
+
         if(changeMsg.getIsStore()){
             storeInfo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(changeMsg.getCustomerNumber()));
             if(storeInfo == null){
                 return;
             }
             serviceDeptId = storeInfo.getServiceDeptId();
+
+            groupId = storeInfo.getGroupDeptId();
+            groupName = storeInfo.getGroupDeptName();
+            serviceId = storeInfo.getServiceDeptId();
+            serviceName = storeInfo.getServiceDeptName();
+            regionId = storeInfo.getRegionDeptId();
+            regionName = storeInfo.getRegionDeptName();
+            businessId = storeInfo.getBusinessDeptId();
+            businessName = storeInfo.getBusinessDeptName();
+            headquartersId = storeInfo.getHeadquartersDeptId();
+            headquartersName = storeInfo.getHeadquartersDeptName();
 
         }else {
             supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(changeMsg.getCustomerNumber()));
@@ -82,6 +105,17 @@ public class ChangeIceboxDeptConsumer {
             }
 
             serviceDeptId = supplierInfo.getServiceDeptId();
+
+            groupId = supplierInfo.getGroupDeptId();
+            groupName = supplierInfo.getGroupDeptName();
+            serviceId = supplierInfo.getServiceDeptId();
+            serviceName = supplierInfo.getServiceDeptName();
+            regionId = supplierInfo.getRegionDeptId();
+            regionName = supplierInfo.getRegionDeptName();
+            businessId = supplierInfo.getBusinessDeptId();
+            businessName = supplierInfo.getBusinessDeptName();
+            headquartersId = supplierInfo.getHeadquartersDeptId();
+            headquartersName = supplierInfo.getHeadquartersDeptName();
         }
 
         //icebox信息
@@ -98,42 +132,6 @@ public class ChangeIceboxDeptConsumer {
             }
         }
 
-        Map<Integer, SessionDeptInfoVo> deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(serviceDeptId));
-        Integer groupId = null;
-        String groupName = null;
-        Integer serviceId = null;
-        String serviceName = null;
-        Integer regionId = null;
-        String regionName = null;
-        Integer businessId = null;
-        String businessName = null;
-        Integer headquartersId = null;
-        String headquartersName = null;
-        SessionDeptInfoVo group = deptMap.get(1);
-        if(Objects.nonNull(group)){
-            groupId = group.getId();
-            groupName = group.getName();
-        }
-        SessionDeptInfoVo service = deptMap.get(2);
-        if(Objects.nonNull(service)){
-            serviceId = service.getId();
-            serviceName = service.getName();
-        }
-        SessionDeptInfoVo region = deptMap.get(3);
-        if(Objects.nonNull(region)){
-            regionId = region.getId();
-            regionName = region.getName();
-        }
-        SessionDeptInfoVo business = deptMap.get(4);
-        if(Objects.nonNull(business)){
-            businessId = business.getId();
-            businessName = business.getName();
-        }
-        SessionDeptInfoVo headquarters = deptMap.get(5);
-        if(Objects.nonNull(headquarters)){
-            headquartersId = headquarters.getId();
-            headquartersName = headquarters.getName();
-        }
 
         //t_ice_back_apply_report
 

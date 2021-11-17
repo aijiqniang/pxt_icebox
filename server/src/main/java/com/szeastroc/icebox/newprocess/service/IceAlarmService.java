@@ -14,4 +14,6 @@ public interface IceAlarmService extends IService<IceAlarm> {
     List<IceAlarm> getAlarmList(Integer boxId);
 
     IPage<IceAlarm> findByPage(IceAlarm.PageRequest boxId);
+
+    List<String> getFeedBacks(Integer type);
 }

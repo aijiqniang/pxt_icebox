@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.bouncycastle.asn1.x509.V2AttributeCertificateInfoGenerator;
 
 /**
  * 
@@ -102,6 +103,12 @@ public class IceAlarm implements Serializable {
 
     @TableField(value = "alarm_remove_time")
     private Date alarmRemoveTime;
+
+    @TableField(value = "remark")
+    private String remark;
+
+    @TableField(value = "repair_time")
+    private Date repairTime;
 
     @Data
     @AllArgsConstructor

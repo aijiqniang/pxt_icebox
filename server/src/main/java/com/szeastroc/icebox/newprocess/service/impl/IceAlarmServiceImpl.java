@@ -7,6 +7,7 @@ import com.szeastroc.common.feign.customer.FeignStoreClient;
 import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
 import com.szeastroc.icebox.newprocess.entity.IceAlarm;
+import com.szeastroc.icebox.newprocess.enums.IceAlarmFeedBackEnum;
 import com.szeastroc.icebox.newprocess.service.IceAlarmService;
 import com.szeastroc.icebox.newprocess.dao.IceAlarmMapper;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,13 @@ implements IceAlarmService{
     public IPage<IceAlarm> findByPage(IceAlarm.PageRequest pageRequest) {
         IPage<IceAlarm> iceAlarmIPage = iceAlarmMapper.selectPage(pageRequest,Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getIceBoxId,pageRequest.getBoxId()));
         return iceAlarmIPage;
+    }
+
+    @Override
+    public List<String> getFeedBacks(Integer type) {
+
+        List<String> desc = IceAlarmFeedBackEnum.getDesc(type);
+        return desc;
     }
 }
 

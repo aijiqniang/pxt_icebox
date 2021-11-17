@@ -59,11 +59,11 @@ public class IceboxEventController {
 
     @ApiOperation("智能冰柜小程序列表")
     @GetMapping("/xfaList")
-    public CommonResponse<List<IceEventVo.IceboxList>> xfaList(@RequestParam("userId")Integer userId,@RequestParam(required = false,value = "assetId")String assetId){
+    public CommonResponse<List<IceEventVo.IceboxList>> xfaList(@RequestParam("userId")Integer userId,@RequestParam(required = false,value = "assetId")String assetId,@RequestParam(required = false,value = "relateCode")String relateCode){
         if(userId == null || userId == 0){
             return new CommonResponse<List<IceEventVo.IceboxList>>(Constants.API_CODE_FAIL, "用户不能为空",null);
         }
-        List<IceEventVo.IceboxList> list = iceEventRecordService.xfaList(userId,assetId);
+        List<IceEventVo.IceboxList> list = iceEventRecordService.xfaList(userId,assetId,relateCode);
         return new CommonResponse<List<IceEventVo.IceboxList>>(Constants.API_CODE_SUCCESS, null,list);
     }
 
@@ -88,12 +88,7 @@ public class IceboxEventController {
     @ApiOperation("定时任务消除报警")
     @GetMapping("/sychAlarm")
     public void sychAlarm(@RequestParam(value = "alarmId",required = false)Integer alarmId){
-
-        try {
-            CompletableFuture.runAsync(()->iceEventRecordService.sychAlarm(alarmId), ExecutorServiceFactory.getInstance());
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        iceEventRecordService.sychAlarm(alarmId);
     }
 
     @ApiOperation(("后台报警记录"))
@@ -102,4 +97,13 @@ public class IceboxEventController {
         IPage<IceAlarm> list = iceAlarmService.findByPage(pageRequest);
         return new CommonResponse<IPage<IceAlarm>>(Constants.API_CODE_SUCCESS, null,list);
     }
+
+    @ApiOperation(("通过类型获取报警反馈"))
+    @PostMapping("/getFeedBacks")
+    public CommonResponse<List<String>> getFeedBacks(@RequestParam(value = "type",required = false)Integer type){
+        List<String> str = iceAlarmService.getFeedBacks(type);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,str);
+    }
+
+
 }

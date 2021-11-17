@@ -19,7 +19,7 @@ public interface IceEventRecordService extends IService<IceEventRecord> {
 
     void createTable(String startTime, String endTime);
 
-    List<IceEventVo.IceboxList> xfaList(Integer userId, String assetId);
+    List<IceEventVo.IceboxList> xfaList(Integer userId, String assetId,String relateCode);
 
     IceEventVo.IceboxDetail boxDetail(String boxId);
 

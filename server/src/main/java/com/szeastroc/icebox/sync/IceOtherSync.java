@@ -296,7 +296,7 @@ public class IceOtherSync {
             String applyNumber = iceBackApply.getApplyNumber();
             IceBackApplyRelateBox one = iceBackApplyRelateBoxService.getOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber, applyNumber));
             IceBox iceBox = iceBoxDao.selectById(one.getBoxId());
-            IceBackApplyReport backApplyReport = iceBackOrderService.generateBackReport(iceBox, applyNumber, iceBackApply.getBackStoreNumber(), one.getFreeType());
+            IceBackApplyReport backApplyReport = iceBackOrderService.generateBackReport(iceBox, applyNumber, iceBackApply.getBackStoreNumber(), one.getFreeType(),null,null);
             SubordinateInfoVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.readId(one.getBackSupplierId()));
             backApplyReport.setDealerName(supplier.getName());
             backApplyReport.setDealerNumber(supplier.getNumber());

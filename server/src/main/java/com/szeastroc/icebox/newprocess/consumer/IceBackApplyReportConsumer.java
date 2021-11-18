@@ -50,7 +50,7 @@ public class IceBackApplyReportConsumer {
         Integer count = iceBackApplyReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
         // 列
         String[] columnName = {"事业部", "大区", "服务处", "流程编号", "所属经销商编号", "所属经销商名称", "退还客户编号", "退还客户名称", "退还客户类型","客户联系人","联系人电话","省","市","区县",
-                "退还客户地址", "退还日期", "冰柜型号", "冰柜编号", "是否免押", "押金金额", "审核人员", "审核人职务", "审核日期","业务员","业务员电话", "退还状态","审批备注","商户编号"};
+                "退还客户地址", "退还日期", "冰柜型号", "冰柜编号", "是否免押", "押金金额", "审核人员", "审核人职务", "审核日期","业务员","业务员电话", "退还状态","审批备注","商户编号","退还备注","退还原因"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -103,6 +103,8 @@ public class IceBackApplyReportConsumer {
                                 eachDataRow.createCell(25).setCellValue(IceBackStatusEnum.getDesc(report.getExamineStatus()));
                                 eachDataRow.createCell(26).setCellValue(report.getReason());
                                 eachDataRow.createCell(27).setCellValue(report.getMerchantNumber());
+                                eachDataRow.createCell(28).setCellValue(report.getBackRemark());
+                                eachDataRow.createCell(29).setCellValue(report.getBackReason());
 
                             }
                         }

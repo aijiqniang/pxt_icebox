@@ -12,7 +12,7 @@ import com.szeastroc.icebox.oldprocess.vo.query.IceDepositPage;
 
 public interface IceBackOrderService extends IService<IceBackOrder> {
 
-    void takeBackOrder(Integer iceBoxId);
+    void takeBackOrder(Integer iceBoxId,String returnRemark);
 
     void doBackOrder(SimpleIceBoxDetailVo simpleIceBoxDetailVo);
 
@@ -30,6 +30,6 @@ public interface IceBackOrderService extends IService<IceBackOrder> {
 
     void exportRefundTransfer(IceDepositPage iceDepositPage);
 
-    IceBackApplyReport generateBackReport(IceBox iceBox, String applyNumber, String putStoreNumber, Integer freeType);
+    IceBackApplyReport generateBackReport(IceBox iceBox, String applyNumber, String putStoreNumber, Integer freeType,String returnRemark,String returnReason);
 }
 

@@ -129,7 +129,7 @@ public class RefundController {
 
     /**
      * 当审批流通过之后，业代确认  修改冰柜的状态
-     * @param simpleIceBoxDetailVo
+     * @param applyNumber
      * @return
      */
     @RequestMapping("/confirm")
@@ -137,7 +137,7 @@ public class RefundController {
     public CommonResponse confirm(@RequestParam String applyNumber) {
         // 创建审批流
         iceBackOrderService.confirm(applyNumber);
-        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
 
     }
 

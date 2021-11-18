@@ -100,4 +100,10 @@ public class IceBackApply {
      */
     @TableField(value = "is_logistics")
     private Integer isLogistics;
+
+    /**
+     * 作废备注
+     * */
+    @TableField(value = "cancel_remark")
+    private String cancelRemark;
 }

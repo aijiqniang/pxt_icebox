@@ -93,6 +93,9 @@ public class IceBoxExtendServiceImpl extends ServiceImpl<IceBoxExtendDao, IceBox
             IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, icePutApplyRelateBox.getId()).ne(IceBackApply::getExamineStatus, 3));
             if (iceBackApply != null) {
                 storeNumber = iceBackApply.getBackStoreNumber();
+                simpleIceBoxDetailVo.setReturnRemark(iceBackApply.getBackRemark());
+                simpleIceBoxDetailVo.setReturnReason(iceBackApply.getBackReason());
+                simpleIceBoxDetailVo.setIsLogistics(iceBackApply.getIsLogistics());
                 IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getBoxId, id).eq(IceBackApplyRelateBox::getApplyNumber, iceBackApply.getApplyNumber()));
                 if (iceBackApplyRelateBox != null) {
                     Integer backSupplierId = iceBackApplyRelateBox.getBackSupplierId();

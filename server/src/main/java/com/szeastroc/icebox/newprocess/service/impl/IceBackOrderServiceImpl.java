@@ -146,7 +146,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     @Override
-    public void takeBackOrder(Integer iceBoxId) {
+    public void takeBackOrder(Integer iceBoxId,String returnRemark) {
         // 校验是否可申请退还
         validateTakeBack(iceBoxId);
 
@@ -179,7 +179,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             if (examineStatus.equals(ExamineStatusEnum.IS_PASS.getStatus()) || examineStatus.equals(ExamineStatusEnum.UN_PASS.getStatus())) {
                 log.info("该冰柜最后一次申请退还已经通过或者驳回,冰柜id-->[{}]", iceBoxId);
                 // 退还编号
-                iceBackOrderServiceImpl.doBack(iceBoxId);
+                iceBackOrderServiceImpl.doBack(iceBoxId,returnRemark);
             } else {
 
                 log.info("该冰柜最后一次申请退还已经未通过或者未驳回,冰柜id-->[{}]", iceBoxId);
@@ -187,7 +187,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             }
         } else {
             // 该冰柜第一次进行退还
-            iceBackOrderServiceImpl.doBack(iceBoxId);
+            iceBackOrderServiceImpl.doBack(iceBoxId,returnRemark);
         }
 
 
@@ -197,6 +197,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     * 业代申请退还冰柜
     * */
     @Override
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     public void doBackOrder(SimpleIceBoxDetailVo simpleIceBoxDetailVo) {
         // 校验是否可申请退还
         validateTakeBack(simpleIceBoxDetailVo.getIceBoxId());
@@ -215,13 +216,13 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
             IceBackApply selectIceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber, selectApplyNumber));
 
             Integer examineStatus = selectIceBackApply.getExamineStatus();
-
+            //已经通过或者驳回，说明流程已经走完 可以继续退还
             if (examineStatus.equals(ExamineStatusEnum.IS_PASS.getStatus()) || examineStatus.equals(ExamineStatusEnum.UN_PASS.getStatus())) {
                 log.info("该冰柜最后一次申请退还已经通过或者驳回,冰柜id-->[{}]", simpleIceBoxDetailVo.getIceBoxId());
                 // 退还编号
                 iceBackOrderServiceImpl.doBackNew(simpleIceBoxDetailVo);
             } else {
-
+                //还未审批完成或者驳回，不能继续申请退还
                 log.info("该冰柜最后一次申请退还已经未通过或者未驳回,冰柜id-->[{}]", simpleIceBoxDetailVo);
                 throw new NormalOptionException(ResultEnum.ICE_BOX_IS_REFUNDING.getCode(), ResultEnum.ICE_BOX_IS_REFUNDING.getMessage());
             }
@@ -236,6 +237,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
      * 当审批流通过之后 业代确认 更改冰柜状态
      * */
     @Override
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
     public void confirm(String applyNumber) {
         JSONObject jsonObject = doTransfer(applyNumber);
         if (jsonObject != null) {
@@ -259,26 +261,16 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         IceBox iceBox = iceBoxDao.selectById(simpleIceBoxDetailVo.getIceBoxId());
         String putStoreNumber = iceBox.getPutStoreNumber();
 
-        // 查询门店的主业务员
-        Integer userId = FeignResponseUtil.getFeignData(feignStoreClient.getMainSaleManId(putStoreNumber));
-
-        if (null == userId) {
-            // 查询配送上的主业务员
-            userId = FeignResponseUtil.getFeignData(feignSupplierClient.getMainSaleManId(putStoreNumber));
-        }
-        //TODO  这里要是查不出来  是不是可以用当前的业代的userId
-        if (null == userId) {
-            throw new NormalOptionException(ResultEnum.CANNOT_FIND_MAIN_SALESMAN.getCode(), ResultEnum.CANNOT_FIND_MAIN_SALESMAN.getMessage());
-        }
         // 业务员申请关联冰柜表：申请编号 冰柜id 型号id 免押类型
         IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
                 .eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber())
                 .eq(IcePutApplyRelateBox::getBoxId, simpleIceBoxDetailVo.getIceBoxId()));
-
+        //业代退还 都是免押  免押类型 1-不免押，2-免押
+        Integer freeType = 2;
         //冰柜退还关联冰柜表：t_ice_back_apply_relate_box
         IceBackApplyRelateBox iceBackApplyRelateBox = IceBackApplyRelateBox.builder()
                 .applyNumber(applyNumber)
-                .freeType(icePutApplyRelateBox.getFreeType())
+                .freeType(freeType)
                 .boxId(simpleIceBoxDetailVo.getIceBoxId())
                 .modelId(iceBox.getModelId())
                 .build();
@@ -291,14 +283,15 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .backReason(simpleIceBoxDetailVo.getReturnReason())
                 .backRemark(simpleIceBoxDetailVo.getReturnRemark())
                 .isLogistics(simpleIceBoxDetailVo.getIsLogistics())
-                .userId(userId)
+                .userId(simpleIceBoxDetailVo.getUserId())
                 .build();
+
         //将退还的相关信息生成报表
-        this.generateBackReport(iceBox, applyNumber, putStoreNumber,icePutApplyRelateBox.getFreeType());
+        this.generateBackReport(iceBox, applyNumber, putStoreNumber,freeType,simpleIceBoxDetailVo.getReturnRemark(),simpleIceBoxDetailVo.getReturnReason());
         iceBackApplyRelateBoxDao.insert(iceBackApplyRelateBox);
         iceBackApplyDao.insert(iceBackApply);
 
-
+        //这个不知道要不要保留
         if (icePutApplyRelateBox.getFreeType().equals(FreePayTypeEnum.UN_FREE.getType())) {
             // 非免押
             IcePutOrder icePutOrder = icePutOrderDao.selectOne(Wrappers.<IcePutOrder>lambdaQuery()
@@ -1255,7 +1248,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
 
 
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
-    public void doBack(Integer iceBoxId) {
+    public void doBack(Integer iceBoxId,String returnRemark) {
         // 退还编号
         String applyNumber = "BAC" + IdUtil.simpleUUID().substring(0, 29);
 
@@ -1313,7 +1306,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .userId(userId)
                 .build();
 
-        this.generateBackReport(iceBox, applyNumber, putStoreNumber,icePutApplyRelateBox.getFreeType());
+        this.generateBackReport(iceBox, applyNumber, putStoreNumber,icePutApplyRelateBox.getFreeType(),returnRemark,null);
         iceBackApplyRelateBoxDao.insert(iceBackApplyRelateBox);
         iceBackApplyDao.insert(iceBackApply);
 
@@ -1340,7 +1333,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
     }
 
     @Override
-    public IceBackApplyReport generateBackReport(IceBox iceBox, String applyNumber, String putStoreNumber, Integer freeType){
+    public IceBackApplyReport generateBackReport(IceBox iceBox, String applyNumber, String putStoreNumber, Integer freeType,String returnRemark,String returnReason){
         Map<Integer, SessionDeptInfoVo> deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(iceBox.getDeptId()));
         Integer groupId = null;
         String groupName = null;
@@ -1447,6 +1440,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .regionDeptId(regionId).regionDeptName(regionName)
                 .headquartersDeptId(headquartersId).headquartersDeptName(headquartersName)
                 .backDate(new Date()).province(province).city(city).area(area)
+                .backReason(returnReason).backRemark(returnRemark)
                 .build();
         iceBackApplyReportService.save(report);
         return report;

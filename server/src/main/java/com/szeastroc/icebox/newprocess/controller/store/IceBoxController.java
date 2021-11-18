@@ -351,11 +351,11 @@ public class IceBoxController {
      */
     @RequestMapping("/takeBackIceBox")
     @RedisLock(key = "#iceBoxId")
-    public CommonResponse<String> takeBackIceBox(Integer iceBoxId) {
+    public CommonResponse<String> takeBackIceBox(Integer iceBoxId,String returnRemark) {
         if (iceBoxId == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        iceBackOrderService.takeBackOrder(iceBoxId);
+        iceBackOrderService.takeBackOrder(iceBoxId,returnRemark);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 
@@ -365,11 +365,11 @@ public class IceBoxController {
      * @return
      */
     @RequestMapping("/doBackIceBox")
-    public CommonResponse<String> doBackIceBox(Integer iceBoxId){
+    public CommonResponse<String> doBackIceBox(Integer iceBoxId,String returnRemark){
         if (iceBoxId == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
-        iceBackOrderService.takeBackOrder(iceBoxId);
+        iceBackOrderService.takeBackOrder(iceBoxId,returnRemark);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
     }
 

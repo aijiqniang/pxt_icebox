@@ -211,6 +211,12 @@ public class MyIceBoxController {
         return new CommonResponse(Constants.API_CODE_SUCCESS,null);
     }
 
+    @RequestMapping("cancelBoxBack")
+    public CommonResponse<IceBoxVo> cancelBoxBack(String applyNumber,String cancelRemark){
+        iceBoxService.cancelBoxBack(applyNumber,cancelRemark);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null);
+    }
+
     /**
      * 根据申请编号查询申请信息
      * @param applyNumber

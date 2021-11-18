@@ -41,7 +41,7 @@ public class IcePutApplyRelateBox {
     private Integer modelId;
 
     /**
-     * 免押类型 0:不免押1:免押
+     * 免押类型 1-不免押，2-免押
      */
     @TableField(value = "free_type")
     private Integer freeType;

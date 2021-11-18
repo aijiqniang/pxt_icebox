@@ -9,8 +9,10 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.io.Serializable;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * (DisplayShelfPutReport)表实体类
@@ -21,6 +23,8 @@ import lombok.Data;
 @SuppressWarnings("serial")
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @TableName("t_display_shelf_put_report")
 public class DisplayShelfPutReport extends Model<DisplayShelfPutReport> {
 

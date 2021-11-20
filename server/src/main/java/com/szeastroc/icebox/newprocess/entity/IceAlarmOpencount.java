@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class IceAlarmOpencount extends Model<IceAlarmOpencount> {
+@TableName(value = "t_ice_alarm_opencount")
+public class IceAlarmOpencount{
 
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
@@ -137,13 +139,5 @@ public class IceAlarmOpencount extends Model<IceAlarmOpencount> {
         this.updateTime = updateTime;
     }
 
-    /**
-     * 获取主键值
-     *
-     * @return 主键值
-     */
-    @Override
-    protected Serializable pkVal() {
-        return this.id;
-    }
+
 }

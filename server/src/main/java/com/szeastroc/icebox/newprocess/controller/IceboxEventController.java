@@ -91,6 +91,12 @@ public class IceboxEventController {
         iceEventRecordService.sychAlarm(alarmId);
     }
 
+    @ApiOperation("定时任务消除人流量报警")
+    @GetMapping("/sychAlarmPerson")
+    public void sychAlarmPerson(@RequestParam(value = "alarmId",required = false)Integer alarmId){
+        iceEventRecordService.sychAlarmPerson(alarmId);
+    }
+
     @ApiOperation(("后台报警记录"))
     @PostMapping("/getAlarmList")
     public CommonResponse<IPage<IceAlarm>> getAlarmList(@RequestBody  IceAlarm.PageRequest pageRequest){

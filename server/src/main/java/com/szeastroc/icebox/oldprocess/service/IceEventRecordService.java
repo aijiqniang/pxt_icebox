@@ -26,4 +26,6 @@ public interface IceEventRecordService extends IService<IceEventRecord> {
     void sychAlarm(Integer alarmId);
 
     void createTableMonth();
+
+    void sychAlarmPerson(Integer alarmId);
 }

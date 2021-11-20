@@ -110,6 +110,34 @@ public class IceAlarm implements Serializable {
     @TableField(value = "repair_time")
     private Date repairTime;
 
+    @TableField(value = "outline_count")
+    private Integer outlineCount;
+
+    @TableField(value = "outline_limit")
+    private Integer outlineLimit;
+
+    @TableField(value = "overTep_wd")
+    private Integer overTepWd;
+
+    @TableField(value = "overTep_count")
+    private Integer overTepCount;
+
+    @TableField(value = "overTep_limit")
+    private Integer overTepLimit;
+
+    @TableField(value = "person_count")
+    private Integer personCount;
+
+    @TableField(value = "person_time")
+    private Integer personTime;
+
+    @TableField(value = "person_limit")
+    private Integer personLimit;
+
+    @TableField(value = "openCount_id")
+    private Integer openCountId;
+
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

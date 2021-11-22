@@ -44,7 +44,7 @@ public class HisenseSignInterceptor implements HandlerInterceptor {
 //        while ((line = reader.readLine()) != null){
 //            jsonBody = jsonBody.concat(line);
 //        }
-        log.info("HisenseSignInterceptor:jsonBody:"+jsonBody);
+        //log.info("HisenseSignInterceptor:jsonBody:"+jsonBody);
         // 接收参数
         HashMap map = null;
         try {
@@ -81,10 +81,10 @@ public class HisenseSignInterceptor implements HandlerInterceptor {
         }
         builder.append("key=");
         builder.append(secretKey);
-        log.info("签名参数:"+ builder.toString());
+        //log.info("签名参数:"+ builder.toString());
         //MD5加密 并转大写
         String signCheck = MD5.md5(builder.toString()).toUpperCase();
-        log.info("签名结果:"+signCheck + ",提交签名:"+map.get("sign"));
+        //log.info("签名结果:"+signCheck + ",提交签名:"+map.get("sign"));
         //对比签名
         if(!signCheck.equals(map.get("sign"))){
             Result result = new Result();

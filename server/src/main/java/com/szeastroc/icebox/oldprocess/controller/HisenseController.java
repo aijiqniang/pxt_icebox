@@ -53,7 +53,7 @@ public class HisenseController extends BaseController {
             e.printStackTrace();
             return renderError("接收异常");
         }
-        log.info("推送结果:"+ JSON.toJSONString(render()));
+        //log.info("推送结果:"+ JSON.toJSONString(render()));
         return render();
     }
 

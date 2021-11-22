@@ -105,7 +105,7 @@ public class IceboxEventController {
     }
 
     @ApiOperation(("通过类型获取报警反馈"))
-    @PostMapping("/getFeedBacks")
+    @GetMapping("/getFeedBacks")
     public CommonResponse<List<String>> getFeedBacks(@RequestParam(value = "type",required = false)Integer type){
         List<String> str = iceAlarmService.getFeedBacks(type);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,str);

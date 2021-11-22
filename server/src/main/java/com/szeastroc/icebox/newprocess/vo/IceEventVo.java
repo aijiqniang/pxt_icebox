@@ -51,6 +51,8 @@ public class IceEventVo {
         String assetId;
         @ApiModelProperty("报警信息")
         List<IceAlarm> alarmList;
+        @ApiModelProperty("门店编号")
+        String storeNumber;
     }
 
     @Data

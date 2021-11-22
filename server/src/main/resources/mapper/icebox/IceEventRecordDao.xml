@@ -4,7 +4,7 @@
 
     <select id="getIntelIceboxs" resultType="com.szeastroc.icebox.newprocess.vo.IceEventVo$IceboxList">
         SELECT a.id iceboxId,b.external_id externalId , c.chest_model chestModel,c.chest_name chestName,b.last_put_time lastPutTime,a.deposit_money depositMoney,
-        a.status,a.asset_id assetId,b.repair_begin_time repairBeginTime,a.created_time createTime
+        a.status,a.asset_id assetId,b.repair_begin_time repairBeginTime,a.created_time createTime,put_store_number storeNumber
         FROM t_ice_box a
         left join t_ice_box_extend b on a.id = b.id
         left join t_ice_model c on a.model_id = c.id

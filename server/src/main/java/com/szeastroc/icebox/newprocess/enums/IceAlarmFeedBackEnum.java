@@ -24,7 +24,7 @@ public enum IceAlarmFeedBackEnum {
     OUTLINE_2(2,"冰柜确实被断电(非正常经营)"),
     OUTLINE_3(2,"冰柜实际未断电"),
     TEMPTUREATURE_1(3,"冰柜确实不制冷"),
-    TEMPTUREATURE_2(3,"冰柜被认为调温"),
+    TEMPTUREATURE_2(3,"冰柜被人为调温"),
     PERSON_1(4,"冰柜开门感应故障"),
     PERSON_2(4,"冰柜确实人流少（调整位置）"),
     PERSON_3(4,"冰柜确实人流少(退柜)");

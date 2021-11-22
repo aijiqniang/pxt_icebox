@@ -1636,7 +1636,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             for (SessionExamineVo sessionExamineVo : sessionExamineVos) {
                 //String applyInfoStr = jedis.get(sessionExamineVo.getVisitExamineInfoVo().getRedisKey());
                 String applyInfoStr = feignExamineClient.getByKey(sessionExamineVo.getVisitExamineInfoVo().getRedisKey());
-                JSONObject applyInfo = JSON.parseObject(applyInfoStr).getJSONObject("data");
+                JSONObject applyInfo = JSON.parseObject(applyInfoStr);
                 JSONArray iceBoxModelList = applyInfo.getJSONArray("iceBoxModelList");
                 for (Object object : iceBoxModelList) {
                     IceBoxVo boxVo = new IceBoxVo();

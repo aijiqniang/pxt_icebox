@@ -63,8 +63,7 @@ public class IceEventVo {
         String storeName;
         String address;
         Double distance;
-
-
-
+        Boolean repairing;
+        Integer backStatus;
     }
 }

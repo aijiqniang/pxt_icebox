@@ -137,6 +137,9 @@ public class IceAlarm implements Serializable {
     @TableField(value = "openCount_id")
     private Integer openCountId;
 
+    @TableField(value = "apply_type")
+    private Integer applyType;
+
 
     @Data
     @AllArgsConstructor

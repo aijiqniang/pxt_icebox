@@ -21,17 +21,12 @@ import com.szeastroc.common.feign.visit.FeignOutBacklogClient;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
-import com.szeastroc.icebox.newprocess.dao.IceAlarmMapper;
-import com.szeastroc.icebox.newprocess.dao.IceAlarmOpencountDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxDao;
-import com.szeastroc.icebox.newprocess.dao.IceBoxExtendDao;
-import com.szeastroc.icebox.newprocess.entity.IceAlarm;
-import com.szeastroc.icebox.newprocess.entity.IceAlarmOpencount;
-import com.szeastroc.icebox.newprocess.entity.IceBox;
-import com.szeastroc.icebox.newprocess.entity.IceBoxExtend;
+import com.szeastroc.icebox.newprocess.dao.*;
+import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.IceAlarmOpencountEnum;
 import com.szeastroc.icebox.newprocess.enums.IceAlarmStatusEnum;
 import com.szeastroc.icebox.newprocess.enums.IceAlarmTypeEnum;
+import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.IceEventVo;
 import com.szeastroc.icebox.oldprocess.dao.IceChestInfoDao;
 import com.szeastroc.icebox.oldprocess.dao.IceEventRecordDao;
@@ -99,6 +94,12 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
     private FeignUserClient feignUserClient;
     @Resource
     private IceAlarmOpencountDao iceAlarmOpencountDao;
+    @Resource
+    private IceRepairOrderService iceRepairOrderService;
+    @Resource
+    private IceBackApplyDao iceBackApplyDao;
+    @Resource
+    private IcePutApplyRelateBoxDao icePutApplyRelateBoxDao;
     /**
      * 冰箱数据推送业务处理
      *
@@ -252,6 +253,18 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                 }
             }
         }
+        Integer unfinishOrderCount = iceRepairOrderService.getUnfinishOrderCount(iceBox.getId());
+        if(unfinishOrderCount>0){
+            detail.setRepairing(Boolean.TRUE);
+        }else{
+            detail.setRepairing(Boolean.FALSE);
+        }
+        IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
+        IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, relateBox.getId())
+                .ne(IceBackApply::getExamineStatus, 3));
+        detail.setBackStatus(iceBackApply == null ? -1 : iceBackApply.getExamineStatus());
+
         SimpleDateFormat dayFormat = new SimpleDateFormat("yyyyMMdd");
         String nyr = dayFormat.format(new Date());
         SimpleDateFormat forMatter = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
@@ -600,7 +613,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getExternalId, hisenseDTO.getControlId()).last("limit 1"));
 
         if (null == iceBoxExtend) {
-            log.info("无效设备信息,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
+            //log.info("无效设备信息,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
         } else {
             Map<String, Object> map = new HashMap<>();
             map.put("occurrence_time", hisenseDTO.getOccurrenceTime());

@@ -1304,6 +1304,7 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
                 .backStoreNumber(putStoreNumber)
                 .oldPutId(icePutApplyRelateBox.getId())
                 .userId(userId)
+                .backRemark(returnRemark)
                 .build();
 
         this.generateBackReport(iceBox, applyNumber, putStoreNumber,icePutApplyRelateBox.getFreeType(),returnRemark,null);

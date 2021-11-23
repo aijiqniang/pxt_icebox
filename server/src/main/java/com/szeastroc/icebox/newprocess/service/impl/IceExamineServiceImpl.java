@@ -135,8 +135,10 @@ public class IceExamineServiceImpl extends ServiceImpl<IceExamineDao, IceExamine
         String assetId = select.getAssetId();
         Integer openTotal = select.getOpenTotal();
         iceExamine.setOpenCloseCount(openTotal);
-
-        IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery().eq(IceEventRecord::getAssetId, assetId).le(IceEventRecord::getOccurrenceTime, new Date()).last("limit 1"));
+        DateTime now1 = new DateTime();
+        Date todayStart = now1.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+        Date todayEnd = now1.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
+        IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery().eq(IceEventRecord::getAssetId, assetId).between(IceEventRecord::getOccurrenceTime,todayStart,todayEnd).last("limit 1"));
 
         if (iceEventRecord != null) {
             Double temperature = iceEventRecord.getTemperature();

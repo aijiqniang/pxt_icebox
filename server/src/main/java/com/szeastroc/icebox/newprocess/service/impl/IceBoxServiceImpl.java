@@ -1890,11 +1890,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     private List<IceBoxStoreVo> buildIceBoxStoreVos(List<IceBox> iceBoxes) {
         List<IceBoxStoreVo> iceBoxStoreVos = Lists.newArrayList();
+        DateTime now = new DateTime();
+        Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+        Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
         for (IceBox iceBox : iceBoxes) {
 
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
             IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery()
                     .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId())
+                    .between(IceEventRecord::getOccurrenceTime,todayStart,todayEnd)
                     .orderByDesc(IceEventRecord::getCreateTime)
                     .last("limit 1"));
             IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
@@ -2937,10 +2941,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (iceBoxExtend != null) {
                 boxVo.setQrCode(iceBoxExtend.getQrCode());
             }
-
+            DateTime now = new DateTime();
+            Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+            Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
             IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery()
                     .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId())
                     .orderByDesc(IceEventRecord::getCreateTime)
+                    .between(IceEventRecord::getOccurrenceTime,todayStart,todayEnd)
                     .last("limit 1"));
             if (iceEventRecord != null) {
                 boxVo.setDetailAddress(iceEventRecord.getDetailAddress());

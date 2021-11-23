@@ -430,10 +430,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBackApply.setUserId(simpleIceBoxDetailVo.getUserId());
         iceBackApply.setCreatedBy(simpleIceBoxDetailVo.getUserId());
         iceBackApply.setExamineId(examineId);
-//        iceBackApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
+        iceBackApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
         if(Objects.nonNull(backApplyReport)){
             backApplyReport.setExamineId(examineId);
-//            backApplyReport.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
+            backApplyReport.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
             Integer checkPersonId = userIds.get(0);
             SimpleUserInfoVo checkPerson = FeignResponseUtil.getFeignData(feignUserClient.findUserById(checkPersonId));
             backApplyReport.setCheckPerson(checkPerson.getRealname());
@@ -606,10 +606,10 @@ public class IceBackOrderServiceImpl extends ServiceImpl<IceBackOrderDao, IceBac
         iceBackApply.setUserId(simpleIceBoxDetailVo.getUserId());
         iceBackApply.setCreatedBy(simpleIceBoxDetailVo.getUserId());
         iceBackApply.setExamineId(examineId);
-//        iceBackApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
+        iceBackApply.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
         if(Objects.nonNull(backApplyReport)){
             backApplyReport.setExamineId(examineId);
-//            backApplyReport.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
+            backApplyReport.setExamineStatus(ExamineStatusEnum.IS_DEFAULT.getStatus());
             Integer checkPersonId = userIds.get(0);
             SimpleUserInfoVo checkPerson = FeignResponseUtil.getFeignData(feignUserClient.findUserById(checkPersonId));
             backApplyReport.setCheckPerson(checkPerson.getRealname());

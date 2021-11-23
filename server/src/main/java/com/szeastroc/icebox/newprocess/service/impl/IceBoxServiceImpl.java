@@ -63,11 +63,8 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
-import com.szeastroc.icebox.newprocess.service.IceBoxService;
-import com.szeastroc.icebox.newprocess.service.IcePutOrderService;
-import com.szeastroc.icebox.newprocess.service.IceTransferRecordService;
+import com.szeastroc.icebox.newprocess.service.*;
 import com.szeastroc.icebox.newprocess.vo.*;
-import com.szeastroc.icebox.newprocess.service.IceRepairOrderService;
 import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
 import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
@@ -165,6 +162,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final FeignIceBoxExamineUserClient feignIceBoxExamineUserClient;
     private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
     private final DmsUrlConfig dmsUrlConfig;
+    private final IceBackApplyReportService iceBackApplyReportService;
     @Autowired
     private IceBoxService iceBoxService;
     @Autowired
@@ -3522,6 +3520,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
             for (IceBox iceBox : iceBoxes) {
                 IceBoxVo boxVo = buildIceBoxVo(dateFormat, iceBox);
+                IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
                 LambdaQueryWrapper<IceExamine> wrapper = Wrappers.<IceExamine>lambdaQuery();
                 wrapper.eq(IceExamine::getIceBoxId, iceBox.getId()).orderByDesc(IceExamine::getId).last("limit 1");
 //                wrapper.and(x -> x.eq(IceExamine::getExaminStatus,ExamineStatus.DEFAULT_EXAMINE.getStatus()).or().eq(IceExamine::getExaminStatus,ExamineStatus.DOING_EXAMINE.getStatus()));
@@ -3535,6 +3534,18 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     }
                 } else {
                     boxVo.setIceStatus(iceBox.getStatus());
+                }
+                IcePutApplyRelateBox relateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery().eq(IcePutApplyRelateBox::getApplyNumber, iceBoxExtend.getLastApplyNumber()).eq(IcePutApplyRelateBox::getBoxId, iceBox.getId()));
+                if (relateBox != null) {
+                    IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getOldPutId, relateBox.getId())
+                            .ne(IceBackApply::getExamineStatus, 3));
+                    boxVo.setBackStatus(iceBackApply == null ? -1 : iceBackApply.getExamineStatus());
+                }
+                Integer unfinishOrderCount = iceRepairOrderService.getUnfinishOrderCount(iceBox.getId());
+                if(unfinishOrderCount>0){
+                    boxVo.setRepairing(Boolean.TRUE);
+                }else{
+                    boxVo.setRepairing(Boolean.FALSE);
                 }
                 //门店拜访频率
                 boxVo.setVisitTypeName(VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(requestVo.getStoreNumber()))));
@@ -3811,7 +3822,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Override
     public Map<String, List<IceBoxVo>> findPutingIceBoxListNew(IceBoxRequestVo requestVo) {
         List<IceBoxVo> iceBoxVos = new ArrayList<>();
-
         LambdaQueryWrapper<PutStoreRelateModel> wrapper = Wrappers.<PutStoreRelateModel>lambdaQuery();
         wrapper.eq(PutStoreRelateModel::getPutStoreNumber, requestVo.getStoreNumber());
         wrapper.ne(PutStoreRelateModel::getPutStatus, PutStatus.FINISH_PUT.getStatus());
@@ -3837,7 +3847,6 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 iceBoxVos.addAll(backIceBoxVos);
             }
         }
-
         Map<String, List<IceBoxVo>> map = Streams.toStream(iceBoxVos).collect(Collectors.groupingBy(IceBoxVo::getApplyNumber));
         return map;
     }
@@ -4329,6 +4338,25 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
         }
 
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class, value = "transactionManager")
+    public void cancelBoxBack(String applyNumber,String cancelRemark) {
+        //冰柜退还的时候，将相关的数据存放到t_ice_back_apply_relate_box表，根据这个表来查询是否有退还的信息
+        IceBackApplyRelateBox iceBackApplyRelateBox = iceBackApplyRelateBoxDao.selectOne(Wrappers.<IceBackApplyRelateBox>lambdaQuery().eq(IceBackApplyRelateBox::getApplyNumber,applyNumber));
+        if(Objects.isNull(iceBackApplyRelateBox)){
+            throw new ImproperOptionException("不存在冰柜退还信息！");
+        }
+        IceBackApply iceBackApply = iceBackApplyDao.selectOne(Wrappers.<IceBackApply>lambdaQuery().eq(IceBackApply::getApplyNumber,iceBackApplyRelateBox.getApplyNumber()));
+        if(Objects.nonNull(iceBackApply)){
+            //退还的逻辑中，是要查询不等于3的状态来判断是否是第一次退还  作废掉 也让它等于3  避免逻辑混乱  这里的3 相当于驳回状态
+            iceBackApply.setExamineStatus(3);
+            iceBackApply.setCancelRemark(cancelRemark);
+            iceBackApplyDao.updateById(iceBackApply);
+            //删除报表的数据
+            iceBackApplyReportService.remove(Wrappers.<IceBackApplyReport>lambdaQuery().eq(IceBackApplyReport::getApplyNumber, iceBackApply.getApplyNumber()));
+        }
     }
 
     private void deleteBacklogByCode(IceBoxVo iceBoxVo) {

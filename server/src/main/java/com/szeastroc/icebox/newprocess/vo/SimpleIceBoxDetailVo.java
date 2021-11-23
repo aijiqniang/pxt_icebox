@@ -19,6 +19,25 @@ public class SimpleIceBoxDetailVo {
      */
     private Integer id;
 
+    /**
+     * 冰柜id
+     * */
+    private Integer iceBoxId;
+
+    /**
+     * 退还原因
+     * */
+    private String returnReason;
+
+    /**
+     * 退还备注
+     * */
+    private String returnRemark;
+
+    /**
+     * 是否需要物流介入 0-是 1-否
+     * */
+    private Integer isLogistics;
 
     /**
      * 东鹏资产id

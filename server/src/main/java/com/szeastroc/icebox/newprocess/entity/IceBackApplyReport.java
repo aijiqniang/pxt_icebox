@@ -189,4 +189,16 @@ public class IceBackApplyReport {
      */
     @TableField(exist = false)
     private String merchantNumber;
+
+    /**
+     * 退还原因
+     */
+    @TableField(value = "back_reason")
+    private String backReason;
+
+    /**
+     * 退还备注
+     */
+    @TableField(value = "back_remark")
+    private String backRemark;
 }

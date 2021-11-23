@@ -114,6 +114,35 @@ public class RefundController {
     }
 
     /**
+     * 业务员直接申请冰柜退还 创建审批流
+     * @param simpleIceBoxDetailVo
+     * @return
+     */
+    @RequestMapping("/doBackOrder")
+    @MonitorAnnotation
+    public CommonResponse doBackOrder(@RequestBody SimpleIceBoxDetailVo simpleIceBoxDetailVo) {
+        // 创建审批流
+        iceBackOrderService.doBackOrder(simpleIceBoxDetailVo);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, null);
+
+    }
+
+    /**
+     * 当审批流通过之后，业代确认  修改冰柜的状态
+     * @param applyNumber
+     * @return
+     */
+    @RequestMapping("/confirm")
+    @MonitorAnnotation
+    public CommonResponse confirm(@RequestParam String applyNumber) {
+        // 创建审批流
+        iceBackOrderService.confirm(applyNumber);
+        return new CommonResponse<>(Constants.API_CODE_SUCCESS, null);
+
+    }
+
+
+    /**
      * 根据冰柜的id判断当前冰柜是否在协议期间内
      *
      * @param id

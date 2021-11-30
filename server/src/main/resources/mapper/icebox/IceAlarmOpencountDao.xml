@@ -29,7 +29,7 @@
                status,
                create_time,
                update_time
-        from pxt_db_ajq.t_ice_alarm_opencount
+        from t_ice_alarm_opencount
         where id = #{id}
     </select>
 
@@ -46,7 +46,7 @@
                status,
                create_time,
                update_time
-        from pxt_db_ajq.t_ice_alarm_opencount limit #{offset}, #{limit}
+        from t_ice_alarm_opencount limit #{offset}, #{limit}
     </select>
 
     <!--通过实体作为筛选条件查询-->
@@ -54,7 +54,7 @@
         select
         id, box_id, box_assetid, put_store_number, ice_alarm_rule_detail_id, limit_count, keep_time, today_count,
         status, create_time, update_time
-        from pxt_db_ajq.t_ice_alarm_opencount
+        from t_ice_alarm_opencount
         <where>
             <if test="id != null">
                 and id = #{id}
@@ -94,7 +94,7 @@
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into pxt_db_ajq.t_ice_alarm_opencount(box_id, box_assetid, put_store_number, ice_alarm_rule_detail_id,
+        insert into t_ice_alarm_opencount(box_id, box_assetid, put_store_number, ice_alarm_rule_detail_id,
                                                      limit_count, keep_time, today_count, status, create_time,
                                                      update_time)
         values (#{boxId}, #{boxAssetid}, #{putStoreNumber}, #{iceAlarmRuleDetailId}, #{limitCount}, #{keepTime},
@@ -102,7 +102,7 @@
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into pxt_db_ajq.t_ice_alarm_opencount(box_id, box_assetid, put_store_number, ice_alarm_rule_detail_id,
+        insert into t_ice_alarm_opencount(box_id, box_assetid, put_store_number, ice_alarm_rule_detail_id,
         limit_count, keep_time, today_count, status, create_time, update_time)
         values
         <foreach collection="entities" item="entity" separator=",">
@@ -113,7 +113,7 @@
     </insert>
 
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into pxt_db_ajq.t_ice_alarm_opencount(box_id, box_assetid, put_store_number, ice_alarm_rule_detail_id,
+        insert into t_ice_alarm_opencount(box_id, box_assetid, put_store_number, ice_alarm_rule_detail_id,
         limit_count, keep_time, today_count, status, create_time, update_time)
         values
         <foreach collection="entities" item="entity" separator=",">
@@ -130,7 +130,7 @@
 
     <!--通过主键修改数据-->
     <update id="update">
-        update pxt_db_ajq.t_ice_alarm_opencount
+        update t_ice_alarm_opencount
         <set>
             <if test="boxId != null and boxId != ''">
                 box_id = #{boxId},
@@ -169,7 +169,7 @@
     <!--通过主键删除-->
     <delete id="deleteById">
         delete
-        from pxt_db_ajq.t_ice_alarm_opencount
+        from t_ice_alarm_opencount
         where id = #{id}
     </delete>
 

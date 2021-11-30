@@ -19,7 +19,7 @@ public class IceBoxEventPushConsumer {
     @RabbitListener(queues = MqConstant.ICEBOX_EVENT_PUSH_QUEUE, containerFactory = "iceboxEventPushContainer")
     public void task(HisenseDTO hisenseDTO) {
 
-        log.info("冰柜推送事件触发，消息{}", JSONObject.toJSONString(hisenseDTO));
+        //log.info("冰柜推送事件触发，消息{}", JSONObject.toJSONString(hisenseDTO));
         iceEventRecordService.eventPushConsumer(hisenseDTO);
     }
 

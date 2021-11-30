@@ -602,7 +602,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
             param.deleteCharAt(param.length() - 1);
         }
         param.append("&key=").append(secretKey);
-        log.info("签名参数:" + param.toString());
+        //log.info("签名参数:" + param.toString());
         //MD5加密,结果转换为大写字符
         return MD5.md5(param.toString()).toUpperCase();
     }

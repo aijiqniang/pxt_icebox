@@ -170,4 +170,8 @@ public class IceBoxExcelVo {
     @ColumnWidth(50)
     @ExcelProperty(value = "导入日期")
     private Date createTime;
+
+    @ColumnWidth(50)
+    @ExcelProperty(value = "冰柜预警")
+    private String alarmDec;
 }

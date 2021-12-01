@@ -164,6 +164,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final FeignIceBoxExamineUserClient feignIceBoxExamineUserClient;
     private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
     private final DmsUrlConfig dmsUrlConfig;
+    private final IceAlarmMapper iceAlarmMapper;
     @Autowired
     private IceBoxService iceBoxService;
     @Autowired
@@ -4152,7 +4153,22 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     distance = getDistance(iceboxLat,iceboxLng,cusLat,cusLng);
                 }
                 iceBoxExcelVo.setDistance(distance);*/
-
+                //加入冰柜预警
+                List<IceAlarm> iceAlarms = iceAlarmMapper.selectList(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getIceBoxAssetid, iceBoxExcelVo.getAssetId()).eq(IceAlarm::getStatus, IceAlarmStatusEnum.NEWALARM.getType()));
+                final String[] alarmDec = {""};
+                Optional.ofNullable(iceAlarms).ifPresent(alarms->{
+                    alarms.stream().forEach(alarm->{
+                        if(alarm.getAlarmType() != null){
+                            String desc = IceAlarmTypeEnum.getDesc(alarm.getAlarmType());
+                            if(StringUtils.isNotBlank(alarmDec[0])){
+                                alarmDec[0] += "," + desc;
+                            }else {
+                                alarmDec[0] = desc;
+                            }
+                        }
+                    });
+                });
+                iceBoxExcelVo.setAlarmDec(alarmDec[0]);
                 iceBoxExcelVoList.add(iceBoxExcelVo);
             }
             // 写入excel

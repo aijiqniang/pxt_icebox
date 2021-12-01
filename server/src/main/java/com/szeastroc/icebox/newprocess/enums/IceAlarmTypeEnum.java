@@ -20,4 +20,14 @@ public enum IceAlarmTypeEnum {
 
     private int type;
     private String desc;
+
+
+    public static String getDesc(int type){
+        for(IceAlarmTypeEnum iceAlarmTypeEnum : IceAlarmTypeEnum.values()){
+            if(iceAlarmTypeEnum.getType() == type){
+                return iceAlarmTypeEnum.getDesc();
+            }
+        }
+        return null;
+    };
 }

@@ -8,6 +8,7 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.entity.IceAlarm;
+import com.szeastroc.icebox.newprocess.enums.IceAlarmStatusEnum;
 import com.szeastroc.icebox.newprocess.service.IceAlarmService;
 import com.szeastroc.icebox.newprocess.vo.IceEventVo;
 import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
@@ -82,6 +83,7 @@ public class IceboxEventController {
     @PostMapping("/submitFeedBack")
     public CommonResponse<Void> submitFeedBack(@RequestBody(required = false)IceAlarm iceAlarm){
         iceAlarm.setUpdateTime(new Date());
+        iceAlarm.setStatus(IceAlarmStatusEnum.FEEDBACKED.getType());
         iceAlarmService.updateById(iceAlarm);
         return new CommonResponse(Constants.API_CODE_SUCCESS, null,null);
     }

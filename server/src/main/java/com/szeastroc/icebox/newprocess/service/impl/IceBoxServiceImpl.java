@@ -4156,14 +4156,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                 //加入冰柜预警
                 List<IceAlarm> iceAlarms = iceAlarmMapper.selectList(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getIceBoxAssetid, iceBoxExcelVo.getAssetId()).eq(IceAlarm::getStatus, IceAlarmStatusEnum.NEWALARM.getType()));
                 final String[] alarmDec = {""};
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
                 Optional.ofNullable(iceAlarms).ifPresent(alarms->{
                     alarms.stream().forEach(alarm->{
                         if(alarm.getAlarmType() != null){
                             String desc = IceAlarmTypeEnum.getDesc(alarm.getAlarmType());
                             if(StringUtils.isNotBlank(alarmDec[0])){
-                                alarmDec[0] += "," + desc;
+                                alarmDec[0] += "," + desc+simpleDateFormat.format(alarm.getCreateTime());
                             }else {
-                                alarmDec[0] = desc;
+                                alarmDec[0] = desc+simpleDateFormat.format(alarm.getCreateTime());
                             }
                         }
                     });

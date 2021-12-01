@@ -707,7 +707,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                 if(icealarmDetailVo.getOutlineTime() != null && icealarmDetailVo.getOutlineTime() > 0){
                     if(hisenseDTO.getLat().equals("") && hisenseDTO.getLng().equals("") && hisenseDTO.getDetailAddress().equals("")){
                         //冰柜离线
-                        IceAlarm alarm = iceAlarmMapper.selectOne(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getPutStoreNumber, putStoreNumber).eq(IceAlarm::getIceBoxAssetid, iceBox.getAssetId()).eq(IceAlarm::getSendUserId, iceBox.getResponseManId()).eq(IceAlarm::getAlarmType,IceAlarmTypeEnum.OUTLINE.getType()).eq(IceAlarm::getStatus,IceAlarmStatusEnum.PRE_ALARM.getType()).orderByDesc(IceAlarm::getId).last("limit 1"));
+                        IceAlarm alarm = iceAlarmMapper.selectOne(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getPutStoreNumber, putStoreNumber).eq(IceAlarm::getIceBoxAssetid, iceBox.getAssetId()).eq(IceAlarm::getSendUserId, iceBox.getResponseManId()).eq(IceAlarm::getAlarmType,IceAlarmTypeEnum.OUTLINE.getType()).eq(IceAlarm::getStatus,IceAlarmStatusEnum.NEWALARM.getType()).orderByDesc(IceAlarm::getId).last("limit 1"));
                         if(alarm == null){
                             DateTime date = new DateTime();
                             String prefix = date.toString("yyyyMMddHHmmss");
@@ -725,7 +725,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                 if(icealarmDetailVo.getOvertempWd() != null && icealarmDetailVo.getOvertempWd() > 0 && icealarmDetailVo.getOvertempSj() != null && icealarmDetailVo.getOvertempSj() > 0){
                       //超温报警
                       if(BigDecimal.valueOf(hisenseDTO.getTemperature()).compareTo(BigDecimal.valueOf(icealarmDetailVo.getOvertempWd())) > -1){
-                          IceAlarm alarm = iceAlarmMapper.selectOne(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getPutStoreNumber, putStoreNumber).eq(IceAlarm::getIceBoxAssetid, iceBox.getAssetId()).eq(IceAlarm::getSendUserId, iceBox.getResponseManId()).eq(IceAlarm::getAlarmType,IceAlarmTypeEnum.OVER_TEMPERTURE.getType()).eq(IceAlarm::getStatus,IceAlarmStatusEnum.PRE_ALARM.getType()).orderByDesc(IceAlarm::getId).last("limit 1"));
+                          IceAlarm alarm = iceAlarmMapper.selectOne(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getPutStoreNumber, putStoreNumber).eq(IceAlarm::getIceBoxAssetid, iceBox.getAssetId()).eq(IceAlarm::getSendUserId, iceBox.getResponseManId()).eq(IceAlarm::getAlarmType,IceAlarmTypeEnum.OVER_TEMPERTURE.getType()).eq(IceAlarm::getStatus,IceAlarmStatusEnum.NEWALARM.getType()).orderByDesc(IceAlarm::getId).last("limit 1"));
                           if(alarm == null){
                               DateTime date = new DateTime();
                               String prefix = date.toString("yyyyMMddHHmmss");
@@ -743,8 +743,9 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                 if(icealarmDetailVo.getPersonCount() != null && icealarmDetailVo.getPersonCount() > 0 && icealarmDetailVo.getPersonTime() != null && icealarmDetailVo.getPersonTime() > 0){
                     //人流量报警
                     if(hisenseDTO.getOpenCloseCount() != null && hisenseDTO.getOpenCloseCount() > 0){
-                        IceAlarmOpencount a = iceAlarmOpencountDao.selectOne(Wrappers.<IceAlarmOpencount>lambdaQuery().eq(IceAlarmOpencount::getBoxAssetid, iceBox.getAssetId()).eq(IceAlarmOpencount::getPutStoreNumber, iceBox.getPutStoreNumber()).eq(IceAlarmOpencount::getStatus, IceAlarmOpencountEnum.WAIT_RUN.getType()).orderByDesc(IceAlarmOpencount::getId).last("limit 1"));
-                        if(a == null){
+                        //IceAlarmOpencount a = iceAlarmOpencountDao.selectOne(Wrappers.<IceAlarmOpencount>lambdaQuery().eq(IceAlarmOpencount::getBoxAssetid, iceBox.getAssetId()).eq(IceAlarmOpencount::getPutStoreNumber, iceBox.getPutStoreNumber()).eq(IceAlarmOpencount::getStatus, IceAlarmOpencountEnum.WAIT_RUN.getType()).orderByDesc(IceAlarmOpencount::getId).last("limit 1"));
+                        IceAlarm alarm = iceAlarmMapper.selectOne(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getPutStoreNumber, putStoreNumber).eq(IceAlarm::getIceBoxAssetid, iceBox.getAssetId()).eq(IceAlarm::getSendUserId, iceBox.getResponseManId()).eq(IceAlarm::getAlarmType,IceAlarmTypeEnum.PERSON.getType()).eq(IceAlarm::getStatus,IceAlarmStatusEnum.NEWALARM.getType()).orderByDesc(IceAlarm::getId).last("limit 1"));
+                        if(alarm == null){
                             IceAlarmOpencount iceAlarmOpencount = IceAlarmOpencount.builder()
                                     .boxId(iceBox.getId()+"")
                                     .boxAssetid(iceBox.getAssetId())

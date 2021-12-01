@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -106,8 +107,8 @@ public class IceboxEventController {
 
     @ApiOperation(("通过类型获取报警反馈"))
     @GetMapping("/getFeedBacks")
-    public CommonResponse<List<String>> getFeedBacks(@RequestParam(value = "type",required = false)Integer type){
-        List<String> str = iceAlarmService.getFeedBacks(type);
+    public CommonResponse<Map<String,String>> getFeedBacks(@RequestParam(value = "type",required = false)Integer type){
+        Map<String,String> str = iceAlarmService.getFeedBacks(type);
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null,str);
     }
 

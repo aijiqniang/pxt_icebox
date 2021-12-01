@@ -5,6 +5,7 @@ import com.szeastroc.icebox.newprocess.entity.IceAlarm;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -15,5 +16,5 @@ public interface IceAlarmService extends IService<IceAlarm> {
 
     IPage<IceAlarm> findByPage(IceAlarm.PageRequest boxId);
 
-    List<String> getFeedBacks(Integer type);
+    Map<String,String> getFeedBacks(Integer type);
 }

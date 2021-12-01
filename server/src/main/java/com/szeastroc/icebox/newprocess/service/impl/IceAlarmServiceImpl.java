@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -44,9 +45,9 @@ implements IceAlarmService{
     }
 
     @Override
-    public List<String> getFeedBacks(Integer type) {
+    public Map<String,String> getFeedBacks(Integer type) {
 
-        List<String> desc = IceAlarmFeedBackEnum.getDesc(type);
+        Map<String,String> desc = IceAlarmFeedBackEnum.getDesc(type);
         return desc;
     }
 }

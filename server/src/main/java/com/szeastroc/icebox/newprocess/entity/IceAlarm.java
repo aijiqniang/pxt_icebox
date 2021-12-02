@@ -140,6 +140,12 @@ public class IceAlarm implements Serializable {
     @TableField(value = "apply_type")
     private Integer applyType;
 
+    @TableField(value = "distance_limit")
+    private Integer distanceLimit;
+
+    @TableField(value = "distance_now")
+    private Double distanceNow;
+
 
     @Data
     @AllArgsConstructor

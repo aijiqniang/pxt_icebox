@@ -718,7 +718,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                                 iceAlarm.setOutlineLimit(icealarmDetailVo.getOutlineTime()).setOutlineCount(1).setPutStoreName(putStoreName).setPutStoreNumber(putStoreNumber).setRelateCode(relateCode).setIceBoxId(iceBox.getId()).setIceBoxAssetid(iceBox.getAssetId()).setAlarmType(IceAlarmTypeEnum.OUTLINE.getType()).setSendUserId(iceBox.getResponseManId()).setStatus(IceAlarmStatusEnum.PRE_ALARM.getType()).setCreateTime(new Date()).setUpdateTime(new Date());
                                 iceAlarmMapper.insert(iceAlarm);
                             }else {
-                                alarm.setOutlineCount(alarm.getOutlineCount()+1);
+                                alarm.setOutlineCount(preAlarm.getOutlineCount()+1);
                                 alarm.setUpdateTime(new Date());
                                 iceAlarmMapper.updateById(alarm);
                             }
@@ -739,7 +739,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                                   iceAlarm.setOverTepWd(icealarmDetailVo.getOvertempWd()).setOverTepLimit(icealarmDetailVo.getOvertempSj()).setOverTepCount(1).setPutStoreName(putStoreName).setPutStoreNumber(putStoreNumber).setRelateCode(relateCode).setIceBoxId(iceBox.getId()).setIceBoxAssetid(iceBox.getAssetId()).setAlarmType(IceAlarmTypeEnum.OVER_TEMPERTURE.getType()).setSendUserId(iceBox.getResponseManId()).setStatus(IceAlarmStatusEnum.PRE_ALARM.getType()).setCreateTime(new Date()).setUpdateTime(new Date());
                                   iceAlarmMapper.insert(iceAlarm);
                               }else {
-                                  alarm.setOverTepCount(alarm.getOverTepCount()+1);
+                                  alarm.setOverTepCount(preAlarm.getOverTepCount()+1);
                                   alarm.setUpdateTime(new Date());
                                   iceAlarmMapper.updateById(alarm);
                               }

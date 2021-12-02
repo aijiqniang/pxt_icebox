@@ -536,6 +536,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                     feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
                     personAlarm.setStatus(IceAlarmOpencountEnum.SUC_ALARM.getType());
                     personAlarm.setUpdateTime(new Date());
+                    personAlarm.setTodayCount(nowCount);
                     iceAlarmOpencountDao.updateById(personAlarm);
                 }else {
                     personAlarm.setTodayCount(nowCount);

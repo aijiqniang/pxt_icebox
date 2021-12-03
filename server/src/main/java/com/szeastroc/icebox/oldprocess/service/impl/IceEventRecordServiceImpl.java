@@ -467,7 +467,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
         });
 
         //报警
-        List<IceAlarm> iceAlarms = iceAlarmMapper.selectList(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getStatus, IceAlarmStatusEnum.NEWALARM.getType()).eq(IceAlarm::getAlarmType, IceAlarmTypeEnum.PERSON.getType()));
+        List<IceAlarm> iceAlarms = iceAlarmMapper.selectList(Wrappers.<IceAlarm>lambdaQuery().and(wrapper->wrapper.eq(IceAlarm::getStatus, IceAlarmStatusEnum.NEWALARM.getType()).or().eq(IceAlarm::getStatus, IceAlarmStatusEnum.FEEDBACKED.getType())).eq(IceAlarm::getAlarmType, IceAlarmTypeEnum.PERSON.getType()));
         Optional.ofNullable(iceAlarms).ifPresent(alarms->{
             alarms.forEach(alarm->{
                 try {

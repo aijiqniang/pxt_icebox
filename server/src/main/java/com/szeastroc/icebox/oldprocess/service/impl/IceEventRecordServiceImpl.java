@@ -681,7 +681,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                 if(icealarmDetailVo.getDistance() != null && icealarmDetailVo.getDistance() > 0){
                     //位移报警
                     IceAlarm alarm = iceAlarmMapper.selectOne(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getPutStoreNumber, putStoreNumber).eq(IceAlarm::getIceBoxAssetid, iceBox.getAssetId()).eq(IceAlarm::getSendUserId, iceBox.getResponseManId()).eq(IceAlarm::getAlarmType,IceAlarmTypeEnum.DISTANCE.getType()).eq(IceAlarm::getStatus,IceAlarmStatusEnum.NEWALARM.getType()).orderByDesc(IceAlarm::getId).last("limit 1"));
-                    if(alarm == null){
+                    if(alarm == null && StringUtils.isNotEmpty(hisenseDTO.getLat()) && StringUtils.isNotEmpty(hisenseDTO.getLng())){
                         double distance = getDistance(Double.parseDouble(hisenseDTO.getLat()), Double.parseDouble(hisenseDTO.getLng()), Double.parseDouble(lat), Double.parseDouble(lng));
                         BigDecimal dis = BigDecimal.valueOf(distance);
                         BigDecimal limit = BigDecimal.valueOf(icealarmDetailVo.getDistance());

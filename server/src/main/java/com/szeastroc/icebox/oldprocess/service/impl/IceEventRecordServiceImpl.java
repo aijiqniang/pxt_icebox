@@ -777,11 +777,18 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
         }
     }
 
-    public static double getDistance(double longitudeFrom, double latitudeFrom, double longitudeTo, double latitudeTo) {
-        GlobalCoordinates source = new GlobalCoordinates(latitudeFrom, longitudeFrom);
-        GlobalCoordinates target = new GlobalCoordinates(latitudeTo, longitudeTo);
 
-        return new GeodeticCalculator().calculateGeodeticCurve(Ellipsoid.Sphere, source, target).getEllipsoidalDistance();
+    public static double getDistance(double lat_a, double lng_a, double lat_b, double lng_b) {
+        Double PI = Math.PI;
+
+        Double PK = 180 / PI;
+
+        double t1 = Math.cos(lat_a / PK) * Math.cos(lng_a / PK) * Math.cos(lat_b / PK) * Math.cos(lng_b / PK);
+        double t2 = Math.cos(lat_a / PK) * Math.sin(lng_a / PK) * Math.cos(lat_b / PK) * Math.sin(lng_b / PK);
+        double t3 = Math.sin(lat_a / PK) * Math.sin(lat_b / PK);
+
+        double tt = Math.acos(t1 + t2 + t3);
+        return 6366000 * tt;
     }
 
 }

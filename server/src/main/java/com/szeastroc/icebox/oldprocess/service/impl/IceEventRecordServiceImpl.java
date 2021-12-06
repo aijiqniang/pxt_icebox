@@ -523,7 +523,17 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
                     }
                     String relateCode = iceBox.getResponseManId()+"_"+iceBox.getAssetId()+"_"+prefix+"_"+IceAlarmTypeEnum.PERSON.getType();
                     IceAlarm iceAlarm = new IceAlarm();
-                    iceAlarm.setPersonCount(nowCount).setPersonLimit(personAlarm.getLimitCount()).setPersonTime(personAlarm.getKeepTime()).setOpenCountId(personAlarm.getId()).setPutStoreName(iceBox.getPutStoreNumber()).setPutStoreNumber(iceBox.getPutStoreNumber()).setRelateCode(relateCode).setIceBoxId(iceBox.getId()).setIceBoxAssetid(iceBox.getAssetId()).setAlarmType(IceAlarmTypeEnum.PERSON.getType()).setSendUserId(iceBox.getResponseManId()).setStatus(IceAlarmStatusEnum.NEWALARM.getType()).setCreateTime(new Date()).setUpdateTime(new Date());
+                    String storeName = "";
+                    if(StringUtils.isNotEmpty(iceBox.getPutStoreNumber())){
+                        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+                        if(storeInfoDtoVo != null){
+                            storeName = storeInfoDtoVo.getStoreName();
+                        }else {
+                            SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
+                            storeName = supplierInfoSessionVo.getName();
+                        }
+                    }
+                    iceAlarm.setPersonCount(nowCount).setPersonLimit(personAlarm.getLimitCount()).setPersonTime(personAlarm.getKeepTime()).setOpenCountId(personAlarm.getId()).setPutStoreName(storeName).setPutStoreNumber(iceBox.getPutStoreNumber()).setRelateCode(relateCode).setIceBoxId(iceBox.getId()).setIceBoxAssetid(iceBox.getAssetId()).setAlarmType(IceAlarmTypeEnum.PERSON.getType()).setSendUserId(iceBox.getResponseManId()).setStatus(IceAlarmStatusEnum.NEWALARM.getType()).setCreateTime(new Date()).setUpdateTime(new Date());
                     iceAlarmMapper.insert(iceAlarm);
                     //发送代办
                     NoticeBacklogRequestVo noticeBacklogRequestVo = NoticeBacklogRequestVo.builder()

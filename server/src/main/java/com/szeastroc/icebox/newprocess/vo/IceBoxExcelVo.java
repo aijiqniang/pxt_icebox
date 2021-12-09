@@ -174,4 +174,8 @@ public class IceBoxExcelVo {
     @ColumnWidth(50)
     @ExcelProperty(value = "门店标签")
     private String label;
+
+    @ColumnWidth(50)
+    @ExcelProperty(value = "冰柜预警")
+    private String alarmDec;
 }

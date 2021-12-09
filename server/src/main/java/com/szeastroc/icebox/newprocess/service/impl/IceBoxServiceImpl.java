@@ -163,6 +163,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
     private final DmsUrlConfig dmsUrlConfig;
     private final IceBackApplyReportService iceBackApplyReportService;
+    private final IceAlarmMapper iceAlarmMapper;
     @Autowired
     private IceBoxService iceBoxService;
     @Autowired
@@ -1889,11 +1890,15 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     private List<IceBoxStoreVo> buildIceBoxStoreVos(List<IceBox> iceBoxes) {
         List<IceBoxStoreVo> iceBoxStoreVos = Lists.newArrayList();
+        DateTime now = new DateTime();
+        Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+        Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
         for (IceBox iceBox : iceBoxes) {
 
             IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(iceBox.getId());
             IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery()
                     .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId())
+                    .between(IceEventRecord::getOccurrenceTime,todayStart,todayEnd)
                     .orderByDesc(IceEventRecord::getCreateTime)
                     .last("limit 1"));
             IcePutApplyRelateBox icePutApplyRelateBox = icePutApplyRelateBoxDao.selectOne(Wrappers.<IcePutApplyRelateBox>lambdaQuery()
@@ -2538,18 +2543,20 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Override
     public Map<String, Object> readEquipNews(Integer id) {
+        DateTime now = new DateTime();
+        Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+        Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
 
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectById(id);
         IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery()
-                .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId()).orderByDesc(IceEventRecord::getId)
+                .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId()).between(IceEventRecord::getOccurrenceTime,todayStart,todayEnd).orderByDesc(IceEventRecord::getId)
                 .last(" limit 1"));
         Map<String, Object> map = Maps.newHashMap();
         Optional.ofNullable(iceEventRecord).ifPresent(info -> {
             map.put("temperature", info.getTemperature()); // 温度
             String assetId = iceBoxExtend.getAssetId();
-            DateTime now = new DateTime();
             // 开关门次数 -- 累计总数
-            Integer totalSum = iceEventRecordDao.sumTotalOpenCloseCount(assetId);
+            //Integer totalSum = iceEventRecordDao.sumTotalOpenCloseCount(assetId);
 
             // 开关门次数 -- 月累计
             Date monStart = now.dayOfMonth().withMinimumValue().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
@@ -2557,11 +2564,10 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Integer monthSum = iceEventRecordDao.sumOpenCloseCount(assetId, monStart, monEnd);
 
             // 开关门次数 -- 今日累计
-            Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
-            Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
+
             Integer todaySum = iceEventRecordDao.sumOpenCloseCount(assetId, todayStart, todayEnd);
 
-            map.put("totalSum", totalSum);
+            //map.put("totalSum", totalSum);
             map.put("monthSum", monthSum);
             map.put("todaySum", todaySum);
             String address = info.getDetailAddress();
@@ -2954,10 +2960,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if (iceBoxExtend != null) {
                 boxVo.setQrCode(iceBoxExtend.getQrCode());
             }
-
+            DateTime now = new DateTime();
+            Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+            Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
             IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery()
                     .eq(IceEventRecord::getAssetId, iceBoxExtend.getAssetId())
                     .orderByDesc(IceEventRecord::getCreateTime)
+                    .between(IceEventRecord::getOccurrenceTime,todayStart,todayEnd)
                     .last("limit 1"));
             if (iceEventRecord != null) {
                 boxVo.setDetailAddress(iceEventRecord.getDetailAddress());
@@ -4191,7 +4200,23 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     distance = getDistance(iceboxLat,iceboxLng,cusLat,cusLng);
                 }
                 iceBoxExcelVo.setDistance(distance);*/
-
+                //加入冰柜预警
+                List<IceAlarm> iceAlarms = iceAlarmMapper.selectList(Wrappers.<IceAlarm>lambdaQuery().eq(IceAlarm::getIceBoxAssetid, iceBoxExcelVo.getAssetId()).eq(IceAlarm::getStatus, IceAlarmStatusEnum.NEWALARM.getType()));
+                final String[] alarmDec = {""};
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                Optional.ofNullable(iceAlarms).ifPresent(alarms->{
+                    alarms.stream().forEach(alarm->{
+                        if(alarm.getAlarmType() != null){
+                            String desc = IceAlarmTypeEnum.getDesc(alarm.getAlarmType());
+                            if(StringUtils.isNotBlank(alarmDec[0])){
+                                alarmDec[0] += "," + desc+simpleDateFormat.format(alarm.getCreateTime());
+                            }else {
+                                alarmDec[0] = desc+simpleDateFormat.format(alarm.getCreateTime());
+                            }
+                        }
+                    });
+                });
+                iceBoxExcelVo.setAlarmDec(alarmDec[0]);
                 iceBoxExcelVoList.add(iceBoxExcelVo);
             }
             // 写入excel

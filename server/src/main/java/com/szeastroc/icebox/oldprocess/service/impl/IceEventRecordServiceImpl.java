@@ -165,7 +165,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
             String sign = createSign(buildMap(hisenseDTO));
             String submitSign = hisenseDTO.getSign();
             //log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
-            saveHisensePushEvent(hisenseDTO);
+            //saveHisensePushEvent(hisenseDTO);
             //log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
             if (!sign.equals(submitSign)) {
                 //log.info("签名数据错误,参数为-->[{}]", JSON.toJSONString(hisenseDTO));

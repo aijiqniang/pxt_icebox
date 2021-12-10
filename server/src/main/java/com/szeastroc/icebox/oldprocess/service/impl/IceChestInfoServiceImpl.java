@@ -11,10 +11,12 @@ import com.szeastroc.icebox.enums.ResultEnum;
 import com.szeastroc.icebox.oldprocess.service.IceChestInfoService;
 import com.szeastroc.icebox.oldprocess.vo.IceChestInfoExcelVo;
 import com.szeastroc.icebox.oldprocess.vo.IceChestResponse;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -49,7 +51,11 @@ public class IceChestInfoServiceImpl extends ServiceImpl<IceChestInfoDao, IceChe
         if (iceChestInfo == null) {
             throw new NormalOptionException(ResultEnum.CLIENT_ICECHEST_IS_NOT_PUT.getCode(), ResultEnum.CLIENT_ICECHEST_IS_NOT_PUT.getMessage());
         }
-        IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery().eq(IceEventRecord::getAssetId, iceChestInfo.getAssetId()).orderByDesc(IceEventRecord::getCreateTime).last("limit 1"));
+        DateTime now = new DateTime();
+        Date todayStart = now.withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
+        Date todayEnd = now.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
+
+        IceEventRecord iceEventRecord = iceEventRecordDao.selectOne(Wrappers.<IceEventRecord>lambdaQuery().eq(IceEventRecord::getAssetId, iceChestInfo.getAssetId()).between(IceEventRecord::getOccurrenceTime,todayStart,todayEnd).orderByDesc(IceEventRecord::getCreateTime).last("limit 1"));
 
         IceChestPutRecord iceChestPutRecord = iceChestPutRecordDao.selectById(iceChestInfo.getLastPutId());
         return new IceChestResponse(iceChestInfo, clientInfo, iceEventRecord, iceChestPutRecord);

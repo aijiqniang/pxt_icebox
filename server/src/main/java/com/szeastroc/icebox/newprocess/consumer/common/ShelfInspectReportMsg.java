@@ -1,12 +1,14 @@
 package com.szeastroc.icebox.newprocess.consumer.common;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -15,42 +17,32 @@ import java.io.Serializable;
 public class ShelfInspectReportMsg extends Page implements Serializable {
 
     private static final long serialVersionUID = -4750978713271531956L;
+    @ApiModelProperty(value = "部门类型")
+    private Integer deptType;
+    @ApiModelProperty(value = "营销区域")
+    private Integer marketAreaId;
+    @ApiModelProperty(value = "货架类型")
+    private String shelfType;
+    @ApiModelProperty(value = "投放客户名称")
+    private String customerName;
+    @ApiModelProperty(value = "投放客户编号")
+    private String customerNumber;
+    @ApiModelProperty(value = "巡检人员")
+    private String submitterName;
+    @ApiModelProperty(value = "巡检日期")
+    private String submitTime;
+
+
     /**
      * 下载任务id
      */
     private Integer recordsId;
-    /**
-     *本部id
-     */
-    private Integer headquartersDeptId;
-    /**
-     *事业部id
-     */
-    private Integer businessDeptId;
-    /**
-     *大区id
-     */
-    private Integer regionDeptId;
-    /**
-     *服务处id
-     */
-    private Integer serviceDeptId;
-    /**
-     *组id
-     */
-    private Integer groupDeptId;
-    /**
-     * 客户编号
-     */
-    private String customerNumber;
+
     /**
      * 商户编号
      */
     private String shNumber;
-    /**
-     * 客户名称
-     */
-    private String customerName;
+
     /**
      * 开始时间
      */

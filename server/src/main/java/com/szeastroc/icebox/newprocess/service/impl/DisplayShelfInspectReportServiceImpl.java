@@ -3,6 +3,7 @@ package com.szeastroc.icebox.newprocess.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -25,28 +26,19 @@ import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
-import com.szeastroc.icebox.enums.ExamineStatusEnum;
 import com.szeastroc.icebox.newprocess.consumer.common.ShelfInspectReportMsg;
+import com.szeastroc.icebox.newprocess.dao.DisplayShelfDao;
 import com.szeastroc.icebox.newprocess.dao.DisplayShelfInspectReportDao;
-import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
-import com.szeastroc.icebox.newprocess.entity.DisplayShelfInspectReport;
-import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApply;
-import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport;
-import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
-import com.szeastroc.icebox.newprocess.enums.ExamineExceptionStatusEnums;
-import com.szeastroc.icebox.newprocess.enums.ExamineStatus;
-import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
+import com.szeastroc.icebox.newprocess.entity.*;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfInspectReportService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import javax.annotation.Resource;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -74,12 +66,16 @@ public class DisplayShelfInspectReportServiceImpl extends ServiceImpl<DisplayShe
     FeignExportRecordsClient feignExportRecordsClient;
     @Autowired
     RabbitTemplate rabbitTemplate;
+    @Resource
+    DisplayShelfInspectReportDao displayShelfInspectReportDao;
+    @Autowired
+    private DisplayShelfDao displayShelfDao;
 
     @Override
-    public Object selectPage(ShelfInspectReportMsg reportMsg) {
+    public IPage<DisplayShelfInspectReport> selectPage(ShelfInspectReportMsg reportMsg) {
         LambdaQueryWrapper<DisplayShelfInspectReport> wrapper = this.fillWrapper(reportMsg);
-        IPage<DisplayShelfInspectReport> page = this.page(reportMsg, wrapper);
-        return page;
+        IPage<DisplayShelfInspectReport> iPage = displayShelfInspectReportDao.selectPage(reportMsg, wrapper);
+        return iPage;
     }
 
     @Override
@@ -102,7 +98,7 @@ public class DisplayShelfInspectReportServiceImpl extends ServiceImpl<DisplayShe
         }
         // 生成下载任务
         Integer recordsId = FeignResponseUtil.getFeignData(feignExportRecordsClient.createExportRecords(userManageVo.getSessionUserInfoVo().getId(),
-                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "陈列架投放报表-导出"));
+                userManageVo.getSessionUserInfoVo().getRealname(), JSON.toJSONString(reportMsg), "陈列架巡检报表-导出"));
 
         //发送mq消息,同步申请数据到报表
         CompletableFuture.runAsync(() -> {
@@ -117,20 +113,29 @@ public class DisplayShelfInspectReportServiceImpl extends ServiceImpl<DisplayShe
     @Override
     public LambdaQueryWrapper<DisplayShelfInspectReport> fillWrapper(ShelfInspectReportMsg reportMsg) {
         LambdaQueryWrapper<DisplayShelfInspectReport> wrapper = Wrappers.lambdaQuery();
-        if (reportMsg.getGroupDeptId() != null) {
-            wrapper.eq(DisplayShelfInspectReport::getGroupDeptId, reportMsg.getGroupDeptId());
-        }
-        if (reportMsg.getServiceDeptId() != null) {
-            wrapper.eq(DisplayShelfInspectReport::getServiceDeptId, reportMsg.getServiceDeptId());
-        }
-        if (reportMsg.getRegionDeptId() != null) {
-            wrapper.eq(DisplayShelfInspectReport::getRegionDeptId, reportMsg.getRegionDeptId());
-        }
-        if (reportMsg.getBusinessDeptId() != null) {
-            wrapper.eq(DisplayShelfInspectReport::getBusinessDeptId, reportMsg.getBusinessDeptId());
-        }
-        if (reportMsg.getHeadquartersDeptId() != null) {
-            wrapper.eq(DisplayShelfInspectReport::getHeadquartersDeptId, reportMsg.getHeadquartersDeptId());
+        if(Objects.nonNull(reportMsg)) {
+            if (reportMsg.getDeptType() != null && reportMsg.getMarketAreaId() != null) {
+                switch (reportMsg.getDeptType()) {
+                    //deptType  1:服务处 2:大区 3:事业部 4:本部 5:组
+                    case 1:
+                        wrapper.eq(DisplayShelfInspectReport::getServiceDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    case 2:
+                        wrapper.eq(DisplayShelfInspectReport::getRegionDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    case 3:
+                        wrapper.eq(DisplayShelfInspectReport::getBusinessDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    case 4:
+                        wrapper.eq(DisplayShelfInspectReport::getHeadquartersDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    case 5:
+                        wrapper.eq(DisplayShelfInspectReport::getGroupDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
         if (StringUtils.isNotEmpty(reportMsg.getCustomerName())) {
             wrapper.like(DisplayShelfInspectReport::getPutCustomerName, reportMsg.getCustomerName());
@@ -138,11 +143,14 @@ public class DisplayShelfInspectReportServiceImpl extends ServiceImpl<DisplayShe
         if (StringUtils.isNotEmpty(reportMsg.getCustomerNumber())) {
             wrapper.eq(DisplayShelfInspectReport::getPutCustomerNumber, reportMsg.getCustomerNumber());
         }
-        if (StringUtils.isNotEmpty(reportMsg.getStartTime())) {
-            wrapper.ge(DisplayShelfInspectReport::getCreateTime, reportMsg.getStartTime());
+        if (StringUtils.isNotEmpty(reportMsg.getShelfType())) {
+            wrapper.like(DisplayShelfInspectReport::getName, reportMsg.getShelfType());
         }
-        if (StringUtils.isNotEmpty(reportMsg.getEndTime())) {
-            wrapper.le(DisplayShelfInspectReport::getCreateTime, reportMsg.getEndTime());
+        if (StringUtils.isNotEmpty(reportMsg.getSubmitTime())) {
+            wrapper.apply("date_format(submit_time,'%Y-%m-%d') = '" +reportMsg.getSubmitTime() +"'");
+        }
+        if (StringUtils.isNotEmpty(reportMsg.getSubmitterName())) {
+            wrapper.like(DisplayShelfInspectReport::getSubmitterName, reportMsg.getSubmitterName());
         }
         wrapper.orderByDesc(DisplayShelfInspectReport::getCreateTime);
         return wrapper;
@@ -154,7 +162,7 @@ public class DisplayShelfInspectReportServiceImpl extends ServiceImpl<DisplayShe
     }
 
     @Override
-    public void build(ShelfInspectModel model, DisplayShelf displayShelf) {
+    public void build(ShelfInspectModel model) {
         SimpleUserInfoVo user = FeignResponseUtil.getFeignData(feignUserClient.findUserById(model.getCreateBy()));
         Map<Integer, SessionDeptInfoVo> deptMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(model.getDeptId()));
         Integer groupId = null;
@@ -200,39 +208,106 @@ public class DisplayShelfInspectReportServiceImpl extends ServiceImpl<DisplayShe
         String customerName;
         String shNumber = null;
         String customerLevel = null;
-        if (SupplierTypeEnum.IS_STORE.getType().equals(displayShelf.getCustomerType())) {
-            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(displayShelf.getPutNumber()));
+        Integer putCount = 0;
+        if (SupplierTypeEnum.IS_STORE.getType().equals(model.getCustomerType())) {
+            StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(model.getCustomerNumber()));
             customerName = store.getStoreName();
             shNumber = store.getMerchantNumber();
             customerLevel = store.getStoreLevel();
         } else {
-            SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(displayShelf.getPutNumber()));
+            SupplierInfoSessionVo supplier = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(model.getCustomerNumber()));
             customerName = supplier.getName();
             customerLevel = supplier.getLevel();
         }
-        DisplayShelfInspectReport report = new DisplayShelfInspectReport();
-        report.setInspectRemark(model.getRemark())
-                .setSubmitTime(new Date())
-                .setSubmitterName(model.getCreateByName())
-                .setSubmitterId(model.getCreateBy())
-                .setSubmitterPosition(user.getPosion())
-                .setPutCustomerNumber(displayShelf.getPutNumber())
-                .setPutCustomerType(displayShelf.getCustomerType())
-                .setPutCustomerName(customerName)
-                .setPutCustomerLevel(customerLevel)
-                .setShNumber(shNumber)
-                .setSupplierNumber(displayShelf.getSupplierNumber())
-                .setSupplierName(displayShelf.getSupplierName())
-                .setSupplierType(displayShelf.getSupplierType())
-                .setStatus(0)
-                .setHeadquartersDeptId(headquartersId).setHeadquartersDeptName(headquartersName)
-                .setBusinessDeptId(businessId).setBusinessDeptName(businessName)
-                .setRegionDeptId(regionId).setRegionDeptName(regionName)
-                .setServiceDeptId(serviceId).setServiceDeptName(serviceName)
-                .setGroupDeptId(groupId).setGroupDeptName(groupName)
-                .setApplyNumber(model.getApplyNumber());
-        this.save(report);
-
+        List<DisplayShelf> displayShelfList = displayShelfDao.selectList(Wrappers.<DisplayShelf>lambdaQuery().eq(DisplayShelf::getPutNumber, model.getCustomerNumber()).eq(DisplayShelf::getPutStatus,3).eq(DisplayShelf::getStatus, 1));
+        if(CollectionUtils.isNotEmpty(displayShelfList)){
+            putCount = displayShelfList.size();
+        }
+        if(model.getInspectStatus().equals(IceBoxEnums.StatusEnum.NORMAL.getType())) {
+            List<ShelfInspectModel.NormalShelf> normalShelves = model.getNormalShelves();
+            for (ShelfInspectModel.NormalShelf normalShelf : normalShelves) {
+                DisplayShelfInspectReport report = new DisplayShelfInspectReport();
+                report.setInspectRemark(model.getRemark())
+                        .setSubmitTime(new Date())
+                        .setSubmitterName(model.getCreateName())
+                        .setSubmitterId(model.getCreateBy())
+                        .setSubmitterPosition(user.getPosion())
+                        .setPutCustomerNumber(model.getCustomerNumber())
+                        .setPutCustomerType(model.getCustomerType())
+                        .setPutCustomerName(customerName)
+                        .setImageUrl(String.join(",", model.getImageUrls()))
+                        .setShNumber(shNumber)
+                        .setStatus(0)
+                        .setHeadquartersDeptId(headquartersId).setHeadquartersDeptName(headquartersName)
+                        .setBusinessDeptId(businessId).setBusinessDeptName(businessName)
+                        .setRegionDeptId(regionId).setRegionDeptName(regionName)
+                        .setServiceDeptId(serviceId).setServiceDeptName(serviceName)
+                        .setGroupDeptId(groupId).setGroupDeptName(groupName)
+                        .setApplyNumber(model.getApplyNumber())
+                        .setPutCount(putCount)
+                        .setName(normalShelf.getName())
+                        .setSize(normalShelf.getSize())
+                        .setInspectStatus(model.getInspectStatus())
+                        .setUnusualNumber(normalShelf.getCount());
+                displayShelfInspectReportDao.insert(report);
+            }
+        }else if(model.getInspectStatus().equals(IceBoxEnums.StatusEnum.SCRAP.getType())){
+            List<ShelfInspectModel.ScrapShelf> scrapShelves = model.getScrapShelves();
+            for (ShelfInspectModel.ScrapShelf scrapShelve : scrapShelves) {
+                DisplayShelfInspectReport report = new DisplayShelfInspectReport();
+                report.setInspectRemark(model.getRemark())
+                        .setSubmitTime(new Date())
+                        .setSubmitterName(model.getCreateName())
+                        .setSubmitterId(model.getCreateBy())
+                        .setSubmitterPosition(user.getPosion())
+                        .setPutCustomerNumber(model.getCustomerNumber())
+                        .setPutCustomerType(model.getCustomerType())
+                        .setPutCustomerName(customerName)
+                        .setImageUrl(String.join(",", model.getImageUrls()))
+                        .setShNumber(shNumber)
+                        .setStatus(0)
+                        .setHeadquartersDeptId(headquartersId).setHeadquartersDeptName(headquartersName)
+                        .setBusinessDeptId(businessId).setBusinessDeptName(businessName)
+                        .setRegionDeptId(regionId).setRegionDeptName(regionName)
+                        .setServiceDeptId(serviceId).setServiceDeptName(serviceName)
+                        .setGroupDeptId(groupId).setGroupDeptName(groupName)
+                        .setApplyNumber(model.getApplyNumber())
+                        .setPutCount(putCount)
+                        .setName(scrapShelve.getName())
+                        .setSize(scrapShelve.getSize())
+                        .setInspectStatus(model.getInspectStatus())
+                        .setUnusualNumber(scrapShelve.getCount());
+                displayShelfInspectReportDao.insert(report);
+            }
+        }else if(model.getInspectStatus().equals(IceBoxEnums.StatusEnum.LOSE.getType())){
+            List<ShelfInspectModel.LostShelf> lostShelves = model.getLostShelves();
+            for (ShelfInspectModel.LostShelf lostShelve : lostShelves) {
+                DisplayShelfInspectReport report = new DisplayShelfInspectReport();
+                report.setInspectRemark(model.getRemark())
+                        .setSubmitTime(new Date())
+                        .setSubmitterName(model.getCreateName())
+                        .setSubmitterId(model.getCreateBy())
+                        .setSubmitterPosition(user.getPosion())
+                        .setPutCustomerNumber(model.getCustomerNumber())
+                        .setPutCustomerType(model.getCustomerType())
+                        .setPutCustomerName(customerName)
+                        .setImageUrl(String.join(",", model.getImageUrls()))
+                        .setShNumber(shNumber)
+                        .setStatus(0)
+                        .setHeadquartersDeptId(headquartersId).setHeadquartersDeptName(headquartersName)
+                        .setBusinessDeptId(businessId).setBusinessDeptName(businessName)
+                        .setRegionDeptId(regionId).setRegionDeptName(regionName)
+                        .setServiceDeptId(serviceId).setServiceDeptName(serviceName)
+                        .setGroupDeptId(groupId).setGroupDeptName(groupName)
+                        .setApplyNumber(model.getApplyNumber())
+                        .setPutCount(putCount)
+                        .setName(lostShelve.getName())
+                        .setSize(lostShelve.getSize())
+                        .setInspectStatus(model.getInspectStatus())
+                        .setUnusualNumber(lostShelve.getCount());
+                displayShelfInspectReportDao.insert(report);
+            }
+        }
     }
 
     @Override

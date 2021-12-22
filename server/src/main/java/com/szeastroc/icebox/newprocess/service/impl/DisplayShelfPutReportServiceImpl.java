@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.BaseDistrictVO;
@@ -20,6 +21,7 @@ import com.szeastroc.common.feign.customer.FeignSupplierClient;
 import com.szeastroc.common.feign.user.FeignCacheClient;
 import com.szeastroc.common.feign.user.FeignUserClient;
 import com.szeastroc.common.feign.visit.FeignExportRecordsClient;
+import com.szeastroc.common.feign.visit.FeignIceboxQueryClient;
 import com.szeastroc.common.utils.ExecutorServiceFactory;
 import com.szeastroc.common.utils.FeignResponseUtil;
 import com.szeastroc.common.vo.CommonResponse;
@@ -27,26 +29,25 @@ import com.szeastroc.commondb.config.redis.JedisClient;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutReportMsg;
+import com.szeastroc.icebox.newprocess.dao.DisplayShelfDao;
 import com.szeastroc.icebox.newprocess.dao.DisplayShelfPutReportDao;
-import com.szeastroc.icebox.newprocess.entity.DisplayShelf;
-import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutApplyRelate;
-import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport;
-import com.szeastroc.icebox.newprocess.entity.IceBackApplyReport;
+import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
+import com.szeastroc.icebox.newprocess.enums.VisitCycleEnum;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyRelateService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutReportService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfService;
+import com.szeastroc.icebox.newprocess.vo.ShelfPutReportVo;
+import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 import org.joda.time.DateTime;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import javax.annotation.Resource;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -79,6 +80,12 @@ public class DisplayShelfPutReportServiceImpl extends ServiceImpl<DisplayShelfPu
     FeignExportRecordsClient feignExportRecordsClient;
     @Autowired
     private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private FeignIceboxQueryClient feignIceboxQueryClient;
+    @Autowired
+    private DisplayShelfDao displayShelfDao;
+    @Resource
+    private DisplayShelfPutReportDao displayShelfPutReportDao;
 
 
     @Override
@@ -134,8 +141,14 @@ public class DisplayShelfPutReportServiceImpl extends ServiceImpl<DisplayShelfPu
         String districtCode = null;
         String customerAddress = null;
         String shNumber = null;
+        String visitTypeName = null;
+        String linkmanMobile = null;
+        String linkmanName = null;
         if(customerType.equals(SupplierTypeEnum.IS_STORE.getType())){
+            visitTypeName = VisitCycleEnum.getDescByCode(FeignResponseUtil.getFeignData(feignIceboxQueryClient.selectVisitTypeForReport(model.getCustomerNumber())));
             StoreInfoDtoVo store = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(model.getCustomerNumber()));
+            linkmanMobile = store.getMainSaleManMobile();
+            linkmanName = store.getMainSaleManName();
             customerAddress = store.getAddress();
             provinceCode = store.getProvinceCode();
             cityCode = store.getCityCode();
@@ -171,13 +184,13 @@ public class DisplayShelfPutReportServiceImpl extends ServiceImpl<DisplayShelfPu
                 .applyNumber(model.getApplyNumber())
                 .supplierNumber(model.getSupplierNumber())
                 .supplierName(model.getSupplierName())
-                .linkmanMobile(model.getLinkMobile())
-                .linkmanName(model.getLinkMan())
-                .visitTypeName(model.getVisitTypeName())
+                .linkmanMobile(linkmanMobile)
+                .linkmanName(linkmanName)
                 .putCustomerLevel(model.getCustomerLevel())
                 .putCustomerName(model.getCustomerName())
                 .putCustomerNumber(model.getCustomerNumber())
                 .putCustomerType(customerType)
+                .visitTypeName(visitTypeName)
                 .shNumber(shNumber)
                 .submitterId(model.getCreateBy())
                 .submitterName(model.getCreateByName())
@@ -193,6 +206,28 @@ public class DisplayShelfPutReportServiceImpl extends ServiceImpl<DisplayShelfPu
         LambdaQueryWrapper<DisplayShelfPutReport> wrapper = this.fillWrapper(reportMsg);
         IPage<DisplayShelfPutReport> page = this.page(reportMsg, wrapper);
         return page;
+    }
+
+    @Override
+    public IPage<ShelfPutReportVo> selectPutPage(DisplayShelfPage reportMsg) {
+        IPage<ShelfPutReportVo> accountPage = new Page<>();
+        List<ShelfPutReportVo> shelfPutReports = new ArrayList<>();
+        IPage<DisplayShelf> displayShelfIPage = displayShelfDao.selectReportDetailsPage(reportMsg);
+        List<DisplayShelf> records = displayShelfIPage.getRecords();
+        for (DisplayShelf displayShelf : records) {
+            ShelfPutReportVo shelfPutReportVo = new ShelfPutReportVo();
+            DisplayShelfPutReport displayShelfPutReport = displayShelfPutReportDao.selectOne(Wrappers.<DisplayShelfPutReport>lambdaQuery().eq(DisplayShelfPutReport::getPutCustomerNumber, displayShelf.getPutNumber()).last(" limit 1"));
+            BeanUtils.copyProperties(displayShelf, shelfPutReportVo);
+            shelfPutReportVo.setShNumber(displayShelfPutReport.getShNumber())
+                .setPutCustomerLevel(displayShelfPutReport.getPutCustomerLevel())
+                .setVisitTypeName(displayShelfPutReport.getVisitTypeName())
+                .setCustomerAddress(displayShelfPutReport.getCustomerAddress())
+                .setLinkmanMobile(displayShelfPutReport.getLinkmanMobile())
+                .setLinkmanName(displayShelfPutReport.getLinkmanName());
+            shelfPutReports.add(shelfPutReportVo);
+        }
+        accountPage.setRecords(shelfPutReports);
+        return accountPage;
     }
 
     @Override
@@ -271,5 +306,51 @@ public class DisplayShelfPutReportServiceImpl extends ServiceImpl<DisplayShelfPu
         wrapper.orderByDesc(DisplayShelfPutReport::getCreateTime);
         return wrapper;
     }
-    
+
+
+//    @Override
+    public LambdaQueryWrapper<DisplayShelf> fillWrappers(ShelfPutReportMsg reportMsg) {
+        LambdaQueryWrapper<DisplayShelf> wrapper = Wrappers.<DisplayShelf>lambdaQuery();
+        /*if(reportMsg != null) {
+            if (reportMsg.getDeptType() != null && reportMsg.getMarketAreaId() != null) {
+                switch (reportMsg.getDeptType()) {
+                    //deptType  1:服务处 2:大区 3:事业部 4:本部 5:组
+                    case 1:
+                        wrapper.eq(DisplayShelf::getServiceDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    case 2:
+                        wrapper.eq(DisplayShelf::getRegionDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    case 3:
+                        wrapper.eq(DisplayShelf::getBusinessDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    case 4:
+                        wrapper.eq(DisplayShelf::getHeadquartersDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    case 5:
+                        wrapper.eq(DisplayShelf::getGroupDeptId, reportMsg.getMarketAreaId());
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }*/
+        /*if(StringUtils.isNotEmpty(reportMsg.getCustomerName())){
+            wrapper.like(DisplayShelfPutReport::getPutCustomerName,reportMsg.getCustomerName());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getCustomerNumber())){
+            wrapper.eq(DisplayShelfPutReport::getPutCustomerNumber,reportMsg.getCustomerNumber());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getStartTime())){
+            wrapper.ge(DisplayShelfPutReport::getCreateTime,reportMsg.getStartTime());
+        }
+        if(StringUtils.isNotEmpty(reportMsg.getEndTime())){
+            wrapper.le(DisplayShelfPutReport::getCreateTime,reportMsg.getEndTime());
+        }
+        if(reportMsg.getPutStatus() != null){
+            wrapper.eq(DisplayShelfPutReport::getPutStatus,reportMsg.getPutStatus());
+        }
+        wrapper.orderByDesc(DisplayShelfPutReport::getCreateTime);*/
+        return wrapper;
+    }
 }

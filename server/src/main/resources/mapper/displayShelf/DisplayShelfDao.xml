@@ -154,6 +154,12 @@
         </where>
         group by size,type
     </select>
+    <select id="InspectCount" resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
+        select count(status) count,name,type,size,put_status,`status`,put_number
+        from t_display_shelf
+        where apply_number = #{applyNumber} and put_status = '3'
+        GROUP BY size,type,`status`;
+    </select>
     <select id="typeCount" resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf$DisplayShelfType">
         select name as typeName, count(type) as count
         from t_display_shelf
@@ -195,6 +201,54 @@
                 and ${ew.sqlSegment}
             </if>
         </trim>
+    </select>
+    <!--投放报表-->
+    <select id="selectReportDetailsPage"
+            resultType="com.szeastroc.icebox.newprocess.entity.DisplayShelf">
+        select headquarters_dept_name,
+        headquarters_dept_id,
+        business_dept_name,
+        business_dept_id,
+        region_dept_name,
+        region_dept_id,
+        service_dept_name,
+        service_dept_id,
+        put_number,
+        put_name,
+        name,
+        COUNT(if(sign_status = 1, 1, null)) AS signCount, -- 签收的数量
+        COUNT(if(put_status != 0, 1, null)) AS putCount, -- 已投放的数量(包含审批中的数据)
+        COUNT(if(status = 2, 1, null)) AS scrapCount, -- 报废的数量
+        COUNT(if(status = 3, 1, null)) AS loseCount, -- 遗失的数量
+        size
+        from t_display_shelf
+        <where>
+            put_status != 0
+            <if test="deptType != '' and deptType != null">
+                <if test="deptType == 1">
+                    and service_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 2">
+                    and region_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 3">
+                    and business_dept_id = #{marketAreaId}
+                </if>
+                <if test="deptType == 4">
+                    and headquarters_dept_id = #{marketAreaId}
+                </if>
+            </if>
+            <if test="putNumber != '' and putNumber != null">
+                and put_number = #{putNumber}
+            </if>
+            <if test="putName != '' and putName != null">
+                and put_name like concat('%',#{putName},'%')
+            </if>
+            <if test="shelfType != '' and shelfType != null">
+                and name like concat('%',#{shelfType},'%')
+            </if>
+        </where>
+        group by put_number,size,name,service_dept_id,region_dept_id,business_dept_id,headquarters_dept_id
     </select>
 
 </mapper>

@@ -169,6 +169,7 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
                             .eq(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())
                             .eq(DisplayShelf::getPutStatus, PutStatus.FINISH_PUT.getStatus())
                             .eq(DisplayShelf::getSize,scrapShelf.getSize())
+                            .eq(DisplayShelf::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus())
                             .set(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.IS_SCRAPING_UNPASS.getType())
                             .set(DisplayShelf::getApplyNumber,applyNumber)
                             .last(" limit " + scrapShelf.getCount()));
@@ -199,6 +200,7 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
                             .eq(DisplayShelf::getType, lostShelf.getType())
                             .eq(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())
                             .eq(DisplayShelf::getSize,lostShelf.getSize())
+                            .eq(DisplayShelf::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus())
                             .eq(DisplayShelf::getPutStatus, PutStatus.FINISH_PUT.getStatus())
                             .set(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.IS_LOSEING_UNPASS.getType())
                             .set(DisplayShelf::getApplyNumber,applyNumber)
@@ -231,13 +233,6 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
         //审批通过
         ShelfInspectModel model = request.getModel();
         if(request.getStatus() == 1){
-            /*//全部变为正常
-            //TODO 逻辑还是有问题
-            displayShelfService.update(Wrappers.<DisplayShelf>lambdaUpdate()
-                    .eq(DisplayShelf::getPutNumber,request.getModel().getCustomerNumber())
-                    .in(DisplayShelf::getStatus,IceBoxEnums.StatusEnum.IS_SCRAPING.getType(),IceBoxEnums.StatusEnum.IS_LOSEING.getType())
-                    .set(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())
-            );*/
             //挑选指定数量遗失
             List<ShelfInspectModel.LostShelf> lostShelves = model.getLostShelves();
             if(Objects.nonNull(lostShelves)){
@@ -294,7 +289,7 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
                     displayShelfService.update(Wrappers.<DisplayShelf>lambdaUpdate()
                             .eq(DisplayShelf::getPutNumber,request.getModel().getCustomerNumber())
                             .eq(DisplayShelf::getType, scrapShelf.getType())
-                            .eq(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.IS_SCRAPING_UNPASS.getType())
+                            .eq(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.IS_LOSEING_UNPASS.getType())
                             .eq(DisplayShelf::getSize,scrapShelf.getSize())
                             .eq(DisplayShelf::getApplyNumber,model.getApplyNumber())
                             .set(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())

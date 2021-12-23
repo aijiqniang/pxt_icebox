@@ -289,7 +289,7 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
                     displayShelfService.update(Wrappers.<DisplayShelf>lambdaUpdate()
                             .eq(DisplayShelf::getPutNumber,request.getModel().getCustomerNumber())
                             .eq(DisplayShelf::getType, scrapShelf.getType())
-                            .eq(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.IS_LOSEING_UNPASS.getType())
+                            .eq(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.IS_SCRAPING_UNPASS.getType())
                             .eq(DisplayShelf::getSize,scrapShelf.getSize())
                             .eq(DisplayShelf::getApplyNumber,model.getApplyNumber())
                             .set(DisplayShelf::getStatus, IceBoxEnums.StatusEnum.NORMAL.getType())

@@ -160,19 +160,16 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
     @Override
     public void eventPushConsumer(HisenseDTO hisenseDTO) {
         if (hisenseDTO.validate()) {
-            //log.info("参数错误-->[{}]", JSON.toJSONString(hisenseDTO));
+            log.info("参数错误-->[{}]", JSON.toJSONString(hisenseDTO));
         }else {
             String sign = createSign(buildMap(hisenseDTO));
             String submitSign = hisenseDTO.getSign();
-            //log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
+            log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
             //saveHisensePushEvent(hisenseDTO);
-            //log.info("实际签名数据:" + sign + ",提交的签名数据:" + submitSign);
             if (!sign.equals(submitSign)) {
-                //log.info("签名数据错误,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
+                log.info("签名数据错误,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
             } else {
                 saveHisensePushEvent(hisenseDTO);
-                //log.info("推送数据入库");
-                //log.info("推送数据入库");
             }
         }
     }
@@ -629,7 +626,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
         IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getExternalId, hisenseDTO.getControlId()).last("limit 1"));
 
         if (null == iceBoxExtend) {
-            //log.info("无效设备信息,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
+            log.info("无效设备信息,参数为-->[{}]", JSON.toJSONString(hisenseDTO));
         } else {
             Map<String, Object> map = new HashMap<>();
             map.put("occurrence_time", hisenseDTO.getOccurrenceTime());
@@ -644,6 +641,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
             iceEventRecord.setAssetId(iceBoxExtend.getAssetId());
             iceEventRecord.setCreateTime(new Date());
             BeanUtils.copyProperties(hisenseDTO, iceEventRecord);
+            log.info("冰柜推送数据->assetId[{}]+occTme[{}]",iceEventRecord.getAssetId(),iceEventRecord.getOccurrenceTime());
             iceEventRecordDao.insert(iceEventRecord);
             //增加冰箱次数
             IceBoxExtend updateIceBoxExtend = new IceBoxExtend();

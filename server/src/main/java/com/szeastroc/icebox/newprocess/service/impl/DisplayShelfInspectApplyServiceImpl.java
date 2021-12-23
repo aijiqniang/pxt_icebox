@@ -123,7 +123,7 @@ public class DisplayShelfInspectApplyServiceImpl extends ServiceImpl<DisplayShel
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class ,transactionManager = "transactionManager")
     public List<SessionExamineVo.VisitExamineNodeVo> submitShelfInspectDetails(ShelfInspectModel model) {
         String applyNumber = "INS" + IdUtil.simpleUUID().substring(0, 29);
         model.setApplyNumber(applyNumber);

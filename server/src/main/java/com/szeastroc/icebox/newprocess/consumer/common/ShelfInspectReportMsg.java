@@ -29,8 +29,10 @@ public class ShelfInspectReportMsg extends Page implements Serializable {
     private String customerNumber;
     @ApiModelProperty(value = "巡检人员")
     private String submitterName;
-    @ApiModelProperty(value = "巡检日期")
-    private String submitTime;
+    @ApiModelProperty(value = "开始时间")
+    private String startTime;
+    @ApiModelProperty(value = "开始时间")
+    private String endTime;
 
 
     /**
@@ -42,14 +44,4 @@ public class ShelfInspectReportMsg extends Page implements Serializable {
      * 商户编号
      */
     private String shNumber;
-
-    /**
-     * 开始时间
-     */
-    private String startTime;
-    /**
-     * 结束时间
-     */
-    private String endTime;
-
 }

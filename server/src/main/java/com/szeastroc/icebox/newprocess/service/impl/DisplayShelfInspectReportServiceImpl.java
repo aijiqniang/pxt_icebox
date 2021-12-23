@@ -33,11 +33,13 @@ import com.szeastroc.icebox.newprocess.entity.*;
 import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfInspectReportService;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutApplyService;
+import com.szeastroc.icebox.util.DateUtil;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -112,6 +114,7 @@ public class DisplayShelfInspectReportServiceImpl extends ServiceImpl<DisplayShe
 
     @Override
     public LambdaQueryWrapper<DisplayShelfInspectReport> fillWrapper(ShelfInspectReportMsg reportMsg) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         LambdaQueryWrapper<DisplayShelfInspectReport> wrapper = Wrappers.lambdaQuery();
         if(Objects.nonNull(reportMsg)) {
             if (reportMsg.getDeptType() != null && reportMsg.getMarketAreaId() != null) {
@@ -146,12 +149,17 @@ public class DisplayShelfInspectReportServiceImpl extends ServiceImpl<DisplayShe
         if (StringUtils.isNotEmpty(reportMsg.getShelfType())) {
             wrapper.like(DisplayShelfInspectReport::getName, reportMsg.getShelfType());
         }
-        if (StringUtils.isNotEmpty(reportMsg.getSubmitTime())) {
-            wrapper.apply("date_format(submit_time,'%Y-%m-%d') = '" +reportMsg.getSubmitTime() +"'");
+
+        if (StringUtils.isNotEmpty(reportMsg.getStartTime()) && StringUtils.isNotEmpty(reportMsg.getEndTime())) {
+            Date start = DateUtil.dayBegin(DateUtil.strToDate(reportMsg.getStartTime(), "yyyy-MM-dd"));
+            Date end = DateUtil.dayEnd(DateUtil.strToDate(reportMsg.getEndTime(), "yyyy-MM-dd"));
+            wrapper.apply("create_time >= '" + dateFormat.format(start) +"'"  + " and create_time <= '" + dateFormat.format(end) + "'");
         }
+
         if (StringUtils.isNotEmpty(reportMsg.getSubmitterName())) {
             wrapper.like(DisplayShelfInspectReport::getSubmitterName, reportMsg.getSubmitterName());
         }
+
         wrapper.orderByDesc(DisplayShelfInspectReport::getCreateTime);
         return wrapper;
     }

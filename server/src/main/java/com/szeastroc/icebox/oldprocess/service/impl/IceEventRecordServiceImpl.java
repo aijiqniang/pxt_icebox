@@ -890,7 +890,13 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
         double t1 = Math.cos(lat_a / PK) * Math.cos(lng_a / PK) * Math.cos(lat_b / PK) * Math.cos(lng_b / PK);
         double t2 = Math.cos(lat_a / PK) * Math.sin(lng_a / PK) * Math.cos(lat_b / PK) * Math.sin(lng_b / PK);
         double t3 = Math.sin(lat_a / PK) * Math.sin(lat_b / PK);
-
+        double num = t1 + t2 + t3;
+        if(num < -1){
+            num=-1;
+        }
+        if(num > 1){
+            num =1;
+        }
         double tt = Math.acos(t1 + t2 + t3);
         return 6366000 * tt;
     }

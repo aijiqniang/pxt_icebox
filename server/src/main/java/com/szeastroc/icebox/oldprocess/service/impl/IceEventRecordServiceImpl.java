@@ -897,7 +897,7 @@ public class IceEventRecordServiceImpl extends ServiceImpl<IceEventRecordDao, Ic
         if(num > 1){
             num =1;
         }
-        double tt = Math.acos(t1 + t2 + t3);
+        double tt = Math.acos(num);
         return 6366000 * tt;
     }
 

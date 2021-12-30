@@ -231,7 +231,7 @@ public class DisplayDisplayShelfPutApplyServiceImpl extends ServiceImpl<DisplayS
             if(CollectionUtils.isEmpty(collect)){
                 return shelfList;
             }
-            List<DisplayShelf> displayShelves = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().eq(DisplayShelf::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()).in(DisplayShelf::getId, collect));
+            List<DisplayShelf> displayShelves = displayShelfService.list(Wrappers.<DisplayShelf>lambdaQuery().eq(DisplayShelf::getStatus,IceBoxEnums.StatusEnum.NORMAL.getType()).eq(DisplayShelf::getSignStatus,StoreSignStatus.ALREADY_SIGN.getStatus()).in(DisplayShelf::getId, collect));
             //根据类型进行分组
             Map<String, List<DisplayShelf>> collect1 = displayShelves.stream().collect(Collectors.groupingBy(groups -> groups.getType()+"_"+groups.getSize()));
             shelfList = collect1.entrySet().stream().map(e -> {

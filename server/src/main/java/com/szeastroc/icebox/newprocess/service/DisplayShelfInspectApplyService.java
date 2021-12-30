@@ -7,6 +7,8 @@ import com.szeastroc.common.entity.visit.SessionExamineVo;
 import com.szeastroc.common.entity.visit.ShelfInspectModel;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfInspectApply;
 import com.szeastroc.icebox.newprocess.vo.request.ShelfInspectPage;
+import com.szeastroc.icebox.newprocess.vo.request.ShelfInspectVo;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -20,7 +22,13 @@ public interface DisplayShelfInspectApplyService extends IService<DisplayShelfIn
 
     List<SessionExamineVo.VisitExamineNodeVo> shelfInspect(ShelfInspectModel model);
 
+    List<SessionExamineVo.VisitExamineNodeVo> submitShelfInspectDetails(ShelfInspectModel model);
+
     void doInspect(ShelfInspectRequest request);
 
     IPage<DisplayShelfInspectApply> history(ShelfInspectPage page);
+
+    List<ShelfInspectModel> submitted( String customerNumber);
+
+    IPage<ShelfInspectVo> inspectHistory(ShelfInspectPage page);
 }

@@ -27,7 +27,7 @@ public class DisplayShelfInspectReport extends Model<DisplayShelfInspectReport> 
 
     @TableId(type = IdType.AUTO)
     private Integer id;
-
+    private String imageUrl;
 
     /**
      * 本部id
@@ -107,24 +107,24 @@ public class DisplayShelfInspectReport extends Model<DisplayShelfInspectReport> 
 
 
     /**
-     * 所属经销商编号
+     * 陈列架名称
      */
 
-    private String supplierNumber;
+    private String name;
 
 
     /**
-     * 所属经销商名称
+     * 尺寸大小
      */
 
-    private String supplierName;
+    private String size;
 
 
     /**
      * 所属经销商类型
      */
 
-    private Integer supplierType;
+//    private Integer supplierType;
 
 
     /**
@@ -174,28 +174,28 @@ public class DisplayShelfInspectReport extends Model<DisplayShelfInspectReport> 
     private Integer putCustomerType;
 
 
-    private String putCustomerLevel;
+//    private String putCustomerLevel;
 
 
     /**
-     * 审核人id
+     * 巡检状态
      */
 
-    private Integer examineUserId;
+    private Integer inspectStatus;
 
 
     /**
-     * 审核人名称
+     * 异常数量
      */
 
-    private String examineUserName;
+    private Integer unusualNumber;
 
 
     /**
-     * 审核人职务
+     * 总的投放数量
      */
 
-    private String examineUserOfficeName;
+    private Integer putCount;
 
 
     private Date examineTime;

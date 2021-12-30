@@ -26,6 +26,7 @@ public class DisplayShelf extends Model<DisplayShelf> {
 
     @TableId(type = IdType.AUTO)
     private Integer id;
+    private String applyNumber;
     /**
      * 货架名称
      */

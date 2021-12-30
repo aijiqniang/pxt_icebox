@@ -27,6 +27,8 @@ import java.util.List;
 public interface DisplayShelfDao extends BaseMapper<DisplayShelf> {
 
     IPage<DisplayShelf> selectDetailsPage(DisplayShelfPage page);
+    //陈列架投放报表分页查询
+    IPage<DisplayShelf> selectReportDetailsPage(DisplayShelfPage page);
 
     List<DisplayShelf> selectDetails(ShelfPutDetailsMsg shelfPutDetailsMsg);
 
@@ -42,6 +44,7 @@ public interface DisplayShelfDao extends BaseMapper<DisplayShelf> {
 
     Integer selectByExportCount(@Param(Constants.WRAPPER) LambdaQueryWrapper<DisplayShelf> wrapper);
 
+    List<DisplayShelf> InspectCount(@Param("applyNumber") String applyNumber);
     /**
      * 导出记录
      */

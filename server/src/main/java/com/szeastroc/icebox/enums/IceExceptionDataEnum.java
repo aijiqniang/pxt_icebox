@@ -10,7 +10,7 @@ public enum IceExceptionDataEnum {
     ICE_SCRAP(2, "报废"),
     ICE_LOSE(3, "遗失"),
     ICE_ADD(4, "新增"),
-    ICE_RETURN_SCRAP(5, "退仓与报废");
+    ICE_RETURN_SCRAP(5, "退仓&报废");
 
     private Integer type;
     private String desc;

@@ -300,7 +300,7 @@ public class DirectExchangeConfig {
     public SimpleRabbitListenerContainerFactory iceboxHandoverContainer() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factoryConfigurer.configure(factory, connectionFactory);
-        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setAcknowledgeMode(AcknowledgeMode.NONE);
         factory.setPrefetchCount(1);
         return factory;
     }

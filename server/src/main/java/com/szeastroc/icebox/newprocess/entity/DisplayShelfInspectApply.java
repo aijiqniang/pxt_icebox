@@ -110,9 +110,9 @@ public class DisplayShelfInspectApply extends Model<DisplayShelfInspectApply> {
 
     private Date updateTime;
 
-    @TableField(exist = false)
+//    @TableField(exist = false)
     private String createName;
-    @TableField(exist = false)
+//    @TableField(exist = false)
     private String customerName;
 
 

@@ -150,6 +150,8 @@ public interface IceBoxService extends IService<IceBox> {
     void helpSignIcebox(String assestId, String applyNumber);
 
     List<IceBox> getByResponsmanId(Integer userId);
+
+    void handelIceBoxDate(MultipartFile file);
 }
 
 

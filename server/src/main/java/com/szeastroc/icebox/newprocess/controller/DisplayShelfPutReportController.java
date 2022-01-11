@@ -5,6 +5,7 @@ import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutReportMsg;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfPutReportService;
+import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,11 @@ public class DisplayShelfPutReportController {
     @PostMapping("page")
     public CommonResponse page(@RequestBody ShelfPutReportMsg reportMsg){
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,displayShelfPutReportService.selectPage(reportMsg));
+    }
+
+    @PostMapping("selectPutPage")
+    public CommonResponse selectPutPage(@RequestBody DisplayShelfPage reportMsg){
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,displayShelfPutReportService.selectPutPage(reportMsg));
     }
 
     @GetMapping("detail")

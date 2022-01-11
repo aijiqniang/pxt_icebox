@@ -20,10 +20,7 @@ public class DisplayShelfPage extends Page<DisplayShelf> {
     private Integer deptId;
     @ApiModelProperty(value = "经销商编号")
     private String supplierNumber;
-    @ApiModelProperty(value = "投放客户名称")
-    private String putName;
-    @ApiModelProperty(value = "投放客户编号")
-    private String putNumber;
+
     @ApiModelProperty(value = "货架状态")
     private Integer status;
     @ApiModelProperty(value = "投放状态")
@@ -38,5 +35,8 @@ public class DisplayShelfPage extends Page<DisplayShelf> {
     private Integer marketAreaId;
     @ApiModelProperty(value = "货架类型")
     private String shelfType;
-
+    @ApiModelProperty(value = "投放客户名称")
+    private String putName;
+    @ApiModelProperty(value = "投放客户编号")
+    private String putNumber;
 }

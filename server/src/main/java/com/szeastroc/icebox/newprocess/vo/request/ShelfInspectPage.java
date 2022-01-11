@@ -15,16 +15,16 @@ public class ShelfInspectPage extends Page<DisplayShelfInspectApply> {
     /**
      * 客户编号
      */
-    @NotEmpty(message = "客户编号不能为空")
+//    @NotEmpty(message = "客户编号不能为空")
     private String customerNumber;
 
     /**
      * 业务员id
      */
-    @NotNull(message = "业务员id不能为空")
+//    @NotNull(message = "业务员id不能为空")
     private Integer createBy;
 
-    @NotEmpty(message = "业务员姓名不能为空")
+//    @NotEmpty(message = "业务员姓名不能为空")
     private String createName;
 
     /**

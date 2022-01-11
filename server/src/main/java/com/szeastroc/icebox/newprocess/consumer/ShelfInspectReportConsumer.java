@@ -10,7 +10,6 @@ import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.newprocess.consumer.common.ShelfInspectReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.utils.PoiUtil;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfInspectReport;
-import com.szeastroc.icebox.newprocess.enums.SupplierTypeEnum;
 import com.szeastroc.icebox.newprocess.service.DisplayShelfInspectReportService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xssf.streaming.SXSSFRow;
@@ -31,7 +30,6 @@ public class ShelfInspectReportConsumer {
     private ImageUploadUtil imageUploadUtil;
     @Autowired
     private FeignExportRecordsClient feignExportRecordsClient;
-
     @RabbitListener(queues = MqConstant.shelfInspectReportQueue)
     public void task(ShelfInspectReportMsg reportMsg) throws Exception {
         selectReport(reportMsg);
@@ -41,8 +39,8 @@ public class ShelfInspectReportConsumer {
         LambdaQueryWrapper<DisplayShelfInspectReport> wrapper = shelfInspectReportService.fillWrapper(reportMsg);
         Integer count = shelfInspectReportService.selectByExportCount(wrapper); // 得到当前条件下的总量
         // 列
-        String[] columnName = {"事业部", "大区", "服务处", "投放客户名称", "投放客户等级", "投放客户编号", "商户编号", "投放客户类型", "所属经销商编号", "所属经销商名称", "所属经销商类型",
-                "巡检人", "巡检人职务", "巡检备注", "审核人员", "审核人职务", "审核日期", "审批备注"};
+        String[] columnName = {"事业部", "大区", "服务处", "门店编号","门店名称", "货架",  "投放数量", "巡检状态", "异常数量", "巡检人员", "巡检日期",
+                "现场照片", "巡检职务", "巡检备注"};
         // 先写入本地文件
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String tmpPath = String.format("%s.xlsx", System.currentTimeMillis());
@@ -61,21 +59,17 @@ public class ShelfInspectReportConsumer {
                                 eachDataRow.createCell(0).setCellValue(report.getBusinessDeptName());
                                 eachDataRow.createCell(1).setCellValue(report.getRegionDeptName());
                                 eachDataRow.createCell(2).setCellValue(report.getServiceDeptName());
-                                eachDataRow.createCell(3).setCellValue(report.getPutCustomerName());
-                                eachDataRow.createCell(4).setCellValue(report.getPutCustomerLevel());
-                                eachDataRow.createCell(5).setCellValue(report.getPutCustomerNumber());
-                                eachDataRow.createCell(6).setCellValue(report.getShNumber());
-                                eachDataRow.createCell(7).setCellValue(SupplierTypeEnum.getDesc(report.getPutCustomerType()));
-                                eachDataRow.createCell(8).setCellValue(report.getSupplierNumber());
-                                eachDataRow.createCell(9).setCellValue(report.getSupplierName());
-                                eachDataRow.createCell(10).setCellValue(report.getSupplierType() == 1 ? "经销商" : "特约经销商");
-                                eachDataRow.createCell(11).setCellValue(report.getSubmitterName());
+                                eachDataRow.createCell(3).setCellValue(report.getPutCustomerNumber());
+                                eachDataRow.createCell(4).setCellValue(report.getPutCustomerName());
+                                eachDataRow.createCell(5).setCellValue(report.getName() + "(" + report.getSize() + ")");
+                                eachDataRow.createCell(6).setCellValue(report.getPutCount());
+                                eachDataRow.createCell(7).setCellValue(report.getInspectStatus());
+                                eachDataRow.createCell(8).setCellValue(report.getUnusualNumber());
+                                eachDataRow.createCell(9).setCellValue(report.getSubmitterName());
+                                eachDataRow.createCell(10).setCellValue(dateFormat.format(report.getSubmitTime()));
+                                eachDataRow.createCell(11).setCellValue(report.getImageUrl());
                                 eachDataRow.createCell(12).setCellValue(report.getSubmitterPosition());
                                 eachDataRow.createCell(13).setCellValue(report.getInspectRemark());
-                                eachDataRow.createCell(14).setCellValue(report.getExamineUserName());
-                                eachDataRow.createCell(15).setCellValue(report.getExamineUserOfficeName());
-                                eachDataRow.createCell(16).setCellValue(dateFormat.format(report.getExamineTime()));
-                                eachDataRow.createCell(17).setCellValue(report.getExamineRemark());
                             }
                         }
                     }

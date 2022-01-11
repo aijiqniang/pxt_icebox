@@ -7,6 +7,8 @@ import com.szeastroc.common.entity.visit.ShelfPutModel;
 import com.szeastroc.common.vo.CommonResponse;
 import com.szeastroc.icebox.newprocess.consumer.common.ShelfPutReportMsg;
 import com.szeastroc.icebox.newprocess.entity.DisplayShelfPutReport;
+import com.szeastroc.icebox.newprocess.vo.ShelfPutReportVo;
+import com.szeastroc.icebox.newprocess.vo.request.DisplayShelfPage;
 
 /**
  * (DisplayShelfPutReport)表服务接口
@@ -21,6 +23,8 @@ public interface DisplayShelfPutReportService extends IService<DisplayShelfPutRe
     LambdaQueryWrapper<DisplayShelfPutReport> fillWrapper(ShelfPutReportMsg reportMsg);
 
     IPage<DisplayShelfPutReport> selectPage(ShelfPutReportMsg reportMsg);
+
+    IPage<ShelfPutReportVo> selectPutPage(DisplayShelfPage reportMsg);
 
     Object detail(String applyNumber);
 

@@ -6049,6 +6049,13 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
                     boxExtend.setId(box.getId()).setAssetId(iceBoxExceptionDate.getAssetId());
                     iceBoxExtendDao.insert(boxExtend);
                     break;
+                case 9:
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.NORMAL.getType());
+                    iceBoxDao.updateById(iceBox);
+                    IceExamine iceExamine = new IceExamine();
+                    iceExamine.setIceStatus(IceBoxEnums.StatusEnum.NORMAL.getType());
+                    iceExamineDao.update(iceExamine,Wrappers.<IceExamine>lambdaUpdate().eq(IceExamine::getIceBoxId,iceBox.getId()));
+                    break;
                 default:
                     break;
             }

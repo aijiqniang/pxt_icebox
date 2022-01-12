@@ -10,8 +10,23 @@ public enum IceExceptionDataEnum {
     ICE_SCRAP(2, "报废"),
     ICE_LOSE(3, "遗失"),
     ICE_ADD(4, "新增"),
-    ICE_RETURN_SCRAP(5, "退仓&报废");
+    ICE_RETURN_SCRAP(5, "退仓&报废"),
+    ICE_SYSTEM_ADD(6, "系统新增"),
+    ICE_ADD_SCRAP(7, "系统新增&报废"),
+    ICE_ADD_LOSE(8, "系统新增&遗失"),
+    ICE_CHANGE_STATUS(9, "异常变更状态");
 
     private Integer type;
     private String desc;
+
+
+
+    public static Integer getEnumType(String desc) {
+        for (IceExceptionDataEnum enu : IceExceptionDataEnum.values()) {
+            if (enu.getDesc().equals(desc)) {
+                return enu.getType();
+            }
+        }
+        return null;
+    }
 }

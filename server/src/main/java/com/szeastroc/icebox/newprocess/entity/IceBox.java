@@ -1,9 +1,7 @@
 package com.szeastroc.icebox.newprocess.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.math.BigDecimal;
 import java.util.Date;
 import lombok.AllArgsConstructor;
@@ -83,7 +81,7 @@ public class IceBox {
     /**
      * 投放的门店number
      */
-    @TableField(value = "put_store_number")
+    @TableField(value = "put_store_number",updateStrategy = FieldStrategy.IGNORED)
     private String putStoreNumber;
 
     /**

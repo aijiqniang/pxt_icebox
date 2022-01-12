@@ -106,6 +106,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -113,6 +114,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static cn.hutool.core.date.DateTime.now;
 
 @Slf4j
 @Service
@@ -176,6 +179,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private IceRepairOrderService iceRepairOrderService;
     @Autowired
     private IceTransferRecordService iceTransferRecordService;
+
 
     @Override
     public List<IceBoxVo> findIceBoxList(IceBoxRequestVo requestVo) {
@@ -5926,27 +5930,137 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     @Override
     @Transactional(rollbackFor = Exception.class, transactionManager = "transactionManager")
-    public void handelIceBoxDate(MultipartFile file) {
+    public void handelIceBoxDate(MultipartFile file) throws IOException {
         //冰柜状态 0:异常，1:正常，2:报废，3:遗失，4:报修
         List<IceBoxExceptionDateVo> data = null;
-        try {
+//        try {
             data = EasyExcel.read(file.getInputStream()).head(IceBoxExceptionDateVo.class).sheet().headRowNumber(2).doReadSync();
             log.info("冰柜异常数据：{}", JSON.toJSONString(data));
             if (org.apache.commons.collections4.CollectionUtils.isEmpty(data)){
                 throw new ImproperOptionException("导入数据为空");
             }
-        } catch (Exception e) {
+        /*} catch (Exception e) {
             log.error("处理冰柜导入数据异常");
             throw new ImproperOptionException("处理冰柜导入数据异常");
-        }
-        //写这么多if else  真是让人难受
+        }*/
         for (IceBoxExceptionDateVo iceBoxExceptionDate : data) {
-            if(iceBoxExceptionDate.getImportType() == null && iceBoxExceptionDate.getAssetId() == null){
+            if (StringUtils.isBlank(iceBoxExceptionDate.getImportType()) || StringUtils.isBlank(iceBoxExceptionDate.getAssetId())) {
                 continue;
             }
+            //如果是系统新增 这里查到的可能就是空的
             IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, iceBoxExceptionDate.getAssetId()));
-            IceBoxExtend iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, iceBox.getId()));
-            if (IceExceptionDataEnum.ICE_RETURN.getDesc().equals(iceBoxExceptionDate.getImportType())){  //退仓
+            IceBoxExtend iceBoxExtend = null;
+            if (Objects.nonNull(iceBox)) {
+                iceBoxExtend = iceBoxExtendDao.selectOne(Wrappers.<IceBoxExtend>lambdaQuery().eq(IceBoxExtend::getId, iceBox.getId()));
+            }
+            IceModel iceModel = iceModelDao.selectOne(Wrappers.<IceModel>lambdaQuery().eq(IceModel::getChestModel, iceBoxExceptionDate.getIceModel()));
+            SupplierInfoSessionVo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBoxExceptionDate.getNumber()));
+            Integer type = IceExceptionDataEnum.getEnumType(iceBoxExceptionDate.getImportType());
+            IceBox box = new IceBox();
+            IceBoxExtend boxExtend = new IceBoxExtend();
+            switch (type) {
+                case 1:
+                    //1、需要判断冰柜拓展表字段last_put_id和last_apply_number有没有数据，如果有  需要修改
+                    if (iceBoxExtend.getLastPutId() != 0) {
+                        iceBoxExtendDao.update(iceBoxExtend, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBox.getId()).set(IceBoxExtend::getLastPutId, 0).set(IceBoxExtend::getLastApplyNumber, null));
+                    }
+                    //2、更改冰柜表的投放状态修改为0 投放门店（put_store_number）更改成null;
+                    iceBox.setPutStatus(IceBoxStatus.NO_PUT.getStatus());
+                    iceBox.setPutStoreNumber(null);
+                    iceBoxDao.updateById(iceBox);
+                    break;
+                case 2:
+                    //要将冰柜表的状态更改为2
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.SCRAP.getType());
+                    iceBoxDao.updateById(iceBox);
+                    break;
+                case 3:
+                    //要将冰柜表的状态更改为3
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.LOSE.getType());
+                    iceBoxDao.updateById(iceBox);
+                    break;
+                case 4:
+                    iceBox.setPutStatus(IceBoxStatus.IS_PUTED.getStatus());
+                    iceBox.setPutStoreNumber(iceBoxExceptionDate.getStoreNumber());
+                    iceBoxDao.updateById(iceBox);
+                    break;
+                case 5:
+                    //1、退仓 需要判断冰柜拓展表字段last_put_id和last_apply_number有没有数据，如果有  需要修改
+                    if (iceBoxExtend.getLastPutId() != 0) {
+                        iceBoxExtendDao.update(iceBoxExtend, Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId, iceBox.getId()).set(IceBoxExtend::getLastPutId, 0).set(IceBoxExtend::getLastApplyNumber, null));
+                    }
+                    iceBox.setPutStatus(IceBoxStatus.NO_PUT.getStatus());
+                    iceBox.setPutStoreNumber(null);
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.SCRAP.getType());
+                    iceBoxDao.updateById(iceBox);
+                    break;
+                case 6:
+                    //(chest_name,model_id,brand_name,chest_norm,deposit_money,supplier_id,dept_id,put_status,status,create_time,updated_time,asset_id,model_name,ice_box_type)
+                    box.setChestName(iceBoxExceptionDate.getChestName())
+                            .setModelId(iceModel.getId())
+                            .setBrandName(iceBoxExceptionDate.getBrandName())
+                            .setChestNorm(iceBoxExceptionDate.getChestNorm())
+                            .setDepositMoney(iceBoxExceptionDate.getChestMoney())
+                            .setSupplierId(supplierInfo.getId())
+                            .setDeptId(supplierInfo.getMarketAreaId())
+                            .setPutStatus(IceBoxStatus.NO_PUT.getStatus())
+                            .setStatus(IceBoxEnums.StatusEnum.NORMAL.getType())
+                            .setCreatedTime(now())
+                            .setUpdatedTime(now())
+                            .setAssetId(iceBoxExceptionDate.getAssetId())
+                            .setIceBoxType(0);
+                    iceBoxDao.insert(box);
+                    boxExtend.setId(box.getId()).setAssetId(iceBoxExceptionDate.getAssetId());
+                    iceBoxExtendDao.insert(boxExtend);
+                    break;
+                case 7:
+                    box.setChestName(iceBoxExceptionDate.getChestName())
+                            .setModelId(iceModel.getId())
+                            .setBrandName(iceBoxExceptionDate.getBrandName())
+                            .setChestNorm(iceBoxExceptionDate.getChestNorm())
+                            .setDepositMoney(iceBoxExceptionDate.getChestMoney())
+                            .setSupplierId(supplierInfo.getId())
+                            .setDeptId(supplierInfo.getMarketAreaId())
+                            .setPutStatus(IceBoxStatus.NO_PUT.getStatus())
+                            .setStatus(IceBoxEnums.StatusEnum.SCRAP.getType())
+                            .setCreatedTime(now())
+                            .setUpdatedTime(now())
+                            .setAssetId(iceBoxExceptionDate.getAssetId())
+                            .setIceBoxType(0);
+                    iceBoxDao.insert(box);
+                    boxExtend.setId(box.getId()).setAssetId(iceBoxExceptionDate.getAssetId());
+                    iceBoxExtendDao.insert(boxExtend);
+                    break;
+                case 8:
+                    box.setChestName(iceBoxExceptionDate.getChestName())
+                            .setModelId(iceModel.getId())
+                            .setBrandName(iceBoxExceptionDate.getBrandName())
+                            .setChestNorm(iceBoxExceptionDate.getChestNorm())
+                            .setDepositMoney(iceBoxExceptionDate.getChestMoney())
+                            .setSupplierId(supplierInfo.getId())
+                            .setDeptId(supplierInfo.getMarketAreaId())
+                            .setPutStatus(IceBoxStatus.NO_PUT.getStatus())
+                            .setStatus(IceBoxEnums.StatusEnum.LOSE.getType())
+                            .setCreatedTime(now())
+                            .setUpdatedTime(now())
+                            .setAssetId(iceBoxExceptionDate.getAssetId())
+                            .setIceBoxType(0);
+                    iceBoxDao.insert(box);
+                    boxExtend.setId(box.getId()).setAssetId(iceBoxExceptionDate.getAssetId());
+                    iceBoxExtendDao.insert(boxExtend);
+                    break;
+                case 9:
+                    iceBox.setStatus(IceBoxEnums.StatusEnum.NORMAL.getType());
+                    iceBoxDao.updateById(iceBox);
+                    IceExamine iceExamine = new IceExamine();
+                    iceExamine.setIceStatus(IceBoxEnums.StatusEnum.NORMAL.getType());
+                    iceExamineDao.update(iceExamine,Wrappers.<IceExamine>lambdaUpdate().eq(IceExamine::getIceBoxId,iceBox.getId()));
+                    break;
+                default:
+                    break;
+            }
+        }
+            /*if (IceExceptionDataEnum.ICE_RETURN.getDesc().equals(iceBoxExceptionDate.getImportType())){  //退仓
                 //1、退仓 需要判断冰柜拓展表字段last_put_id和last_apply_number有没有数据，如果有  需要修改
                 if(iceBoxExtend.getLastPutId() != 0){
                     iceBoxExtendDao.update(iceBoxExtend,Wrappers.<IceBoxExtend>lambdaUpdate().eq(IceBoxExtend::getId,iceBox.getId()).set(IceBoxExtend::getLastPutId,0).set(IceBoxExtend::getLastApplyNumber,null));
@@ -5974,8 +6088,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }else{ //不是上面的状态 直接退出
                 continue;
             }
-            iceBoxDao.updateById(iceBox);
-        }
+            iceBoxDao.updateById(iceBox);*/
+
     }
 
 }

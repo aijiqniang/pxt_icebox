@@ -16,6 +16,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
 import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -151,7 +152,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     List<IceBox> getByResponsmanId(Integer userId);
 
-    void handelIceBoxDate(MultipartFile file);
+    void handelIceBoxDate(MultipartFile file) throws IOException;
 }
 
 

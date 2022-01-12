@@ -13,7 +13,8 @@ public enum IceExceptionDataEnum {
     ICE_RETURN_SCRAP(5, "退仓&报废"),
     ICE_SYSTEM_ADD(6, "系统新增"),
     ICE_ADD_SCRAP(7, "系统新增&报废"),
-    ICE_ADD_LOSE(8, "系统新增&遗失");
+    ICE_ADD_LOSE(8, "系统新增&遗失"),
+    ICE_CHANGE_STATUS(9, "异常变更状态");
 
     private Integer type;
     private String desc;

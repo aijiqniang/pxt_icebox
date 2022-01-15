@@ -81,7 +81,7 @@ public class IceBox {
     /**
      * 投放的门店number
      */
-    @TableField(value = "put_store_number",updateStrategy = FieldStrategy.IGNORED)
+    @TableField(value = "put_store_number")
     private String putStoreNumber;
 
     /**

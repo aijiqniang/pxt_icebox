@@ -122,13 +122,16 @@ public class IceBoxPutReportConsumer {
                             BeanUtils.copyProperties(report,excelVo);
                             excelVo.setVisitTypeName(VisitCycleEnum.getDescByCode(report.getVisitType()));
                             IcePutApply icePutApply = icePutApplyDao.selectOne(Wrappers.<IcePutApply>lambdaQuery().eq(IcePutApply::getApplyNumber, report.getApplyNumber()).last("limit 1"));
-                            if(icePutApply != null){
+                            /**
+                             * 签收时间取报表时间
+                             */
+                            /*if(icePutApply != null){
                                 excelVo.setApplyPit(icePutApply.getApplyPit());
                                 if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())
                                         && icePutApply.getUpdateTime() != null){
                                     excelVo.setSignTime(dateFormat.format(icePutApply.getUpdateTime()));
                                 }
-                            }
+                            }*/
                             if(report.getSubmitTime() != null){
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
                             }

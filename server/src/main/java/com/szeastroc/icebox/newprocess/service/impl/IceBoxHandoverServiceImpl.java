@@ -574,10 +574,12 @@ implements IceBoxHandoverService{
     @Override
     public void updateResponseMan(List<Integer> iceboxIds) {
         List<IceBox> iceBoxes = new ArrayList<>();
-        iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()));
-        if(iceboxIds != null && iceBoxes.size() > 0){
-            iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).in(IceBox::getId,iceboxIds));
+        LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
+        wrapper.eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus());
+        if(iceboxIds != null && iceboxIds.size() > 0){
+            wrapper.in(IceBox::getId,iceboxIds);
         }
+        iceBoxes = iceBoxDao.selectList(wrapper);
         for(IceBox iceBox : iceBoxes){
             if(iceBox != null && StringUtils.isNotEmpty(iceBox.getPutStoreNumber()) && PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
                 if(iceBox.getResponseManId() != null && iceBox.getResponseManId() !=0){

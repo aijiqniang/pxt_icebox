@@ -125,13 +125,13 @@ public class IceBoxPutReportConsumer {
                             /**
                              * 签收时间取报表时间
                              */
-                            /*if(icePutApply != null){
+                            if(icePutApply != null){
                                 excelVo.setApplyPit(icePutApply.getApplyPit());
-                                if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())
+                                /*if(StoreSignStatus.ALREADY_SIGN.getStatus().equals(icePutApply.getStoreSignStatus())
                                         && icePutApply.getUpdateTime() != null){
                                     excelVo.setSignTime(dateFormat.format(icePutApply.getUpdateTime()));
-                                }
-                            }*/
+                                }*/
+                            }
                             if(report.getSubmitTime() != null){
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
                             }

@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szeastroc.common.constant.Constants;
 import com.szeastroc.common.entity.customer.vo.*;
 import com.szeastroc.common.entity.user.session.UserManageVo;
+import com.szeastroc.common.entity.user.vo.SimpleUserInfoVo;
 import com.szeastroc.common.entity.user.vo.UserInfoVo;
 import com.szeastroc.common.entity.visit.NoticeBacklogRequestVo;
 import com.szeastroc.common.entity.visit.enums.NoticeTypeEnum;
@@ -572,125 +573,79 @@ implements IceBoxHandoverService{
 
     @Override
     public void updateResponseMan(List<Integer> iceboxIds) {
-        if(iceboxIds.size()>0){
-            for(Integer id : iceboxIds){
-                IceBox iceBox = iceBoxDao.selectById(id);
-                if(iceBox != null && StringUtils.isNotEmpty(iceBox.getPutStoreNumber()) && PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
-                    if(iceBox.getPutStoreNumber().startsWith("C0")){
-                        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
-                        if(storeInfoDtoVo != null){
-                            if(storeInfoDtoVo.getMainSaleManId() != null && storeInfoDtoVo.getMainSaleManId() > 0){
-                                //有主业务员
-                                iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
-                                UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(storeInfoDtoVo.getMainSaleManId()));
-                                if(userInfoVo != null){
-                                    iceBox.setResponseMan(userInfoVo.getRealname());
-                                    iceBoxDao.updateById(iceBox);
-                                }
-                            }else{
-                                //无主业务员
-                                IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
-                                if(iceExamine != null && iceExamine.getCreateBy() != null){
-                                    iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
-                                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
-                                    if(userInfoVo != null){
-                                        iceBox.setResponseMan(userInfoVo.getRealname());
-                                    }
-                                    iceBoxDao.updateById(iceBox);
-                                }
-
-                            }
-                        }
-
-                    }else{
-                        SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
-                        if(supplierInfoSessionVo != null){
-                            if(supplierInfoSessionVo.getMainSalesmanId() != null && supplierInfoSessionVo.getMainSalesmanId() > 0){
-                                //有主业务员
-                                iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
-                                UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(supplierInfoSessionVo.getMainSalesmanId()));
-                                if(userInfoVo != null){
-                                    iceBox.setResponseMan(userInfoVo.getRealname());
-                                }
-                                iceBoxDao.updateById(iceBox);
-                            }else {
-                                //无主业务员
-                                IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
-                                if(iceExamine != null && iceExamine.getCreateBy() != null){
-                                    iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
-                                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
-                                    if(userInfoVo != null){
-                                        iceBox.setResponseMan(userInfoVo.getRealname());
-                                    }
-                                    iceBoxDao.updateById(iceBox);
-                                }
-                            }
-                        }
-
+        List<IceBox> iceBoxes = new ArrayList<>();
+        iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()));
+        if(iceboxIds != null && iceBoxes.size() > 0){
+            iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()).in(IceBox::getId,iceboxIds));
+        }
+        for(IceBox iceBox : iceBoxes){
+            if(iceBox != null && StringUtils.isNotEmpty(iceBox.getPutStoreNumber()) && PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
+                if(iceBox.getResponseManId() != null && iceBox.getResponseManId() !=0){
+                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceBox.getResponseManId()));
+                    if(userInfoVo == null || !userInfoVo.getEnable().equals(1)){
+                        solveResMan(iceBox);
                     }
+                }else{
+                    solveResMan(iceBox);
                 }
             }
-        }else {
-            List<IceBox> iceBoxes = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getPutStatus, PutStatus.FINISH_PUT.getStatus()));
-            for(IceBox iceBox : iceBoxes){
-                if(iceBox != null && StringUtils.isNotEmpty(iceBox.getPutStoreNumber()) && PutStatus.FINISH_PUT.getStatus().equals(iceBox.getPutStatus())){
-                    if(iceBox.getPutStoreNumber().startsWith("C0")){
-                        StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
-                        if(storeInfoDtoVo != null){
-                            if(storeInfoDtoVo.getMainSaleManId() != null && storeInfoDtoVo.getMainSaleManId() > 0){
-                                //有主业务员
-                                iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
-                                UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(storeInfoDtoVo.getMainSaleManId()));
-                                if(userInfoVo != null){
-                                    iceBox.setResponseMan(userInfoVo.getRealname());
-                                }
-                                iceBoxDao.updateById(iceBox);
-                            }else{
-                                //无主业务员
-                                IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
-                                if(iceExamine != null && iceExamine.getCreateBy() != null){
-                                    iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
-                                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
-                                    if(userInfoVo != null){
-                                        iceBox.setResponseMan(userInfoVo.getRealname());
-                                    }
-                                    iceBoxDao.updateById(iceBox);
-                                }
+        }
+    }
 
-                            }
+    private void solveResMan(IceBox iceBox) {
+        if(iceBox.getPutStoreNumber().startsWith("C0")){
+            StoreInfoDtoVo storeInfoDtoVo = FeignResponseUtil.getFeignData(feignStoreClient.getByStoreNumber(iceBox.getPutStoreNumber()));
+            if(storeInfoDtoVo != null){
+                if(storeInfoDtoVo.getMainSaleManId() != null && storeInfoDtoVo.getMainSaleManId() > 0){
+                    //有主业务员
+                    iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
+                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(storeInfoDtoVo.getMainSaleManId()));
+                    if(userInfoVo != null){
+                        iceBox.setResponseMan(userInfoVo.getRealname());
+                    }
+                    iceBoxDao.updateById(iceBox);
+                }else{
+                    //无主业务员
+                    IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
+                    if(iceExamine != null && iceExamine.getCreateBy() != null){
+                        iceBox.setResponseManId(storeInfoDtoVo.getMainSaleManId());
+                        UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
+                        if(userInfoVo != null){
+                            iceBox.setResponseMan(userInfoVo.getRealname());
                         }
+                        iceBoxDao.updateById(iceBox);
+                    }
 
-                    }else{
-                        SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
-                        if(supplierInfoSessionVo != null){
-                            if(supplierInfoSessionVo.getMainSalesmanId() != null && supplierInfoSessionVo.getMainSalesmanId() > 0){
-                                //有主业务员
-                                iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
-                                UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(supplierInfoSessionVo.getMainSalesmanId()));
-                                if(userInfoVo != null){
-                                    iceBox.setResponseMan(userInfoVo.getRealname());
-                                }
-                                iceBoxDao.updateById(iceBox);
+                }
+            }
 
-                            }else {
-                                //无主业务员
-                                IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
-                                if(iceExamine != null && iceExamine.getCreateBy() != null){
-                                    iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
-                                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
-                                    if(userInfoVo != null){
-                                        iceBox.setResponseMan(userInfoVo.getRealname());
-                                    }
-                                    iceBoxDao.updateById(iceBox);
-                                }
-                            }
+        }else{
+            SupplierInfoSessionVo supplierInfoSessionVo = FeignResponseUtil.getFeignData(feignSupplierClient.getSuppliserInfoByNumber(iceBox.getPutStoreNumber()));
+            if(supplierInfoSessionVo != null){
+                if(supplierInfoSessionVo.getMainSalesmanId() != null && supplierInfoSessionVo.getMainSalesmanId() > 0){
+                    //有主业务员
+                    iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
+                    UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(supplierInfoSessionVo.getMainSalesmanId()));
+                    if(userInfoVo != null){
+                        iceBox.setResponseMan(userInfoVo.getRealname());
+                    }
+                    iceBoxDao.updateById(iceBox);
+
+                }else {
+                    //无主业务员
+                    IceExamine iceExamine = iceExamineDao.selectOne(Wrappers.<IceExamine>lambdaQuery().eq(IceExamine::getIceBoxId, iceBox.getId()).eq(IceExamine::getStoreNumber, iceBox.getPutStoreNumber()).orderByAsc(IceExamine::getId).last("limit 1"));
+                    if(iceExamine != null && iceExamine.getCreateBy() != null){
+                        iceBox.setResponseManId(supplierInfoSessionVo.getMainSalesmanId());
+                        UserInfoVo userInfoVo = FeignResponseUtil.getFeignData(feignUserClient.findById(iceExamine.getCreateBy()));
+                        if(userInfoVo != null){
+                            iceBox.setResponseMan(userInfoVo.getRealname());
                         }
-
+                        iceBoxDao.updateById(iceBox);
                     }
                 }
             }
 
-            }
+        }
     }
 
     private LambdaQueryWrapper<IceBoxHandover> fillWrapper(IceBoxHandoverPage iceBoxHandoverPage) {

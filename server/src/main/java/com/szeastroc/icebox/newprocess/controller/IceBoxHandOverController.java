@@ -126,6 +126,7 @@ public class IceBoxHandOverController {
      * @param iceboxIds
      * @return
      */
+    @ApiOperation(value = "更新冰柜责任人")
     @PostMapping("/updateResponseMan")
     public CommonResponse updateResponseMan(@RequestBody List<Integer> iceboxIds){
         try {

@@ -22,6 +22,7 @@ import com.szeastroc.icebox.newprocess.enums.DeptTypeEnum;
 import com.szeastroc.icebox.newprocess.enums.IceAlarmTypeEnum;
 import com.szeastroc.icebox.newprocess.service.ExamineErrorService;
 import com.szeastroc.icebox.newprocess.mapper.ExamineErrorMapper;
+import org.joda.time.DateTime;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -58,42 +59,31 @@ implements ExamineErrorService{
         examineError.setBoxId(iceBox.getId());
         examineError.setCreateTime(new Date());
 
-        Map<Integer, SessionDeptInfoVo> deptInfoVoMap = FeignResponseUtil.getFeignData(feignCacheClient.getFiveLevelDept(examineError.getDeptId()));
-        SessionDeptInfoVo group = deptInfoVoMap.get(1);
-        SessionDeptInfoVo service = deptInfoVoMap.get(2);
-
         Map<Integer, SessionUserInfoVo> userInfoVoMap = FeignResponseUtil.getFeignData(feignDeptClient.findLevelLeaderByDeptIdNew(examineError.getDeptId()));
         SessionUserInfoVo userInfoVo1 = userInfoVoMap.get(0);
         SessionUserInfoVo userInfoVo2 = userInfoVoMap.get(1);
 
-        if(examineError.getIsLeader().equals(1)){
-            //领导
-            if(examineError.getDeptId().equals(group.getId())){
-                //组长 给服务处经理发个通知审批
-                examineError.setSendUserId1(userInfoVo1.getId());
-                examineError.setSendUserName1(userInfoVo1.getRealname());
-                examineError.setPassStatus(0);
-
-            }else if(examineError.getDeptId().equals(service.getId())){
-                //服务处经理 直接通过
-                examineError.setPassStatus(1);
-            }
-
-        }else {
-            if(examineError.getDeptId().equals(group.getId())){
-                //业代 给组长一级审批  给服务处经理通知不需要审批
-
-            }
+        if(userInfoVo1 == null){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"找不到组长");
         }
+        if(userInfoVo2 == null){
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"找不到服务处经理");
+        }
+
+        examineError.setSendUserId1(userInfoVo1.getId());
+        examineError.setSendUserName1(userInfoVo1.getRealname());
+        examineError.setPassStatus(0);
         examineErrorMapper.insert(examineError);
 
         //发送代办
-        String relateCode ="";
+        DateTime date = new DateTime();
+        String prefix = date.toString("yyyyMMddHHmmss");
+        String relateCode =iceBox.getAssetId()+"_"+examineError.getId()+"_"+prefix;
                 NoticeBacklogRequestVo noticeBacklogRequestVo = NoticeBacklogRequestVo.builder()
-                .backlogName(iceBox.getAssetId()+"_冰柜报警:"+ IceAlarmTypeEnum.DISTANCE.getDesc())
-                .noticeTypeEnum(NoticeTypeEnum.ICEBOX_ALARM)
+                .backlogName(iceBox.getAssetId()+"_冰柜无法巡检:")
+                .noticeTypeEnum(NoticeTypeEnum.ICE_CANT_EXAMINE)
                 .relateCode(relateCode)
-                .sendUserId(iceBox.getResponseManId())
+                .sendUserId(userInfoVo1.getId())
                 .build();
         // 创建通知
         feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);

@@ -71,7 +71,7 @@ public class ExamineError implements Serializable {
     private String sendUserName2;
 
     /**
-     * 0未通过  1通过
+     * 0审核中  1通过 2驳回
      */
     @TableField(value = "pass_status")
     private Integer passStatus;
@@ -100,17 +100,20 @@ public class ExamineError implements Serializable {
     @TableField(value = "updatetime")
     private Date updatetime;
 
+    /**
+     * 创建人部门id
+     */
     @TableField(value = "dept_id")
     private Integer deptId;
 
+    /**
+     * 创建人职位id
+     */
     @TableField(value = "office_id")
     private Integer officeId;
 
     @TableField(exist = false)
-    private Integer isLeader;
-
-    @TableField(exist = false)
-    private Integer deptType;
+    private Integer updateUserId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
@@ -140,7 +143,9 @@ public class ExamineError implements Serializable {
             && (this.getCreateUserId() == null ? other.getCreateUserId() == null : this.getCreateUserId().equals(other.getCreateUserId()))
             && (this.getCreteUserName() == null ? other.getCreteUserName() == null : this.getCreteUserName().equals(other.getCreteUserName()))
             && (this.getCreateTime() == null ? other.getCreateTime() == null : this.getCreateTime().equals(other.getCreateTime()))
-            && (this.getUpdatetime() == null ? other.getUpdatetime() == null : this.getUpdatetime().equals(other.getUpdatetime()));
+            && (this.getUpdatetime() == null ? other.getUpdatetime() == null : this.getUpdatetime().equals(other.getUpdatetime()))
+            && (this.getDeptId() == null ? other.getDeptId() == null : this.getDeptId().equals(other.getDeptId()))
+            && (this.getOfficeId() == null ? other.getOfficeId() == null : this.getOfficeId().equals(other.getOfficeId()));
     }
 
     @Override
@@ -161,6 +166,8 @@ public class ExamineError implements Serializable {
         result = prime * result + ((getCreteUserName() == null) ? 0 : getCreteUserName().hashCode());
         result = prime * result + ((getCreateTime() == null) ? 0 : getCreateTime().hashCode());
         result = prime * result + ((getUpdatetime() == null) ? 0 : getUpdatetime().hashCode());
+        result = prime * result + ((getDeptId() == null) ? 0 : getDeptId().hashCode());
+        result = prime * result + ((getOfficeId() == null) ? 0 : getOfficeId().hashCode());
         return result;
     }
 
@@ -183,7 +190,9 @@ public class ExamineError implements Serializable {
         sb.append(", createUserId=").append(createUserId);
         sb.append(", creteUserName=").append(creteUserName);
         sb.append(", createTime=").append(createTime);
-        sb.append(", updatetime=").append(updatetime);
+        sb.append(", upDate=").append(updatetime);
+        sb.append(", deptId=").append(deptId);
+        sb.append(", officeId=").append(officeId);
         sb.append(", serialVersionUID=").append(serialVersionUID);
         sb.append("]");
         return sb.toString();

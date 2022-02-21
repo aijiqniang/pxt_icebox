@@ -165,6 +165,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     private final IceBoxRelateDmsDao iceBoxRelateDmsDao;
     private final DmsUrlConfig dmsUrlConfig;
     private final IceAlarmMapper iceAlarmMapper;
+    private final ExamineErrorMapper examineErrorMapper;
     @Autowired
     private IceBoxService iceBoxService;
     @Autowired

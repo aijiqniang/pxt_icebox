@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szeastroc.icebox.newprocess.dao.ExamineErrorMapper">
+
+    <resultMap type="com.szeastroc.icebox.newprocess.entity.ExamineError" id="TExamineErrorMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="boxId" column="box_id" jdbcType="INTEGER"/>
+        <result property="boxAssetid" column="box_assetId" jdbcType="VARCHAR"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
+        <result property="storeNumber" column="store_number" jdbcType="VARCHAR"/>
+        <result property="sendUserId1" column="send_user_id_1" jdbcType="INTEGER"/>
+        <result property="sendUserName1" column="send_user_name_1" jdbcType="VARCHAR"/>
+        <result property="sendUserId2" column="send_user_id_2" jdbcType="INTEGER"/>
+        <result property="sendUserName2" column="send_user_name_2" jdbcType="VARCHAR"/>
+        <result property="passStatus" column="pass_status" jdbcType="INTEGER"/>
+        <result property="createUserId" column="create_user_id" jdbcType="INTEGER"/>
+        <result property="creteUserName" column="crete_user_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updatetime" column="updatetime" jdbcType="TIMESTAMP"/>
+        <result property="deptId" column="dept_id" jdbcType="INTEGER"/>
+        <result property="officeId" column="office_id" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="TExamineErrorMap">
+        select id,
+               box_id,
+               box_assetId,
+               remark,
+               store_number,
+               send_user_id_1,
+               send_user_name_1,
+               send_user_id_2,
+               send_user_name_2,
+               pass_status,
+               create_user_id,
+               crete_user_name,
+               create_time,
+               updatetime,
+               dept_id,
+               office_id
+        from pxt_db_ajq.t_examine_error
+        where id = #{id}
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="TExamineErrorMap">
+        select id,
+               box_id,
+               box_assetId,
+               remark,
+               store_number,
+               send_user_id_1,
+               send_user_name_1,
+               send_user_id_2,
+               send_user_name_2,
+               pass_status,
+               create_user_id,
+               crete_user_name,
+               create_time,
+               updatetime,
+               dept_id,
+               office_id
+        from pxt_db_ajq.t_examine_error limit #{offset}, #{limit}
+    </select>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" resultMap="TExamineErrorMap">
+        select
+        id, box_id, box_assetId, remark, store_number, send_user_id_1, send_user_name_1, send_user_id_2,
+        send_user_name_2, pass_status, create_user_id, crete_user_name, create_time, updatetime, dept_id, office_id
+        from pxt_db_ajq.t_examine_error
+        <where>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="boxId != null">
+                and box_id = #{boxId}
+            </if>
+            <if test="boxAssetid != null and boxAssetid != ''">
+                and box_assetId = #{boxAssetid}
+            </if>
+            <if test="remark != null and remark != ''">
+                and remark = #{remark}
+            </if>
+            <if test="storeNumber != null and storeNumber != ''">
+                and store_number = #{storeNumber}
+            </if>
+            <if test="sendUserId1 != null">
+                and send_user_id_1 = #{sendUserId1}
+            </if>
+            <if test="sendUserName1 != null and sendUserName1 != ''">
+                and send_user_name_1 = #{sendUserName1}
+            </if>
+            <if test="sendUserId2 != null">
+                and send_user_id_2 = #{sendUserId2}
+            </if>
+            <if test="sendUserName2 != null and sendUserName2 != ''">
+                and send_user_name_2 = #{sendUserName2}
+            </if>
+            <if test="passStatus != null">
+                and pass_status = #{passStatus}
+            </if>
+            <if test="createUserId != null">
+                and create_user_id = #{createUserId}
+            </if>
+            <if test="creteUserName != null and creteUserName != ''">
+                and crete_user_name = #{creteUserName}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updatetime != null">
+                and updatetime = #{updatetime}
+            </if>
+            <if test="deptId != null">
+                and dept_id = #{deptId}
+            </if>
+            <if test="officeId != null">
+                and office_id = #{officeId}
+            </if>
+        </where>
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into pxt_db_ajq.t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
+                                               send_user_name_1, send_user_id_2, send_user_name_2, pass_status,
+                                               create_user_id, crete_user_name, create_time, updatetime, dept_id,
+                                               office_id)
+        values (#{boxId}, #{boxAssetid}, #{remark}, #{storeNumber}, #{sendUserId1}, #{sendUserName1}, #{sendUserId2},
+                #{sendUserName2}, #{passStatus}, #{createUserId}, #{creteUserName}, #{createTime}, #{updatetime},
+                #{deptId}, #{officeId})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into pxt_db_ajq.t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
+        send_user_name_1, send_user_id_2, send_user_name_2, pass_status, create_user_id, crete_user_name, create_time,
+        updatetime, dept_id, office_id)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.boxId}, #{entity.boxAssetid}, #{entity.remark}, #{entity.storeNumber}, #{entity.sendUserId1},
+            #{entity.sendUserName1}, #{entity.sendUserId2}, #{entity.sendUserName2}, #{entity.passStatus},
+            #{entity.createUserId}, #{entity.creteUserName}, #{entity.createTime}, #{entity.updatetime},
+            #{entity.deptId}, #{entity.officeId})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into pxt_db_ajq.t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
+        send_user_name_1, send_user_id_2, send_user_name_2, pass_status, create_user_id, crete_user_name, create_time,
+        updatetime, dept_id, office_id)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.boxId}, #{entity.boxAssetid}, #{entity.remark}, #{entity.storeNumber}, #{entity.sendUserId1},
+            #{entity.sendUserName1}, #{entity.sendUserId2}, #{entity.sendUserName2}, #{entity.passStatus},
+            #{entity.createUserId}, #{entity.creteUserName}, #{entity.createTime}, #{entity.updatetime},
+            #{entity.deptId}, #{entity.officeId})
+        </foreach>
+        on duplicate key update
+        box_id = values(box_id) , box_assetId = values(box_assetId) , remark = values(remark) , store_number =
+        values(store_number) , send_user_id_1 = values(send_user_id_1) , send_user_name_1 = values(send_user_name_1) ,
+        send_user_id_2 = values(send_user_id_2) , send_user_name_2 = values(send_user_name_2) , pass_status =
+        values(pass_status) , create_user_id = values(create_user_id) , crete_user_name = values(crete_user_name) ,
+        create_time = values(create_time) , updatetime = values(updatetime) , dept_id = values(dept_id) , office_id =
+        values(office_id)
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update pxt_db_ajq.t_examine_error
+        <set>
+            <if test="boxId != null">
+                box_id = #{boxId},
+            </if>
+            <if test="boxAssetid != null and boxAssetid != ''">
+                box_assetId = #{boxAssetid},
+            </if>
+            <if test="remark != null and remark != ''">
+                remark = #{remark},
+            </if>
+            <if test="storeNumber != null and storeNumber != ''">
+                store_number = #{storeNumber},
+            </if>
+            <if test="sendUserId1 != null">
+                send_user_id_1 = #{sendUserId1},
+            </if>
+            <if test="sendUserName1 != null and sendUserName1 != ''">
+                send_user_name_1 = #{sendUserName1},
+            </if>
+            <if test="sendUserId2 != null">
+                send_user_id_2 = #{sendUserId2},
+            </if>
+            <if test="sendUserName2 != null and sendUserName2 != ''">
+                send_user_name_2 = #{sendUserName2},
+            </if>
+            <if test="passStatus != null">
+                pass_status = #{passStatus},
+            </if>
+            <if test="createUserId != null">
+                create_user_id = #{createUserId},
+            </if>
+            <if test="creteUserName != null and creteUserName != ''">
+                crete_user_name = #{creteUserName},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="updatetime != null">
+                updatetime = #{updatetime},
+            </if>
+            <if test="deptId != null">
+                dept_id = #{deptId},
+            </if>
+            <if test="officeId != null">
+                office_id = #{officeId},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete
+        from pxt_db_ajq.t_examine_error
+        where id = #{id}
+    </delete>
+
+</mapper>
+

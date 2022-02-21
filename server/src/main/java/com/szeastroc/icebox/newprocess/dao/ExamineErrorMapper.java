@@ -1,4 +1,4 @@
-package com.szeastroc.icebox.newprocess.mapper;
+package com.szeastroc.icebox.newprocess.dao;
 
 import com.szeastroc.icebox.newprocess.entity.ExamineError;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;

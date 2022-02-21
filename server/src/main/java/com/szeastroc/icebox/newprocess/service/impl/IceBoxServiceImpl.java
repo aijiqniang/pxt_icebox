@@ -5856,6 +5856,38 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     @Override
     public List<IceBox> getByResponsmanId(Integer userId) {
         List<IceBox> boxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getResponseManId, userId).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1));
+        //获取前月的第一天
+        Calendar cale = Calendar.getInstance();
+        cale.add(Calendar.MONTH, -1);
+        cale.set(Calendar.DAY_OF_MONTH,1);
+        cale.set(Calendar.HOUR_OF_DAY,0);
+        cale.set(Calendar.MINUTE,0);
+        cale.set(Calendar.SECOND,0);
+        Date monthStart = cale.getTime();
+        //获取前月的最后一天
+        Calendar cale2 = Calendar.getInstance();
+        cale2.set(Calendar.DAY_OF_MONTH,0);
+        cale2.set(Calendar.HOUR_OF_DAY,23);
+        cale2.set(Calendar.MINUTE,59);
+        cale2.set(Calendar.SECOND,59);
+        Date monthEnd = cale2.getTime();
+
+        if(CollectionUtil.isNotEmpty(boxList)){
+            List<IceBox> boxListFor = new ArrayList<>(boxList);
+
+            List<ExamineError> examineErrors = examineErrorMapper.selectList(Wrappers.<ExamineError>lambdaQuery().eq(ExamineError::getCreateUserId, userId).ge(ExamineError::getCreateTime, monthStart).le(ExamineError::getCreateTime, monthEnd).eq(ExamineError::getPassStatus,1));
+            if(CollectionUtil.isNotEmpty(examineErrors)){
+                List<String> boxs = examineErrors.stream().map(ExamineError::getBoxAssetid).collect(Collectors.toList());
+                for (String box : boxs){
+                    for(IceBox i : boxListFor){
+                        if(i.getAssetId().equals(box)){
+                            boxList.remove(i);
+                        }
+                    }
+                }
+            }
+        }
+
         return boxList;
     }
 

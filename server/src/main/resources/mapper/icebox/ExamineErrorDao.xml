@@ -39,7 +39,7 @@
                updatetime,
                dept_id,
                office_id
-        from pxt_db_ajq.t_examine_error
+        from t_examine_error
         where id = #{id}
     </select>
 
@@ -61,7 +61,7 @@
                updatetime,
                dept_id,
                office_id
-        from pxt_db_ajq.t_examine_error limit #{offset}, #{limit}
+        from t_examine_error limit #{offset}, #{limit}
     </select>
 
     <!--通过实体作为筛选条件查询-->
@@ -69,7 +69,7 @@
         select
         id, box_id, box_assetId, remark, store_number, send_user_id_1, send_user_name_1, send_user_id_2,
         send_user_name_2, pass_status, create_user_id, crete_user_name, create_time, updatetime, dept_id, office_id
-        from pxt_db_ajq.t_examine_error
+        from t_examine_error
         <where>
             <if test="id != null">
                 and id = #{id}
@@ -124,7 +124,7 @@
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into pxt_db_ajq.t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
+        insert into t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
                                                send_user_name_1, send_user_id_2, send_user_name_2, pass_status,
                                                create_user_id, crete_user_name, create_time, updatetime, dept_id,
                                                office_id)
@@ -134,7 +134,7 @@
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into pxt_db_ajq.t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
+        insert into t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
         send_user_name_1, send_user_id_2, send_user_name_2, pass_status, create_user_id, crete_user_name, create_time,
         updatetime, dept_id, office_id)
         values
@@ -147,7 +147,7 @@
     </insert>
 
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into pxt_db_ajq.t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
+        insert into t_examine_error(box_id, box_assetId, remark, store_number, send_user_id_1,
         send_user_name_1, send_user_id_2, send_user_name_2, pass_status, create_user_id, crete_user_name, create_time,
         updatetime, dept_id, office_id)
         values
@@ -168,7 +168,7 @@
 
     <!--通过主键修改数据-->
     <update id="update">
-        update pxt_db_ajq.t_examine_error
+        update t_examine_error
         <set>
             <if test="boxId != null">
                 box_id = #{boxId},
@@ -222,7 +222,7 @@
     <!--通过主键删除-->
     <delete id="deleteById">
         delete
-        from pxt_db_ajq.t_examine_error
+        from t_examine_error
         where id = #{id}
     </delete>
 

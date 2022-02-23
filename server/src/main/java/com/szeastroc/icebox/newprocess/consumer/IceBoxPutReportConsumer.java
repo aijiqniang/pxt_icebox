@@ -132,6 +132,9 @@ public class IceBoxPutReportConsumer {
                                     excelVo.setSignTime(dateFormat.format(icePutApply.getUpdateTime()));
                                 }*/
                             }
+                            if(report.getSignTime() != null){
+                                excelVo.setSignTime(dateFormat.format(report.getSignTime()));
+                            }
                             if(report.getSubmitTime() != null){
                                 excelVo.setSubmitTime(dateFormat.format(report.getSubmitTime()));
                             }

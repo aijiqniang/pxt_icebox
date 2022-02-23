@@ -49,9 +49,9 @@ implements ExamineErrorService{
         DateTime now = new DateTime();
         Date monthStart = now.dayOfMonth().withMinimumValue().withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).toDate();
         Date monthEnd = now.dayOfMonth().withMaximumValue().withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).toDate();
-        List<ExamineError> examineErrors = examineErrorMapper.selectList(Wrappers.<ExamineError>lambdaQuery().eq(ExamineError::getCreateUserId,examineError.getCreateUserId()).eq(ExamineError::getBoxAssetid,examineError.getBoxAssetid()).ge(ExamineError::getCreateTime, monthStart).le(ExamineError::getCreateTime, monthEnd));
+        List<ExamineError> examineErrors = examineErrorMapper.selectList(Wrappers.<ExamineError>lambdaQuery().eq(ExamineError::getCreateUserId,examineError.getCreateUserId()).eq(ExamineError::getBoxAssetid,examineError.getBoxAssetid()).ge(ExamineError::getCreateTime, monthStart).le(ExamineError::getCreateTime, monthEnd).ne(ExamineError::getPassStatus,2));
         if(examineErrors != null && examineErrors.size() > 0){
-            throw new NormalOptionException(Constants.API_CODE_FAIL,"本月该冰柜已计入无法巡检,不需要再次添加");
+            throw new NormalOptionException(Constants.API_CODE_FAIL,"本月该冰柜已提交无法巡检,不需要再次添加");
         }
         IceBox iceBox = iceBoxDao.selectOne(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getAssetId, examineError.getBoxAssetid()));
         if(iceBox == null){

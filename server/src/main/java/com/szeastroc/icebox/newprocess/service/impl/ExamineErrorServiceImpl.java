@@ -96,6 +96,11 @@ implements ExamineErrorService{
         noticeBacklogRequestVo.setRelateCode(relateCode2);
         feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
 
+        String relateCode3 =iceBox.getAssetId()+"_"+examineError.getId()+"_"+examineError.getCreateUserId()+"_"+prefix;
+        noticeBacklogRequestVo.setSendUserId(examineError.getCreateUserId());
+        noticeBacklogRequestVo.setRelateCode(relateCode3);
+        feignOutBacklogClient.createNoticeBacklog(noticeBacklogRequestVo);
+
     }
 }
 

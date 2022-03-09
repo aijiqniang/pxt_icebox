@@ -6125,4 +6125,52 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
 
     }
 
+    @Override
+    public List<IceBox> getByResponsmanIdAndTime(Integer userId, Date endTime) {
+        List<IceBox> boxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getResponseManId, userId).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1));
+        //获取前月的第一天
+        Calendar cale = Calendar.getInstance();
+        cale.add(Calendar.MONTH, -1);
+        cale.set(Calendar.DAY_OF_MONTH,1);
+        cale.set(Calendar.HOUR_OF_DAY,0);
+        cale.set(Calendar.MINUTE,0);
+        cale.set(Calendar.SECOND,0);
+        Date monthStart = cale.getTime();
+        //获取前月的最后一天
+        Calendar cale2 = Calendar.getInstance();
+        cale2.set(Calendar.DAY_OF_MONTH,0);
+        cale2.set(Calendar.HOUR_OF_DAY,23);
+        cale2.set(Calendar.MINUTE,59);
+        cale2.set(Calendar.SECOND,59);
+        Date monthEnd = cale2.getTime();
+        if(CollectionUtil.isNotEmpty(boxList)){
+            //无法巡检
+            List<IceBox> boxListFor = new ArrayList<>(boxList);
+            List<ExamineError> examineErrors = examineErrorMapper.selectList(Wrappers.<ExamineError>lambdaQuery().eq(ExamineError::getCreateUserId, userId).ge(ExamineError::getCreateTime, monthStart).le(ExamineError::getCreateTime, monthEnd).eq(ExamineError::getPassStatus,1));
+            if(CollectionUtil.isNotEmpty(examineErrors)){
+                List<String> boxs = examineErrors.stream().map(ExamineError::getBoxAssetid).collect(Collectors.toList());
+                for (String box : boxs){
+                    for(IceBox i : boxListFor){
+                        if(i.getAssetId().equals(box)){
+                            boxList.remove(i);
+                        }
+                    }
+                }
+            }
+
+            List<String> boxIds = boxListFor.stream().map(IceBox::getAssetId).collect(Collectors.toList());
+            List<IceBoxPutReport> iceBoxPutReports = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().in(IceBoxPutReport::getIceBoxAssetId, boxIds).eq(IceBoxPutReport::getSubmitterId, userId).ge(IceBoxPutReport::getSignTime, endTime));
+            if(CollectionUtil.isNotEmpty(iceBoxPutReports)){
+                for (IceBoxPutReport report : iceBoxPutReports){
+                    for(IceBox i : boxListFor){
+                        if(i.getAssetId().equals(report.getIceBoxAssetId())){
+                            boxList.remove(i);
+                        }
+                    }
+                }
+            }
+        }
+        return boxList;
+    }
+
 }

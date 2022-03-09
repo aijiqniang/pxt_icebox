@@ -16,9 +16,11 @@ import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -318,6 +320,12 @@ public class MyIceBoxController {
     @GetMapping("getByResponsmanId")
     public CommonResponse<List<IceBox>> getByResponsmanId(@RequestParam Integer userId){
         List<IceBox> boxList = iceBoxService.getByResponsmanId(userId);
+        return new CommonResponse(Constants.API_CODE_SUCCESS,null,boxList);
+    }
+
+    @GetMapping("getByResponsmanIdAndTime")
+    public CommonResponse<List<IceBox>> getByResponsmanIdAndTime(@RequestParam("userId") Integer userId, @RequestParam("endTime")@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")Date endTime){
+        List<IceBox> boxList = iceBoxService.getByResponsmanIdAndTime(userId,endTime);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,boxList);
     }
 

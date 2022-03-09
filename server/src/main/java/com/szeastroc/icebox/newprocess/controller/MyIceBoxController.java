@@ -324,7 +324,7 @@ public class MyIceBoxController {
     }
 
     @GetMapping("getByResponsmanIdAndTime")
-    public CommonResponse<List<IceBox>> getByResponsmanIdAndTime(@RequestParam("userId") Integer userId, @RequestParam("endTime")@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")Date endTime){
+    public CommonResponse<List<IceBox>> getByResponsmanIdAndTime(@RequestParam("userId") Integer userId, @RequestParam("endTime")Date endTime){
         List<IceBox> boxList = iceBoxService.getByResponsmanIdAndTime(userId,endTime);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,boxList);
     }

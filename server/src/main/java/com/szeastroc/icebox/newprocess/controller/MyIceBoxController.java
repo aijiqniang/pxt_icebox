@@ -325,7 +325,9 @@ public class MyIceBoxController {
 
     @GetMapping("getByResponsmanIdAndTime")
     public CommonResponse<List<IceBox>> getByResponsmanIdAndTime(@RequestParam("userId") Integer userId, @RequestParam("endTime")Date endTime){
+        log.info("冰柜算分进入,userid{}",userId);
         List<IceBox> boxList = iceBoxService.getByResponsmanIdAndTime(userId,endTime);
+        log.info("冰柜算分完成,userid{}",userId);
         return new CommonResponse(Constants.API_CODE_SUCCESS,null,boxList);
     }
 

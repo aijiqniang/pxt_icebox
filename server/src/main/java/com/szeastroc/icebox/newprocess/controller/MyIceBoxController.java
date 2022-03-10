@@ -20,6 +20,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -324,7 +325,7 @@ public class MyIceBoxController {
     }
 
     @GetMapping("getByResponsmanIdAndTime")
-    public CommonResponse<List<IceBox>> getByResponsmanIdAndTime(@RequestParam("userId") Integer userId, @RequestParam("endTime")Date endTime){
+    public CommonResponse<List<IceBox>> getByResponsmanIdAndTime(@RequestParam("userId") Integer userId, @RequestParam("endTime")String endTime) throws ParseException {
         log.info("冰柜算分进入,userid{}",userId);
         List<IceBox> boxList = iceBoxService.getByResponsmanIdAndTime(userId,endTime);
         log.info("冰柜算分完成,userid{}",userId);

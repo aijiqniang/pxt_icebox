@@ -109,6 +109,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -6126,7 +6127,8 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
     }
 
     @Override
-    public List<IceBox> getByResponsmanIdAndTime(Integer userId, Date endTime) {
+    public List<IceBox> getByResponsmanIdAndTime(Integer userId, String endTime) throws ParseException {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
         List<IceBox> boxList = iceBoxDao.selectList(Wrappers.<IceBox>lambdaQuery().eq(IceBox::getResponseManId, userId).eq(IceBox::getPutStatus, 3).eq(IceBox::getStatus, 1));
         //获取前月的第一天
         Calendar cale = Calendar.getInstance();
@@ -6159,7 +6161,7 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             }
 
             List<String> boxIds = boxListFor.stream().map(IceBox::getAssetId).collect(Collectors.toList());
-            List<IceBoxPutReport> iceBoxPutReports = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().in(IceBoxPutReport::getIceBoxAssetId, boxIds).eq(IceBoxPutReport::getSubmitterId, userId).ge(IceBoxPutReport::getSignTime, endTime));
+            List<IceBoxPutReport> iceBoxPutReports = iceBoxPutReportDao.selectList(Wrappers.<IceBoxPutReport>lambdaQuery().in(IceBoxPutReport::getIceBoxAssetId, boxIds).eq(IceBoxPutReport::getSubmitterId, userId).ge(IceBoxPutReport::getSignTime, simpleDateFormat.parse(endTime)));
             if(CollectionUtil.isNotEmpty(iceBoxPutReports)){
                 for (IceBoxPutReport report : iceBoxPutReports){
                     for(IceBox i : boxListFor){

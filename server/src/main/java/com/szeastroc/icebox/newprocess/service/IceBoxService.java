@@ -17,6 +17,7 @@ import com.szeastroc.icebox.newprocess.vo.request.IceTransferRecordPage;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -155,7 +156,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     void handelIceBoxDate(MultipartFile file) throws IOException;
 
-    List<IceBox> getByResponsmanIdAndTime(Integer userId, Date endTime);
+    List<IceBox> getByResponsmanIdAndTime(Integer userId, String endTime) throws ParseException;
 }
 
 

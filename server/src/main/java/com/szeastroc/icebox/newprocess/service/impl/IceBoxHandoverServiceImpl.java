@@ -549,7 +549,7 @@ implements IceBoxHandoverService{
 
             StoreInfoDtoVo requestVo = new StoreInfoDtoVo();
             requestVo.setStoreName(storeName);
-            List<StoreInfoDtoVo> feignData = FeignResponseUtil.getFeignData(feignStoreClient.findStoreInfoVoByNameAndNumber(storeName));
+            List<StoreInfoDtoVo> feignData = FeignResponseUtil.getFeignData(feignStoreClient.findStoreInfoVoByNameAndNumberAndUserId(storeName,sendUserId));
             if(feignData.size()>0){
                 for (StoreInfoDtoVo storeVo : feignData){
                     if(storeNumbers.contains(storeVo.getStoreNumber()) ){
@@ -557,7 +557,7 @@ implements IceBoxHandoverService{
                     }
                 }
             }
-            List<SimpleSupplierInfoVo> feignData1 = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierInfoVoByNameOrNumber(storeName));
+            List<SimpleSupplierInfoVo> feignData1 = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierInfoVoByNameOrNumberAndUserId(storeName,sendUserId));
             if(feignData1.size()>0){
                 for (SimpleSupplierInfoVo storeVo : feignData1){
                     if(storeNumbers.contains(storeVo.getNumber()) ){

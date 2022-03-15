@@ -1850,6 +1850,110 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<SimpleSupplierInfoVo> supplierInfoVoList = new ArrayList<>();
 
         Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findServiceDeptIdByDeptId(deptId));
+
+        /**
+         * 京东e站特殊处理  前期写死  后期看产品怎么设计
+         */
+        Set<Integer> gxSet = new HashSet<>();
+        //桂北大区 10925
+        gxSet.add(10926);
+        gxSet.add(10931);
+        gxSet.add(10934);
+        gxSet.add(10938);
+        gxSet.add(10942);
+        gxSet.add(13160);
+        gxSet.add(13162);
+        gxSet.add(13178);
+        //桂南大区 10946
+        gxSet.add(10947);
+        gxSet.add(10952);
+        gxSet.add(10955);
+        gxSet.add(10959);
+        gxSet.add(10963);
+        gxSet.add(10966);
+        gxSet.add(12368);
+        //南宁大区 10904
+        gxSet.add(10905);
+        gxSet.add(10909);
+        gxSet.add(10911);
+        gxSet.add(10913);
+        gxSet.add(10916);
+        gxSet.add(10920);
+        gxSet.add(10923);
+        gxSet.add(12363);
+
+        Set<Integer> hnSet = new HashSet<>();
+        //湘北大区 13250
+        hnSet.add(13252);
+        hnSet.add(13268);
+        hnSet.add(13274);
+        hnSet.add(13278);
+        hnSet.add(13281);
+        //湘南大区 13290
+        hnSet.add(13291);
+        hnSet.add(13299);
+        hnSet.add(13306);
+        hnSet.add(13309);
+        hnSet.add(13315);
+        hnSet.add(13326);
+        hnSet.add(13332);
+
+        Set<Integer> zjSet = new HashSet<>();
+        //浙北大区 8314
+        zjSet.add(8318);
+        zjSet.add(8322);
+        zjSet.add(8325);
+        zjSet.add(8329);
+        zjSet.add(10332);
+        zjSet.add(10334);
+        zjSet.add(10335);
+        zjSet.add(11178);
+        zjSet.add(12221);
+        zjSet.add(13099);
+        //浙南大区 8145
+        zjSet.add(8146);
+        zjSet.add(8157);
+        zjSet.add(8164);
+        zjSet.add(8172);
+        zjSet.add(8178);
+        zjSet.add(8182);
+        zjSet.add(8193);
+        zjSet.add(8200);
+        zjSet.add(8201);
+        zjSet.add(10308);
+        zjSet.add(10309);
+        zjSet.add(11161);
+        zjSet.add(13114);
+        zjSet.add(13120);
+        //浙中大区 13015
+        zjSet.add(13016);
+        zjSet.add(13021);
+        zjSet.add(13026);
+        zjSet.add(13034);
+        zjSet.add(13039);
+        zjSet.add(13044);
+        zjSet.add(13054);
+
+        int supId = 0;
+        if(hnSet.contains(serviceDeptId)){
+            //134496	2298
+            supId = 134496;
+        }
+        if(gxSet.contains(serviceDeptId)){
+            //id134494	number2297
+            supId = 134494;
+        }
+        if(zjSet.contains(serviceDeptId)){
+            // 134508	2310
+            supId = 134508;
+        }
+        if(supId > 0){
+            SubordinateInfoVo res = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(supId));
+            SimpleSupplierInfoVo simpleSupplierInfoVo = new SimpleSupplierInfoVo();
+            BeanUtils.copyProperties(res,simpleSupplierInfoVo);
+            supplierInfoVoList.add(simpleSupplierInfoVo);
+            return supplierInfoVoList;
+        }
         if (null != serviceDeptId) {
             List<SimpleSupplierInfoVo> simpleSupplierInfoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.findByDeptId(serviceDeptId));
 
@@ -3661,8 +3765,18 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             zjSet.add(13044);
             zjSet.add(13054);
 
-
-
+            if(hnSet.contains(serviceId)){
+                //134496	2298
+                supplierIds.add(134496);
+            }
+            if(gxSet.contains(serviceId)){
+                //id134494	number2297
+                supplierIds.add(134494);
+            }
+            if(zjSet.contains(serviceId)){
+                // 134508	2310
+                supplierIds.add(134508);
+            }
 
             wrapper.in(IceBox::getSupplierId, supplierIds)
 //                    .eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());

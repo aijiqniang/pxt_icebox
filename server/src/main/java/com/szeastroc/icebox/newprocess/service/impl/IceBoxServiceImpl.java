@@ -25,6 +25,7 @@ import com.szeastroc.common.entity.customer.vo.label.CusLabelDetailVo;
 import com.szeastroc.common.entity.icebox.enums.IceBoxStatus;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.icebox.vo.IceBoxTransferHistoryVo;
+import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.common.entity.user.session.MatchRuleVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
 import com.szeastroc.common.entity.user.vo.*;
@@ -32,7 +33,10 @@ import com.szeastroc.common.entity.visit.*;
 import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.common.feign.customer.*;
+import com.szeastroc.common.feign.customer.FeignCusLabelClient;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.customer.FeignSupplierRelateUserClient;
 import com.szeastroc.common.feign.user.*;
 import com.szeastroc.common.feign.visit.FeignBacklogClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
@@ -48,32 +52,19 @@ import com.szeastroc.icebox.config.DmsUrlConfig;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
-import com.szeastroc.icebox.enums.*;
-import com.szeastroc.icebox.enums.ExamineStatusEnum;
-import com.szeastroc.icebox.enums.FreePayTypeEnum;
-import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
+import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
-import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.*;
 import com.szeastroc.icebox.newprocess.vo.*;
-import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
-import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
-import com.szeastroc.icebox.newprocess.vo.ImportIceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
@@ -87,7 +78,6 @@ import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -100,8 +90,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -3768,14 +3756,26 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             if(hnSet.contains(serviceId)){
                 //134496	2298
                 supplierIds.add(134496);
+                SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(134496));
+                SimpleSupplierInfoVo vo = new SimpleSupplierInfoVo();
+                BeanUtils.copyProperties(supplierInfo,vo);
+                supplierInfoVoMap.put(134496,vo);
             }
             if(gxSet.contains(serviceId)){
                 //id134494	number2297
                 supplierIds.add(134494);
+                SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(134494));
+                SimpleSupplierInfoVo vo = new SimpleSupplierInfoVo();
+                BeanUtils.copyProperties(supplierInfo,vo);
+                supplierInfoVoMap.put(134494,vo);
             }
             if(zjSet.contains(serviceId)){
                 // 134508	2310
                 supplierIds.add(134508);
+                SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(134508));
+                SimpleSupplierInfoVo vo = new SimpleSupplierInfoVo();
+                BeanUtils.copyProperties(supplierInfo,vo);
+                supplierInfoVoMap.put(134508,vo);
             }
 
             wrapper.in(IceBox::getSupplierId, supplierIds)

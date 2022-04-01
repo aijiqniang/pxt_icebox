@@ -25,6 +25,7 @@ import com.szeastroc.common.entity.customer.vo.label.CusLabelDetailVo;
 import com.szeastroc.common.entity.icebox.enums.IceBoxStatus;
 import com.szeastroc.common.entity.icebox.vo.IceBoxRequest;
 import com.szeastroc.common.entity.icebox.vo.IceBoxTransferHistoryVo;
+import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.common.entity.user.session.MatchRuleVo;
 import com.szeastroc.common.entity.user.session.UserManageVo;
 import com.szeastroc.common.entity.user.vo.*;
@@ -32,7 +33,10 @@ import com.szeastroc.common.entity.visit.*;
 import com.szeastroc.common.enums.CommonStatus;
 import com.szeastroc.common.exception.ImproperOptionException;
 import com.szeastroc.common.exception.NormalOptionException;
-import com.szeastroc.common.feign.customer.*;
+import com.szeastroc.common.feign.customer.FeignCusLabelClient;
+import com.szeastroc.common.feign.customer.FeignStoreClient;
+import com.szeastroc.common.feign.customer.FeignSupplierClient;
+import com.szeastroc.common.feign.customer.FeignSupplierRelateUserClient;
 import com.szeastroc.common.feign.user.*;
 import com.szeastroc.common.feign.visit.FeignBacklogClient;
 import com.szeastroc.common.feign.visit.FeignExamineClient;
@@ -48,32 +52,19 @@ import com.szeastroc.icebox.config.DmsUrlConfig;
 import com.szeastroc.icebox.config.MqConstant;
 import com.szeastroc.icebox.constant.IceBoxConstant;
 import com.szeastroc.icebox.constant.RedisConstant;
-import com.szeastroc.icebox.enums.*;
-import com.szeastroc.icebox.enums.ExamineStatusEnum;
-import com.szeastroc.icebox.enums.FreePayTypeEnum;
-import com.szeastroc.icebox.enums.OrderStatus;
 import com.szeastroc.icebox.enums.RecordStatus;
 import com.szeastroc.icebox.enums.ServiceType;
+import com.szeastroc.icebox.enums.*;
 import com.szeastroc.icebox.newprocess.consumer.common.IceBoxPutReportMsg;
-import com.szeastroc.common.entity.icebox.vo.IceInspectionReportMsg;
 import com.szeastroc.icebox.newprocess.consumer.enums.OperateTypeEnum;
 import com.szeastroc.icebox.newprocess.convert.IceBoxConverter;
 import com.szeastroc.icebox.newprocess.dao.*;
 import com.szeastroc.icebox.newprocess.entity.*;
-import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.enums.PutStatus;
 import com.szeastroc.icebox.newprocess.enums.ResultEnum;
+import com.szeastroc.icebox.newprocess.enums.*;
 import com.szeastroc.icebox.newprocess.service.*;
 import com.szeastroc.icebox.newprocess.vo.*;
-import com.szeastroc.icebox.newprocess.vo.ExamineNodeVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxDetailVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxExcelVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxManagerVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStatusVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxStoreVo;
-import com.szeastroc.icebox.newprocess.vo.IceBoxVo;
-import com.szeastroc.icebox.newprocess.vo.IceExamineVo;
-import com.szeastroc.icebox.newprocess.vo.ImportIceBoxVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxPage;
 import com.szeastroc.icebox.newprocess.vo.request.IceBoxRequestVo;
 import com.szeastroc.icebox.newprocess.vo.request.IceExaminePage;
@@ -87,7 +78,6 @@ import com.szeastroc.icebox.util.redis.RedisLockUtil;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -100,8 +90,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -1852,6 +1840,110 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
         List<SimpleSupplierInfoVo> supplierInfoVoList = new ArrayList<>();
 
         Integer serviceDeptId = FeignResponseUtil.getFeignData(feignDeptClient.findServiceDeptIdByDeptId(deptId));
+
+        /**
+         * 京东e站特殊处理  前期写死  后期看产品怎么设计
+         */
+        Set<Integer> gxSet = new HashSet<>();
+        //桂北大区 10925
+        gxSet.add(10926);
+        gxSet.add(10931);
+        gxSet.add(10934);
+        gxSet.add(10938);
+        gxSet.add(10942);
+        gxSet.add(13160);
+        gxSet.add(13162);
+        gxSet.add(13178);
+        //桂南大区 10946
+        gxSet.add(10947);
+        gxSet.add(10952);
+        gxSet.add(10955);
+        gxSet.add(10959);
+        gxSet.add(10963);
+        gxSet.add(10966);
+        gxSet.add(12368);
+        //南宁大区 10904
+        gxSet.add(10905);
+        gxSet.add(10909);
+        gxSet.add(10911);
+        gxSet.add(10913);
+        gxSet.add(10916);
+        gxSet.add(10920);
+        gxSet.add(10923);
+        gxSet.add(12363);
+
+        Set<Integer> hnSet = new HashSet<>();
+        //湘北大区 13250
+        hnSet.add(13252);
+        hnSet.add(13268);
+        hnSet.add(13274);
+        hnSet.add(13278);
+        hnSet.add(13281);
+        //湘南大区 13290
+        hnSet.add(13291);
+        hnSet.add(13299);
+        hnSet.add(13306);
+        hnSet.add(13309);
+        hnSet.add(13315);
+        hnSet.add(13326);
+        hnSet.add(13332);
+
+        Set<Integer> zjSet = new HashSet<>();
+        //浙北大区 8314
+        zjSet.add(8318);
+        zjSet.add(8322);
+        zjSet.add(8325);
+        zjSet.add(8329);
+        zjSet.add(10332);
+        zjSet.add(10334);
+        zjSet.add(10335);
+        zjSet.add(11178);
+        zjSet.add(12221);
+        zjSet.add(13099);
+        //浙南大区 8145
+        zjSet.add(8146);
+        zjSet.add(8157);
+        zjSet.add(8164);
+        zjSet.add(8172);
+        zjSet.add(8178);
+        zjSet.add(8182);
+        zjSet.add(8193);
+        zjSet.add(8200);
+        zjSet.add(8201);
+        zjSet.add(10308);
+        zjSet.add(10309);
+        zjSet.add(11161);
+        zjSet.add(13114);
+        zjSet.add(13120);
+        //浙中大区 13015
+        zjSet.add(13016);
+        zjSet.add(13021);
+        zjSet.add(13026);
+        zjSet.add(13034);
+        zjSet.add(13039);
+        zjSet.add(13044);
+        zjSet.add(13054);
+
+        int supId = 0;
+        if(hnSet.contains(serviceDeptId)){
+            //134496	2298
+            supId = 134496;
+        }
+        if(gxSet.contains(serviceDeptId)){
+            //id134494	number2297
+            supId = 134494;
+        }
+        if(zjSet.contains(serviceDeptId)){
+            // 134508	2310
+            supId = 134508;
+        }
+        if(supId > 0){
+            SubordinateInfoVo res = FeignResponseUtil.getFeignData(feignSupplierClient.findSupplierBySupplierId(supId));
+            SimpleSupplierInfoVo simpleSupplierInfoVo = new SimpleSupplierInfoVo();
+            BeanUtils.copyProperties(res,simpleSupplierInfoVo);
+            supplierInfoVoList.add(simpleSupplierInfoVo);
+            return supplierInfoVoList;
+        }
         if (null != serviceDeptId) {
             List<SimpleSupplierInfoVo> simpleSupplierInfoVoList = FeignResponseUtil.getFeignData(feignSupplierClient.findByDeptId(serviceDeptId));
 
@@ -3580,6 +3672,114 @@ public class IceBoxServiceImpl extends ServiceImpl<IceBoxDao, IceBox> implements
             Set<Integer> supplierIds = supplierInfoVos.stream().map(x -> x.getId()).collect(Collectors.toSet());
             Map<Integer, SimpleSupplierInfoVo> supplierInfoVoMap = supplierInfoVos.stream().collect(Collectors.toMap(SimpleSupplierInfoVo::getId, x -> x));
             LambdaQueryWrapper<IceBox> wrapper = Wrappers.<IceBox>lambdaQuery();
+            /**
+             * 京东e站特殊处理  前期写死  后期看产品怎么设计
+             */
+            Set<Integer> gxSet = new HashSet<>();
+            //桂北大区 10925
+            gxSet.add(10926);
+            gxSet.add(10931);
+            gxSet.add(10934);
+            gxSet.add(10938);
+            gxSet.add(10942);
+            gxSet.add(13160);
+            gxSet.add(13162);
+            gxSet.add(13178);
+            //桂南大区 10946
+            gxSet.add(10947);
+            gxSet.add(10952);
+            gxSet.add(10955);
+            gxSet.add(10959);
+            gxSet.add(10963);
+            gxSet.add(10966);
+            gxSet.add(12368);
+            //南宁大区 10904
+            gxSet.add(10905);
+            gxSet.add(10909);
+            gxSet.add(10911);
+            gxSet.add(10913);
+            gxSet.add(10916);
+            gxSet.add(10920);
+            gxSet.add(10923);
+            gxSet.add(12363);
+
+            Set<Integer> hnSet = new HashSet<>();
+            //湘北大区 13250
+            hnSet.add(13252);
+            hnSet.add(13268);
+            hnSet.add(13274);
+            hnSet.add(13278);
+            hnSet.add(13281);
+            //湘南大区 13290
+            hnSet.add(13291);
+            hnSet.add(13299);
+            hnSet.add(13306);
+            hnSet.add(13309);
+            hnSet.add(13315);
+            hnSet.add(13326);
+            hnSet.add(13332);
+
+            Set<Integer> zjSet = new HashSet<>();
+            //浙北大区 8314
+            zjSet.add(8318);
+            zjSet.add(8322);
+            zjSet.add(8325);
+            zjSet.add(8329);
+            zjSet.add(10332);
+            zjSet.add(10334);
+            zjSet.add(10335);
+            zjSet.add(11178);
+            zjSet.add(12221);
+            zjSet.add(13099);
+            //浙南大区 8145
+            zjSet.add(8146);
+            zjSet.add(8157);
+            zjSet.add(8164);
+            zjSet.add(8172);
+            zjSet.add(8178);
+            zjSet.add(8182);
+            zjSet.add(8193);
+            zjSet.add(8200);
+            zjSet.add(8201);
+            zjSet.add(10308);
+            zjSet.add(10309);
+            zjSet.add(11161);
+            zjSet.add(13114);
+            zjSet.add(13120);
+            //浙中大区 13015
+            zjSet.add(13016);
+            zjSet.add(13021);
+            zjSet.add(13026);
+            zjSet.add(13034);
+            zjSet.add(13039);
+            zjSet.add(13044);
+            zjSet.add(13054);
+
+            if(hnSet.contains(serviceId)){
+                //134496	2298
+                supplierIds.add(134496);
+                SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(134496));
+                SimpleSupplierInfoVo vo = new SimpleSupplierInfoVo();
+                BeanUtils.copyProperties(supplierInfo,vo);
+                supplierInfoVoMap.put(134496,vo);
+            }
+            if(gxSet.contains(serviceId)){
+                //id134494	number2297
+                supplierIds.add(134494);
+                SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(134494));
+                SimpleSupplierInfoVo vo = new SimpleSupplierInfoVo();
+                BeanUtils.copyProperties(supplierInfo,vo);
+                supplierInfoVoMap.put(134494,vo);
+            }
+            if(zjSet.contains(serviceId)){
+                // 134508	2310
+                supplierIds.add(134508);
+                SupplierInfo supplierInfo = FeignResponseUtil.getFeignData(feignSupplierClient.findInfoById(134508));
+                SimpleSupplierInfoVo vo = new SimpleSupplierInfoVo();
+                BeanUtils.copyProperties(supplierInfo,vo);
+                supplierInfoVoMap.put(134508,vo);
+            }
+
             wrapper.in(IceBox::getSupplierId, supplierIds)
 //                    .eq(IceBox::getPutStatus, PutStatus.NO_PUT.getStatus());
                     .eq(IceBox::getStatus, CommonStatus.VALID.getStatus());

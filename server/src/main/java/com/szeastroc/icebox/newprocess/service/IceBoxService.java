@@ -18,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +34,7 @@ public interface IceBoxService extends IService<IceBox> {
 
     IceBoxDetailVo findIceBoxById(Integer id);
 
-    List<SimpleSupplierInfoVo> findSupplierByDeptId(Integer deptId);
+    List<SimpleSupplierInfoVo> findSupplierByDeptId(Integer deptId,String assetId);
 
     IceBoxStatusVo checkBoxByQrcode(String qrcode, String pxtNumber);
 

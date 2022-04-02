@@ -82,14 +82,14 @@ public class RefundController {
      */
     @RequestMapping("/findSupplierByDeptId")
     @MonitorAnnotation
-    public CommonResponse<List<SimpleSupplierInfoVo>> findSupplierByDeptId(@RequestParam("deptId") Integer deptId) {
+    public CommonResponse<List<SimpleSupplierInfoVo>> findSupplierByDeptId(@RequestParam("deptId") Integer deptId,@RequestParam(value = "assetId",required = false) String assetId) {
 
         if (deptId == null) {
             throw new ImproperOptionException(Constants.ErrorMsg.REQUEST_PARAM_ERROR);
         }
 
 
-        List<SimpleSupplierInfoVo> simpleSupplierInfoVoList = iceBoxService.findSupplierByDeptId(deptId);
+        List<SimpleSupplierInfoVo> simpleSupplierInfoVoList = iceBoxService.findSupplierByDeptId(deptId,assetId);
 
         return new CommonResponse<>(Constants.API_CODE_SUCCESS, null, simpleSupplierInfoVoList);
     }
